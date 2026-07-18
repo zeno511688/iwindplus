@@ -123,7 +123,6 @@ iwindplus/
 #### 安装教程
 
 1.  jdk17
-2.  deploy目录下middle中间件启动
 3.  iwindplus-server服务启动
 
 #### 使用说明
