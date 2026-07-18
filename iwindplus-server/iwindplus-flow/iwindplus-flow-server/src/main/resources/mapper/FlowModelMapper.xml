@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.flow.server.dal.mapper.FlowModelMapper">
+    <sql id="modelPageAliasField">
+        fm.id, fm.created_time, fm.created_timestamp, fm.created_by, fm.modified_time, fm.modified_timestamp, fm.modified_by, fm.version,
+        fm.status, fm.code, fm.name, fm.model_version, fm.form_type, fm.seq, fm.build_in_flag
+    </sql>
+
+    <sql id="modelAliasField">
+        fm.id, fm.created_time, fm.created_timestamp, fm.created_by, fm.created_id, fm.modified_time, fm.modified_timestamp, fm.modified_by, fm.modified_id, fm.deleted, fm.version, fm.remark, fm.build_in_flag,
+        fm.status, fm.code, fm.name, fm.model_version, fm.form_type, fm.form_path, fm.seq, fm.category_id, fm.form_id
+    </sql>
+
+    <resultMap id="flowModelAllMap" type="com.iwindplus.flow.domain.vo.FlowModelExtVO" autoMapping="true">
+        <result column="model_content" property="modelContent" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+    </resultMap>
+
+    <select id="selectPageByCondition" resultType="com.iwindplus.flow.domain.vo.FlowModelPageVO">
+        select
+            <include refid="modelPageAliasField"/>
+            ,
+            <include refid="com.iwindplus.flow.server.dal.mapper.FlowCategoryMapper.categoryBaseAliasField"/>
+        from flow_model fm
+        inner join `flow_category` fc on fm.category_id = fc.id
+        where fm.deleted = 0 and fm.status <![CDATA[ <> ]]> 3
+        <if test="ew.status != null">
+            and fm.status = #{ew.status}
+        </if>
+        <if test="ew.code != null and ew.code != ''">
+            and fm.code = #{ew.code}
+        </if>
+        <if test="ew.name != null and ew.name != ''">
+            and fm.name like concat('%', #{ew.name}, '%')
+        </if>
+        <if test="ew.categoryId != null">
+            and fc.id = #{ew.categoryId}
+        </if>
+        <if test="ew.categoryCode != null">
+            and fc.code = #{ew.categoryCode}
+        </if>
+        <if test="ew.categoryName != null and ew.categoryName != ''">
+            and fc.name like concat('%', #{ew.categoryName}, '%')
+        </if>
+        order by fm.modified_time desc
+    </select>
+
+    <select id="selectDetailById" resultMap="flowModelAllMap">
+        select
+            <include refid="modelAliasField"/>
+            ,
+            <include refid="com.iwindplus.flow.server.dal.mapper.FlowModelExtendMapper.modelExtendAliasField"/>
+        from flow_model fm
+        left join flow_model_extend fme on fm.id = fme.model_id
+        where fm.deleted = 0
+        and fm.id = #{id}
+    </select>
+
+    <select id="selectNewestOneByCondition" resultMap="flowModelAllMap">
+        select
+            <include refid="modelAliasField"/>
+            ,
+            <include refid="com.iwindplus.flow.server.dal.mapper.FlowModelExtendMapper.modelExtendAliasField"/>
+        from flow_model fm
+        left join flow_model_extend fme on fm.id = fme.model_id
+        where fm.deleted = 0
+        and fm.status = #{status}
+        and fm.code = #{code}
+        order by fm.model_version desc
+        limit 1
+    </select>
+</mapper>

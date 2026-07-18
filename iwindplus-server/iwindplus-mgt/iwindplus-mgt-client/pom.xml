@@ -1,0 +1,25 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>iwindplus-mgt</artifactId>
+        <groupId>com.iwindplus.mgt</groupId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>iwindplus-mgt-client</artifactId>
+    <packaging>jar</packaging>
+
+    <name>iwindplus-mgt-client</name>
+    <description>管理服务客户端</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-feign</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iwindplus.mgt</groupId>
+            <artifactId>iwindplus-mgt-api</artifactId>
+        </dependency>
+    </dependencies>
+</project>

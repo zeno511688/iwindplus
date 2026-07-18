@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.OrgAuditMapper">
+    <sql id="orgAuditField">
+        id, created_time, created_timestamp, created_by, modified_time, modified_timestamp, modified_by,
+        audit_status, seq, org_id
+    </sql>
+
+    <sql id="orgAuditAliasField">
+        boa.id, boa.created_time, boa.created_timestamp, boa.created_by, boa.modified_time, boa.modified_timestamp, boa.modified_by,
+        boa.audit_status, boa.seq, boa.org_id
+    </sql>
+
+    <sql id="inSql">
+        <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </sql>
+
+    <delete id="deleteByOrgIds">
+        delete from org_audit
+        where org_id in
+        <include refid="inSql"/>
+    </delete>
+
+    <select id="selectNewestByOrgId" resultType="com.iwindplus.mgt.domain.vo.power.OrgAuditVO">
+        select
+            <include refid="orgAuditField"/>
+        from org_audit
+        where deleted = 0
+        and org_id =  #{orgId}
+        order by created_time desc
+        limit 1
+    </select>
+
+    <select id="selectListByOrgId" resultType="com.iwindplus.mgt.domain.vo.power.OrgAuditVO">
+        select
+            <include refid="orgAuditAliasField"/>
+        from org_audit boa
+        inner join `org` bo on boa.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        where boa.deleted = 0
+        and bo.id = #{orgId}
+        order by boa.seq desc
+    </select>
+</mapper>

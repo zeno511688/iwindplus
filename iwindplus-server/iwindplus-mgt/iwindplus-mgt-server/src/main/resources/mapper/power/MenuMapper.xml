@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.MenuMapper">
+
+    <resultMap id="MenuBaseTreeAliasVO" type="com.iwindplus.base.domain.vo.BaseTreeVO">
+        <result property="id" column="bm_id"/>
+        <result property="code" column="bm_code"/>
+        <result property="name" column="bm_name"/>
+        <result property="level" column="bm_level"/>
+        <result property="seq" column="bm_seq"/>
+        <result property="parentId" column="bm_parent_id"/>
+    </resultMap>
+
+    <resultMap id="MenuTreeAliasVO" extends="MenuBaseTreeAliasVO" type="com.iwindplus.mgt.domain.vo.power.MenuTreeVO">
+        <result property="iconStyle" column="bm_icon_style"/>
+        <result property="iconUrlStr" column="bm_icon_url"/>
+        <result property="routeUrl" column="bm_route_url"/>
+    </resultMap>
+
+    <resultMap id="MenuBaseTreeCheckedAliasVO" extends="MenuBaseTreeAliasVO" type="com.iwindplus.base.domain.vo.BaseTreeCheckedVO">
+        <result property="type" column="type"/>
+        <result property="checked" column="checked"/>
+    </resultMap>
+
+    <resultMap id="MenuBaseListSystemAliasVO" extends="com.iwindplus.mgt.server.dal.mapper.power.SystemMapper.SystemBaseExtendAliasVO" type="com.iwindplus.mgt.domain.vo.power.MenuBaseListSystemVO">
+        <collection property="menus" resultMap="MenuBaseTreeCheckedAliasVO"/>
+    </resultMap>
+
+    <resultMap id="MenuListSystemAliasVO" extends="com.iwindplus.mgt.server.dal.mapper.power.SystemMapper.SystemBaseExtendAliasVO" type="com.iwindplus.mgt.domain.vo.power.MenuListSystemVO">
+        <collection property="menus" resultMap="MenuTreeAliasVO"/>
+    </resultMap>
+
+    <sql id="menuBaseAliasField">
+        bm.id as menu_id, bm.code as menu_code, bm.name as menu_name, bm.level as menu_level, bm.seq as menu_seq
+    </sql>
+
+    <sql id="menuBaseTreeField">
+        bm.id, bm.code, bm.name, bm.level, bm.seq, bm.parent_id
+    </sql>
+
+    <sql id="menuBaseTreeAliasField">
+        bm.id as bm_id, bm.code as bm_code, bm.name as bm_name, bm.level as bm_level, bm.seq as bm_seq, bm.parent_id as bm_parent_id
+    </sql>
+
+    <sql id="menuTreeField">
+        bm.id, bm.code, bm.name, bm.level, bm.seq, bm.parent_id,
+        bm.icon_style, bm.icon_url, bm.route_url
+    </sql>
+
+    <sql id="menuTreeAliasField">
+        bm.id as bm_id, bm.code as bm_code, bm.name as bm_name, bm.level as bm_level, bm.seq as bm_seq, bm.parent_id as bm_parent_id,
+        bm.icon_style as bm_icon_style, bm.icon_url as bm_icon_url, bm.route_url as bm_route_url
+    </sql>
+
+    <select id="selectListEnabled" resultMap="MenuBaseListSystemAliasVO">
+        select
+            <include refid="menuBaseTreeAliasField"/>,
+            <include refid="com.iwindplus.mgt.server.dal.mapper.power.SystemMapper.systemBaseAliasField"/>,
+            '0' as type,
+            0 as checked
+        from `menu` bm
+        inner join `system` bs on bm.system_id = bs.id and bs.deleted = 0 and bs.status = 1 and bs.hide_flag = 0
+        where bm.deleted = 0 and bm.status = 1 and bm.hide_flag = 0
+        order by bs.seq asc, bm.seq asc
+    </select>
+
+    <select id="selectListByRoleId" resultMap="MenuBaseListSystemAliasVO">
+        select
+            <include refid="menuBaseTreeAliasField"/>
+            ,
+            <include refid="com.iwindplus.mgt.server.dal.mapper.power.SystemMapper.systemBaseAliasField"/>
+            , '0' as type
+            , 1 as checked
+        from `menu` bm
+        inner join `system` bs on bm.system_id = bs.id and bs.deleted = 0 and bs.status = 1 and bs.hide_flag = 0
+        inner join role_menu brm on bm.id = brm.menu_id and brm.deleted = 0
+        inner join `role` br on brm.role_id = br.id and br.deleted = 0 and br.status = 1
+        inner join `org` bo on br.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        where bm.deleted = 0 and bm.status = 1 and bm.hide_flag = 0
+        and bo.id = #{orgId}
+        and br.id = #{roleId}
+        order by bs.seq asc, bm.seq asc
+    </select>
+
+    <select id="selectListBySystemId" resultType="com.iwindplus.base.domain.vo.BaseTreeVO">
+        select
+            <include refid="menuBaseTreeField"/>
+            , 0 as checked
+        from `menu` bm
+        inner join `system` bs on bm.system_id = bs.id and bs.deleted = 0 and bs.status = 1 and bs.hide_flag = 0
+        where bm.deleted = 0
+        <if test="status != null">
+            and bm.status = #{status}
+        </if>
+        and bs.id = #{systemId}
+        order by bs.seq asc, bm.seq asc
+    </select>
+
+    <sql id="selectListByUserIdOne">
+        select
+            <include refid="menuTreeAliasField"/>,
+            <include refid="com.iwindplus.mgt.server.dal.mapper.power.SystemMapper.systemBaseAliasField"/>
+        from `menu` bm
+        inner join `system` bs on bm.system_id = bs.id and bs.deleted = 0 and bs.status = 1 and bs.hide_flag = 0
+        inner join role_menu brm on bm.id = brm.menu_id and brm.deleted = 0
+        inner join `role` br on brm.role_id = br.id and br.deleted = 0 and br.status = 1
+        inner join `org` bo on br.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        inner join user_role bur on br.id = bur.role_id and bur.deleted = 0
+        inner join `user` bu on bur.user_id = bu.id and bu.deleted = 0 and bu.enabled = 1 and bu.locked = 0 and bu.account_expired = 0 and bu.credentials_expired = 0
+        where bm.deleted = 0 and bm.status = 1 and bm.hide_flag = 0
+        and bo.id = #{orgId}
+        and bu.id = #{userId}
+        order by bs.seq asc, bm.seq asc
+    </sql>
+
+    <sql id="selectListByUserIdTwo">
+        select
+            <include refid="menuTreeAliasField"/>,
+            <include refid="com.iwindplus.mgt.server.dal.mapper.power.SystemMapper.systemBaseAliasField"/>
+        from `menu` bm
+        inner join `system` bs on bm.system_id = bs.id and bs.deleted = 0 and bs.status = 1 and bs.hide_flag = 0
+        inner join role_menu brm on bm.id = brm.menu_id and brm.deleted = 0
+        inner join `role` br on brm.role_id = br.id and br.deleted = 0 and br.status = 1
+        inner join `org` bo on br.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        inner join user_group_role bugr on br.id = bugr.role_id and bugr.deleted = 0
+        inner join user_group bug on bugr.user_group_id = bug.id and bug.deleted = 0 and bug.status = 1
+        inner join user_group_user bugu on bug.id = bugu.user_group_id and bugu.deleted = 0
+        inner join `user` bu on bugu.user_id = bu.id and bu.deleted = 0 and bu.enabled = 1 and bu.locked = 0 and bu.account_expired = 0 and bu.credentials_expired = 0
+        where bm.deleted = 0 and bm.status = 1 and bm.hide_flag = 0
+        and bo.id = #{orgId}
+        and bu.id = #{userId}
+        order by bs.seq asc, bm.seq asc
+    </sql>
+
+    <select id="selectListByUserId" resultMap="MenuListSystemAliasVO">
+        (
+            <include refid="selectListByUserIdOne"/>
+        )
+        union
+        (
+            <include refid="selectListByUserIdTwo"/>
+        )
+    </select>
+
+</mapper>

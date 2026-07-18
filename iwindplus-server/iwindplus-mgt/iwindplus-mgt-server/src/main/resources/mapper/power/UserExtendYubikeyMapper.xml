@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.UserExtendYubikeyMapper">
+    <sql id="userExtendYubikeyAliasField">
+        buey.id, buey.created_time, buey.created_timestamp, buey.created_by, buey.created_id, buey.modified_time, buey.modified_timestamp, buey.modified_by, buey.modified_id, buey.deleted, buey.version, buey.remark,
+        buey.user_id, buey.yubikey_public_key, buey.biz_type
+    </sql>
+
+    <sql id="inSql">
+        <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </sql>
+
+    <delete id="deleteByUserIds">
+        delete from user_extend_yubikey
+        where user_id in
+        <include refid="inSql"/>
+    </delete>
+</mapper>

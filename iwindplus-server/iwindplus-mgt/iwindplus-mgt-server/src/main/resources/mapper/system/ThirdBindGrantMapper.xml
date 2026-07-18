@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.mgt.server.dal.mapper.system.ThirdBindGrantMapper">
+    <sql id="thirdBindGrantAliasField">
+        tbg.id, tbg.created_time, tbg.created_timestamp, tbg.created_by, tbg.created_id, tbg.modified_time, tbg.modified_timestamp, tbg.modified_by, tbg.modified_id, tbg.deleted, tbg.version, tbg.remark,
+        tbg.code, tbg.openid, tbg.union_id, tbg.type, tbg.user_id
+    </sql>
+
+    <sql id="userAliasField">
+        bu.job_number, bu.mobile
+    </sql>
+
+    <sql id="inSql">
+        <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </sql>
+
+    <delete id="deleteByIds">
+        delete from third_bind_grant
+        where id in
+        <include refid="inSql"/>
+    </delete>
+
+    <delete id="deleteByUserIds">
+        delete from third_bind_grant
+        where user_id in
+        <include refid="inSql"/>
+    </delete>
+
+    <sql id="joinUserSql">
+        select
+            <include refid="thirdBindGrantAliasField"/>
+            ,
+            <include refid="userAliasField"/>
+        from third_bind_grant tbg
+        left join `user` bu on tbg.user_id = bu.id and bu.deleted = 0
+    </sql>
+
+    <select id="selectPageByCondition" resultType="com.iwindplus.mgt.domain.vo.system.ThirdBindGrantVO">
+        <include refid="joinUserSql"/>
+        where tbg.deleted = 0
+        <if test="ew.type != null">
+            and tbg.type = #{ew.type}
+        </if>
+        <if test="ew.code != null and ew.code != ''">
+            and tbg.code like concat('%', #{ew.code}, '%')
+        </if>
+        <if test="ew.openid != null and ew.openid != ''">
+            and tbg.openid like concat('%', #{ew.openid}, '%')
+        </if>
+        <if test="ew.jobNumber != null and ew.jobNumber != ''">
+            and bu.job_number = #{ew.jobNumber}
+        </if>
+
+        <if test="ew.mobile != null and ew.mobile != ''">
+            and bu.mobile like concat('%', #{ew.mobile}, '%')
+        </if>
+        order by tbg.modified_time desc
+    </select>
+
+    <select id="selectByOpenId" resultType="com.iwindplus.mgt.domain.vo.system.ThirdBindGrantVO">
+        <include refid="joinUserSql"/>
+        where tbg.deleted = 0
+        <if test="unionId != null and unionId != ''">
+            and tbg.union_id = #{unionId}
+        </if>
+        and tbg.type = #{type}
+    </select>
+
+    <select id="selectDetailById" resultType="com.iwindplus.mgt.domain.vo.system.ThirdBindGrantVO">
+        <include refid="joinUserSql"/>
+        where tbg.deleted = 0 and tbg.id = #{id}
+    </select>
+
+</mapper>

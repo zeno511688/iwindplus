@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>iwindplus</artifactId>
+        <groupId>com.iwindplus</groupId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>iwindplus-server</artifactId>
+    <packaging>pom</packaging>
+
+    <name>iwindplus-server</name>
+    <description>服务</description>
+
+    <modules>
+        <module>iwindplus-auth</module>
+        <module>iwindplus-gateway</module>
+        <module>iwindplus-im</module>
+        <module>iwindplus-log</module>
+        <module>iwindplus-mgt</module>
+        <module>iwindplus-setup</module>
+        <module>iwindplus-monitor</module>
+        <module>iwindplus-flow</module>
+        <module>iwindplus-binlog</module>
+        <module>iwindplus-dtx</module>
+    </modules>
+</project>

@@ -1,0 +1,21 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>iwindplus-dtx</artifactId>
+        <groupId>com.iwindplus.dtx</groupId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>iwindplus-dtx-api</artifactId>
+    <packaging>jar</packaging>
+
+    <name>iwindplus-dtx-api</name>
+    <description>分布式事务服务api</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.iwindplus.dtx</groupId>
+            <artifactId>iwindplus-dtx-domain</artifactId>
+        </dependency>
+    </dependencies>
+</project>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.DepartmentMapper">
+    <sql id="departmentBaseTreeField">
+        bd.id, bd.code, bd.name, bd.level, bd.seq, bd.parent_id
+    </sql>
+
+    <sql id="departmentBaseField">
+        bd.id, bd.name, bd.code
+    </sql>
+
+    <sql id="departmentBaseAliasField">
+        bd.code as department_code, bd.name as department_name
+    </sql>
+
+    <sql id="departmentAliasField">
+        bd.id, bd.created_time, bd.created_by, bd.created_id, bd.modified_time, bd.modified_by, bd.modified_id, bd.deleted, bd.version, bd.remark,
+        bd.status, bd.code, bd.name, bd.level, bd.seq, bd.build_in_flag, bd.parent_id, bd.org_id
+    </sql>
+
+    <select id="selectListByOrgId" resultType="com.iwindplus.base.domain.vo.BaseTreeCheckedVO">
+        select
+            <include refid="departmentBaseTreeField"/>
+            , 0 as checked
+        from `department` bd
+        inner join `org` bo on bd.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        where bd.deleted = 0
+        <if test="status != null">
+            and bd.status = #{status}
+        </if>
+        and bo.id = #{orgId}
+        order by bd.name asc, bd.seq asc
+    </select>
+
+    <select id="selectDetailById" resultType="com.iwindplus.mgt.domain.vo.power.DepartmentExtendVO">
+        select
+            <include refid="departmentAliasField"/>
+            ,
+            <include refid="com.iwindplus.mgt.server.dal.mapper.power.OrgMapper.orgBaseAliasField"/>
+        from `department` bd
+        inner join `org` bo on bd.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        where bd.deleted = 0 and bd.id = #{id}
+    </select>
+
+    <select id="selectListCheckedByUserId" resultType="com.iwindplus.mgt.domain.vo.power.DepartmentBaseVO">
+        select
+            <include refid="departmentBaseField"/>
+        from `department` bd
+        inner join `org` bo on bd.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        inner join `user_department` bud on bd.id = bud.department_id and bud.deleted = 0
+        inner join `user` bu on bud.user_id = bu.id and bu.deleted = 0 and bu.enabled = 1 and bu.locked = 0 and bu.account_expired = 0 and bu.credentials_expired = 0
+        where bd.deleted = 0 and bd.status = 1
+        and bo.id = #{orgId}
+        and bud.user_id = #{userId}
+        order by bud.primary_flag desc, bd.name asc, bd.seq asc
+    </select>
+</mapper>

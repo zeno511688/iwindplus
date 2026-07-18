@@ -1,0 +1,6 @@
+com.iwindplus.base.web.FilterConfiguration
+com.iwindplus.base.web.JacksonConfiguration
+com.iwindplus.base.web.KeyGeneratorConfiguration
+com.iwindplus.base.web.ThreadPoolConfiguration
+com.iwindplus.base.web.ValidatorConfiguration
+com.iwindplus.base.web.WebConfiguration

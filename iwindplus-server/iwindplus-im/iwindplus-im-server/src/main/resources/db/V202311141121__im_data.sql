@@ -1,0 +1,31 @@
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+-- Records of chat_group
+-- ----------------------------
+BEGIN;
+INSERT INTO `chat_group` (`id`, `created_time`, `created_timestamp`, `created_by`, `created_id`, `modified_time`, `modified_timestamp`, `modified_by`, `modified_id`, `deleted`, `version`, `remark`, `status`, `group_name`, `group_avatar`, `group_qrcode`, `announcement`, `limit_num`, `show_nick_name_flag`, `edit_avatar_flag`, `org_id`) VALUES (1771480773303529473, '2024-03-23 18:15:03', 1757785403815, 'system', 1705393523906400258, '2024-03-23 18:15:03', 1757785403815, 'system', 1705393523906400258, 0, 0, 'system,system', 1, 'system,system', 'chatGroup/20240323/1771480769242382336.png', 'chatGroup/20240323/1771480777941368832.png', '', 500, 1, 0, 1543953063620931586);
+INSERT INTO `chat_group` (`id`, `created_time`, `created_timestamp`, `created_by`, `created_id`, `modified_time`, `modified_timestamp`, `modified_by`, `modified_id`, `deleted`, `version`, `remark`, `status`, `group_name`, `group_avatar`, `group_qrcode`, `announcement`, `limit_num`, `show_nick_name_flag`, `edit_avatar_flag`, `org_id`) VALUES (1771481177592492033, '2024-03-23 18:16:39', 1757785403815, 'system', 1543960516026822658, '2024-03-23 18:16:39', 1757785403815, 'system', 1543960516026822658, 0, 0, 'system,system,system', 1, 'system,system,system', 'chatGroup/20240323/1771481176828067840.png', 'chatGroup/20240323/1771481178036027392.png', '', 500, 1, 0, 1543953063620931586);
+COMMIT;
+
+-- ----------------------------
+-- Records of chat_group_user
+-- ----------------------------
+BEGIN;
+INSERT INTO `chat_group_user` (`id`, `created_time`, `created_timestamp`, `created_by`, `created_id`, `modified_time`, `modified_timestamp`, `modified_by`, `modified_id`, `deleted`, `version`, `remark`, `nick_name`, `leader_flag`, `join_type`, `agree_flag`, `seq`, `chat_group_id`, `user_id`, `user_avatar`, `user_nick_name`, `org_id`) VALUES (1771480782908485634, '2024-03-23 18:15:05', 1757785403815, 'system', 1705393523906400258, '2024-03-23 18:15:05', 1757785403815, 'system', 1705393523906400258, 0, 0, '群主', 'system', 1, 1, 1, 1, 1771480773303529473, 1705393523906400258, 'pic/user/20240314/1768293812631318528.jpeg', 'system', 1543953063620931586);
+INSERT INTO `chat_group_user` (`id`, `created_time`, `created_timestamp`, `created_by`, `created_id`, `modified_time`, `modified_timestamp`, `modified_by`, `modified_id`, `deleted`, `version`, `remark`, `nick_name`, `leader_flag`, `join_type`, `agree_flag`, `seq`, `chat_group_id`, `user_id`, `user_avatar`, `user_nick_name`, `org_id`) VALUES (1771480782946234370, '2024-03-23 18:15:05', 1757785403815, 'system', 1705393523906400258, '2024-03-23 18:15:05', 1757785403815, 'system', 1705393523906400258, 0, 0, '成员', 'system', 0, 1, 1, 2, 1771480773303529473, 1768955311468625921, 'pic/user/20240314/1768293812631318528.jpeg', 'system', 1543953063620931586);
+INSERT INTO `chat_group_user` (`id`, `created_time`, `created_timestamp`, `created_by`, `created_id`, `modified_time`, `modified_timestamp`, `modified_by`, `modified_id`, `deleted`, `version`, `remark`, `nick_name`, `leader_flag`, `join_type`, `agree_flag`, `seq`, `chat_group_id`, `user_id`, `user_avatar`, `user_nick_name`, `org_id`) VALUES (1771481179123412993, '2024-03-23 18:16:40', 1757785403815, 'system', 1543960516026822658, '2024-03-23 18:16:40', 1757785403815, 'system', 1543960516026822658, 0, 0, '群主', 'system', 1, 1, 1, 1, 1771481177592492033, 1543960516026822658, 'pic/user/20240314/1768293924480823296.jpeg', 'system', 1543953063620931586);
+INSERT INTO `chat_group_user` (`id`, `created_time`, `created_timestamp`, `created_by`, `created_id`, `modified_time`, `modified_timestamp`, `modified_by`, `modified_id`, `deleted`, `version`, `remark`, `nick_name`, `leader_flag`, `join_type`, `agree_flag`, `seq`, `chat_group_id`, `user_id`, `user_avatar`, `user_nick_name`, `org_id`) VALUES (1771481179140190210, '2024-03-23 18:16:40', 1757785403815, 'system', 1543960516026822658, '2024-03-23 18:16:40', 1757785403815, 'system', 1543960516026822658, 0, 0, '成员', 'system', 0, 1, 1, 2, 1771481177592492033, 1705393523906400258, 'pic/user/20240314/1768293812631318528.jpeg', 'system', 1543953063620931586);
+INSERT INTO `chat_group_user` (`id`, `created_time`, `created_timestamp`, `created_by`, `created_id`, `modified_time`, `modified_timestamp`, `modified_by`, `modified_id`, `deleted`, `version`, `remark`, `nick_name`, `leader_flag`, `join_type`, `agree_flag`, `seq`, `chat_group_id`, `user_id`, `user_avatar`, `user_nick_name`, `org_id`) VALUES (1771481179148578818, '2024-03-23 18:16:40', 1757785403815, 'system', 1543960516026822658, '2024-03-23 18:16:40', 1757785403815, 'system', 1543960516026822658, 0, 0, '成员', 'system', 0, 1, 1, 3, 1771481177592492033, 1768955311468625921, 'pic/user/20240314/1768293812631318528.jpeg', 'system', 1543953063620931586);
+COMMIT;
+
+-- ----------------------------
+-- Records of user_friend
+-- ----------------------------
+BEGIN;
+INSERT INTO `user_friend` (`id`, `created_time`, `created_timestamp`, `created_by`, `created_id`, `modified_time`, `modified_timestamp`, `modified_by`, `modified_id`, `deleted`, `version`, `remark`, `status`, `user_id`, `user_avatar`, `user_nick_name`, `friend_id`, `friend_avatar`, `friend_nick_name`, `org_id`) VALUES (1769717976152469505, '2024-03-18 21:30:19', 1757785403815, 'system', 1543960516026822658, '2024-03-18 21:30:19', 1757785403815, 'system', 1543960516026822658, 0, 0, '', 1, 1543960516026822658, 'pic/user/20240314/1768293924480823296.jpeg', 'system', 1768955311468625921, '', 'system', 1543953063620931586);
+INSERT INTO `user_friend` (`id`, `created_time`, `created_timestamp`, `created_by`, `created_id`, `modified_time`, `modified_timestamp`, `modified_by`, `modified_id`, `deleted`, `version`, `remark`, `status`, `user_id`, `user_avatar`, `user_nick_name`, `friend_id`, `friend_avatar`, `friend_nick_name`, `org_id`) VALUES (1769720550909865985, '2024-03-18 21:40:33', 1757785403815, 'system', 1543960516026822658, '2024-03-18 21:40:33', 1757785403815, 'system', 1543960516026822658, 0, 0, '', 1, 1705393523906400258, 'pic/user/20240314/1768293924480823296.jpeg', 'system', 1543960516026822658, 'pic/user/20240314/1768293812631318528.jpeg', 'system', 1543953063620931586);
+COMMIT;
+
+SET FOREIGN_KEY_CHECKS = 1;

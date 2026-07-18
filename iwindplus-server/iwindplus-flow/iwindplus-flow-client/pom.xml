@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>iwindplus-flow</artifactId>
+        <groupId>com.iwindplus.flow</groupId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>iwindplus-flow-client</artifactId>
+    <packaging>jar</packaging>
+
+    <name>iwindplus-flow-client</name>
+    <description>流程服务客户端</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-feign</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iwindplus.flow</groupId>
+            <artifactId>iwindplus-flow-api</artifactId>
+        </dependency>
+    </dependencies>
+</project>

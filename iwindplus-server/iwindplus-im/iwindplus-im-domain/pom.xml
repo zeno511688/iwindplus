@@ -1,0 +1,21 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>iwindplus-im</artifactId>
+        <groupId>com.iwindplus.im</groupId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>iwindplus-im-domain</artifactId>
+    <packaging>jar</packaging>
+
+    <name>iwindplus-im-domain</name>
+    <description>即时通讯服务实体</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-domain</artifactId>
+        </dependency>
+    </dependencies>
+</project>

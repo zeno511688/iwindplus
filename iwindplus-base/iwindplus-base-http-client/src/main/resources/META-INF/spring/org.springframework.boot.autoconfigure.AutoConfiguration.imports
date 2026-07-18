@@ -1,0 +1,5 @@
+com.iwindplus.base.http.client.ApacheHttpClientConfiguration
+com.iwindplus.base.http.client.HttpClientConfiguration
+com.iwindplus.base.http.client.OkHttpClientConfiguration
+com.iwindplus.base.http.client.RestClientConfiguration
+com.iwindplus.base.http.client.WebClientConfiguration

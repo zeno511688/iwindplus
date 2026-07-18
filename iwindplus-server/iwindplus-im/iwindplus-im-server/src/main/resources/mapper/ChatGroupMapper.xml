@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.im.server.dal.mapper.ChatGroupMapper">
+    <sql id="chatGroupPageAliasField">
+        cg.id, cg.created_time, cg.created_timestamp, cg.created_by, cg.modified_time, cg.modified_timestamp, cg.modified_by, cg.version,
+        cg.status, cg.group_name
+    </sql>
+
+    <sql id="chatGroupAliasField">
+        cg.id, cg.created_time, cg.created_timestamp, cg.created_by, cg.created_id, cg.modified_time, cg.modified_timestamp, cg.modified_by, cg.modified_id, cg.deleted, cg.version, cg.remark,
+        cg.status, cg.group_name, cg.group_avatar, cg.group_qrcode, cg.announcement, cg.limit_num, cg.show_nick_name_flag, cg.edit_avatar_flag, cg.org_id
+    </sql>
+
+    <sql id="inSql">
+        <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </sql>
+    
+    <delete id="deleteByIds">
+        delete from chat_group
+        where id in
+        <include refid="inSql"/>
+    </delete>
+
+    <select id="selectPageByCondition" resultType="com.iwindplus.im.domain.vo.ChatGroupPageVO">
+        select
+            <include refid="chatGroupPageAliasField"/>
+        from chat_group cg
+        inner join chat_group_user cgu on cg.id = cgu.chat_group_id and cg.org_id = cgu.org_id and cgu.deleted = 0
+        where cg.deleted = 0 and cg.status = 1 and cg.org_id = #{ew.orgId}
+        <if test="ew.groupName != null and ew.groupName != ''">
+            and cg.group_name like concat('%', #{ew.groupName}, '%')
+        </if>
+        and cgu.user_id = #{ew.userId}
+    </select>
+
+    <select id="selectByUserId" resultType="java.lang.Long">
+        select
+            distinct cg.id
+        from chat_group cg
+        inner join chat_group_user cgu on cg.id = cgu.chat_group_id and cg.org_id = cgu.org_id and cgu.deleted = 0
+        where cg.deleted = 0 and cg.status = 1 and cg.org_id = #{orgId}
+        and cgu.user_id = #{userId} and cgu.agree_flag = 1
+    </select>
+
+</mapper>

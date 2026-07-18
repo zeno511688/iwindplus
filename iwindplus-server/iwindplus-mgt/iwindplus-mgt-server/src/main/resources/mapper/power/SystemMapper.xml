@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.SystemMapper">
+    <sql id="systemBaseAliasField">
+        bs.id as bs_id, bs.code as bs_code, bs.name as bs_name, bs.seq as bs_seq
+    </sql>
+
+    <sql id="systemBaseField">
+        bs.id, bs.code, bs.name, bs.seq
+    </sql>
+
+    <resultMap id="SystemBaseExtendAliasVO" type="com.iwindplus.mgt.domain.vo.power.SystemBaseExtendVO">
+        <result property="id" column="bs_id"/>
+        <result property="code" column="bs_code"/>
+        <result property="name" column="bs_name"/>
+        <result property="seq" column="bs_seq"/>
+    </resultMap>
+
+</mapper>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.iwindplus.base</groupId>
+        <artifactId>iwindplus-base</artifactId>
+        <version>${revision}</version>
+        <relativePath>../../iwindplus-base/pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.iwindplus.binlog</groupId>
+    <artifactId>iwindplus-binlog</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+
+    <name>iwindplus-binlog</name>
+    <description>binlog服务</description>
+
+    <modules>
+        <module>iwindplus-binlog-producer-server</module>
+        <module>iwindplus-binlog-consumer-server</module>
+        <module>iwindplus-binlog-test</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.iwindplus.mgt</groupId>
+                <artifactId>iwindplus-mgt-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.log</groupId>
+                <artifactId>iwindplus-log-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.im</groupId>
+                <artifactId>iwindplus-im-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.binlog</groupId>
+                <artifactId>iwindplus-binlog-producer-server</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.binlog</groupId>
+                <artifactId>iwindplus-binlog-consumer-server</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.binlog</groupId>
+                <artifactId>iwindplus-binlog-test</artifactId>
+                <version>${revision}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

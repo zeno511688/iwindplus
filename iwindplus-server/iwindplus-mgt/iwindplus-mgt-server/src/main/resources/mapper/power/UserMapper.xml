@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.UserMapper">
+    <sql id="userPageAliasField">
+        bu.id, bu.created_time, bu.created_timestamp, bu.created_by, bu.created_id, bu.modified_time, bu.modified_timestamp, bu.modified_by, bu.modified_id, bu.deleted, bu.version, bu.remark,
+        bu.enabled, bu.locked, bu.job_number, bu.username, bu.mobile, bu.real_name, bu.mail, bu.admin_flag, bu.ga_bind_flag
+    </sql>
+
+    <sql id="userInfoField">
+        bu.id as userId, bu.job_number, bu.username, bu.mobile, bu.real_name, bu.sex, bu.mail, bu.nick_name, bu.id_card,
+        bu.avatar, bu.admin_flag, bu.ga_bind_flag
+    </sql>
+
+    <sql id="userDetailAliasField">
+        bu.id as userId, bu.enabled, bu.locked, bu.account_expired, bu.credentials_expired, bu.job_number, bu.username,
+        bu.password, bu.mobile, bu.real_name, bu.sex, bu.mail, bu.nick_name, bu.id_card, bu.avatar, bu.admin_flag, bu.ga_bind_flag
+    </sql>
+
+    <sql id="inRoleIdSql">
+        <foreach collection="roleIds" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </sql>
+
+    <sql id="inDepartmentIdSql">
+        <foreach collection="departmentIds" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </sql>
+
+    <select id="selectPageByCondition" resultType="com.iwindplus.mgt.domain.vo.power.UserPageVO">
+        select
+            <include refid="userPageAliasField"/>
+        from `user` bu
+        inner join user_org buo on bu.id = buo.user_id and buo.deleted = 0 and buo.checked = 1
+        inner join `org` bo on buo.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        where bu.deleted = 0
+        <if test="ew.enabled != null">
+            and bu.enabled = #{ew.enabled}
+        </if>
+        <if test="ew.jobNumber != null and ew.jobNumber != ''">
+            and bu.job_number = #{ew.jobNumber}
+        </if>
+        <if test="ew.username != null and ew.username != ''">
+            and bu.username = #{ew.username}
+        </if>
+        <if test="ew.mobile != null and ew.mobile != ''">
+            and bu.mobile = #{ew.mobile}
+        </if>
+        <if test="ew.realName != null and ew.realName != ''">
+            and bu.real_name = #{ew.realName}
+        </if>
+        <if test="ew.mail != null and ew.mail != ''">
+            and bu.mail = #{ew.mail}
+        </if>
+        and bo.id = #{ew.orgId}
+        order by bu.modified_time desc
+    </select>
+
+    <sql id="selectListByRoleIdOne">
+        select
+            bu.id as userId,
+            bu.real_name as userRealName,
+            bo.id as orgId,
+            bo.code as orgCode,
+            bo.name as orgName,
+            bo.abbr as orgAbbr
+        from `user` bu
+        inner join user_role bur on bu.id = bur.user_id and bur.deleted = 0
+        inner join role br on bur.role_id = br.id and br.deleted = 0 and br.status = 1
+        inner join `org` bo on br.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        where bu.deleted = 0 and bu.enabled = 1 and bu.locked = 0 and bu.account_expired = 0 and bu.credentials_expired = 0
+        and br.id in
+        <include refid="inRoleIdSql"/>
+        order by bu.username asc
+    </sql>
+
+    <sql id="selectListByRoleIdTwo">
+        select
+            bu.id as userId,
+            bu.real_name as userRealName,
+            bo.id as orgId,
+            bo.code as orgCode,
+            bo.name as orgName,
+            bo.abbr as orgAbbr
+        from `user` bu
+        inner join user_group_user bugu on bu.id = bugu.user_id and bugu.deleted = 0
+        inner join user_group bug on bugu.user_group_id = bug.id and bug.deleted = 0 and bug.status = 1
+        inner join user_group_role bugr on bug.id = bugr.user_group_id and bugr.deleted = 0
+        inner join role br on bugr.role_id = br.id and br.deleted = 0 and br.status = 1
+        inner join `org` bo on br.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        where bu.deleted = 0 and bu.enabled = 1 and bu.locked = 0 and bu.account_expired = 0 and bu.credentials_expired = 0
+        and br.id in
+        <include refid="inRoleIdSql"/>
+        order by bu.username asc
+    </sql>
+
+    <select id="selectListByRoleIds" resultType="com.iwindplus.mgt.domain.vo.power.UserOrgInfoVO">
+        (
+            <include refid="selectListByRoleIdOne"/>
+        )
+        union
+        (
+            <include refid="selectListByRoleIdTwo"/>
+        )
+    </select>
+
+    <select id="selectListByDepartmentIds" resultType="com.iwindplus.mgt.domain.vo.power.UserDepartmentInfoVO">
+        select
+            bu.id as userId,
+            bu.real_name as userRealName,
+            bd.id as departmentId,
+            bd.code as departmentCode,
+            bd.name as departmentName,
+            bo.id as orgId,
+            bo.code as orgCode,
+            bo.name as orgName,
+            bo.abbr as orgAbbr
+        from `user` bu
+        inner join user_department bud on bu.id = bud.user_id and bud.deleted = 0
+        inner join `department` bd on bud.department_id = bd.id and bd.deleted = 0 and bd.status = 1
+        inner join `org` bo on bd.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        where bu.deleted = 0 and bu.enabled = 1 and bu.locked = 0 and bu.account_expired = 0 and bu.credentials_expired = 0
+        and bd.id in
+        <include refid="inDepartmentIdSql"/>
+    </select>
+
+    <select id="selectLoginByParam" resultType="com.iwindplus.mgt.domain.vo.power.UserDetailVO">
+        select
+            <include refid="userDetailAliasField"/>
+            ,
+            <include refid="com.iwindplus.mgt.server.dal.mapper.power.OrgMapper.orgBaseField"/>
+        from `user` bu
+        inner join user_org buo on bu.id = buo.user_id and buo.deleted = 0 and buo.checked = 1
+        inner join `org` bo on buo.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        where bu.deleted = 0 and (bu.username = #{param} or bu.mobile = #{param} or bu.mail = #{param} or bu.id_card = #{param})
+    </select>
+
+    <select id="selectLoginByCode" resultType="com.iwindplus.mgt.domain.vo.power.UserDetailVO">
+        select
+            <include refid="userDetailAliasField"/>
+            ,
+            <include refid="com.iwindplus.mgt.server.dal.mapper.power.OrgMapper.orgBaseField"/>
+        from `user` bu
+        inner join third_bind_grant tbg on bu.id = tbg.user_id and tbg.deleted = 0
+        inner join user_org buo on bu.id = buo.user_id and buo.deleted = 0 and buo.checked = 1
+        inner join `org` bo on buo.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        where bu.deleted = 0
+        and tbg.code = #{code}
+    </select>
+
+    <select id="selectByUserId" resultType="com.iwindplus.mgt.domain.vo.power.UserInfoVO">
+        select
+            <include refid="userInfoField"/>
+            ,
+            <include refid="com.iwindplus.mgt.server.dal.mapper.power.OrgMapper.orgBaseField"/>
+        from `user` bu
+        inner join user_org buo on bu.id = buo.user_id and buo.deleted = 0 and buo.checked = 1
+        inner join `org` bo on buo.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        where bu.deleted = 0 and bu.enabled = 1 and bu.locked = 0 and bu.account_expired = 0 and bu.credentials_expired = 0
+        and bu.id = #{userId}
+    </select>
+
+    <select id="selectByCondition" resultType="com.iwindplus.mgt.domain.vo.power.UserInfoVO">
+        select
+            <include refid="userInfoField"/>
+            ,
+            <include refid="com.iwindplus.mgt.server.dal.mapper.power.OrgMapper.orgBaseField"/>
+        from `user` bu
+        inner join user_org buo on bu.id = buo.user_id and buo.deleted = 0 and buo.checked = 1
+        inner join `org` bo on buo.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        where bu.deleted = 0 and bu.enabled = 1 and bu.locked = 0 and bu.account_expired = 0 and bu.credentials_expired = 0
+        <if test="ew.jobNumber != null and ew.jobNumber != ''">
+            and bu.job_number = #{ew.jobNumber}
+        </if>
+        <if test="ew.username != null and ew.username != ''">
+            and bu.username = #{ew.username}
+        </if>
+        <if test="ew.mobile != null and ew.mobile != ''">
+            and bu.mobile = #{ew.mobile}
+        </if>
+        <if test="ew.mail != null and ew.mail != ''">
+            and bu.mail = #{ew.mail}
+        </if>
+        <if test="ew.idCard != null and ew.idCard != ''">
+            and bu.id_card = #{ew.idCard}
+        </if>
+    </select>
+</mapper>

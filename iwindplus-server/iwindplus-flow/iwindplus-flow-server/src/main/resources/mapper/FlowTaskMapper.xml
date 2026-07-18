@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.flow.server.dal.mapper.FlowTaskMapper">
+    <sql id="inSql">
+        <foreach collection="coll" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </sql>
+
+    <select id="selectMyPendingPage" resultType="com.iwindplus.flow.domain.vo.FlowTaskPageVO">
+        select
+            ft.id, ft.created_time, ft.created_timestamp, ft.created_by, ft.modified_time, ft.modified_timestamp, ft.modified_by, ft.version,
+            ft.code, ft.name, ft.type, ft.instance_id, fi.name as instance_name, fi.biz_number, fi.current_node_name, ft.model_id,
+            fm.name as model_name, fm.code as model_code
+        from flow_task ft
+        inner join flow_task_player ftp on ft.id = ftp.task_id and ftp.deleted = 0
+        inner join flow_instance fi on ft.instance_id = fi.id and fi.deleted = 0
+        inner join flow_model fm on ft.model_id = fm.id and fm.deleted = 0
+        where ft.deleted = 0
+        and (
+        (ftp.type = 0 and ftp.player_id = #{ew.userId})
+            <if test="ew.roleIds != null and ew.roleIds.size() > 0">
+                or (ftp.type = 1 and ftp.player_id in
+                    <foreach item="roleId" collection="ew.roleIds" open="(" separator="," close=")">
+                        #{roleId}
+                    </foreach>
+                )
+            </if>
+        )
+        <if test="ew.taskName != null and ew.taskName != ''">
+            and ft.name like concat('%', #{ew.taskName}, '%')
+        </if>
+        <if test="ew.instanceName != null and ew.instanceName != ''">
+            and fi.name like concat('%', #{ew.instanceName}, '%')
+        </if>
+        <if test="ew.bizNumber != null and ew.bizNumber != ''">
+            and fi.biz_number = #{ew.bizNumber}
+        </if>
+        order by ft.modified_time desc
+    </select>
+
+    <delete id="deleteByIds">
+        delete from flow_task
+        where id in
+        <include refid="inSql"/>
+    </delete>
+</mapper>

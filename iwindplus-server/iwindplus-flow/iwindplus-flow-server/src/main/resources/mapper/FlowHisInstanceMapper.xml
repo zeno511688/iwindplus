@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.flow.server.dal.mapper.FlowHisInstanceMapper">
+    <select id="selectPage" resultType="com.iwindplus.flow.domain.vo.FlowHisInstancePageVO">
+        select
+            inst.*
+        from (
+            select
+                id, created_id, created_time, created_timestamp, created_by, modified_time, modified_timestamp, modified_by, version,
+                code, name, biz_number, 0 as status, null as take_time, model_id
+            from flow_instance
+            where deleted = 0
+            union all
+            select
+                id, created_id, created_time, created_timestamp, created_by, modified_time, modified_timestamp, modified_by, version,
+                code, name, biz_number, status, take_time, model_id
+            from flow_his_instance where deleted = 0
+        ) inst
+        <if test="ew.queryType.name() == 'MY_DONE' or ew.queryType.name() == 'MY_CC'">
+            inner join (
+                select
+                    distinct fht.instance_id
+                from flow_his_task fht
+                inner join flow_his_task_player fhtp on fht.id = fhtp.task_id and fhtp.deleted = 0
+                where fht.deleted = 0
+                <choose>
+                    <when test="ew.queryType.name() == 'MY_DONE'">
+                        and fht.type = 0
+                        and(
+                        (fhtp.type = 0 and fhtp.player_id = #{ew.userId})
+                        <if test="ew.roleIds != null and ew.roleIds.size() > 0">
+                            or(
+                            fhtp.type = 1 and fhtp.player_id in
+                            <foreach item="roleId" collection="ew.roleIds" open="(" separator="," close=")">
+                                #{roleId}
+                            </foreach>
+                            )
+                        </if>
+                        )
+                    </when>
+                    <when test="ew.queryType.name() == 'MY_CC'">
+                        and fht.type = 1 and fhtp.player_id = #{ew.userId}
+                    </when>
+                </choose>
+            ) task_filter on inst.id = task_filter.instance_id
+        </if>
+        where 1 = 1
+        <if test="ew.queryType.name() == 'MY_INITIATED'">
+            and inst.created_id = #{ew.userId}
+        </if>
+        <if test="ew.name != null and ew.name != ''">
+            and inst.name like concat('%', #{ew.name}, '%')
+        </if>
+        <if test="ew.bizNumber != null and ew.bizNumber != ''">
+            and inst.biz_number = #{ew.bizNumber}
+        </if>
+        <if test="ew.status != null">
+            and inst.status = #{ew.status}
+        </if>
+        order by inst.modified_time desc
+    </select>
+</mapper>

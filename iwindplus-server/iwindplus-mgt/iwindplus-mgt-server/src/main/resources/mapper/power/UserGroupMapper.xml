@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.UserGroupMapper">
+    <sql id="userGroupPageAliasField">
+        bug.id, bug.created_time, bug.created_timestamp, bug.created_by, bug.modified_time, bug.modified_timestamp, bug.modified_by, bug.version,
+        bug.status, bug.code, bug.name, bug.build_in_flag
+    </sql>
+
+    <sql id="userGroupBaseAliasField">
+        bug.id, bug.code, bug.name
+    </sql>
+
+    <sql id="userGroupAliasField">
+        bug.id, bug.created_time, bug.created_timestamp, bug.created_by, bug.created_id, bug.modified_time, bug.modified_timestamp, bug.modified_by, bug.modified_id, bug.deleted, bug.version, bug.remark,
+        bug.status, bug.code, bug.name, bug.seq, bug.build_in_flag, bug.org_id
+    </sql>
+
+    <select id="selectPageByCondition" resultType="com.iwindplus.mgt.domain.vo.power.UserGroupPageVO">
+        select
+            <include refid="userGroupPageAliasField"/>
+        from user_group bug
+        inner join `org` bo on bug.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        where bug.deleted = 0
+        <if test="ew.status != null">
+            and bug.status = #{ew.status}
+        </if>
+        <if test="ew.code != null and ew.code != ''">
+            and bug.code = #{ew.code}
+        </if>
+        <if test="ew.name != null and ew.name != ''">
+            and bug.name like concat('%', #{ew.name}, '%')
+        </if>
+        and bo.id = #{ew.orgId}
+        order by bug.modified_time desc
+    </select>
+
+    <select id="selectListByOrgId" resultType="com.iwindplus.mgt.domain.vo.power.UserGroupBaseCheckedVO">
+        select
+            <include refid="userGroupBaseAliasField"/>
+            , 0 as checked
+        from user_group bug
+        inner join `org` bo on bug.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        where bug.deleted = 0 and bug.status = 1
+        and bo.id = #{orgId}
+        order by bug.name asc, bug.seq asc, bug.created_time asc
+    </select>
+
+    <select id="selectListByUserId" resultType="com.iwindplus.mgt.domain.vo.power.UserGroupBaseCheckedVO">
+        select
+            <include refid="userGroupBaseAliasField"/>
+            , 1 as checked
+        from user_group bug
+        inner join `org` bo on bug.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        inner join user_group_user bugu on bug.id = bugu.user_group_id and bugu.deleted = 0
+        inner join `user` bu on bugu.user_id = bu.id and bu.deleted = 0 and bu.enabled = 1 and bu.locked = 0 and bu.account_expired = 0 and bu.credentials_expired = 0
+        where bug.deleted = 0 and bug.status = 1
+        and bo.id = #{orgId}
+        and bu.id = #{userId}
+        order by bug.name asc, bug.seq asc
+    </select>
+
+    <select id="selectListByRoleId" resultType="com.iwindplus.mgt.domain.vo.power.UserGroupBaseCheckedVO">
+        select
+            <include refid="userGroupBaseAliasField"/>
+            , 1 as checked
+        from user_group bug
+        inner join `org` bo on bug.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        inner join user_group_role bugr on bug.id = bugr.user_group_id and bugr.deleted = 0
+        inner join `role` br on bugr.role_id = br.id and br.deleted = 0 and br.status = 1
+        where bug.deleted = 0 and bug.status = 1
+        and bo.id = #{orgId}
+        and br.id = #{roleId}
+        order by bug.name asc, bug.seq asc
+    </select>
+
+    <select id="selectDetailById" resultType="com.iwindplus.mgt.domain.vo.power.UserGroupExtendVO">
+        select
+            <include refid="userGroupAliasField"/>
+            ,
+            <include refid="com.iwindplus.mgt.server.dal.mapper.power.OrgMapper.orgBaseAliasField"/>
+        from user_group bug
+        inner join `org` bo on bug.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        where bug.deleted = 0 and bug.id = #{id}
+    </select>
+</mapper>

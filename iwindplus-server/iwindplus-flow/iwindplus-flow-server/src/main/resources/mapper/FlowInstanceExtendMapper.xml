@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.flow.server.dal.mapper.FlowInstanceExtendMapper">
+    <sql id="inSql">
+        <foreach collection="coll" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </sql>
+
+    <delete id="deleteByIds">
+        delete from flow_instance_extend
+        where id in
+        <include refid="inSql"/>
+    </delete>
+</mapper>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.iwindplus.base</groupId>
+        <artifactId>iwindplus-base</artifactId>
+        <version>${revision}</version>
+        <relativePath>../../iwindplus-base/pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.iwindplus.mgt</groupId>
+    <artifactId>iwindplus-mgt</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+
+    <name>iwindplus-mgt</name>
+    <description>管理服务</description>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.iwindplus.dtx</groupId>
+                <artifactId>iwindplus-dtx</artifactId>
+                <version>${revision}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.log</groupId>
+                <artifactId>iwindplus-log-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.setup</groupId>
+                <artifactId>iwindplus-setup-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.im</groupId>
+                <artifactId>iwindplus-im-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.flow</groupId>
+                <artifactId>iwindplus-flow-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.mgt</groupId>
+                <artifactId>iwindplus-mgt-domain</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.mgt</groupId>
+                <artifactId>iwindplus-mgt-api</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.mgt</groupId>
+                <artifactId>iwindplus-mgt-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.mgt</groupId>
+                <artifactId>iwindplus-mgt-server</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.mgt</groupId>
+                <artifactId>iwindplus-mgt-test</artifactId>
+                <version>${revision}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <modules>
+        <module>iwindplus-mgt-domain</module>
+        <module>iwindplus-mgt-api</module>
+        <module>iwindplus-mgt-client</module>
+        <module>iwindplus-mgt-server</module>
+        <module>iwindplus-mgt-test</module>
+    </modules>
+</project>

@@ -1,0 +1,40 @@
+spring:
+  main:
+    allow-circular-references: true
+    allow-bean-definition-overriding: true
+    banner-mode: off
+  profiles:
+    active: local
+  application:
+    name: iwindplus-log
+  config:
+    import:
+      - optional:nacos:${spring.application.name}-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
+
+  cloud:
+    nacos:
+      server-addr: 127.0.0.1:8848
+      username: nacos
+      password: zjLGJX2gRNRT
+      discovery:
+        enabled: true
+        server-addr: ${spring.cloud.nacos.server-addr}
+        username: ${spring.cloud.nacos.username}
+        password: ${spring.cloud.nacos.password}
+        namespace: iwindplus-${spring.profiles.active}
+        group: IWINDPLUS_GROUP
+        cluster-name: iwindplus-${spring.profiles.active}
+        watch:
+          enabled: true
+        metadata:
+          name: ${server.servlet.application-display-name:${spring.application.name}}
+          version: v1
+
+      config:
+        enabled: true
+        server-addr: ${spring.cloud.nacos.server-addr}
+        username: ${spring.cloud.nacos.username}
+        password: ${spring.cloud.nacos.password}
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        group: ${spring.cloud.nacos.discovery.group}
+        file-extension: yml

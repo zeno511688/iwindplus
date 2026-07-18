@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.OrgMapper">
+    <sql id="orgBaseField">
+        bo.id as org_id, bo.code as org_code, bo.name as org_name, bo.abbr as org_abbr
+    </sql>
+
+    <sql id="orgBaseAliasField">
+        bo.code as org_code, bo.name as org_name, bo.abbr as org_abbr
+    </sql>
+
+    <sql id="orgAliasField">
+        bo.id, bo.created_time, bo.created_timestamp, bo.created_by, bo.created_id, bo.modified_time, bo.modified_timestamp, bo.modified_by, bo.modified_id, bo.deleted, bo.version, bo.remark,
+        bo.status, bo.audit_status, bo.code, bo.name, bo.abbr, bo.uscc, bo.legal_person, bo.leader, bo.manager, bo.logo, bo.business_license,
+        bo.mail, bo.mobile, bo.telephone, bo.country, bo.province, bo.city, bo.district, bo.detail_address, bo.website, bo.seq, bo.build_in_flag
+    </sql>
+
+    <select id="selectListByUserId" resultType="com.iwindplus.mgt.domain.vo.power.OrgBaseCheckedVO">
+        select
+            bo.id, bo.code, bo.name, bo.abbr, buo.checked, buo.id as userOrgId
+        from `org` bo
+        inner join user_org buo on bo.id = buo.org_id and buo.deleted = 0
+        inner join `user` bu on buo.user_id = bu.id and bu.deleted = 0 and bu.enabled = 1 and bu.locked = 0 and bu.account_expired = 0 and bu.credentials_expired = 0
+        where bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        and bu.id = #{userId}
+        order by bo.name asc, bo.seq asc
+    </select>
+
+    <select id="selectDetailById" resultType="com.iwindplus.mgt.domain.vo.power.OrgVO">
+        select
+            <include refid="orgAliasField"/>
+            ,
+            <include refid="com.iwindplus.mgt.server.dal.mapper.power.OrgExtendMapper.orgExtendAliasField"/>
+        from org bo
+        left join org_extend boe on bo.id = boe.org_id
+        where bo.deleted = 0
+        and bo.id = #{id}
+    </select>
+</mapper>

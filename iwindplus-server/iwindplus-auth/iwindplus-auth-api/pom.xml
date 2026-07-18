@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>iwindplus-auth</artifactId>
+        <groupId>com.iwindplus.auth</groupId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>iwindplus-auth-api</artifactId>
+    <packaging>jar</packaging>
+
+    <name>iwindplus-auth-api</name>
+    <description>认证服务api</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.iwindplus.auth</groupId>
+            <artifactId>iwindplus-auth-domain</artifactId>
+        </dependency>
+    </dependencies>
+</project>

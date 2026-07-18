@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.PositionMapper">
+    <sql id="positionBaseAliasField">
+        bp.id, bp.code, bp.name
+    </sql>
+
+    <sql id="positionAliasField">
+        bp.id, bp.created_time, bp.created_timestamp, bp.created_by, bp.created_id, bp.modified_time, bp.modified_timestamp, bp.modified_by, bp.modified_id, bp.deleted, bp.version, bp.remark,
+        bp.status, bp.code, bp.name, bp.seq, bp.build_in_flag, bp.org_id, bp.department_id
+    </sql>
+
+    <sql id="inSql">
+        <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </sql>
+
+    <select id="selectListByOrgId" resultType="com.iwindplus.mgt.domain.vo.power.PositionBaseCheckedVO">
+        select
+            <include refid="positionBaseAliasField"/>
+            , 0 as checked
+        from `position` bp
+        inner join `org` bo on bp.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        <if test="list != null and list.size() > 0">
+            inner join `department` bd on bp.org_id = bd.org_id and bp.department_id = bd.id and bd.deleted = 0 and bd.status = 1
+        </if>
+        where bp.deleted = 0 and bp.status = 1
+        and bo.id = #{orgId}
+        <if test="list != null and list.size() > 0">
+            and bp.department_id in <include refid="inSql"/>
+        </if>
+        order by bp.name asc, bp.seq asc
+    </select>
+
+    <select id="selectListByUserId" resultType="com.iwindplus.mgt.domain.vo.power.PositionBaseCheckedVO">
+        select
+            <include refid="positionBaseAliasField"/>
+            , 1 as checked
+        from `position` bp
+        inner join `org` bo on bp.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        <if test="list != null and list.size() > 0">
+            inner join `department` bd on bp.org_id = bd.org_id and bp.department_id = bd.id and bd.deleted = 0 and bd.status = 1
+        </if>
+        inner join user_position bup on bp.id = bup.position_id and bup.deleted = 0
+        inner join `user` bu on bup.user_id = bu.id and bu.deleted = 0 and bu.enabled = 1 and bu.locked = 0 and bu.account_expired = 0 and bu.credentials_expired = 0
+        where bp.deleted = 0 and bp.status = 1
+        and bo.id = #{orgId}
+        <if test="list != null and list.size() > 0">
+            and bp.department_id in <include refid="inSql"/>
+        </if>
+        and bu.id = #{userId}
+        order by bp.name asc, bp.seq asc
+    </select>
+
+    <select id="selectDetailById" resultType="com.iwindplus.mgt.domain.vo.power.PositionExtendVO">
+        select
+            <include refid="positionAliasField"/>
+            ,
+            <include refid="com.iwindplus.mgt.server.dal.mapper.power.DepartmentMapper.departmentBaseAliasField"/>
+            ,
+            <include refid="com.iwindplus.mgt.server.dal.mapper.power.OrgMapper.orgBaseAliasField"/>
+        from `position` bp
+        inner join department bd on bp.org_id = bd.org_id and bp.department_id = bd.id and bd.deleted = 0 and bd.status = 1
+        inner join `org` bo on bp.org_id = bo.id and bd.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        and bp.id = #{id}
+    </select>
+</mapper>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.base.async.cmd.dal.mapper.AsyncCmdMapper">
+    <sql id="inSql">
+        <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </sql>
+
+    <delete id="deleteDataByIds">
+        delete from async_cmd
+        where id in
+        <include refid="inSql"/>
+    </delete>
+
+    <delete id="deleteDataById">
+        delete from async_cmd
+        where id = #{id}
+    </delete>
+
+    <delete id="deleteByCondition">
+        delete from async_cmd
+        where env = #{env}
+        and biz_type = #{bizType}
+        and event_type = #{eventType}
+        and biz_number = #{bizNumber}
+    </delete>
+</mapper>

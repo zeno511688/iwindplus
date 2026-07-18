@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.iwindplus.base</groupId>
+        <artifactId>iwindplus-base</artifactId>
+        <version>${revision}</version>
+        <relativePath>../../iwindplus-base/pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.iwindplus.dtx</groupId>
+    <artifactId>iwindplus-dtx</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+
+    <name>iwindplus-dtx</name>
+    <description>分布式事务服务</description>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.iwindplus.dtx</groupId>
+                <artifactId>iwindplus-dtx-domain</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.dtx</groupId>
+                <artifactId>iwindplus-dtx-api</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.dtx</groupId>
+                <artifactId>iwindplus-dtx-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.dtx</groupId>
+                <artifactId>iwindplus-dtx-tcc</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.dtx</groupId>
+                <artifactId>iwindplus-dtx-server</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.dtx</groupId>
+                <artifactId>iwindplus-dtx-test</artifactId>
+                <version>${revision}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <modules>
+        <module>iwindplus-dtx-domain</module>
+        <module>iwindplus-dtx-api</module>
+        <module>iwindplus-dtx-client</module>
+        <module>iwindplus-dtx-tcc</module>
+        <module>iwindplus-dtx-server</module>
+        <module>iwindplus-dtx-test</module>
+    </modules>
+</project>

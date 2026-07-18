@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.im.server.dal.mapper.UserFriendMapper">
+    <sql id="aliasField">
+        uf.id, uf.created_time, uf.created_timestamp, uf.created_by, uf.created_id, uf.modified_time, uf.modified_timestamp, uf.modified_by, uf.modified_id, uf.deleted, uf.version, uf.remark,
+        uf.status, uf.user_id, uf.user_avatar, uf.user_nick_name, uf.friend_id, uf.friend_avatar, uf.friend_nick_name, uf.org_id
+    </sql>
+
+    <sql id="inSql">
+        <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </sql>
+
+</mapper>

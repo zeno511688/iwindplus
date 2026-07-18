@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: iwindplus-log
+  name: iwindplus-log
+  namespace: iwindplus-app
+spec:
+  ports:
+    - name: 9003tcp
+      port: 9003
+      protocol: TCP
+      targetPort: 9003
+  selector:
+    app: iwindplus-log
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: iwindplus-log
+  name: iwindplus-log
+  namespace: iwindplus-app
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: iwindplus-log
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: iwindplus-log
+    spec:
+      containers:
+        - env:
+          - name: TZ
+            value: Asia/Shanghai
+          - name: JAVA_OPTS
+            value: -Xmx128m -Xms128m -Xmn128m -XX:+UseStringDeduplication -XX:+TieredCompilation -XX:+UseZGC -XX:ZCollectionInterval=30 -XX:ZAllocationSpikeTolerance=5 -Xlog:safepoint,classhisto*=trace,age*,gc*=info:file=logs/gc-%t.log:time,tid,tags:filecount=5,filesize=50m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=logs/errorDump.hprof
+          - name: PROFILE_ACTIVE
+            value: prd
+          - name: NACOS_SERVER_ADDR
+            value: 127.0.0.1:8848
+          - name: NACOS_NAMESPACE
+            value: iwindplus-prd
+          - name: NACOS_GROUP
+            value: IWINDPLUS_SERVER_GROUP
+          - name: NACOS_USERNAME
+            value: nacos
+          - name: NACOS_PASSWORD
+            value: zaq12wsx
+          - name: NACOS_WATCH_ENABLED
+            value: "true"
+          - name: NACOS_CLUSTER
+            value: prd
+          - name: NACOS_CONFIG_ENABLED
+            value: "true"
+          - name: APP_VESION
+            value: v1
+          image: iwindplus-log:latest
+          imagePullPolicy: IfNotPresent
+          name: iwindplus-log
+          ports:
+            - containerPort: 9003
+              name: 9003tcp
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+            requests:
+              cpu: "0.5"
+              memory: 512Mi
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30

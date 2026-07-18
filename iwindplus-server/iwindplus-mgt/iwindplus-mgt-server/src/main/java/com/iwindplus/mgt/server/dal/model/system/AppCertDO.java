@@ -1,0 +1,79 @@
+/*
+ *
+ *  * Copyright (c) iwindplus Technologies Co., Ltd.2024-2030, All rights reserved.
+ *
+ *
+ */
+
+package com.iwindplus.mgt.server.dal.model.system;
+
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.iwindplus.base.mybatis.domain.DbBaseDO;
+import com.iwindplus.base.domain.annotation.TableFieldSafe;
+import com.iwindplus.base.domain.enums.EnableStatusEnum;
+import com.iwindplus.base.domain.enums.AppCertTypeEnum;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
+/**
+ * 应用凭证表.
+ *
+ * @author zengdegui
+ * @since 2020/4/14
+ */
+@Schema(description = "应用凭证对象")
+@TableName(value = "`app_cert`")
+@Data
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
+@AllArgsConstructor
+public class AppCertDO extends DbBaseDO {
+
+    /**
+     * 状态（DISABLE：禁用，ENABLE：启用，LOCKED：锁定）.
+     */
+    @Schema(description = "状态（DISABLE：禁用，ENABLE：启用，LOCKED：锁定）")
+    private EnableStatusEnum status;
+
+    /**
+     * 名称.
+     */
+    @Schema(description = "名称")
+    private String name;
+
+    /**
+     * 访问key.
+     */
+    @Schema(description = "访问key")
+    private String accessKey;
+
+    /**
+     * 密钥.
+     */
+    @Schema(description = "密钥")
+    @TableFieldSafe
+    private String secretKey;
+
+    /**
+     * 超时时间.
+     */
+    @Schema(description = "超时时间（单位：秒）")
+    private Integer timeout;
+
+    /**
+     * 应用凭证类型.
+     */
+    @Schema(description = "应用凭证类型（API_SIGN：API签名，SERVICE_SIGN：服务签名）")
+    private AppCertTypeEnum certType;
+
+    /**
+     * 是否内置（false：否，true：是）.
+     */
+    @Schema(description = "是否内置（false：否，true：是）")
+    private Boolean buildInFlag;
+}

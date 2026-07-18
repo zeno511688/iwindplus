@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.iwindplus.base</groupId>
+        <artifactId>iwindplus-base</artifactId>
+        <version>${revision}</version>
+        <relativePath>../../iwindplus-base/pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.iwindplus.setup</groupId>
+    <artifactId>iwindplus-setup</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+
+    <name>iwindplus-setup</name>
+    <description>通用设置服务</description>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.iwindplus.dtx</groupId>
+                <artifactId>iwindplus-dtx</artifactId>
+                <version>${revision}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.im</groupId>
+                <artifactId>iwindplus-im-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.mgt</groupId>
+                <artifactId>iwindplus-mgt-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.log</groupId>
+                <artifactId>iwindplus-log-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.setup</groupId>
+                <artifactId>iwindplus-setup-domain</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.setup</groupId>
+                <artifactId>iwindplus-setup-api</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.setup</groupId>
+                <artifactId>iwindplus-setup-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.setup</groupId>
+                <artifactId>iwindplus-setup-server</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.setup</groupId>
+                <artifactId>iwindplus-setup-test</artifactId>
+                <version>${revision}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <modules>
+        <module>iwindplus-setup-domain</module>
+        <module>iwindplus-setup-api</module>
+        <module>iwindplus-setup-client</module>
+        <module>iwindplus-setup-server</module>
+        <module>iwindplus-setup-test</module>
+    </modules>
+</project>

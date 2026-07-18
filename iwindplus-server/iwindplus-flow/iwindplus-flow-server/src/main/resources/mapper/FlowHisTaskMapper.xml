@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.flow.server.dal.mapper.FlowHisTaskMapper">
+    <sql id="hisTaskBaseField">
+        fht.id, fht.created_time, fht.created_timestamp, fht.created_by, fht.modified_time, fht.modified_timestamp, fht.modified_by, fht.version,
+        fht.code, fht.name, fht.type, fht.status, fht.take_time, fht.instance_id, fhi.name as instance_name, fhi.biz_number, fht.model_id,
+        fm.name as model_name, fm.code as model_code
+    </sql>
+
+    <select id="selectApprovalRecordPage" resultType="com.iwindplus.flow.domain.vo.FlowHisTaskPageVO">
+        select
+            <include refid="hisTaskBaseField"/>
+        from flow_his_task fht
+        inner join flow_his_instance fhi on fht.instance_id = fhi.id and fhi.deleted = 0
+        inner join flow_model fm on fht.model_id = fm.id and fm.deleted = 0
+        where fht.deleted = 0
+        <if test="ew.instanceId != null">
+            and fht.instance_id = #{ew.instanceId}
+        </if>
+        <if test="ew.taskName != null and ew.taskName != ''">
+            and fht.name like concat('%', #{ew.taskName}, '%')
+        </if>
+        <if test="ew.instanceName != null and ew.instanceName != ''">
+            and fhi.name like concat('%', #{ew.instanceName}, '%')
+        </if>
+        <if test="ew.bizNumber != null and ew.bizNumber != ''">
+            and fhi.biz_number = #{ew.bizNumber}
+        </if>
+        <if test="ew.status != null">
+            and fht.status = #{ew.status}
+        </if>
+        <if test="ew.userId != null">
+            and exists (
+                select 1 from flow_his_task_player fhtp
+                where fhtp.task_id = fht.id and fhtp.deleted = 0 and fhtp.player_id = #{ew.userId}
+            )
+        </if>
+        order by fht.modified_time desc
+    </select>
+</mapper>

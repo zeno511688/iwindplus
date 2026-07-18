@@ -1,0 +1,95 @@
+server:
+  #配置启动的接口
+  port: 9005
+  shutdown: graceful
+  servlet:
+    application-display-name: 监控服务
+  undertow:
+    threads:
+      io: 16
+      worker: 256
+    buffer-size: 1024
+    direct-buffers: true
+spring:
+  jmx:
+    enabled: true
+  messages:
+    basename: i18n/messages
+    fallback-to-system-locale: true
+    cache-duration: -1
+    # 是否开启远程消息源
+    enabled-remote: true
+    # 是否启用并发刷新
+    concurrentRefresh: true
+    # 语言集合，启动加载对应语言的国际化文件
+    languages:
+      - zh-CN
+      - en-US
+    # nacos分组名称
+    group: I18N_GROUP
+    # 国际化文件后缀
+    file-suffix: .properties
+  security:
+    user:
+      name: admin
+      password: T##uZV$EQ6UL
+  boot:
+    admin:
+      ui:
+        public-url: http://127.0.0.1:9005
+      notify:
+        mail:
+          from: zengdeguiu88@163.com
+          to: 845875725@qq.com
+      monitor:
+        default-timeout: 30000
+      discovery:
+        ignored-services:
+          - iwindplus-im-ws
+  mail:
+    port: 465
+    host: smtp.163.com
+    username: zengdeguiu88@163.com
+    password: IPXLGUCTYMERUHDO
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          ssl:
+            enable: true
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          socketFactory:
+            port: ${spring.mail.port}
+            class: javax.net.ssl.SSLSocketFactory
+logging:
+  level:
+    root: INFO
+  console:
+    enabled: true
+    enabled-async: true
+  logstash:
+    enabled: true
+    enabled-async: true
+    address: 127.0.0.1:4560
+  config: classpath:logback-spring.xml
+management:
+  health:
+    mail:
+      enabled: false
+  endpoints:
+    jmx:
+      exposure:
+        include: "*"
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,logfile
+        exclude: env,heapdump,threaddump,mappings
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    sampling:
+      probability: 0.1

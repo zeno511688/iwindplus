@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>iwindplus-binlog</artifactId>
+        <groupId>com.iwindplus.binlog</groupId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>iwindplus-binlog-test</artifactId>
+
+    <name>iwindplus-binlog-test</name>
+    <description>binlog服务测试模块</description>
+
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.iwindplus.binlog</groupId>
+            <artifactId>iwindplus-binlog-producer-server</artifactId>
+        </dependency>
+    </dependencies>
+</project>

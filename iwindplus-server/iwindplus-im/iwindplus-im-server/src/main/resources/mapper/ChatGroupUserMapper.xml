@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.im.server.dal.mapper.ChatGroupUserMapper">
+    <sql id="chatGroupUserPageAliasField">
+        cgu.id, cgu.created_time, cgu.created_timestamp, cgu.created_by, cgu.modified_time, cgu.modified_timestamp, cgu.modified_by, cgu.version,
+        cgu.status, cgu.nick_name, cgu.leader_flag, cgu.join_type, cgu.agree_flag, cgu.user_nick_name
+    </sql>
+
+    <sql id="chatGroupUserAliasField">
+        cgu.id, cgu.created_time, cgu.created_timestamp, cgu.created_by, cgu.created_id, cgu.modified_time, cgu.modified_timestamp, cgu.modified_by, cgu.modified_id, cgu.deleted, cgu.version, cgu.remark,
+        cgu.nick_name, cgu.leader_flag, cgu.join_type, cgu.agree_flag, cgu.seq, cgu.chat_group_id, cgu.user_id, cgu.user_avatar, cgu.user_nick_name, cgu.org_id
+    </sql>
+
+    <sql id="inSql">
+        <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </sql>
+
+    <delete id="deleteByChatGroupIds">
+        delete from chat_group_user
+        where chat_group_id in
+        <include refid="inSql"/>
+    </delete>
+
+    <delete id="deleteByIds">
+        delete from chat_group_user
+        where id in
+        <include refid="inSql"/>
+    </delete>
+
+    <select id="selectPageByCondition" resultType="com.iwindplus.im.domain.vo.ChatGroupUserPageVO">
+        select
+            <include refid="chatGroupUserPageAliasField"/>
+        from chat_group_user cgu
+        inner join chat_group cg on cgu.chat_group_id = cg.id and cg.deleted = 0 and cg.status = 1
+        where cgu.deleted = 0 and cgu.org_id = #{ew.orgId} and cgu.chat_group_id = #{ew.chatGroupId}
+        order by cgu.seq asc
+    </select>
+</mapper>

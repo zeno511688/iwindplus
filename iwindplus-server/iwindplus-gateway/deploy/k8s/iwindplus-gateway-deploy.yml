@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: iwindplus-gateway
+  name: iwindplus-gateway
+  namespace: iwindplus-app
+spec:
+  ports:
+    - name: 9000tcp
+      port: 9000
+      protocol: TCP
+      targetPort: 9000
+    - name: 8720tcp
+      port: 8720
+      protocol: TCP
+      targetPort: 8720
+  selector:
+    app: iwindplus-gateway
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: iwindplus-gateway
+  name: iwindplus-gateway
+  namespace: iwindplus-app
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: iwindplus-gateway
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: iwindplus-gateway
+    spec:
+      containers:
+        - env:
+          - name: TZ
+            value: Asia/Shanghai
+          - name: JAVA_OPTS
+            value: -Xmx128m -Xms128m -Xmn128m -XX:+UseStringDeduplication -XX:+TieredCompilation -XX:+UseZGC -XX:ZCollectionInterval=30 -XX:ZAllocationSpikeTolerance=5 -Xlog:safepoint,classhisto*=trace,age*,gc*=info:file=logs/gc-%t.log:time,tid,tags:filecount=5,filesize=50m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=logs/errorDump.hprof -Dio.netty.leakDetection.level=ADVANCE
+          - name: PROFILE_ACTIVE
+            value: prd
+          - name: NACOS_SERVER_ADDR
+            value: 127.0.0.1:8848
+          - name: NACOS_NAMESPACE
+            value: iwindplus-prd
+          - name: NACOS_GROUP
+            value: IWINDPLUS_SERVER_GROUP
+          - name: NACOS_USERNAME
+            value: nacos
+          - name: NACOS_PASSWORD
+            value: zaq12wsx
+          - name: NACOS_WATCH_ENABLED
+            value: "true"
+          - name: NACOS_CLUSTER
+            value: prd
+          - name: NACOS_CONFIG_ENABLED
+            value: "true"
+          - name: APP_VESION
+            value: v1
+          image: iwindplus-gateway:latest
+          imagePullPolicy: IfNotPresent
+          name: iwindplus-gateway
+          ports:
+            - containerPort: 9000
+              name: 9000tcp
+              protocol: TCP
+            - containerPort: 8720
+              name: 8720tcp
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+            requests:
+              cpu: "0.5"
+              memory: 512Mi
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30

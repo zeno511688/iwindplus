@@ -1,0 +1,3 @@
+com.iwindplus.base.web.flux.handler.GlobalErrorHandler
+com.iwindplus.base.web.flux.CrossConfiguration
+com.iwindplus.base.web.flux.WebFluxConfiguration

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.UserOrgMapper">
+    <sql id="userOrgAliasField">
+        buo.id, buo.created_time, buo.created_timestamp, buo.created_by, buo.created_id, buo.modified_time, buo.modified_timestamp, buo.modified_by, buo.modified_id, buo.deleted, buo.version, buo.remark,
+        buo.checked, buo.user_id, buo.org_id
+    </sql>
+
+    <sql id="inSql">
+        <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </sql>
+
+    <delete id="deleteByIds">
+        delete from user_org
+        where id in
+        <include refid="inSql"/>
+    </delete>
+
+    <delete id="deleteByUserIds">
+        delete from user_org
+        where user_id in
+        <include refid="inSql"/>
+    </delete>
+
+    <delete id="deleteByOrgIds">
+        delete from user_org
+        where org_id in
+        <include refid="inSql"/>
+    </delete>
+</mapper>

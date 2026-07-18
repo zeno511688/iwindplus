@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.iwindplus.base</groupId>
+        <artifactId>iwindplus-base</artifactId>
+        <version>${revision}</version>
+        <relativePath>../../iwindplus-base/pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.iwindplus.auth</groupId>
+    <artifactId>iwindplus-auth</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+
+    <name>iwindplus-auth</name>
+    <description>认证服务</description>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.iwindplus.mgt</groupId>
+                <artifactId>iwindplus-mgt-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.log</groupId>
+                <artifactId>iwindplus-log-domain</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.log</groupId>
+                <artifactId>iwindplus-log-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.setup</groupId>
+                <artifactId>iwindplus-setup-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.auth</groupId>
+                <artifactId>iwindplus-auth-domain</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.auth</groupId>
+                <artifactId>iwindplus-auth-api</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.auth</groupId>
+                <artifactId>iwindplus-auth-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.auth</groupId>
+                <artifactId>iwindplus-auth-server</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.auth</groupId>
+                <artifactId>iwindplus-auth-test</artifactId>
+                <version>${revision}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <modules>
+        <module>iwindplus-auth-domain</module>
+        <module>iwindplus-auth-api</module>
+        <module>iwindplus-auth-client</module>
+        <module>iwindplus-auth-server</module>
+        <module>iwindplus-auth-test</module>
+    </modules>
+</project>

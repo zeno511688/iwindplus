@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.UserGroupRoleMapper">
+    <sql id="groupRoleAliasField">
+        bugr.id, bugr.created_time, bugr.created_timestamp, bugr.created_by, bugr.created_id, bugr.modified_time, bugr.modified_timestamp, bugr.modified_by, bugr.modified_id, bugr.deleted, bugr.version, bugr.remark,
+        bugr.user_group_id, bugr.role_id
+    </sql>
+
+    <sql id="inSql">
+        <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </sql>
+    
+    <delete id="deleteByIds">
+        delete from user_group_role
+        where id in
+        <include refid="inSql"/>
+    </delete>
+
+    <delete id="deleteByUserGroupIds">
+        delete from user_group_role
+        where user_group_id in
+        <include refid="inSql"/>
+    </delete>
+
+    <delete id="deleteByRoleIds">
+        delete from user_group_role
+        where role_id in
+        <include refid="inSql"/>
+    </delete>
+</mapper>

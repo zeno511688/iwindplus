@@ -1,0 +1,36 @@
+networks:
+  app:
+    external: true
+    name: iwindplus-app
+services:
+  iwindplus-flow:
+    build:
+      context: iwindplus-flow
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: "*.jar"
+    image: iwindplus-flow:latest
+    hostname: iwindplus-flow
+    container_name: iwindplus-flow
+    restart: always
+    privileged: true
+    environment:
+      - TZ=Asia/Shanghai
+      - PROFILE_ACTIVE=dev
+      - NACOS_SERVER_ADDR=192.168.2.6:8848
+      - NACOS_NAMESPACE=iwindplus-dev
+      - NACOS_GROUP=IWINDPLUS_GROUP
+      - NACOS_USERNAME=nacos
+      - NACOS_PASSWORD=zjLGJX2gRNRT
+      - NACOS_WATCH_ENABLED=true
+      - NACOS_CLUSTER=iwindplus-dev
+      - NACOS_CONFIG_ENABLED=true
+      - APP_VESION=v1
+      - JAVA_OPTS=-Xmx256m -Xms256m -Xmn96m -XX:+UseStringDeduplication -XX:+TieredCompilation -XX:+UseZGC -XX:ZCollectionInterval=30 -XX:ZAllocationSpikeTolerance=5 -Xlog:safepoint,classhisto*=trace,age*,gc*=info:file=logs/gc-%t.log:time,tid,tags:filecount=5,filesize=50m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=logs/errorDump.hprof
+    expose:
+      - "9007"
+    networks:
+      - app
+    volumes:
+      - /usr/share/zoneinfo/Asia/Shanghai:/etc/localtime
+      - ./iwindplus-flow/logs:/home/logs
