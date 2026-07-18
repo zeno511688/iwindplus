@@ -110,7 +110,7 @@ iwindplus/
         └── iwindplus-monitor-server/ # 监控服务实现
 ```
 #  iwindplus-web-mgt
-    对应前端代码地址：https://gitee.com/zengdegui_1_0/iwindplus-web-mgt.git
+    对应前端代码地址：https://github.com/zeno511688/iwindplus-web-mgt.git
 #### 软件架构
 
 一款开源、免费、轻量级 Java 微服务框架，开发重点考虑了安全漏洞处理
