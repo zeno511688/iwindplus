@@ -128,7 +128,7 @@ public final class KafkaDynamicRegistry {
                 );
             }
 
-            if (Boolean.FALSE.equals(m.getEnabledDlq())) {
+            if (Boolean.TRUE.equals(m.getEnabledDlq())) {
                 result.add(
                     buildConfig(m, KafkaConstant.KAFKA_DLQ_SUFFIX)
                 );
