@@ -53,7 +53,6 @@ public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
 
     private final RabbitMultiProperty property;
 
-    private final Map<String, CachingConnectionFactory> connectionFactoryMap = new ConcurrentHashMap<>(16);
     private final Map<String, AmqpAdmin> adminClientMap = new ConcurrentHashMap<>(16);
     private final Map<String, RabbitTemplate> templateMap = new ConcurrentHashMap<>(16);
     private final Map<String, SimpleRabbitListenerContainerFactory> factoryMap = new ConcurrentHashMap<>(16);
@@ -70,14 +69,6 @@ public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
     public void stop() {
         running = false;
 
-        connectionFactoryMap.values().forEach(cf -> {
-            try {
-                cf.destroy();
-            } catch (Exception e) {
-                log.error("Close ConnectionFactory error", e);
-            }
-        });
-
         templateMap.values().forEach(template -> {
             try {
                 template.destroy();
@@ -85,6 +76,10 @@ public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
                 log.error("Close RabbitTemplate error", e);
             }
         });
+
+        adminClientMap.clear();
+        templateMap.clear();
+        factoryMap.clear();
     }
 
     @Override
@@ -103,11 +98,6 @@ public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
     @Override
     public void destroy() {
         stop();
-
-        adminClientMap.clear();
-        templateMap.clear();
-        factoryMap.clear();
-        connectionFactoryMap.clear();
     }
 
     /**
@@ -125,7 +115,6 @@ public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
         }
 
         clusters.forEach((clusterName, clusterConfig) -> {
-
             CachingConnectionFactory connectionFactory = buildConnectionFactory(clusterName, clusterConfig);
             validateConnection(clusterName, connectionFactory);
 
@@ -274,9 +263,7 @@ public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
 
         templateMap.computeIfAbsent(clusterName, k -> {
             RabbitTemplate template = new RabbitTemplate(cf);
-
             template.setMandatory(producer.getMandatory());
-
             template.setMessageConverter(new Jackson2JsonMessageConverter());
             template.setReplyTimeout(producer.getReplyTimeout());
 
@@ -307,7 +294,8 @@ public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
         });
     }
 
-    private CachingConnectionFactory buildConnectionFactory(String clusterName,
+    private CachingConnectionFactory buildConnectionFactory(
+        String clusterName,
         RabbitMultiClusterConfig config) {
 
         CachingConnectionFactory cf;
@@ -331,13 +319,12 @@ public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
             cf.setPublisherReturns(producerConfig.getPublisherReturns());
         }
 
-        connectionFactoryMap.put(clusterName, cf);
-
         log.info("CachingConnectionFactory built for cluster [{}]", clusterName);
         return cf;
     }
 
-    private void buildListenerContainerFactory(String clusterName,
+    private void buildListenerContainerFactory(
+        String clusterName,
         ConnectionFactory cf,
         RabbitConsumerConfig consumer) {
 
@@ -346,7 +333,6 @@ public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
         }
 
         factoryMap.computeIfAbsent(clusterName, k -> {
-
             SimpleRabbitListenerContainerFactory factory =
                 new SimpleRabbitListenerContainerFactory();
 
@@ -375,7 +361,10 @@ public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
         });
     }
 
-    private void buildAdviceChain(String clusterName, RabbitConsumerConfig consumer, SimpleRabbitListenerContainerFactory containerFactory) {
+    private void buildAdviceChain(
+        String clusterName,
+        RabbitConsumerConfig consumer,
+        SimpleRabbitListenerContainerFactory containerFactory) {
         if (Boolean.TRUE.equals(consumer.getEnableRetry())) {
             Advice retryAdvice = this.getRetryOperationsInterceptor(clusterName, consumer);
             containerFactory.setAdviceChain(retryAdvice);
@@ -411,7 +400,6 @@ public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
     }
 
     private RetryTemplate getRetryTemplate(Integer attempts, Long interval) {
-
         RetryTemplate template = new RetryTemplate();
 
         SimpleRetryPolicy policy = new SimpleRetryPolicy();

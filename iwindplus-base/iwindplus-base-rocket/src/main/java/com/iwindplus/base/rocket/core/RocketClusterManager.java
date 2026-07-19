@@ -74,6 +74,9 @@ public class RocketClusterManager implements SmartLifecycle, DisposableBean {
                 log.error("Destroy Rocket consumer error: {}", key, e);
             }
         });
+
+        producerMap.clear();
+        consumerMap.clear();
     }
 
     @Override
@@ -93,9 +96,6 @@ public class RocketClusterManager implements SmartLifecycle, DisposableBean {
     @Override
     public void destroy() {
         stop();
-
-        producerMap.clear();
-        consumerMap.clear();
     }
 
     /**

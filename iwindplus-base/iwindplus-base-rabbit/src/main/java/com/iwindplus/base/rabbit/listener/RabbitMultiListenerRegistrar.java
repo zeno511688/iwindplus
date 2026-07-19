@@ -96,6 +96,11 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
                 );
             }
         });
+
+        containerMap.clear();
+        invokerCache.clear();
+        argCache.clear();
+        readerCache.invalidateAll();
     }
 
     @Override
@@ -111,11 +116,6 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
     @Override
     public void destroy() {
         stop();
-
-        containerMap.clear();
-        invokerCache.clear();
-        argCache.clear();
-        readerCache.invalidateAll();
     }
 
     private void preWarm(List<RabbitMultiListenerMetaDTO> metas) {

@@ -97,6 +97,12 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
                 );
             }
         });
+
+        consumersMap.clear();
+        invokerCache.clear();
+        argCache.clear();
+        readerCache.invalidateAll();
+        index.clear();
     }
 
     @Override
@@ -112,12 +118,6 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
     @Override
     public void destroy() throws Exception {
         stop();
-
-        consumersMap.clear();
-        invokerCache.clear();
-        argCache.clear();
-        readerCache.invalidateAll();
-        index.clear();
     }
 
     private void preWarm(List<RocketMultiListenerMetaDTO> metas) {
