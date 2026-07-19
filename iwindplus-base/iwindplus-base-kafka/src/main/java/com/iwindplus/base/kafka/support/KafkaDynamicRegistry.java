@@ -7,10 +7,10 @@
 
 package com.iwindplus.base.kafka.support;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
-import com.iwindplus.base.kafka.domain.constant.KafkaConstant.BizRetryConstant;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaBindingConfig;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumerConfig;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaMultiClusterConfig;
@@ -54,7 +54,6 @@ public final class KafkaDynamicRegistry {
         KafkaMultiClusterConfig clusterConfig,
         AdminClient adminClient,
         Integer timeoutSec) {
-
         if (clusterConfig == null || adminClient == null) {
             return;
         }
@@ -69,8 +68,7 @@ public final class KafkaDynamicRegistry {
             .orElse(DEFAULT_TIMEOUT_SEC);
 
         try {
-            List<KafkaBindingConfig> topics = buildAllTopics(clusterName, clusterConfig);
-
+            List<KafkaBindingConfig> topics = KafkaDynamicRegistry.buildAllTopics(clusterConfig);
             if (CollUtil.isEmpty(topics)) {
                 return;
             }
@@ -116,54 +114,62 @@ public final class KafkaDynamicRegistry {
     /**
      * 构建所有 Topic
      */
-    private static List<KafkaBindingConfig> buildAllTopics(
-        String clusterName,
-        KafkaMultiClusterConfig clusterConfig) {
-
+    private static List<KafkaBindingConfig> buildAllTopics(KafkaMultiClusterConfig clusterConfig) {
         KafkaConsumerConfig consumer = clusterConfig.getConsumer();
-
         List<KafkaBindingConfig> sourceBindings = new ArrayList<>(consumer.getBindings());
-
         List<KafkaBindingConfig> result = new ArrayList<>(sourceBindings);
-
         // default producer topic
-        addDefaultProducerTopic(clusterConfig, result);
+        KafkaDynamicRegistry.addDefaultTopic(clusterConfig, result);
 
-        // retry topics
-        if (Boolean.TRUE.equals(consumer.getEnabledBizRetry())) {
-            sourceBindings.stream()
-                .map(binding -> toRetryTopics(binding))
-                .forEach(result::addAll);
-        }
+        sourceBindings.stream().forEach(m -> {
+            if (Boolean.TRUE.equals(m.getEnabledRetry())) {
+                result.add(
+                    buildConfig(m, KafkaConstant.KAFKA_RETRY_SUFFIX)
+                );
+            }
 
-        // dlq topics
-        if (Boolean.TRUE.equals(consumer.getEnabledBizDlq())) {
-            sourceBindings.stream()
-                .map(KafkaDynamicRegistry::toDlqTopic)
-                .forEach(result::add);
-        }
+            if (Boolean.FALSE.equals(m.getEnabledDlq())) {
+                result.add(
+                    buildConfig(m, KafkaConstant.KAFKA_DLQ_SUFFIX)
+                );
+                final KafkaBindingConfig config = BeanUtil.copyProperties(m, KafkaBindingConfig.class);
+                config.setTopic(m.getTopic() + KafkaConstant.KAFKA_DLQ_SUFFIX);
+                result.add(config);
+            }
+        });
 
         return deduplicate(result);
     }
 
-    private static void addDefaultProducerTopic(
+    private static void addDefaultTopic(
         KafkaMultiClusterConfig clusterConfig,
         List<KafkaBindingConfig> result) {
-
         KafkaProducerConfig producer = clusterConfig.getProducer();
-
-        if (producer == null
-            || CharSequenceUtil.isBlank(producer.getDefaultTopic())) {
-
+        if (producer == null || CharSequenceUtil.isBlank(producer.getDefaultTopic())) {
             return;
         }
 
         KafkaBindingConfig binding = new KafkaBindingConfig();
-
         binding.setTopic(producer.getDefaultTopic());
         binding.setAutoCreate(true);
-
         result.add(binding);
+    }
+
+    private static KafkaBindingConfig buildConfig(
+        KafkaBindingConfig binding,
+        String suffix) {
+
+        KafkaBindingConfig config =
+            BeanUtil.copyProperties(
+                binding,
+                KafkaBindingConfig.class
+            );
+
+        config.setTopic(
+            binding.getTopic() + suffix
+        );
+
+        return config;
     }
 
     private static List<KafkaBindingConfig> deduplicate(List<KafkaBindingConfig> bindings) {
@@ -195,41 +201,6 @@ public final class KafkaDynamicRegistry {
         }
 
         return builder.build();
-    }
-
-    private static List<KafkaBindingConfig> toRetryTopics(KafkaBindingConfig origin) {
-        List<KafkaBindingConfig> topics = new ArrayList<>(10);
-        for (String suffix : KafkaConstant.KAFKA_RETRY_SUFFIXES) {
-            KafkaBindingConfig retry = copy(origin);
-            retry.setTopic(suffix);
-            retry.setAutoCreate(true);
-
-            topics.add(retry);
-        }
-
-        return topics;
-    }
-
-    private static KafkaBindingConfig toDlqTopic(
-        KafkaBindingConfig origin) {
-
-        KafkaBindingConfig dlq = copy(origin);
-
-        dlq.setTopic(BizRetryConstant.KAFKA_DLQ);
-        dlq.setAutoCreate(true);
-
-        return dlq;
-    }
-
-    private static KafkaBindingConfig copy(
-        KafkaBindingConfig source) {
-
-        KafkaBindingConfig target = new KafkaBindingConfig();
-        target.setPartitions(source.getPartitions());
-        target.setReplicationFactor(source.getReplicationFactor());
-        target.setArguments(source.getArguments());
-
-        return target;
     }
 
     private static boolean isAutoCreate(

@@ -8,19 +8,17 @@
 package com.iwindplus.binlog.producer.server.listener;
 
 import cn.hutool.core.text.CharSequenceUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iwindplus.base.binlog.domain.dto.BinlogDTO;
 import com.iwindplus.base.binlog.domain.event.BinLogEvent;
 import com.iwindplus.base.kafka.core.KafkaTemplateRouter;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
+import com.iwindplus.base.util.JacksonUtil;
 import jakarta.annotation.Resource;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
 
 /**
  * binlog生产方日志监听器.
@@ -31,9 +29,6 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 public class BinLogProducerListener {
-
-    @Resource
-    private ObjectMapper objectMapper;
 
     @Resource
     private KafkaMultiProperty property;
@@ -58,16 +53,7 @@ public class BinLogProducerListener {
 
         final String topicName = property.listTopic(property.getDefaultCluster()).get(0);
 
-        Mono.fromCallable(() -> objectMapper.writeValueAsString(dto))
-            .doOnError(JsonProcessingException.class,
-                e -> log.warn("json skip, data={}", dto, e))
-            .onErrorComplete()
-            .flatMap(json -> kafkaTemplateRouter.sendReactive(property.getDefaultCluster(), topicName, null, json))
-            .doOnNext(r -> log.info("kafka ok, t={}, p={}, o={}",
-                r.recordMetadata().topic(),
-                r.recordMetadata().partition(),
-                r.recordMetadata().offset()))
-            .doOnError(e -> log.error("kafka error, data={}", dto, e))
-            .subscribe();
+        final String json = JacksonUtil.toJsonStr(dto);
+        kafkaTemplateRouter.send(property.getDefaultCluster(), topicName, null, json);
     }
 }

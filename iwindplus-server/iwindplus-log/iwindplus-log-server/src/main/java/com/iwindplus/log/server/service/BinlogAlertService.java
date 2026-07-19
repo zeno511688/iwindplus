@@ -30,6 +30,14 @@ public interface BinlogAlertService extends EsBaseService<BinlogAlertDO> {
     boolean save(BinlogAlertDTO entity);
 
     /**
+     * 批量保存
+     *
+     * @param entities  对象集合
+     * @return boolean
+     */
+    boolean saveBatch(List<BinlogAlertDTO> entities);
+
+    /**
      * 批量删除.
      *
      * @param ids 主键集合

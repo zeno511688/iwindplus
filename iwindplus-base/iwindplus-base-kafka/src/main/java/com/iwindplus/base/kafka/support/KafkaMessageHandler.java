@@ -24,6 +24,21 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 public class KafkaMessageHandler {
 
     /**
+     * 集群ID.
+     */
+    private String clusterId;
+
+    /**
+     * listenerId.
+     */
+    private String listenerId;
+
+    /**
+     * clientId.
+     */
+    private String clientId;
+
+    /**
      * 集群.
      */
     private String cluster;
@@ -44,10 +59,17 @@ public class KafkaMessageHandler {
     private final Consumer<List<ConsumerRecord<String, Object>>> batchHandler;
 
     public KafkaMessageHandler(
+        String clusterId,
+        String listenerId,
+        String clientId,
         String cluster,
         String[] topics,
         String group,
         Consumer<List<ConsumerRecord<String, Object>>> handler) {
+
+        this.clusterId = clusterId;
+        this.listenerId = listenerId;
+        this.clientId = clientId;
         this.cluster = cluster;
         this.topics = topics;
         this.group = group;

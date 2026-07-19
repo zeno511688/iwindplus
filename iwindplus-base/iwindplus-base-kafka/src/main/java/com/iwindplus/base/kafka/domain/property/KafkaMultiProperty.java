@@ -11,7 +11,6 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -111,7 +110,7 @@ public class KafkaMultiProperty {
         private Boolean enabled = true;
 
         /**
-         * 是否启用监控观察.
+         * 是否启用每次请求观察（自带的）.
          */
         @Builder.Default
         private Boolean enabledObservation = Boolean.TRUE;
@@ -299,46 +298,10 @@ public class KafkaMultiProperty {
         private Boolean enabled = true;
 
         /**
-         * 是否启用监控观察.
+         * 是否启用每次请求观察（自带的）.
          */
         @Builder.Default
         private Boolean enabledObservation = Boolean.TRUE;
-
-        /**
-         * 是否开启业务失败重试消费（重试队列方式）.
-         */
-        @Builder.Default
-        private Boolean enabledBizRetry = Boolean.FALSE;
-
-        /**
-         * 业务失败最大重试次数.
-         */
-        @Builder.Default
-        private Integer bizMaxRetryCount = 10;
-
-        /**
-         * 业务失败重试消费组ID.
-         */
-        @Builder.Default
-        private String bizRetryGroup = "iwindplus-retry-group";
-
-        /**
-         * 是否开启业务失败达到重试次数后进入死信队列.
-         */
-        @Builder.Default
-        private Boolean enabledBizDlq = Boolean.FALSE;
-
-        /**
-         * 死信队列Topic名称.
-         */
-        @Builder.Default
-        private String dlqTopic = "kafka_dlq";
-
-        /**
-         * 重试/DLQ发送超时时间（毫秒）.
-         */
-        @Builder.Default
-        private Long sendTimeoutMs = 30000L;
 
         /**
          * 消费组ID（可选）.
@@ -506,12 +469,6 @@ public class KafkaMultiProperty {
         private Integer connectionsMaxIdleMs = 540000;
 
         /**
-         * 是否启用重试.
-         */
-        @Builder.Default
-        private Boolean enabledRetry = true;
-
-        /**
          * 重试次数.
          */
         @Builder.Default
@@ -534,32 +491,6 @@ public class KafkaMultiProperty {
          */
         @Builder.Default
         private Integer metadataMaxAgeMs = 300000;
-
-        /**
-         * Reactive 批量提交大小（offset commit）
-         * <p>
-         * 建议： - 默认：reactiveBatchSize * 2
-         */
-        @Builder.Default
-        private Integer commitBatchSize = 200;
-
-        /**
-         * Reactive 并发数（offset commit）
-         */
-        @Builder.Default
-        private Integer reactiveConcurrency = 32;
-
-        /**
-         * Reactive 批量提交超时时间（毫秒）
-         */
-        @Builder.Default
-        private Duration commitInterval = Duration.ofSeconds(1);
-
-        /**
-         * Reactive 批量提交积压上限（concurrency × prefetch × 2~3）
-         */
-        @Builder.Default
-        private Integer maxDeferredCommits = 500;
 
         /**
          * 自定义扩展配置（覆盖所有以上配置）. 可配置任何Kafka原生参数
@@ -619,6 +550,24 @@ public class KafkaMultiProperty {
         @Builder.Default
         @NestedConfigurationProperty
         private Map<String, String> arguments = new HashMap<>(16);
+
+        /**
+         * 是否启用重试.
+         */
+        @Builder.Default
+        private Boolean enabledRetry = true;
+
+        /**
+         * 是否启用死信队列.
+         */
+        @Builder.Default
+        private Boolean enabledDlq = true;
+
+        /**
+         * 最大重试次数.
+         */
+        @Builder.Default
+        private Integer retryMaxCount = 10;
     }
 
     /**
@@ -871,18 +820,6 @@ public class KafkaMultiProperty {
     }
 
     /**
-     * 获取Reactive并发数
-     *
-     * @param cluster 集群
-     * @return
-     */
-    public Integer getReactiveConcurrency(String cluster) {
-        final KafkaConsumerConfig config = getConsumerConfig(cluster);
-        return config != null && config.getReactiveConcurrency() != null
-            ? config.getReactiveConcurrency() : 1;
-    }
-
-    /**
      * 获取自动提交
      *
      * @param cluster 集群
@@ -906,26 +843,25 @@ public class KafkaMultiProperty {
     }
 
     /**
-     * 是否启用Reactive
+     * 是否启用监控观察（自带的）
      *
      * @param cluster 集群
      * @return
      */
-    public Boolean getEnableReactive(String cluster) {
+    public Boolean getProducerEnabledObservation(String cluster) {
         final KafkaProducerConfig config = getProducerConfig(cluster);
-        return config != null && Boolean.TRUE.equals(config.getEnableReactive());
+        return config != null && config.getEnabledObservation();
     }
 
     /**
-     * 获取Reactive最大并发数
+     * 是否启用监控观察（自带的）
      *
      * @param cluster 集群
      * @return
      */
-    public Integer getReactiveMaxInFlight(String cluster) {
-        final KafkaProducerConfig config = getProducerConfig(cluster);
-        return config != null && config.getReactiveMaxInFlight() != null
-            ? config.getReactiveMaxInFlight() : 2048;
+    public Boolean getConsumerEnabledObservation(String cluster) {
+        final KafkaConsumerConfig config = getConsumerConfig(cluster);
+        return config != null && config.getEnabledObservation();
     }
 
     /**
@@ -953,39 +889,5 @@ public class KafkaMultiProperty {
             .filter(binding -> binding != null && CharSequenceUtil.isNotBlank(binding.getTopic()))
             .map(KafkaBindingConfig::getTopic)
             .collect(Collectors.toList());
-    }
-
-    /**
-     * 是否启用监控观察
-     *
-     * @param cluster 集群
-     * @return
-     */
-    public Boolean getProducerEnabledObservation(String cluster) {
-        final KafkaProducerConfig config = getProducerConfig(cluster);
-        return config != null && config.getEnabledObservation();
-    }
-
-    /**
-     * 是否启用监控观察
-     *
-     * @param cluster 集群
-     * @return
-     */
-    public Boolean getConsumerEnabledObservation(String cluster) {
-        final KafkaConsumerConfig config = getConsumerConfig(cluster);
-        return config != null && config.getEnabledObservation();
-    }
-
-    /**
-     * 获取发送超时时间（毫秒）
-     *
-     * @param cluster 集群
-     * @return 超时时间（毫秒）
-     */
-    public Long getSendTimeoutMs(String cluster) {
-        final KafkaConsumerConfig config = getConsumerConfig(cluster);
-        return config != null && config.getSendTimeoutMs() != null
-            ? config.getSendTimeoutMs() : 30000L;
     }
 }

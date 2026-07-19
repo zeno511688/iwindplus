@@ -50,9 +50,4 @@ public class KafkaMultiListenerMetaDTO implements Serializable {
      * 消费组ID
      */
     private String group;
-
-    /**
-     * 是否使用 Reactive 消费模型
-     */
-    private Boolean reactive;
 }

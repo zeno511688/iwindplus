@@ -4,6 +4,7 @@
 
 package com.iwindplus.log.api;
 
+import com.iwindplus.base.domain.dto.ValidListDTO;
 import com.iwindplus.base.domain.validation.SaveGroup;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.log.domain.dto.BinlogAlertDTO;
@@ -34,4 +35,14 @@ public interface BinlogAlertApi {
     @Operation(summary = "添加binlog告警")
     @PostMapping(API_PREFIX + "save")
     ResultVO<Boolean> save(@RequestBody @Validated({SaveGroup.class}) BinlogAlertDTO entity);
+
+    /**
+     * 批量添加binlog告警.
+     *
+     * @param entity 对象
+     * @return ResultVO<Boolean>
+     */
+    @Operation(summary = "批量添加binlog告警")
+    @PostMapping(API_PREFIX + "saveBatch")
+    ResultVO<Boolean> saveBatch(@RequestBody @Validated({SaveGroup.class}) ValidListDTO<BinlogAlertDTO> entity);
 }

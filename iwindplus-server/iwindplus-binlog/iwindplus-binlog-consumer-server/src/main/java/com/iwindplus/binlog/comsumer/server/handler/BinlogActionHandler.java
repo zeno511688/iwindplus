@@ -7,14 +7,17 @@
 
 package com.iwindplus.binlog.comsumer.server.handler;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.iwindplus.base.alert.domain.dto.AlertWebhookRequestDTO;
 import com.iwindplus.base.alert.factory.AlertExecutorStrategyFactory;
+import com.iwindplus.base.domain.dto.ValidListDTO;
 import com.iwindplus.base.domain.enums.DbActionTypeEnum;
 import com.iwindplus.base.util.JacksonUtil;
 import com.iwindplus.binlog.comsumer.server.domain.dto.BinlogActionCheckSignDTO;
 import com.iwindplus.binlog.comsumer.server.domain.dto.BinlogActionProcessDTO;
 import com.iwindplus.binlog.comsumer.server.domain.dto.BinlogRowDataDTO;
+import com.iwindplus.binlog.comsumer.server.domain.dto.BinlogRowDataProcessDTO;
 import com.iwindplus.binlog.comsumer.server.domain.dto.SourceMetaDTO;
 import com.iwindplus.binlog.comsumer.server.domain.property.BinLogConsumerProperty;
 import com.iwindplus.binlog.comsumer.server.domain.property.BinLogConsumerProperty.Webhook;
@@ -22,6 +25,8 @@ import com.iwindplus.binlog.comsumer.server.factory.BinlogActionStrategyFactory;
 import com.iwindplus.log.client.BinlogAlertClient;
 import com.iwindplus.log.domain.dto.BinlogAlertDTO;
 import jakarta.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.dromara.dynamictp.core.executor.DtpExecutor;
@@ -55,22 +60,50 @@ public class BinlogActionHandler {
     /**
      * 处理binlog数据.
      *
-     * @param entity binlog数据
+     * @param entities binlog数据
      */
-    public void processHandler(BinlogRowDataDTO entity) {
-        // 验签
-        final DbActionTypeEnum actionType = DbActionTypeEnum.fromAlias(entity.getOp());
-        BinlogActionProcessDTO<BinlogRowDataDTO> processDTO = BinlogActionProcessDTO
-            .<BinlogRowDataDTO>builder()
-            .actionType(actionType)
-            .data(entity)
-            .build();
-        final BinlogActionCheckSignDTO checkSignDTO = this.binlogActionStrategyFactory.execute(processDTO);
-        if (Objects.nonNull(checkSignDTO) && Boolean.TRUE.equals(checkSignDTO.getSuccess())) {
+    public void processHandler(List<BinlogRowDataDTO> entities) {
+        List<BinlogRowDataProcessDTO> list = new ArrayList<>(10);
+        for (BinlogRowDataDTO entity : entities) {
+            // 验签
+            final DbActionTypeEnum actionType = DbActionTypeEnum.fromAlias(entity.getOp());
+            BinlogActionProcessDTO<BinlogRowDataDTO> processDTO = BinlogActionProcessDTO
+                .<BinlogRowDataDTO>builder()
+                .actionType(actionType)
+                .data(entity)
+                .build();
+            final BinlogActionCheckSignDTO checkSignDTO = this.binlogActionStrategyFactory.execute(processDTO);
+            if (Objects.nonNull(checkSignDTO) && Boolean.TRUE.equals(checkSignDTO.getSuccess())) {
+                continue;
+            }
+
+            // todo 处置
+            buildParam(list, entity, actionType, checkSignDTO.getMessage());
+        }
+
+        if (CollUtil.isEmpty(list)) {
             return;
         }
 
-        // todo 处置
+        final List<BinlogAlertDTO> dtoList = list.stream()
+            .map(BinlogRowDataProcessDTO::getBinlogAlert).toList();
+        final ValidListDTO<BinlogAlertDTO> paramList = new ValidListDTO<>(dtoList);
+
+        this.binlogTaskExecutor.execute(() -> {
+            this.binlogAlertClient.saveBatch(paramList);
+
+            for (BinlogRowDataProcessDTO entity : list) {
+                final BinlogAlertDTO binlogAlert = entity.getBinlogAlert();
+                this.sendMsg(entity.getSourceData(), binlogAlert.getActionType(), binlogAlert.getMessage());
+            }
+        });
+    }
+
+    private void buildParam(
+        List<BinlogRowDataProcessDTO> list,
+        BinlogRowDataDTO entity,
+        DbActionTypeEnum actionType,
+        String message) {
 
         final SourceMetaDTO source = entity.getSource();
         final BinlogAlertDTO binlogAlertDTO = BinlogAlertDTO.builder()
@@ -83,17 +116,19 @@ public class BinlogActionHandler {
             .actionType(actionType)
             .before(JacksonUtil.toJsonStr(entity.getBefore()))
             .after(JacksonUtil.toJsonStr(entity.getAfter()))
-            .message(checkSignDTO.getMessage())
+            .message(message)
             .build();
-        this.binlogTaskExecutor.execute(() -> {
-            this.binlogAlertClient.save(binlogAlertDTO);
-            this.sendMsg(entity, actionType, checkSignDTO.getMessage());
-        });
+
+        final BinlogRowDataProcessDTO binlogRowDataProcess = BinlogRowDataProcessDTO.builder()
+            .sourceData(entity)
+            .binlogAlert(binlogAlertDTO)
+            .build();
+        list.add(binlogRowDataProcess);
     }
 
     private void sendMsg(BinlogRowDataDTO dto, DbActionTypeEnum actionType, String message) {
         final Webhook webhook = property.getWebhook();
-        if (Objects.isNull(webhook)) {
+        if (Objects.isNull(webhook) || Objects.isNull(webhook.getUrl())) {
             return;
         }
 

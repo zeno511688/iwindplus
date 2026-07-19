@@ -9,14 +9,11 @@ package com.iwindplus.base.kafka.support;
 
 import com.iwindplus.base.kafka.core.KafkaClusterManager;
 import com.iwindplus.base.kafka.domain.dto.KafkaMessageDTO;
-import com.iwindplus.base.kafka.support.observation.ClusterKafkaSenderObservationConvention;
-import com.iwindplus.base.kafka.support.observation.KafkaSenderObservationContext;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
 import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
 
 /**
  * Kafka发送调度器.
@@ -28,9 +25,6 @@ import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
 public record KafkaSenderDispatcher(
     KafkaClusterManager manager,
     ObservationExecutor observationExecutor) {
-
-    private static final ClusterKafkaSenderObservationConvention CONVENTION =
-        new ClusterKafkaSenderObservationConvention();
 
     /**
      * 发送
@@ -63,36 +57,6 @@ public record KafkaSenderDispatcher(
     }
 
     /**
-     * 发送
-     *
-     * @param cluster  集群名称
-     * @param topic    主题名称
-     * @param key      key
-     * @param headers  头
-     * @param message  消息体
-     * @param executor 执行器
-     * @param <T>      泛型
-     * @return T
-     */
-    public <T> T dispatch(
-        String cluster,
-        String topic,
-        String key,
-        Map<String, Object> headers,
-        String message,
-        ReactiveKafkaSendExecutor<T> executor) {
-
-        return doDispatch(
-            cluster,
-            topic,
-            key,
-            headers,
-            message,
-            executor,
-            manager::getReactiveTemplate);
-    }
-
-    /**
      * 公共调度逻辑
      */
     private <T, P> T doDispatch(
@@ -115,22 +79,7 @@ public record KafkaSenderDispatcher(
             .message(message)
             .build();
 
-        Boolean enabledObservation = manager.getProperty().getProducerEnabledObservation(cluster);
-        if (Boolean.FALSE.equals(enabledObservation)) {
-            return executor.execute(template, msg);
-        }
-
-        KafkaSenderObservationContext context =
-            new KafkaSenderObservationContext(
-                cluster,
-                topic,
-                key);
-
-        return observationExecutor.execute(
-            CONVENTION,
-            () -> context,
-            () -> executor.execute(template, msg)
-        );
+        return executor.execute(template, msg);
     }
 
     private void validate(String cluster, String topic, Object message) {
@@ -175,14 +124,6 @@ public record KafkaSenderDispatcher(
      */
     @FunctionalInterface
     public interface KafkaSendExecutor<T> extends ExecutorWrapper<T, KafkaTemplate<String, Object>> {
-
-    }
-
-    /**
-     * 对外 Reactive Kafka 执行器
-     */
-    @FunctionalInterface
-    public interface ReactiveKafkaSendExecutor<T> extends ExecutorWrapper<T, ReactiveKafkaProducerTemplate<String, Object>> {
 
     }
 }

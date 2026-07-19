@@ -8,24 +8,22 @@
 package com.iwindplus.binlog.comsumer.server.listener;
 
 import cn.hutool.core.text.CharSequenceUtil;
+import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.base.disruptor.core.DisruptorManager;
 import com.iwindplus.base.kafka.domain.annotation.KafkaMultiListener;
 import com.iwindplus.base.util.JacksonUtil;
 import com.iwindplus.binlog.comsumer.server.domain.dto.BinlogRowDataDTO;
 import com.iwindplus.binlog.comsumer.server.domain.dto.SourceMetaDTO;
 import com.iwindplus.binlog.comsumer.server.domain.property.BinLogConsumerProperty;
-import com.iwindplus.binlog.comsumer.server.handler.BinlogActionHandler;
+import com.iwindplus.binlog.comsumer.server.handler.event.BinlogRowDataDisruptorEventHandler;
 import jakarta.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
-import reactor.kafka.receiver.ReceiverRecord;
-import reactor.util.function.Tuples;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.support.Acknowledgment;
 
 /**
  * binlog消费方日志监听器.
@@ -40,72 +38,49 @@ public class BinLogConsumerListener {
     protected BinLogConsumerProperty property;
 
     @Resource
-    private BinlogActionHandler handler;
+    private DisruptorManager<List<BinlogRowDataDTO>> disruptorManager;
 
     @KafkaMultiListener(
         cluster = "${kafka.multi.default-cluster}",
         topics = {"${kafka.multi.clusters.default.consumer.bindings[0].topic}"},
         group = "${kafka.multi.clusters.default.consumer.bindings[0].group}"
     )
-    public Mono<Void> listenBatch(List<ReceiverRecord<String, Object>> records) {
+    public void listenBatch(List<ConsumerRecord<String, String>> records, Acknowledgment ack) {
         if (records == null || records.isEmpty()) {
-            return Mono.empty();
+            return;
         }
 
-        AtomicInteger recordCount = new AtomicInteger(0);
-        AtomicInteger parsedCount = new AtomicInteger(0);
-        AtomicInteger successCount = new AtomicInteger(0);
-
-        return Flux.fromIterable(records)
-            // 统计原始 Kafka 数量
-            .doOnNext(r -> recordCount.incrementAndGet())
-            .filter(r -> r != null && r.value() != null)
-            // 解析
-            .flatMap(record ->
-                Mono.fromCallable(() -> parseData(record.value()))
-                    .subscribeOn(Schedulers.boundedElastic())
-                    .flatMapMany(Flux::fromIterable)
-                    .map(dto -> Tuples.of(record, dto))
-            )
-            // 统计解析后的数量
-            .doOnNext(t -> parsedCount.incrementAndGet())
-            // 处理
-            .flatMap(tuple -> {
-                ReceiverRecord<String, Object> record = tuple.getT1();
-                BinlogRowDataDTO dto = tuple.getT2();
-
-                return Mono.fromRunnable(() -> processData(dto))
-                    .subscribeOn(Schedulers.boundedElastic())
-                    .doOnSuccess(v -> successCount.incrementAndGet())
-                    .onErrorResume(e -> {
-                        log.error("处理失败, offset={}", record.offset(), e);
-                        return Mono.empty();
-                    });
-            })
-            .then()
-            // 统一输出统计
-            .doOnSuccess(v -> log.info(
-                "Kafka批量处理完成: 原始记录={}, 解析后={}, 成功处理={}",
-                recordCount.get(),
-                parsedCount.get(),
-                successCount.get()
-            ));
-    }
-
-    private void processData(BinlogRowDataDTO entity) {
         try {
-            this.handler.processHandler(entity);
-        } catch (Exception ex) {
-            if (ex instanceof BizException bizEx) {
-                throw bizEx;
+            final List<BinlogRowDataDTO> batchList = buildBinlogRowData(records);
+
+            if (!batchList.isEmpty()) {
+                final String name = StrUtil.lowerFirst(BinlogRowDataDisruptorEventHandler.class.getSimpleName());
+                disruptorManager.getTemplate(name).publish("kafka", "elasticsearch", batchList);
             }
 
-            log.error("binlog日志消息消费失败={}", ex);
+            if (ack != null) {
+                ack.acknowledge();
+            }
+        } catch (Exception ex) {
+            log.error("binlog日志消息批量消费失败, size={}", records.size(), ex);
+            throw ex;
         }
     }
 
-    private List<BinlogRowDataDTO> parseData(Object value) {
-        // log.info("binlog日志消息消费参数={}", value);
+    private List<BinlogRowDataDTO> buildBinlogRowData(List<ConsumerRecord<String, String>> records) {
+        List<BinlogRowDataDTO> entities = new ArrayList<>(records.size());
+        for (ConsumerRecord<String, String> record : records) {
+            if (record == null || CharSequenceUtil.isBlank(record.value())) {
+                continue;
+            }
+
+            final BinlogRowDataDTO data = parseData(record.value());
+            entities.add(parseData(data));
+        }
+        return entities;
+    }
+
+    private BinlogRowDataDTO parseData(Object value) {
         if (value == null) {
             return null;
         }
@@ -121,7 +96,7 @@ public class BinLogConsumerListener {
             return null;
         }
 
-        return List.of(data);
+        return data;
     }
 
     private boolean checkTableNeedSign(BinlogRowDataDTO data) {

@@ -8,8 +8,7 @@
 package com.iwindplus.base.kafka.support;
 
 import com.iwindplus.base.kafka.core.KafkaClusterManager;
-import com.iwindplus.base.kafka.support.observation.ClusterKafkaReceiverObservationConvention;
-import com.iwindplus.base.kafka.support.observation.KafkaReceiverObservationContext;
+import com.iwindplus.base.kafka.support.observation.CustomKafkaListenerObservationConvention;
 import com.iwindplus.base.monitor.domain.dto.TraceScope;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
 import com.iwindplus.base.monitor.support.TraceContextPropagator;
@@ -20,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
+import org.springframework.kafka.support.micrometer.KafkaRecordReceiverContext;
 
 /**
  * Kafka接收调度器.
@@ -33,8 +33,8 @@ public record KafkaReceiverDispatcher(
     TraceContextPropagator traceContextPropagator,
     ObservationExecutor observationExecutor) {
 
-    private static final ClusterKafkaReceiverObservationConvention CONVENTION =
-        new ClusterKafkaReceiverObservationConvention();
+    private static final CustomKafkaListenerObservationConvention CONVENTION =
+        new CustomKafkaListenerObservationConvention();
 
     public static final Propagator.Getter<Headers> KAFKA_GETTER =
         (headers, key) -> {
@@ -58,19 +58,15 @@ public record KafkaReceiverDispatcher(
             return;
         }
 
-        final Boolean enabledObservation =
-            manager.getProperty().getConsumerEnabledObservation(handler.getCluster());
+        ConsumerRecord<String,Object> record = msgs.get(0);
 
-        if (Boolean.FALSE.equals(enabledObservation)) {
-            handler.handleBatch(msgs);
-            return;
-        }
-
-        KafkaReceiverObservationContext context =
-            new KafkaReceiverObservationContext(
-                handler.getCluster(),
-                handler.getTopics(),
-                handler.getGroup()
+        KafkaRecordReceiverContext context =
+            new KafkaRecordReceiverContext(
+                record,
+                handler.getListenerId(),
+                handler.getClientId(),
+                handler.getGroup(),
+                () -> handler.getClusterId()
             );
 
         try (TraceScope ignored =

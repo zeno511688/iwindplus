@@ -18,7 +18,6 @@ import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
-import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.domain.context.HeaderContextHolder;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
@@ -26,7 +25,6 @@ import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
 import com.iwindplus.base.util.AddressUtil;
-import com.iwindplus.base.util.CheckDataUtil;
 import com.iwindplus.base.util.domain.vo.AddressVO;
 import com.iwindplus.log.domain.dto.GatewayLogDTO;
 import com.iwindplus.log.domain.dto.GatewayLogSearchDTO;
@@ -74,7 +72,6 @@ public class GatewayLogServiceImpl extends EsBaseServiceImpl<GatewayLogDO> imple
     @CacheEvict(allEntries = true)
     @Override
     public boolean saveBatch(List<GatewayLogDTO> entities) {
-        CheckDataUtil.checkBatchOperationSize(entities.size(), NumberConstant.NUMBER_FIFTY);
         entities.forEach(entity -> {
             if (CharSequenceUtil.isBlank(entity.getIp())) {
                 entity.setIp(MDC.get(HeaderConstant.REAL_IP));

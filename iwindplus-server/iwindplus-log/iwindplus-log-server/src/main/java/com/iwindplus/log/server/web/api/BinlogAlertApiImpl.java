@@ -7,6 +7,7 @@
 
 package com.iwindplus.log.server.web.api;
 
+import com.iwindplus.base.domain.dto.ValidListDTO;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.web.controller.BaseController;
 import com.iwindplus.log.api.BinlogAlertApi;
@@ -36,6 +37,12 @@ public class BinlogAlertApiImpl extends BaseController implements BinlogAlertApi
     @Override
     public ResultVO<Boolean> save(BinlogAlertDTO entity) {
         boolean data = this.binlogAlertService.save(entity);
+        return ResultVO.success(data);
+    }
+
+    @Override
+    public ResultVO<Boolean> saveBatch(ValidListDTO<BinlogAlertDTO> entity) {
+        boolean data = this.binlogAlertService.saveBatch(entity);
         return ResultVO.success(data);
     }
 }

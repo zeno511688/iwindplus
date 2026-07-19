@@ -79,8 +79,7 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
                 observationRegistry
             );
 
-        try (
-            Observation.Scope ignored =
+        try (Observation.Scope ignored =
                 observation.start()
                     .openScope()) {
 

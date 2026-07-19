@@ -12,22 +12,16 @@ import com.iwindplus.base.kafka.core.KafkaTemplateRouter;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
 import com.iwindplus.base.kafka.listener.KafkaMultiListenerBeanPostProcessor;
 import com.iwindplus.base.kafka.listener.KafkaMultiListenerRegistrar;
-import com.iwindplus.base.kafka.support.KafkaDlqHandler;
-import com.iwindplus.base.kafka.support.KafkaMetrics;
 import com.iwindplus.base.kafka.support.KafkaReceiverDispatcher;
-import com.iwindplus.base.kafka.support.KafkaRetryHandler;
 import com.iwindplus.base.kafka.support.KafkaSenderDispatcher;
-import com.iwindplus.base.kafka.support.ReactiveKafkaReceiverDispatcher;
-import com.iwindplus.base.kafka.support.impl.DefaultKafkaDlqHandler;
-import com.iwindplus.base.kafka.support.impl.DefaultKafkaRetryHandler;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
 import com.iwindplus.base.monitor.support.TraceContextPropagator;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -48,15 +42,18 @@ public class KafkaConfiguration {
      *
      * @param property                    property
      * @param observationRegistryProvider observationRegistryProvider
+     * @param applicationContext          applicationContext
      * @return KafkaClusterManager
      */
     @Bean
     public KafkaClusterManager kafkaClusterManager(
         KafkaMultiProperty property,
-        ObjectProvider<ObservationRegistry> observationRegistryProvider) {
+        ObjectProvider<ObservationRegistry> observationRegistryProvider,
+        ApplicationContext applicationContext) {
         KafkaClusterManager manager = new KafkaClusterManager(
             property,
-            observationRegistryProvider.getIfAvailable());
+            observationRegistryProvider.getIfAvailable(),
+            applicationContext);
         log.info("KafkaClusterManager={}", manager);
         return manager;
     }
@@ -117,25 +114,6 @@ public class KafkaConfiguration {
     }
 
     /**
-     * 创建 RocketReceiverDispatcher.
-     *
-     * @param manager                集群管理器
-     * @param traceContextPropagator traceContextPropagator
-     * @param observationExecutor    observationExecutor
-     * @return ReactiveKafkaReceiverDispatcher
-     */
-    @Bean
-    public ReactiveKafkaReceiverDispatcher reactiveKafkaReceiverDispatcher(
-        KafkaClusterManager manager,
-        TraceContextPropagator traceContextPropagator,
-        ObservationExecutor observationExecutor) {
-        final ReactiveKafkaReceiverDispatcher reactiveKafkaReceiverDispatcher = new ReactiveKafkaReceiverDispatcher(manager,
-            traceContextPropagator, observationExecutor);
-        log.info("ReactiveKafkaReceiverDispatcher={}", reactiveKafkaReceiverDispatcher);
-        return reactiveKafkaReceiverDispatcher;
-    }
-
-    /**
      * 创建 KafkaMultiListenerBeanPostProcessor.
      *
      * @return KafkaMultiListenerBeanPostProcessor
@@ -148,65 +126,21 @@ public class KafkaConfiguration {
     }
 
     /**
-     * 创建 KafkaMetrics.
-     *
-     * @param meterRegistry meterRegistry
-     * @return KafkaMetrics
-     */
-    @Bean
-    public KafkaMetrics kafkaMetrics(MeterRegistry meterRegistry) {
-        final KafkaMetrics kafkaMetrics = new KafkaMetrics(meterRegistry);
-        log.info("KafkaMetrics={}", kafkaMetrics);
-        return kafkaMetrics;
-    }
-
-    /**
      * 创建 KafkaMultiListenerRegistrar.
      *
      * @param bpp                bpp
      * @param manager            集群管理器
      * @param dispatcher         接收调度器
-     * @param reactiveDispatcher reactive接收调度器
-     * @param retryHandler       重试助手
-     * @param dlqHandler         死信队列助手
      * @return KafkaMultiListenerRegistrar
      */
     @Bean
     public KafkaMultiListenerRegistrar kafkaMultiListenerRegistrar(
         KafkaMultiListenerBeanPostProcessor bpp,
         KafkaClusterManager manager,
-        KafkaReceiverDispatcher dispatcher,
-        ReactiveKafkaReceiverDispatcher reactiveDispatcher,
-        KafkaRetryHandler retryHandler,
-        KafkaDlqHandler dlqHandler,
-        KafkaMetrics kafkaMetrics) {
+        KafkaReceiverDispatcher dispatcher) {
         final KafkaMultiListenerRegistrar registrar = new KafkaMultiListenerRegistrar(
-            bpp, manager, dispatcher, reactiveDispatcher, retryHandler, dlqHandler, kafkaMetrics);
+            bpp, manager, dispatcher);
         log.info("KafkaMultiListenerRegistrar={}", registrar);
         return registrar;
-    }
-
-    /**
-     * 创建 KafkaRetryHandler.
-     *
-     * @param property property
-     * @param manager  集群管理器
-     * @return KafkaRetryHandler
-     */
-    @Bean
-    public KafkaRetryHandler defaultKafkaRetryHandler(KafkaMultiProperty property, KafkaClusterManager manager) {
-        return new DefaultKafkaRetryHandler(property, manager);
-    }
-
-    /**
-     * 创建 KafkaDlqHandler.
-     *
-     * @param property property
-     * @param manager  集群管理器
-     * @return KafkaDlqHandler
-     */
-    @Bean
-    public KafkaDlqHandler defaultKafkaDlqHandler(KafkaMultiProperty property, KafkaClusterManager manager) {
-        return new DefaultKafkaDlqHandler(property, manager);
     }
 }

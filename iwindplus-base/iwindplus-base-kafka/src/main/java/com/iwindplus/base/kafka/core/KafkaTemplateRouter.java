@@ -7,15 +7,15 @@
 
 package com.iwindplus.base.kafka.core;
 
+import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
+import com.iwindplus.base.domain.constant.CommonConstant.SystemConstant;
+import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
 import com.iwindplus.base.kafka.support.KafkaSenderDispatcher;
-import com.iwindplus.base.kafka.support.KafkaSenderDispatcher.KafkaSendExecutor;
-import com.iwindplus.base.kafka.support.KafkaSenderDispatcher.ReactiveKafkaSendExecutor;
 import com.iwindplus.base.monitor.support.TraceContextPropagator;
-import io.opentelemetry.context.Context;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -23,9 +23,6 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.kafka.sender.SenderResult;
 
 /**
  * Kafka模板路由器.
@@ -108,14 +105,14 @@ public record KafkaTemplateRouter(
         Map<String, Object> headers,
         String message) {
 
-        final Message<String> objectMessage = buildTraceMessage(topic, key, message);
+        final Message<String> objectMessage = buildTraceMessage(cluster, topic, key, headers, message);
         return dispatcher.dispatch(
             cluster,
             topic,
             key,
             headers,
             message,
-            (KafkaSendExecutor<SendResult<String, Object>>) (template, msg) -> {
+            (template, msg) -> {
                 try {
                     SendResult<String, Object> result =
                         template.send(objectMessage).get();
@@ -143,154 +140,36 @@ public record KafkaTemplateRouter(
     }
 
     /**
-     * Reactive发送.
-     *
-     * @param cluster 集群
-     * @param topic   topic
-     * @param message 消息
-     * @return Mono<SenderResult < Void>>
-     */
-    public Mono<SenderResult<Void>> sendReactive(
-        String cluster,
-        String topic,
-        Map<String, Object> headers,
-        String message) {
-        return sendReactive(cluster, topic, null, headers, message);
-    }
-
-    /**
-     * Reactive发送.
-     *
-     * @param cluster 集群
-     * @param topic   topic
-     * @param key     key
-     * @param message 消息
-     * @return Mono<SenderResult < Void>>
-     */
-    public Mono<SenderResult<Void>> sendReactive(
-        String cluster,
-        String topic,
-        String key,
-        Map<String, Object> headers,
-        String message) {
-
-        return Mono.deferContextual(
-            reactorContext -> {
-                Context context =
-                    reactorContext.getOrDefault(
-                        TraceContextPropagator
-                            .TRACE_CONTEXT_KEY,
-                        Context.current()
-                    );
-
-                Message<String> traceMessage =
-                    buildReactiveTraceMessage(
-                        topic,
-                        key,
-                        message,
-                        context
-                    );
-
-                return dispatcher.dispatch(
-                    cluster,
-                    topic,
-                    key,
-                    headers,
-                    message,
-                    (ReactiveKafkaSendExecutor<Mono<SenderResult<Void>>>) (template, msg) ->
-                        template.send(msg.getTopic(), traceMessage)
-                            .doOnNext(result ->
-                                logReactiveSuccess(
-                                    msg.getCluster(),
-                                    msg.getTopic(),
-                                    msg.getKey(),
-                                    result
-                                )
-                            ).doOnError(e ->
-                                logReactiveError(
-                                    msg.getCluster(),
-                                    msg.getTopic(),
-                                    msg.getKey(),
-                                    e
-                                )
-                            )
-                );
-            }
-        );
-    }
-
-    /**
-     * Reactive 批量发送.
-     *
-     * @param cluster     集群
-     * @param topic       topic
-     * @param messages    消息
-     * @param concurrency 并发数
-     * @return Mono<Void>
-     */
-    public Mono<Void> sendBatchReactive(
-        String cluster,
-        String topic,
-        Map<String, Object> headers,
-        List<String> messages,
-        int concurrency) {
-
-        return Flux.fromIterable(messages)
-            .flatMap(
-                msg -> sendReactive(cluster, topic, headers, msg),
-                concurrency
-            )
-            .then();
-    }
-
-    /**
      * 构建同步Trace消息.
      */
     private Message<String> buildTraceMessage(
+        String cluster,
         String topic,
         String key,
+        Map<String, Object> headers,
         String message) {
 
         MessageBuilder<String> builder =
-            MessageBuilder.withPayload(message)
-                .setHeader(KafkaHeaders.TOPIC, topic);
+            MessageBuilder.withPayload(message);
 
+        if (MapUtil.isNotEmpty(headers)) {
+            builder.copyHeaders(headers);
+        }
+        if (CharSequenceUtil.isNotBlank(cluster)) {
+            builder.setHeader(KafkaConstant.CLUSTER, cluster);
+        }
+        if (CharSequenceUtil.isNotBlank(topic)) {
+            builder.setHeader(KafkaHeaders.TOPIC, topic);
+        }
         if (CharSequenceUtil.isNotBlank(key)) {
             builder.setHeader(KafkaHeaders.KEY, key);
         }
-
-        traceContextPropagator.inject(
-            builder,
-            MessageBuilder::setHeader
-        );
-
-        return builder.build();
-    }
-
-    /**
-     * 构建Reactive Trace消息.
-     */
-    private Message<String> buildReactiveTraceMessage(
-        String topic,
-        String key,
-        String message,
-        Context context) {
-
-        MessageBuilder<String> builder =
-            MessageBuilder
-                .withPayload(message)
-                .setHeader(KafkaHeaders.TOPIC, topic);
-
-        if (CharSequenceUtil.isNotBlank(key)) {
-            builder.setHeader(KafkaHeaders.KEY, key);
+        if (MapUtil.isNotEmpty(headers)) {
+            final Object requestId = headers.get(SystemConstant.REQUEST_ID);
+            if (Objects.nonNull(requestId)) {
+                builder.setHeader(SystemConstant.REQUEST_ID, requestId);
+            }
         }
-
-        traceContextPropagator.injectReactor(
-            context,
-            builder,
-            MessageBuilder::setHeader
-        );
-
         return builder.build();
     }
 
@@ -326,49 +205,6 @@ public record KafkaTemplateRouter(
             metadata.topic(),
             metadata.partition(),
             metadata.offset()
-        );
-    }
-
-    /**
-     * Reactive发送成功日志.
-     */
-    private void logReactiveSuccess(
-        String cluster,
-        String topic,
-        String key,
-        SenderResult<Void> result) {
-
-        RecordMetadata metadata = result.recordMetadata();
-        if (metadata == null) {
-            return;
-        }
-
-        log.debug(
-            "Reactive send success cluster={} topic={} key={} partition={} offset={}",
-            cluster,
-            topic,
-            key,
-            metadata.partition(),
-            metadata.offset()
-        );
-    }
-
-    /**
-     * Reactive发送失败日志.
-     */
-    private void logReactiveError(
-        String cluster,
-        String topic,
-        String key,
-        Throwable e) {
-
-        log.error(
-            "Reactive send failed cluster={} topic={} key={} err={}",
-            cluster,
-            topic,
-            key,
-            e.getMessage(),
-            e
         );
     }
 }

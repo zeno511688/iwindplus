@@ -56,6 +56,13 @@ public class BinlogAlertServiceImpl extends EsBaseServiceImpl<BinlogAlertDO>
         return Boolean.TRUE;
     }
 
+    @Override
+    public boolean saveBatch(List<BinlogAlertDTO> entities) {
+        final List<BinlogAlertDO> models = BeanUtil.copyToList(entities, BinlogAlertDO.class);
+        super.saveBatch(models);
+        return Boolean.TRUE;
+    }
+
     @CacheEvict(allEntries = true)
     @Override
     public boolean removeByIds(List<String> ids) {

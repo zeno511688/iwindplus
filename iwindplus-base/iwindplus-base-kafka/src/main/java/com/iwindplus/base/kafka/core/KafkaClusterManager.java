@@ -12,13 +12,14 @@ import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
-import com.iwindplus.base.kafka.domain.dto.KafkaConsumerKeyDTO;
 import com.iwindplus.base.kafka.domain.enums.KafkaCodeEnum;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumerConfig;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaMultiClusterConfig;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaProducerConfig;
 import com.iwindplus.base.kafka.support.KafkaDynamicRegistry;
+import com.iwindplus.base.kafka.support.observation.CustomKafkaListenerObservationConvention;
+import com.iwindplus.base.kafka.support.observation.CustomKafkaTemplateObservationConvention;
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Duration;
 import java.util.Collection;
@@ -35,20 +36,16 @@ import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.common.TopicPartition;
 import org.dromara.dynamictp.core.DtpRegistry;
 import org.dromara.dynamictp.core.executor.DtpExecutor;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.ContainerProperties.AckMode;
-import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
-import org.springframework.util.backoff.FixedBackOff;
-import reactor.kafka.receiver.ReceiverOptions;
-import reactor.kafka.sender.KafkaSender;
-import reactor.kafka.sender.SenderOptions;
 
 /**
  * Kafka 集群管理器（工业级增强版）.
@@ -58,16 +55,15 @@ import reactor.kafka.sender.SenderOptions;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class KafkaClusterManager implements SmartLifecycle {
+public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
 
     private final KafkaMultiProperty property;
     private final ObservationRegistry observationRegistry;
+    private final ApplicationContext applicationContext;
 
     private final Map<String, AdminClient> adminClientMap = new ConcurrentHashMap<>(16);
     private final Map<String, KafkaTemplate<String, Object>> templateMap = new ConcurrentHashMap<>(16);
-    private final Map<String, ReactiveKafkaProducerTemplate<String, Object>> reactiveTemplateMap = new ConcurrentHashMap<>(16);
     private final Map<String, ConcurrentKafkaListenerContainerFactory<String, Object>> factoryMap = new ConcurrentHashMap<>(16);
-    private final Map<KafkaConsumerKeyDTO, ReceiverOptions<String, Object>> reactiveReceiverOptionsMap = new ConcurrentHashMap<>(16);
 
     private volatile boolean running = false;
 
@@ -102,14 +98,6 @@ public class KafkaClusterManager implements SmartLifecycle {
             }
         });
 
-        reactiveTemplateMap.values().forEach(template -> {
-            try {
-                template.close();
-            } catch (Exception e) {
-                log.error("Close ReactiveKafkaProducerTemplate error", e);
-            }
-        });
-
         log.info("KafkaClusterManager stopped");
     }
 
@@ -121,6 +109,11 @@ public class KafkaClusterManager implements SmartLifecycle {
     @Override
     public boolean isRunning() {
         return running;
+    }
+
+    @Override
+    public void destroy() {
+        stop();
     }
 
     /**
@@ -141,8 +134,6 @@ public class KafkaClusterManager implements SmartLifecycle {
         }
 
         clusters.forEach((clusterName, clusterConfig) -> {
-            log.info("Initializing Kafka cluster [{}]", clusterName);
-
             final AdminClient adminClient =
                 buildAdminClient(
                     clusterName,
@@ -163,18 +154,9 @@ public class KafkaClusterManager implements SmartLifecycle {
             buildProducer(property, clusterName, clusterConfig.getProducer());
 
             buildConsumer(property, clusterName, clusterConfig.getConsumer());
-
-            buildReactiveProducer(property, clusterName, clusterConfig.getProducer());
         });
 
-        log.info("Kafka clusters initialization completed. " +
-                "clusters={}, admins={}, producers={}, consumers={}, reactiveProducers={}",
-            property.getClusters().size(),
-            adminClientMap.size(),
-            templateMap.size(),
-            factoryMap.size(),
-            reactiveTemplateMap.size()
-        );
+        log.info("Kafka clusters initialized: {}", clusters.size());
     }
 
     /**
@@ -196,6 +178,29 @@ public class KafkaClusterManager implements SmartLifecycle {
     }
 
     /**
+     * 获取集群ID.
+     * @param cluster 集群名称
+     * @return String
+     */
+    public String getClusterId(String cluster) {
+        AdminClient admin = getAdmin(cluster);
+        try {
+            return admin
+                .describeCluster()
+                .clusterId()
+                .get();
+        } catch (Exception e) {
+            log.warn(
+                "Get kafka clusterId failed, cluster={}",
+                cluster,
+                e
+            );
+
+            return null;
+        }
+    }
+
+    /**
      * 获取同步 KafkaTemplate.
      */
     public KafkaTemplate<String, Object> getTemplate(String cluster) {
@@ -214,24 +219,6 @@ public class KafkaClusterManager implements SmartLifecycle {
     }
 
     /**
-     * 获取 Reactive Template.
-     */
-    public ReactiveKafkaProducerTemplate<String, Object> getReactiveTemplate(String cluster) {
-        return getOrThrow(
-            reactiveTemplateMap,
-            resolveCluster(cluster),
-            KafkaCodeEnum.KAFKA_CLUSTER_NOT_EXIST
-        );
-    }
-
-    /**
-     * 获取默认 Reactive Template.
-     */
-    public ReactiveKafkaProducerTemplate<String, Object> getDefaultReactiveTemplate() {
-        return getReactiveTemplate(null);
-    }
-
-    /**
      * 获取 Listener Factory.
      */
     public ConcurrentKafkaListenerContainerFactory<String, Object> getFactory(String cluster) {
@@ -247,21 +234,6 @@ public class KafkaClusterManager implements SmartLifecycle {
      */
     public ConcurrentKafkaListenerContainerFactory<String, Object> getDefaultFactory() {
         return getFactory(getDefaultCluster());
-    }
-
-    /**
-     * 获取 ReceiverOptions.
-     */
-    public ReceiverOptions<String, Object> getReceiverOptions(
-        String cluster,
-        String group) {
-
-        KafkaConsumerKeyDTO key = new KafkaConsumerKeyDTO(cluster, group);
-
-        return reactiveReceiverOptionsMap.computeIfAbsent(
-            key,
-            k -> createReceiverOptions(cluster, group)
-        );
     }
 
     /**
@@ -292,13 +264,6 @@ public class KafkaClusterManager implements SmartLifecycle {
      */
     public Integer getConcurrency(String cluster) {
         return property.getConcurrency(cluster);
-    }
-
-    /**
-     * 获取Reactive并发数.
-     */
-    public Integer getReactiveConcurrency(String cluster) {
-        return property.getReactiveConcurrency(cluster);
     }
 
     /**
@@ -351,8 +316,7 @@ public class KafkaClusterManager implements SmartLifecycle {
                     bootstrapServers
                 );
 
-                AdminClient admin =
-                    AdminClient.create(adminProps);
+                AdminClient admin = AdminClient.create(adminProps);
 
                 log.info(
                     "AdminClient created cluster={}",
@@ -386,13 +350,17 @@ public class KafkaClusterManager implements SmartLifecycle {
                 Map<String, Object> props =
                     property.buildProducerProps(clusterName);
 
-                DefaultKafkaProducerFactory<String, Object> factory = new DefaultKafkaProducerFactory<>(props);
+                DefaultKafkaProducerFactory<String, Object> factory =
+                    new DefaultKafkaProducerFactory<>(props);
 
                 KafkaTemplate<String, Object> template = new KafkaTemplate<>(factory);
-
+                template.setApplicationContext(applicationContext);
                 if (CharSequenceUtil.isNotBlank(producer.getDefaultTopic())) {
                     template.setDefaultTopic(producer.getDefaultTopic());
                 }
+                template.setObservationEnabled(producer.getEnabledObservation());
+                template.setObservationConvention(new CustomKafkaTemplateObservationConvention());
+                template.afterSingletonsInstantiated();
 
                 log.info("KafkaTemplate created cluster={}, acks={}, compression={}",
                     clusterName,
@@ -434,15 +402,9 @@ public class KafkaClusterManager implements SmartLifecycle {
                     factory = new ConcurrentKafkaListenerContainerFactory<>();
 
                 factory.setConsumerFactory(consumerFactory);
-
                 factory.setConcurrency(consumer.getConcurrency());
-
                 factory.setBatchListener(consumer.getEnabledBatchListener());
-
-                buildRetry(clusterName, consumer, factory);
-
                 ContainerProperties containerProps = factory.getContainerProperties();
-
                 buildContainerProperties(clusterName, consumer, containerProps);
 
                 log.info("Kafka Consumer created cluster={}, concurrency={}, batch={}, ackMode={}",
@@ -455,101 +417,6 @@ public class KafkaClusterManager implements SmartLifecycle {
                 return factory;
             }
         );
-    }
-
-    /**
-     * build reactive producer.
-     */
-    private void buildReactiveProducer(
-        KafkaMultiProperty property,
-        String clusterName,
-        KafkaProducerConfig producer) {
-
-        if (Objects.isNull(producer)
-            || Boolean.FALSE.equals(
-            producer.getEnableReactive())) {
-
-            return;
-        }
-
-        reactiveTemplateMap.computeIfAbsent(
-            clusterName,
-            key -> {
-                int maxInFlight = Optional.ofNullable(producer.getReactiveMaxInFlight()
-                ).orElse(1024);
-
-                boolean stopOnError = Optional.ofNullable(producer.getReactiveStopOnError())
-                    .orElse(Boolean.FALSE);
-
-                SenderOptions<String, Object>
-                    senderOptions =
-                    SenderOptions.<String, Object>create(
-                            property.buildProducerProps(clusterName)
-                        )
-                        .maxInFlight(maxInFlight)
-                        .stopOnError(stopOnError)
-                        .withObservation(observationRegistry);
-
-                KafkaSender<String, Object> sender = KafkaSender.create(senderOptions);
-
-                ReactiveKafkaProducerTemplate<String, Object> reactiveTemplate = new ReactiveKafkaProducerTemplate<>(sender);
-
-                log.info("ReactiveKafkaProducerTemplate created cluster={}, maxInFlight={}, stopOnError={}",
-                    clusterName,
-                    maxInFlight,
-                    stopOnError
-                );
-
-                return reactiveTemplate;
-            }
-        );
-    }
-
-    /**
-     * create receiver options.
-     */
-    private ReceiverOptions<String, Object> createReceiverOptions(
-        String clusterName,
-        String group) {
-
-        KafkaMultiClusterConfig clusterConfig = property.getClusters().get(resolveCluster(clusterName));
-        KafkaConsumerConfig consumerConfig = clusterConfig.getConsumer();
-        Map<String, Object> props = property.buildConsumerProps(clusterName, group);
-
-        ReceiverOptions<String, Object> options =
-            ReceiverOptions.<String, Object>create(props)
-                .pollTimeout(Duration.ofMillis(consumerConfig.getPollTimeoutMs()))
-                .addAssignListener(partitions ->
-                    log.info("Reactive assigned cluster={}, group={}, partitions={}",
-                        clusterName,
-                        group,
-                        partitions
-                    )
-                )
-                .addRevokeListener(partitions ->
-                    log.warn("Reactive revoked cluster={}, group={}, partitions={}",
-                        clusterName,
-                        group,
-                        partitions
-                    )
-                );
-
-        if (Boolean.TRUE.equals(
-            consumerConfig.getEnabledAutoCommit())) {
-            options = options.commitBatchSize(consumerConfig.getCommitBatchSize())
-                .commitInterval(consumerConfig.getCommitInterval());
-
-            log.warn("Cluster {} using AUTO COMMIT", clusterName);
-        } else {
-            int maxDeferred = Optional.ofNullable(consumerConfig.getMaxDeferredCommits())
-                .orElse(consumerConfig.getConcurrency() * 2);
-
-            options = options.maxDeferredCommits(maxDeferred);
-
-            log.info("Cluster {} MANUAL COMMIT maxDeferredCommits={}", clusterName, maxDeferred);
-        }
-
-        return options;
     }
 
     /**
@@ -568,6 +435,8 @@ public class KafkaClusterManager implements SmartLifecycle {
             )
         );
         containerProps.setPollTimeout(consumer.getPollTimeoutMs());
+        containerProps.setObservationEnabled(consumer.getEnabledObservation());
+        containerProps.setObservationConvention(new CustomKafkaListenerObservationConvention());
 
         if (Boolean.FALSE.equals(
             consumer.getEnabledAutoCommit())) {
@@ -603,48 +472,6 @@ public class KafkaClusterManager implements SmartLifecycle {
             clusterName,
             consumer,
             containerProps
-        );
-    }
-
-    /**
-     * build retry.
-     */
-    private void buildRetry(
-        String clusterName,
-        KafkaConsumerConfig consumer,
-        ConcurrentKafkaListenerContainerFactory<String, Object>
-            factory) {
-
-        if (Boolean.FALSE.equals(consumer.getEnabledRetry())) {
-
-            log.debug("Cluster {} retry disabled", clusterName);
-
-            return;
-        }
-
-        DefaultErrorHandler errorHandler =
-            new DefaultErrorHandler(
-                (consumerRecord, ex) ->
-                    log.error("Kafka consume failed topic={}, partition={}, offset={}, key={}",
-                        consumerRecord.topic(),
-                        consumerRecord.partition(),
-                        consumerRecord.offset(),
-                        consumerRecord.key(),
-                        ex
-                    ),
-                new FixedBackOff(
-                    consumer.getRetryIntervalMs(),
-                    consumer.getRetryAttempts()
-                )
-            );
-
-        factory.setCommonErrorHandler(errorHandler);
-
-        log.info(
-            "Cluster {} retry enabled attempts={}, interval={}ms",
-            clusterName,
-            consumer.getRetryAttempts(),
-            consumer.getRetryIntervalMs()
         );
     }
 
