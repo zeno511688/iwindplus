@@ -44,8 +44,6 @@ public class BinLogProducerListener {
     @Async
     @EventListener(BinLogEvent.class)
     public void onApplicationEvent(BinLogEvent event) {
-        log.info("binlog日志发布事件");
-
         final BinlogDTO dto = event.getLogData();
         if (Objects.isNull(dto) || CharSequenceUtil.isBlank(dto.getOp())) {
             return;
