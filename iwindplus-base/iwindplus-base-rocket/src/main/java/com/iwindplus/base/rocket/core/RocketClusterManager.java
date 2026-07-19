@@ -113,10 +113,11 @@ public class RocketClusterManager implements SmartLifecycle, DisposableBean {
         }
 
         property.getClusters().forEach((clusterName, clusterConfig) -> {
-            log.info("Initializing Rocket cluster: {}", clusterName);
             // 创建Producer
             buildProducer(clusterName, clusterConfig);
         });
+
+        log.info("Rocket clusters initialized: {}", clusters.size());
     }
 
     /**
