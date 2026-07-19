@@ -257,6 +257,15 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
             doDispatch(k, msgs);
             return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
         } catch (Exception e) {
+            log.error(
+                "Rocket concurrently consume failed, key={}, msgs={}",
+                k,
+                msgs.stream()
+                    .map(MessageExt::getMsgId)
+                    .toList(),
+                e
+            );
+
             return ConsumeConcurrentlyStatus.RECONSUME_LATER;
         }
     }
@@ -266,6 +275,15 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
             doDispatch(k, msgs);
             return ConsumeOrderlyStatus.SUCCESS;
         } catch (Exception e) {
+            log.error(
+                "Rocket orderly consume failed, key={}, msgs={}",
+                k,
+                msgs.stream()
+                    .map(MessageExt::getMsgId)
+                    .toList(),
+                e
+            );
+
             return ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
         }
     }
