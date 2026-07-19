@@ -27,29 +27,14 @@ public final class KafkaConstant {
     public static final String KAFKA = "kafka";
 
     /**
-     * 生产者.
-     */
-    public static final String KAFKA_PRODUCER = "kafka.producer";
-
-    /**
-     * 消费者.
-     */
-    public static final String KAFKA_CONSUMER = "kafka.consumer";
-
-    /**
      * 生产者后缀.
      */
-    public static final String PRODUCER_SUFFIX = "producer";
+    public static final String PRODUCER_SUFFIX = "-producer";
 
     /**
      * 消费者后缀.
      */
-    public static final String CONSUMER_SUFFIX = "consumer";
-
-    /**
-     * 默认的消费者组.
-     */
-    public static final String KAFKA_DEFAULT_GROUP = "default-group";
+    public static final String CONSUMER_SUFFIX = "-consumer";
 
     /**
      * 集群
@@ -57,24 +42,9 @@ public final class KafkaConstant {
     public static final String CLUSTER = "cluster";
 
     /**
-     * 主题
-     */
-    public static final String TOPIC = "topic";
-
-    /**
-     * key
-     */
-    public static final String KEY = "key";
-
-    /**
      * 消费组
      */
     public static final String GROUP = "group";
-
-    /**
-     * 预取数量
-     */
-    public static final int PREFETCH = 1;
 
     /**
      * 重试topic后缀

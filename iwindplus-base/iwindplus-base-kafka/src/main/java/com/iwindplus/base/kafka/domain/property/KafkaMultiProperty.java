@@ -9,12 +9,12 @@ package com.iwindplus.base.kafka.domain.property;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.extra.spring.SpringUtil;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -119,6 +119,11 @@ public class KafkaMultiProperty {
          * Bootstrap服务器（覆盖集群配置，可选）.
          */
         private String bootstrapServers;
+
+        /**
+         * 客户端ID（可选）.
+         */
+        private String clientId;
 
         /**
          * 默认Topic（可选，默认发送）.
@@ -257,24 +262,6 @@ public class KafkaMultiProperty {
         private Integer connectionsMaxIdleMs = 540000;
 
         /**
-         * 是否启用Reactive.
-         */
-        @Builder.Default
-        private Boolean enableReactive = false;
-
-        /**
-         * Reactive最大并发请求数.
-         */
-        @Builder.Default
-        private Integer reactiveMaxInFlight = 2048;
-
-        /**
-         * Reactive遇到错误是否停止.
-         */
-        @Builder.Default
-        private Boolean reactiveStopOnError = false;
-
-        /**
          * 自定义扩展配置（覆盖所有以上配置）. 可配置任何Kafka原生参数
          */
         @Builder.Default
@@ -304,14 +291,14 @@ public class KafkaMultiProperty {
         private Boolean enabledObservation = Boolean.TRUE;
 
         /**
-         * 消费组ID（可选）.
-         */
-        private String group;
-
-        /**
          * Bootstrap服务器（覆盖集群配置，可选）.
          */
         private String bootstrapServers;
+
+        /**
+         * 客户端ID（可选）.
+         */
+        private String clientId;
 
         /**
          * Key反序列化器类名.
@@ -324,12 +311,6 @@ public class KafkaMultiProperty {
          */
         @Builder.Default
         private String valueDeserializer = "org.apache.kafka.common.serialization.StringDeserializer";
-
-        /**
-         * 信任包（JSON反序列化）.
-         */
-        @Builder.Default
-        private String trustedPackages = "*";
 
         /**
          * 监听线程池bean名称（对于DtpExecutor）.
@@ -469,18 +450,6 @@ public class KafkaMultiProperty {
         private Integer connectionsMaxIdleMs = 540000;
 
         /**
-         * 重试次数.
-         */
-        @Builder.Default
-        private Long retryAttempts = 3L;
-
-        /**
-         * 重试间隔（毫秒）.
-         */
-        @Builder.Default
-        private Long retryIntervalMs = 1000L;
-
-        /**
          * 分区分配策略类名.
          */
         @Builder.Default
@@ -585,7 +554,9 @@ public class KafkaMultiProperty {
         // 基础配置（可被覆盖）
         putIfNotNull(config, ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
             p.getBootstrapServers() != null ? p.getBootstrapServers() : clusterConfig.getBootstrapServers());
-        final String clientId = this.buildClientId(cluster, null, KafkaConstant.PRODUCER_SUFFIX);
+
+        final String clientId = Optional.ofNullable(p.getClientId())
+            .orElse(cluster + KafkaConstant.PRODUCER_SUFFIX);
         putIfNotNull(config, ProducerConfig.CLIENT_ID_CONFIG, clientId);
 
         // 序列化配置（可被覆盖）
@@ -637,7 +608,7 @@ public class KafkaMultiProperty {
     /**
      * 构建消费者配置（全参数可配置）. 优先级: 自定义 properties > 显式配置 > Kafka默认值
      */
-    public Map<String, Object> buildConsumerProps(String cluster, String group) {
+    public Map<String, Object> buildConsumerProps(String cluster) {
         final KafkaMultiClusterConfig clusterConfig = clusters.get(cluster);
         if (clusterConfig == null) {
             throw new IllegalArgumentException("Cluster not found: " + cluster);
@@ -649,9 +620,9 @@ public class KafkaMultiProperty {
         // 基础配置（可被覆盖）
         putIfNotNull(config, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
             c.getBootstrapServers() != null ? c.getBootstrapServers() : clusterConfig.getBootstrapServers());
-        final String groupVal = this.getGroup(cluster, group);
-        putIfNotNull(config, ConsumerConfig.GROUP_ID_CONFIG, groupVal);
-        final String clientId = this.buildClientId(cluster, groupVal, KafkaConstant.CONSUMER_SUFFIX);
+
+        final String clientId = Optional.ofNullable(c.getClientId())
+            .orElse(cluster + KafkaConstant.CONSUMER_SUFFIX);
         putIfNotNull(config, ConsumerConfig.CLIENT_ID_CONFIG, clientId);
 
         // 序列化配置（可被覆盖）
@@ -692,30 +663,6 @@ public class KafkaMultiProperty {
         }
 
         return config;
-    }
-
-    /**
-     * 构建客户端ID
-     *
-     * @param clusterName 集群名称
-     * @param group       消费组名称
-     * @param type        类型
-     * @return
-     */
-    public String buildClientId(String clusterName, String group, String type) {
-        final StringBuilder sb = new StringBuilder(16)
-            .append(SpringUtil.getActiveProfile())
-            .append("-")
-            .append(SpringUtil.getApplicationName())
-            .append("-")
-            .append(clusterName);
-        if (CharSequenceUtil.isNotBlank(group)) {
-            sb.append("-")
-                .append(group);
-        }
-        return sb.append("-")
-            .append(type)
-            .toString();
     }
 
     /**
@@ -787,24 +734,6 @@ public class KafkaMultiProperty {
         final KafkaConsumerConfig config = getConsumerConfig(cluster);
         return config != null && config.getAckMode() != null
             ? config.getAckMode() : AckMode.MANUAL_IMMEDIATE;
-    }
-
-    /**
-     * 获取消费者组
-     *
-     * @param cluster 集群
-     * @param group   组
-     * @return
-     */
-    public String getGroup(String cluster, String group) {
-        if (CharSequenceUtil.isNotBlank(group)) {
-            return group;
-        }
-
-        final KafkaConsumerConfig config = getConsumerConfig(cluster);
-        return config != null && CharSequenceUtil.isNotBlank(config.getGroup())
-            ? config.getGroup()
-            : KafkaConstant.KAFKA_DEFAULT_GROUP;
     }
 
     /**

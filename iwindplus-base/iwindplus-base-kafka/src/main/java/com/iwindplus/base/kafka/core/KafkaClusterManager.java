@@ -11,7 +11,6 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.domain.exception.BizException;
-import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
 import com.iwindplus.base.kafka.domain.enums.KafkaCodeEnum;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumerConfig;
@@ -237,15 +236,6 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
     }
 
     /**
-     * 获取 group.
-     */
-    public String getGroup(
-        String cluster,
-        String group) {
-        return property.getGroup(cluster, group);
-    }
-
-    /**
      * 获取默认集群.
      */
     public String getDefaultCluster() {
@@ -307,9 +297,7 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
         return adminClientMap.computeIfAbsent(
             clusterName,
             key -> {
-
-                Map<String, Object> adminProps =
-                    new HashMap<>(16);
+                Map<String, Object> adminProps = new HashMap<>(16);
 
                 adminProps.put(
                     AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
@@ -346,9 +334,7 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
         templateMap.computeIfAbsent(
             clusterName,
             key -> {
-
-                Map<String, Object> props =
-                    property.buildProducerProps(clusterName);
+                Map<String, Object> props =property.buildProducerProps(clusterName);
 
                 DefaultKafkaProducerFactory<String, Object> factory =
                     new DefaultKafkaProducerFactory<>(props);
@@ -391,8 +377,7 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
         factoryMap.computeIfAbsent(
             clusterName,
             key -> {
-                Map<String, Object> props =
-                    property.buildConsumerProps(clusterName, consumer.getGroup());
+                Map<String, Object> props = property.buildConsumerProps(clusterName);
 
                 DefaultKafkaConsumerFactory<String, Object>
                     consumerFactory =
@@ -427,13 +412,6 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
         KafkaConsumerConfig consumer,
         ContainerProperties containerProps) {
 
-        containerProps.setClientId(
-            property.buildClientId(
-                clusterName,
-                getGroup(clusterName, consumer.getGroup()),
-                KafkaConstant.CONSUMER_SUFFIX
-            )
-        );
         containerProps.setPollTimeout(consumer.getPollTimeoutMs());
         containerProps.setObservationEnabled(consumer.getEnabledObservation());
         containerProps.setObservationConvention(new CustomKafkaListenerObservationConvention());

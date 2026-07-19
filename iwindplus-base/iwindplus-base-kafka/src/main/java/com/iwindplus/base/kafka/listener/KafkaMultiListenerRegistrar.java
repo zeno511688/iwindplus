@@ -32,10 +32,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.SmartLifecycle;
@@ -224,12 +224,8 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         KafkaMultiProperty property,
         ContainerProperties p) {
         p.setGroupId(meta.getGroup());
-        String clientId =
-            property.buildClientId(
-                meta.getCluster(),
-                meta.getGroup(),
-                KafkaConstant.CONSUMER_SUFFIX
-            );
+        final String clientId = Optional.ofNullable(p.getClientId())
+            .orElse(meta.getCluster() + KafkaConstant.CONSUMER_SUFFIX);
         p.setClientId(clientId);
 
         boolean batch = property.getEnabledBatchListener(meta.getCluster());
@@ -449,14 +445,12 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             ? clusterManager.getDefaultCluster()
             : meta.getCluster();
 
-        String group = clusterManager.getGroup(cluster, meta.getGroup());
-
         return KafkaMultiListenerMetaDTO.builder()
             .bean(meta.getBean())
             .method(meta.getMethod())
             .cluster(cluster)
             .topics(meta.getTopics())
-            .group(group)
+            .group(meta.getGroup())
             .build();
     }
 
