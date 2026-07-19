@@ -50,13 +50,13 @@ public class HttpClientProperty {
      * 是否启用每次请求观察（客户端自带的）.
      */
     @Builder.Default
-    private Boolean enabledObservation = Boolean.FALSE;
+    private Boolean enabledObservation = Boolean.TRUE;
 
     /**
      * 是否启用每次请求观察（自定义）.
      */
     @Builder.Default
-    private Boolean enabledObservationCustom = Boolean.TRUE;
+    private Boolean enabledObservationCustom = Boolean.FALSE;
 
     /**
      * 默认客户端
