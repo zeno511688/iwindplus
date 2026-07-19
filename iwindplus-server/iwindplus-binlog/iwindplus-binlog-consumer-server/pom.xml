@@ -97,6 +97,10 @@
             <groupId>com.iwindplus.log</groupId>
             <artifactId>iwindplus-log-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-disruptor</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
