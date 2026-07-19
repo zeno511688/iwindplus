@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -555,9 +554,7 @@ public class KafkaMultiProperty {
         putIfNotNull(config, ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
             p.getBootstrapServers() != null ? p.getBootstrapServers() : clusterConfig.getBootstrapServers());
 
-        final String clientId = Optional.ofNullable(p.getClientId())
-            .orElse(cluster + KafkaConstant.PRODUCER_SUFFIX);
-        putIfNotNull(config, ProducerConfig.CLIENT_ID_CONFIG, clientId);
+        putIfNotNull(config, ProducerConfig.CLIENT_ID_CONFIG, getProducerClientId(cluster));
 
         // 序列化配置（可被覆盖）
         putIfNotNull(config, ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, p.getKeySerializer());
@@ -621,9 +618,7 @@ public class KafkaMultiProperty {
         putIfNotNull(config, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
             c.getBootstrapServers() != null ? c.getBootstrapServers() : clusterConfig.getBootstrapServers());
 
-        final String clientId = Optional.ofNullable(c.getClientId())
-            .orElse(cluster + KafkaConstant.CONSUMER_SUFFIX);
-        putIfNotNull(config, ConsumerConfig.CLIENT_ID_CONFIG, clientId);
+        putIfNotNull(config, ConsumerConfig.CLIENT_ID_CONFIG, getConsumerClientId(cluster));
 
         // 序列化配置（可被覆盖）
         putIfNotNull(config, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, c.getKeyDeserializer());
@@ -758,6 +753,32 @@ public class KafkaMultiProperty {
         final KafkaConsumerConfig config = getConsumerConfig(cluster);
         return config != null && config.getEnabledAutoCommit() != null
             && Boolean.TRUE.equals(config.getEnabledAutoCommit());
+    }
+
+    /**
+     * 获取生产者clientId
+     *
+     * @param cluster 集群
+     * @return
+     */
+    public String getProducerClientId(String cluster) {
+        final KafkaProducerConfig config = getProducerConfig(cluster);
+
+        return CharSequenceUtil.isBlank(config.getClientId())
+            ? cluster + KafkaConstant.PRODUCER_SUFFIX : config.getClientId();
+    }
+
+    /**
+     * 获取消费者clientId
+     *
+     * @param cluster 集群
+     * @return
+     */
+    public String getConsumerClientId(String cluster) {
+        final KafkaConsumerConfig config = getConsumerConfig(cluster);
+
+        return CharSequenceUtil.isBlank(config.getClientId())
+            ? cluster + KafkaConstant.CONSUMER_SUFFIX : config.getClientId();
     }
 
     /**

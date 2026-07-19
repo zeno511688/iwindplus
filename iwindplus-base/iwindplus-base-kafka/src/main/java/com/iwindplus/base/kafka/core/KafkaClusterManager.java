@@ -200,6 +200,16 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
     }
 
     /**
+     * 获取消费者clientId
+     *
+     * @param cluster 集群
+     * @return
+     */
+    public String getConsumerClientId(String cluster) {
+        return property.getConsumerClientId(cluster);
+    }
+
+    /**
      * 获取同步 KafkaTemplate.
      */
     public KafkaTemplate<String, Object> getTemplate(String cluster) {
@@ -412,6 +422,7 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
         KafkaConsumerConfig consumer,
         ContainerProperties containerProps) {
 
+        containerProps.setClientId(this.getConsumerClientId(clusterName));
         containerProps.setPollTimeout(consumer.getPollTimeoutMs());
         containerProps.setObservationEnabled(consumer.getEnabledObservation());
         containerProps.setObservationConvention(new CustomKafkaListenerObservationConvention());

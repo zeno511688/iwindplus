@@ -184,13 +184,17 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         }
         String clusterId = clusterManager.getClusterId(meta.getCluster());
 
+
         KafkaMultiProperty property = clusterManager.getProperty();
 
         AbstractMessageListenerContainer<String, Object> container =
             factory.createContainer(meta.getTopics());
         container.setBeanName(listenerId);
         ContainerProperties p = container.getContainerProperties();
-        registerListener(clusterId, listenerId, meta, property, p);
+        final String clientId = CharSequenceUtil.isBlank(p.getClientId())
+            ? p.getClientId(): clusterManager.getConsumerClientId(meta.getCluster());
+
+        registerListener(clusterId, listenerId, clientId, meta, property, p);
 
         try {
             container.start();
@@ -220,13 +224,11 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
     private void registerListener(
         String clusterId,
         String listenerId,
+        String clientId,
         KafkaMultiListenerMetaDTO meta,
         KafkaMultiProperty property,
         ContainerProperties p) {
         p.setGroupId(meta.getGroup());
-        final String clientId = Optional.ofNullable(p.getClientId())
-            .orElse(meta.getCluster() + KafkaConstant.CONSUMER_SUFFIX);
-        p.setClientId(clientId);
 
         boolean batch = property.getEnabledBatchListener(meta.getCluster());
         final AckMode ackMode = p.getAckMode();
