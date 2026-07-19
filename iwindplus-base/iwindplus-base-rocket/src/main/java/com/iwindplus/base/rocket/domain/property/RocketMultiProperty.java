@@ -207,6 +207,12 @@ public class RocketMultiProperty {
         private Integer maxReconsumeTimes = 16;
 
         /**
+         * 拉取消息超时（毫秒）
+         */
+        @Builder.Default
+        private Long suspendCurrentQueueTimeMillis = 1000L;
+
+        /**
          * 拉取批量大小
          */
         @Builder.Default

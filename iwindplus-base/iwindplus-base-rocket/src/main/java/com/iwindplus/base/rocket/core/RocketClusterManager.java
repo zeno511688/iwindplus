@@ -255,7 +255,16 @@ public class RocketClusterManager implements SmartLifecycle, DisposableBean {
             consumer.setConsumeThreadMin(consumerConfig.getConsumeThreadMin());
             consumer.setConsumeThreadMax(consumerConfig.getConsumeThreadMax());
             consumer.setConsumeMessageBatchMaxSize(consumerConfig.getConsumeMessageBatchMaxSize());
-            consumer.setMaxReconsumeTimes(consumerConfig.getMaxReconsumeTimes());
+            consumer.setMaxReconsumeTimes(
+                Optional.ofNullable(
+                    consumerConfig.getMaxReconsumeTimes()
+                ).orElse(16)
+            );
+            consumer.setSuspendCurrentQueueTimeMillis(
+                Optional.ofNullable(
+                    consumerConfig.getSuspendCurrentQueueTimeMillis()
+                ).orElse(1000L)
+            );
             consumer.setPullBatchSize(consumerConfig.getPullBatchSize());
             consumer.setPullInterval(consumerConfig.getPullInterval());
 
