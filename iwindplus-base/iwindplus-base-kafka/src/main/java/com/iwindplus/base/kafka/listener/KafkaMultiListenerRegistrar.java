@@ -182,11 +182,9 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         if (factory == null) {
             throw new IllegalStateException("Kafka listener factory not found, cluster=" + meta.getCluster());
         }
+
         String clusterId = clusterManager.getClusterId(meta.getCluster());
-
-
         KafkaMultiProperty property = clusterManager.getProperty();
-
         AbstractMessageListenerContainer<String, Object> container =
             factory.createContainer(meta.getTopics());
         container.setBeanName(listenerId);
