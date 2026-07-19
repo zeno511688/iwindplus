@@ -22,6 +22,11 @@ public final class RabbitConstant {
     }
 
     /**
+     * rabbit.
+     */
+    public static final String RABBIT = "rabbit";
+
+    /**
      * 生产者.
      */
     public static final String RABBIT_PRODUCER = "rabbitmq.producer";

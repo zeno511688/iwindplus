@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.rocket.listener;
 
+import cn.hutool.core.collection.CollUtil;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -22,12 +23,10 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
@@ -59,12 +58,10 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
     private final Cache<Class<?>, ObjectReader> readerCache =
         Caffeine.newBuilder().maximumSize(1024).build();
 
-    private final Map<RocketConsumerKeyDTO,
-        Map<RocketTopicTagKeyDTO, List<RocketMessageHandler>>> index =
+    private final Map<RocketConsumerKeyDTO, Map<RocketTopicTagKeyDTO, List<RocketMessageHandler>>> index =
         new ConcurrentHashMap<>(16);
 
-    private final Set<RocketConsumerKeyDTO> started = ConcurrentHashMap.newKeySet();
-    private final Set<RocketConsumerKeyDTO> orderly = ConcurrentHashMap.newKeySet();
+    private final Map<RocketConsumerKeyDTO, DefaultMQPushConsumer> consumersMap = new ConcurrentHashMap<>(16);
 
     private volatile boolean running;
 
@@ -84,6 +81,24 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
     @Override
     public void stop() {
         running = false;
+
+        consumersMap.forEach((key, consumer) -> {
+            try {
+                consumer.shutdown();
+                log.info(
+                    "Rocket consumer shutdown {}",
+                    key
+                );
+            } catch (Exception e) {
+                log.error(
+                    "Rocket consumer shutdown failed {}",
+                    key,
+                    e
+                );
+            }
+        });
+
+        consumersMap.clear();
     }
 
     @Override
@@ -98,12 +113,12 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
 
     @Override
     public void destroy() throws Exception {
+        stop();
+
         invokerCache.clear();
         argCache.clear();
         readerCache.invalidateAll();
         index.clear();
-        started.clear();
-        orderly.clear();
     }
 
     private void preWarm(List<RocketMultiListenerMetaDTO> metas) {
@@ -144,7 +159,6 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
     }
 
     private RocketMultiListenerMetaDTO resolve(RocketMultiListenerMetaDTO m) {
-
         String cluster = m.getCluster() != null
             ? m.getCluster()
             : clusterManager.getDefaultCluster();
@@ -160,37 +174,62 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
             .build();
     }
 
-    private void register(RocketMultiListenerMetaDTO m) {
-        var key = new RocketConsumerKeyDTO(m.getCluster(), m.getGroup());
-        var tt = new RocketTopicTagKeyDTO(m.getTopic(), m.getTag());
+    private void register(RocketMultiListenerMetaDTO meta) {
+        var key = new RocketConsumerKeyDTO(meta.getCluster(), meta.getGroup());
+        var tt = new RocketTopicTagKeyDTO(meta.getTopic(), meta.getTag());
 
-        index.computeIfAbsent(key, k -> new HashMap<>(16))
-            .computeIfAbsent(tt, k -> new ArrayList<>(10))
-            .add(buildHandler(m));
-
-        var c = clusterManager.getConsumer(m.getCluster(), m.getGroup());
-
-        try {
-            c.subscribe(m.getTopic(), m.getTag());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        if (m.getOrderly()) {
-            orderly.add(key);
-        }
-
-        startConsumer(m, key, c);
-    }
-
-    private void startConsumer(
-        RocketMultiListenerMetaDTO meta,
-        RocketConsumerKeyDTO key,
-        DefaultMQPushConsumer consumer) {
-        if (!started.add(key)) {
+        if (consumersMap.containsKey(key)) {
+            log.warn("Rocket consumer already started, key={}", key);
             return;
         }
 
+        index.computeIfAbsent(
+                key,
+                k -> new ConcurrentHashMap<>()
+            )
+            .computeIfAbsent(
+                tt,
+                k -> new CopyOnWriteArrayList<>()
+            )
+            .add(buildHandler(meta));
+
+        var consumer = clusterManager.getConsumer(meta.getCluster(), meta.getGroup());
+        if (consumer == null) {
+            throw new IllegalStateException("Rocket consumer not found, cluster=" + meta.getCluster());
+        }
+
+        try {
+            consumer.subscribe(meta.getTopic(), meta.getTag());
+            registerListener(meta, key, consumer);
+
+            consumersMap.put(key, consumer);
+
+            consumer.start();
+
+            log.info(
+                "Rocket consumer started, cluster={}, group={}, orderly={}",
+                meta.getCluster(),
+                meta.getGroup(),
+                meta.getOrderly()
+            );
+        } catch (Exception e) {
+            log.error(
+                "Rocket consumer start failed, cluster={}, group={}, orderly={}",
+                meta.getCluster(),
+                meta.getGroup(),
+                meta.getOrderly(),
+                e
+            );
+
+            consumersMap.remove(key);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void registerListener(
+        RocketMultiListenerMetaDTO meta,
+        RocketConsumerKeyDTO key,
+        DefaultMQPushConsumer consumer) {
         if (meta.getOrderly()) {
             consumer.registerMessageListener(
                 (MessageListenerOrderly)
@@ -204,19 +243,6 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
                     (msgs, ctx) ->
                         dispatchConcurrently(key, msgs)
             );
-        }
-
-        try {
-            consumer.start();
-
-            log.info(
-                "Rocket consumer started, cluster={}, group={}, orderly={}",
-                meta.getCluster(),
-                meta.getGroup(),
-                meta.getOrderly()
-            );
-        } catch (Exception e) {
-            throw new RuntimeException("Rocket consumer start failed", e);
         }
     }
 
@@ -246,13 +272,16 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
     }
 
     private void doDispatch(RocketConsumerKeyDTO k, List<MessageExt> msgs) {
-
         var map = index.get(k);
         if (map == null) {
             return;
         }
 
+        if (CollUtil.isEmpty(msgs)) {
+            return;
+        }
         var first = msgs.get(0);
+
         var key = new RocketTopicTagKeyDTO(first.getTopic(), first.getTags());
 
         var handlers = map.get(key);
@@ -266,7 +295,6 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
     }
 
     private Object invoke(RocketMultiListenerMetaDTO m, List<MessageExt> msgs) {
-
         Method method = m.getMethod();
         var meta = argCache.computeIfAbsent(method, this::buildArgMetadata);
 
@@ -279,6 +307,14 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
             return invokerCache.computeIfAbsent(method, x -> createInvoker(method, m.getBean()))
                 .invoke(args);
         } catch (Throwable e) {
+            log.error(
+                "Rocket listener invoke failed, cluster={}, group={}, topic={}, method={}",
+                m.getCluster(),
+                m.getGroup(),
+                m.getTopic(),
+                method,
+                e
+            );
             throw new RuntimeException(e);
         }
     }
@@ -307,13 +343,11 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
     }
 
     private ArgMetadata buildArgMeta(Class<?> t, Type g) {
-
         if (t == MessageExt.class) {
             return new ArgMetadata(ArgType.MSG, null);
         }
 
         if (List.class.isAssignableFrom(t)) {
-
             Class<?> c = extract(g);
 
             return c == MessageExt.class
@@ -361,6 +395,13 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
     @FunctionalInterface
     interface BeanInvoker {
 
+        /**
+         * Invoke the method with the given arguments.
+         *
+         * @param args the arguments to invoke the method with
+         * @return the invocation result
+         * @throws Throwable in case of invocation failure
+         */
         Object invoke(Object[] args) throws Throwable;
     }
 }

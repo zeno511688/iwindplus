@@ -14,6 +14,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.rabbit.core.RabbitClusterManager;
+import com.iwindplus.base.rabbit.domain.constant.RabbitConstant;
 import com.iwindplus.base.rabbit.domain.dto.RabbitConsumerKeyDTO;
 import com.iwindplus.base.rabbit.domain.dto.RabbitMultiListenerMetaDTO;
 import com.iwindplus.base.rabbit.support.RabbitMessageHandler;
@@ -59,7 +60,6 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
     private final Map<Method, BeanInvoker> invokerCache = new ConcurrentHashMap<>(16);
     private final Map<Method, ArgMetadata[]> argCache = new ConcurrentHashMap<>(16);
     private final Cache<Class<?>, ObjectReader> readerCache = Caffeine.newBuilder().maximumSize(1024).build();
-    private final Map<String, Boolean> batchCache = new ConcurrentHashMap<>(16);
     private final Map<String, SimpleMessageListenerContainer> containerMap = new ConcurrentHashMap<>(16);
 
     private volatile boolean running;
@@ -84,11 +84,20 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
         containerMap.forEach((id, container) -> {
             try {
                 container.stop();
-                log.info("Rabbit listener stopped: {}", id);
+                log.info(
+                    "Rabbit listener stopped:{}",
+                    id
+                );
             } catch (Exception e) {
-                log.error("Stop rabbit listener failed: {}", id, e);
+                log.error(
+                    "Stop rabbit listener failed:{}",
+                    id,
+                    e
+                );
             }
         });
+
+        containerMap.clear();
     }
 
     @Override
@@ -108,8 +117,6 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
         invokerCache.clear();
         argCache.clear();
         readerCache.invalidateAll();
-        batchCache.clear();
-        containerMap.clear();
     }
 
     private void preWarm(List<RabbitMultiListenerMetaDTO> metas) {
@@ -150,13 +157,16 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
     }
 
     private void register(RabbitMultiListenerMetaDTO meta) {
-        String cluster = meta.getCluster();
-        SimpleRabbitListenerContainerFactory factory = clusterManager.getFactory(cluster);
-        if (factory == null) {
-            throw new IllegalStateException("Rabbit listener factory not found, cluster=" + cluster);
+        String id = buildId(meta);
+        if (containerMap.containsKey(id)) {
+            log.warn("Rabbit listener already started, id={}", id);
+            return;
         }
 
-        String id = buildId(meta);
+        SimpleRabbitListenerContainerFactory factory = clusterManager.getFactory(meta.getCluster());
+        if (factory == null) {
+            throw new IllegalStateException("Rabbit listener factory not found, cluster=" + meta.getCluster());
+        }
 
         SimpleMessageListenerContainer container = factory.createListenerContainer();
         container.setListenerId(id);
@@ -168,14 +178,23 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
 
             containerMap.put(id, container);
 
-            log.info("Rabbit consumer started, cluster={}, group={}, queues={}, id={}",
+            log.info("Rabbit listener started, cluster={}, group={}, queues={}, id={}",
                 meta.getCluster(),
                 meta.getGroup(),
                 meta.getQueues(),
                 id
             );
         } catch (Exception e) {
-            throw new RuntimeException("Rabbit consumer start failed", e);
+            log.error(
+                "Rabbit listener start failed, cluster={}, group={}, queues={}",
+                meta.getCluster(),
+                meta.getGroup(),
+                meta.getQueues(),
+                e
+            );
+
+            containerMap.remove(id);
+            throw new RuntimeException("Rabbit listener start failed", e);
         }
     }
 
@@ -199,7 +218,7 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
     }
 
     private MessageListener createListener(RabbitMultiListenerMetaDTO meta) {
-        boolean batch = isBatch(meta.getCluster());
+        boolean batch = clusterManager.getEnabledBatchListener(meta.getCluster());
         return batch ? (ChannelAwareBatchMessageListener) (messages, channel) -> dispatch(meta, messages, channel)
             : (ChannelAwareMessageListener) (message, channel) -> dispatch(meta, List.of(message), channel);
     }
@@ -219,6 +238,14 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
         try {
             invokerCache.computeIfAbsent(method, m -> createInvoker(method, meta.getBean())).invoke(args);
         } catch (Throwable e) {
+            log.error(
+                "Rabbit listener invoke failed, cluster={}, group={}, queues={}, method={}",
+                meta.getCluster(),
+                meta.getGroup(),
+                meta.getQueues(),
+                method,
+                e
+            );
             throw new RuntimeException(e);
         }
     }
@@ -317,14 +344,10 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
             + SymbolConstant.WELL_NO
             + String.join(SymbolConstant.COMMA, meta.getQueues());
 
-        return "rabbit"
+        return RabbitConstant.RABBIT
             + SymbolConstant.HORIZONTAL_LINE + meta.getCluster()
             + SymbolConstant.HORIZONTAL_LINE + meta.getGroup()
             + SymbolConstant.HORIZONTAL_LINE + SecureUtil.md5(str);
-    }
-
-    private boolean isBatch(String cluster) {
-        return batchCache.computeIfAbsent(cluster, clusterManager::getEnabledBatchListener);
     }
 
     enum ArgType {MSG, MSG_LIST, DTO, DTO_LIST, CHANNEL}
@@ -336,6 +359,13 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
     @FunctionalInterface
     interface BeanInvoker {
 
+        /**
+         * Invoke the method with the given arguments.
+         *
+         * @param args the arguments to invoke the method with
+         * @return the result of the method invocation
+         * @throws Throwable if the method invocation failed
+         */
         Object invoke(Object[] args) throws Throwable;
     }
 }
