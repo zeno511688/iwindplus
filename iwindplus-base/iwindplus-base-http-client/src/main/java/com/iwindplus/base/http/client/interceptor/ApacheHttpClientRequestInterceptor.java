@@ -13,10 +13,8 @@ import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.base.domain.context.TccContextHolder;
 import com.iwindplus.base.http.client.domain.property.HttpClientProperty;
 import com.iwindplus.base.http.client.support.ApiProtectionProvider;
-import com.iwindplus.base.monitor.support.TraceContextPropagator;
 import com.iwindplus.base.util.ApiSignUtil;
 import com.iwindplus.base.util.domain.dto.ApiSignGenerateDTO;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.EntityDetails;
@@ -34,22 +32,12 @@ import org.apache.hc.core5.http.protocol.HttpContext;
 @Slf4j
 public record ApacheHttpClientRequestInterceptor(
     HttpClientProperty property,
-    TraceContextPropagator traceContextPropagator,
-    CircuitBreakerRegistry circuitBreakerRegistry,
     ApiProtectionProvider apiProtectionProvider) implements HttpRequestInterceptor {
 
     @Override
     public void process(HttpRequest httpRequest, EntityDetails entityDetails, HttpContext httpContext) throws HttpException, IOException {
-        injectTrace(httpRequest);
         injectTcc(httpRequest);
         injectApiSign(httpRequest);
-    }
-
-    private void injectTrace(HttpRequest httpRequest) {
-        traceContextPropagator.inject(
-            httpRequest,
-            (carrier, key, value) -> carrier.setHeader(key, value)
-        );
     }
 
     private void injectTcc(HttpRequest httpRequest) {

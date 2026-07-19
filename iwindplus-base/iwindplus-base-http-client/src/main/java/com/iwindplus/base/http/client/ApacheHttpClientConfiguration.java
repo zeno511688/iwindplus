@@ -16,8 +16,6 @@ import com.iwindplus.base.http.client.domain.property.HttpClientProperty.ApacheH
 import com.iwindplus.base.http.client.domain.property.HttpClientProperty.ApacheHttpClientConfig.Retry;
 import com.iwindplus.base.http.client.interceptor.ApacheHttpClientRequestInterceptor;
 import com.iwindplus.base.http.client.support.ApiProtectionProvider;
-import com.iwindplus.base.monitor.support.TraceContextPropagator;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.micrometer.core.instrument.binder.httpcomponents.hc5.ObservationExecChainHandler;
 import io.micrometer.observation.ObservationRegistry;
 import jakarta.annotation.Resource;
@@ -64,13 +62,7 @@ public class ApacheHttpClientConfiguration {
     private HttpClientProperty property;
 
     @Resource
-    private TraceContextPropagator traceContextPropagator;
-
-    @Resource
     private ApiProtectionProvider apiProtectionProvider;
-
-    @Resource
-    private CircuitBreakerRegistry circuitBreakerRegistry;
 
     /**
      * 创建 PoolingHttpClientConnectionManager
@@ -281,7 +273,6 @@ public class ApacheHttpClientConfiguration {
      */
     @Bean
     public ApacheHttpClientRequestInterceptor apacheHttpClientRequestInterceptor() {
-        return new ApacheHttpClientRequestInterceptor(property, traceContextPropagator
-            , circuitBreakerRegistry, apiProtectionProvider);
+        return new ApacheHttpClientRequestInterceptor(property, apiProtectionProvider);
     }
 }

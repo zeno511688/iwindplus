@@ -33,8 +33,6 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 public record OkHttpClientInterceptor(
     HttpClientProperty property,
-    TraceContextPropagator traceContextPropagator,
-    CircuitBreakerRegistry circuitBreakerRegistry,
     ApiProtectionProvider apiProtectionProvider) implements Interceptor {
 
     @Override
@@ -45,17 +43,9 @@ public record OkHttpClientInterceptor(
 
     private Request enhanceRequest(Request request) {
         Request.Builder builder = request.newBuilder();
-        injectTrace(builder);
         injectTcc(builder);
         Request enhanced = builder.build();
         return injectApiSign(enhanced);
-    }
-
-    private void injectTrace(Request.Builder builder) {
-        traceContextPropagator.inject(
-            builder,
-            (carrier, key, value) -> carrier.header(key, value)
-        );
     }
 
     private void injectTcc(Request.Builder builder) {

@@ -248,6 +248,8 @@ public class OssMinioServiceImpl extends AbstractOssBaseServiceImpl implements O
             result.addAll(batchResult);
         }
 
+        log.info("getFilePathList result: {}", result);
+
         return result;
     }
 
@@ -359,8 +361,9 @@ public class OssMinioServiceImpl extends AbstractOssBaseServiceImpl implements O
         final Builder builder = MinioClient.builder()
             .endpoint(minio.getEndpoint())
             .credentials(minio.getAccessKey(), minio.getSecretKey())
-            .region(minio.getRegion());
-        okHttpClientProvider.ifAvailable(builder::httpClient);
+            .region(minio.getRegion())
+            .httpClient(okHttpClientProvider.getIfAvailable());
+       // okHttpClientProvider.ifAvailable(builder::httpClient);
         return builder.build();
     }
 

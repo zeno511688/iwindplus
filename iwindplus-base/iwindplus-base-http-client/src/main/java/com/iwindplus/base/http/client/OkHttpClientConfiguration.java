@@ -14,8 +14,6 @@ import com.iwindplus.base.http.client.domain.property.HttpClientProperty.OkHttpC
 import com.iwindplus.base.http.client.domain.property.HttpClientProperty.OkHttpClientConfig.Pool;
 import com.iwindplus.base.http.client.interceptor.OkHttpClientInterceptor;
 import com.iwindplus.base.http.client.support.ApiProtectionProvider;
-import com.iwindplus.base.monitor.support.TraceContextPropagator;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.micrometer.core.instrument.binder.okhttp3.OkHttpObservationInterceptor;
 import io.micrometer.observation.ObservationRegistry;
 import jakarta.annotation.Resource;
@@ -50,13 +48,7 @@ public class OkHttpClientConfiguration {
     private HttpClientProperty property;
 
     @Resource
-    private TraceContextPropagator traceContextPropagator;
-
-    @Resource
     private ApiProtectionProvider apiProtectionProvider;
-
-    @Resource
-    private CircuitBreakerRegistry circuitBreakerRegistry;
 
     @Resource
     private ObservationRegistry observationRegistry;
@@ -148,8 +140,8 @@ public class OkHttpClientConfiguration {
      */
     @Bean
     public OkHttpClientInterceptor okHttpClientInterceptor() {
-        return new OkHttpClientInterceptor(property, traceContextPropagator,
-            circuitBreakerRegistry, apiProtectionProvider);
+        return new OkHttpClientInterceptor(property,
+            apiProtectionProvider);
     }
 
     /**
