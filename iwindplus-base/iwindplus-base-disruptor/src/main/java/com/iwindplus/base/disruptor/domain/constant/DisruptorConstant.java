@@ -37,6 +37,11 @@ public final class DisruptorConstant {
     public static final String SEQUENCE = "sequence";
 
     /**
+     * 是否是批量结束.
+     */
+    public static final String END_OF_BATCH = "endOfBatch";
+
+    /**
      * 数据来源.
      */
     public static final String SOURCE = "source";

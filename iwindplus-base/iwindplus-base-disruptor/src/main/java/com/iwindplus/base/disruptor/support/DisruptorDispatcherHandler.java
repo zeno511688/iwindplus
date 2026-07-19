@@ -44,6 +44,7 @@ public record DisruptorDispatcherHandler<T>(
             new DisruptorObservationContext(
                 event.getName(),
                 String.valueOf(sequence),
+                String.valueOf(endOfBatch),
                 event.getSource(),
                 event.getDestination());
 

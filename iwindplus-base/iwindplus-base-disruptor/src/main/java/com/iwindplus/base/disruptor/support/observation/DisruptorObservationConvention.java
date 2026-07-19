@@ -43,37 +43,31 @@ public class DisruptorObservationConvention implements ObservationConvention<Dis
     @Override
     public KeyValues getLowCardinalityKeyValues(DisruptorObservationContext context) {
         List<KeyValue> list = new ArrayList<>(10);
-        list.add(KeyValue.of(
-            DisruptorConstant.HANDLER,
-            context.getHandler()
-        ));
+        add(list, DisruptorConstant.HANDLER, context.getHandler());
+        add(list, DisruptorConstant.SEQUENCE, context.getSequence());
+        add(list, DisruptorConstant.END_OF_BATCH, context.getEndOfBatch());
+        add(list, DisruptorConstant.SOURCE, context.getSource());
+        add(list, DisruptorConstant.DESTINATION, context.getDestination());
 
-        if (CharSequenceUtil.isNotBlank(context.getSource())) {
-            list.add(KeyValue.of(
-                DisruptorConstant.SOURCE,
-                context.getSource()
-            ));
-        }
-
-        if (CharSequenceUtil.isNotBlank(context.getDestination())) {
-            list.add(KeyValue.of(
-                DisruptorConstant.DESTINATION,
-                context.getDestination()
-            ));
-        }
-
+        String error = context.getError() == null
+            ? ObservationConstant.NONE
+            : context.getError().getClass().getSimpleName();
+        add(list, ObservationConstant.EXCEPTION, error);
         return KeyValues.of(list);
     }
 
     @Override
     public KeyValues getHighCardinalityKeyValues(DisruptorObservationContext context) {
-        String error = context.getError() == null
-            ? ObservationConstant.NONE
-            : context.getError().getClass().getSimpleName();
+        return KeyValues.empty();
+    }
 
-        return KeyValues.of(
-            ObservationConstant.EXCEPTION, error,
-            DisruptorConstant.SEQUENCE, context.getSequence()
-        );
+    private void add(
+        List<KeyValue> list,
+        String key,
+        String value) {
+
+        if (CharSequenceUtil.isNotBlank(value)) {
+            list.add(KeyValue.of(key, value));
+        }
     }
 }
