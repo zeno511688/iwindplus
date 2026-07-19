@@ -260,7 +260,7 @@ dynamictp:
       maximumPoolSize: 32
       queueCapacity: 100
       threadNamePrefix: binlogTask
-      runTimeout: 5000
+      runTimeout: 0
       platformIds: [ 1 ]
       preStartAllCoreThreads: true
     - threadPoolName: binlogTaskScheduler

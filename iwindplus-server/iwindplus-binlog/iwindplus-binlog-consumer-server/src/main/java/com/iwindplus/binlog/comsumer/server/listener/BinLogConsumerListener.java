@@ -9,7 +9,6 @@ package com.iwindplus.binlog.comsumer.server.listener;
 
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.StrUtil;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.iwindplus.base.disruptor.core.DisruptorManager;
 import com.iwindplus.base.kafka.domain.annotation.KafkaMultiListener;
 import com.iwindplus.base.util.JacksonUtil;
@@ -75,7 +74,7 @@ public class BinLogConsumerListener {
             }
 
             final BinlogRowDataDTO data = parseData(record.value());
-            entities.add(parseData(data));
+            entities.add(data);
         }
         return entities;
     }
@@ -85,8 +84,7 @@ public class BinLogConsumerListener {
             return null;
         }
 
-        final BinlogRowDataDTO data = JacksonUtil.parseObject(value.toString(), new TypeReference<>() {
-        });
+        final BinlogRowDataDTO data = JacksonUtil.parseObject(value.toString(), BinlogRowDataDTO.class);
 
         if (Objects.isNull(data)) {
             return null;
