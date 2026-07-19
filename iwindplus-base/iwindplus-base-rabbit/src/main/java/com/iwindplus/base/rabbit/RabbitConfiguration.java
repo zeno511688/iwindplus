@@ -16,7 +16,9 @@ import com.iwindplus.base.rabbit.listener.RabbitMultiListenerBeanPostProcessor;
 import com.iwindplus.base.rabbit.listener.RabbitMultiListenerRegistrar;
 import com.iwindplus.base.rabbit.support.RabbitReceiverDispatcher;
 import com.iwindplus.base.rabbit.support.RabbitSenderDispatcher;
+import io.micrometer.observation.ObservationRegistry;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -37,14 +39,16 @@ public class RabbitConfiguration {
     /**
      * 创建 RabbitClusterManager.
      *
-     * @param property property
+     * @param property                    property
+     * @param observationRegistryProvider observationRegistryProvider
      * @return RabbitClusterManager
      */
     @Bean
     public RabbitClusterManager rabbitClusterManager(
-        RabbitMultiProperty property) {
+        RabbitMultiProperty property,
+        ObjectProvider<ObservationRegistry> observationRegistryProvider) {
         RabbitClusterManager manager = new RabbitClusterManager(
-            property);
+            property, observationRegistryProvider.getIfAvailable());
         log.info("RabbitClusterManager={}", manager);
         return manager;
     }

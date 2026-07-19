@@ -16,6 +16,7 @@ import com.iwindplus.base.rabbit.domain.property.RabbitMultiProperty.RabbitConsu
 import com.iwindplus.base.rabbit.domain.property.RabbitMultiProperty.RabbitMultiClusterConfig;
 import com.iwindplus.base.rabbit.domain.property.RabbitMultiProperty.RabbitProducerConfig;
 import com.iwindplus.base.rabbit.support.RabbitDynamicRegistry;
+import io.micrometer.observation.ObservationRegistry;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,6 +53,7 @@ import org.springframework.retry.support.RetryTemplate;
 public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
 
     private final RabbitMultiProperty property;
+    private final ObservationRegistry observationRegistry;
 
     private final Map<String, AmqpAdmin> adminClientMap = new ConcurrentHashMap<>(16);
     private final Map<String, RabbitTemplate> templateMap = new ConcurrentHashMap<>(16);
@@ -137,6 +139,15 @@ public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
      */
     public RabbitMultiProperty getProperty() {
         return property;
+    }
+
+    /**
+     * 获取ObservationRegistry.
+     *
+     * @return ObservationRegistry
+     */
+    public ObservationRegistry getObservationRegistry() {
+        return observationRegistry;
     }
 
     /**
