@@ -562,7 +562,6 @@ public class KafkaMultiProperty {
 
         // 可靠性配置（可被覆盖）
         putIfNotNull(config, ProducerConfig.ACKS_CONFIG, p.getAcks());
-        putIfNotNull(config, ProducerConfig.RETRIES_CONFIG, p.getRetries());
         putIfNotNull(config, ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, p.getEnableIdempotence());
 
         // 批量性能配置（可被覆盖）
@@ -580,6 +579,7 @@ public class KafkaMultiProperty {
         putIfNotNull(config, ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, p.getRequestTimeoutMs());
         putIfNotNull(config, ProducerConfig.METADATA_MAX_AGE_CONFIG, p.getMetadataMaxAgeMs());
         putIfNotNull(config, ProducerConfig.RETRY_BACKOFF_MS_CONFIG, p.getRetryBackoffMs());
+        putIfNotNull(config, ProducerConfig.RETRIES_CONFIG, p.getRetries());
         putIfNotNull(config, ProducerConfig.RECONNECT_BACKOFF_MS_CONFIG, p.getReconnectBackoffMs());
         putIfNotNull(config, ProducerConfig.RECONNECT_BACKOFF_MAX_MS_CONFIG, p.getReconnectBackoffMaxMs());
 
