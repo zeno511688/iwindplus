@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.log.domain.property;
 
+import com.iwindplus.base.alert.domain.enums.AlertChannelTypeEnum;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -83,6 +84,11 @@ public class AlertLogProperty {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class WebhookCfg {
+
+        /**
+         * 告警渠道类型.
+         */
+        private AlertChannelTypeEnum channelType = AlertChannelTypeEnum.FEI_SHU;
 
         /**
          * 路径.

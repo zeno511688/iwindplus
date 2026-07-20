@@ -1,6 +1,13 @@
 # binlog模块
+    优势：
+        支持自定义实现BinLogEvent事件监听
+        支持多数据源
+        支持自定义库表监听
+    依赖：kafka
+
     1、在配置文件（yml,properties）中配置BinlogProperty类中相关属性
     2、监听BinLogEvent事件
+
     示例：
     @Async
     @EventListener(BinLogEvent.class)

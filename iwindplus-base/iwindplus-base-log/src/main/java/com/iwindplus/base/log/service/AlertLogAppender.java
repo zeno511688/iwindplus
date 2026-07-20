@@ -136,7 +136,7 @@ public class AlertLogAppender extends AppenderBase<ILoggingEvent> {
                 .content(content)
                 .build();
             this.alertExecutorStrategyFactory
-                .getDefaultAlertExecutor()
+                .getAlertExecutor(webhook.getChannelType())
                 .sendWebhookMsg(entity);
         } catch (Exception e) {
             addError("Failed to send alert", e);

@@ -1,4 +1,10 @@
 # disruptor模块
+    优势：
+        支持多配置模式
+        支持动态线程池
+        支持链路追踪
+        支持监控打点
+    使用场景：kafka poll消峰/数据过多需并行处理
 # 一、对接流程
       1、在配置文件（yml,properties）中配置DisruptorMultiProperty类中相关属性
       2、配置Dtp相关线程池配置

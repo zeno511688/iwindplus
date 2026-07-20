@@ -1,5 +1,7 @@
 # rabbit模块（根据配置动态创建绑定关系，队列，路由key）
-
+    优势：
+        1、动态创建绑定关系，队列，路由key，无需手动创建
+        2、支持多集群配置
 # 一、对接流程
       1、在配置文件（yml,properties）中配置RabbitMultiProperty类中相关属性
       2、程序中调用RabbitTemplateRouter发送mq消息
