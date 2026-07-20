@@ -88,6 +88,7 @@ public class AlertLogProperty {
         /**
          * 告警渠道类型.
          */
+        @Builder.Default
         private AlertChannelTypeEnum channelType = AlertChannelTypeEnum.FEI_SHU;
 
         /**
