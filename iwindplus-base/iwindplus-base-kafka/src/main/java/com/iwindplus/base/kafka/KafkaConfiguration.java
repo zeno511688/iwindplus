@@ -128,9 +128,9 @@ public class KafkaConfiguration {
     /**
      * 创建 KafkaMultiListenerRegistrar.
      *
-     * @param bpp                bpp
-     * @param manager            集群管理器
-     * @param dispatcher         接收调度器
+     * @param bpp        bpp
+     * @param manager    集群管理器
+     * @param dispatcher 接收调度器
      * @return KafkaMultiListenerRegistrar
      */
     @Bean
