@@ -468,12 +468,6 @@ public class KafkaMultiProperty {
         private Integer metadataMaxAgeMs = 300000;
 
         /**
-         * 是否启用死信队列.
-         */
-        @Builder.Default
-        private Boolean enabledDlq = false;
-
-        /**
          * 自定义扩展配置（覆盖所有以上配置）. 可配置任何Kafka原生参数
          */
         @Builder.Default
@@ -505,16 +499,16 @@ public class KafkaMultiProperty {
     public static class KafkaBindingConfig {
 
         /**
+         * 是否启用死信队列.
+         */
+        @Builder.Default
+        private Boolean enabledDlq = false;
+
+        /**
          * 是否自动创建.
          */
         @Builder.Default
         private Boolean autoCreate = true;
-
-        /**
-         * 是否自动创建死信队列.
-         */
-        @Builder.Default
-        private Boolean autoCreateDlq = true;
 
         /**
          * Topic名称.
@@ -845,28 +839,6 @@ public class KafkaMultiProperty {
     public Boolean getEnabledBatchListener(String cluster) {
         final KafkaConsumerConfig config = getConsumerConfig(cluster);
         return config != null && Boolean.TRUE.equals(config.getEnabledBatchListener());
-    }
-
-    /**
-     * 是否启用监控观察（自带的）
-     *
-     * @param cluster 集群
-     * @return
-     */
-    public Boolean getProducerEnabledObservation(String cluster) {
-        final KafkaProducerConfig config = getProducerConfig(cluster);
-        return config != null && config.getEnabledObservation();
-    }
-
-    /**
-     * 是否启用监控观察（自带的）
-     *
-     * @param cluster 集群
-     * @return
-     */
-    public Boolean getConsumerEnabledObservation(String cluster) {
-        final KafkaConsumerConfig config = getConsumerConfig(cluster);
-        return config != null && config.getEnabledObservation();
     }
 
     /**

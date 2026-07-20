@@ -11,6 +11,7 @@ import com.iwindplus.base.kafka.core.KafkaTemplateRouter;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant.RetryHeadersConstant;
 import com.iwindplus.base.kafka.domain.dto.KafkaErrorMessageDTO;
+import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaBindingConfig;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumerConfig;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumerLocalRetryConfig;
 import java.util.Map;
@@ -41,9 +42,10 @@ public record KafkaErrorHandler(
             ex
         );
 
-        if (Boolean.FALSE.equals(consumer.getEnabledDlq())) {
+        if (!enabledDlqFlag(record)) {
             return;
         }
+
         final KafkaConsumerLocalRetryConfig cfg = consumer.getLocalRetry();
 
         long now = System.currentTimeMillis();
@@ -81,10 +83,22 @@ public record KafkaErrorHandler(
                 message.getOriginalTopic() + KafkaConstant.KAFKA_DLQ_SUFFIX,
                 message.getKey(),
                 headers, record.value().toString());
-        } catch(Exception e){
+        } catch (Exception e) {
             log.error("send dlq failed", e);
 
             throw e;
         }
+    }
+
+    private boolean enabledDlqFlag(ConsumerRecord<?, ?> record) {
+        final String topic = record.topic();
+        KafkaBindingConfig kafkaBinding = consumer.getBindings().stream()
+            .filter(x -> x.getTopic().equals(topic))
+            .findFirst()
+            .orElse(null);
+        if (kafkaBinding != null && Boolean.TRUE.equals(kafkaBinding.getEnabledDlq())) {
+            return true;
+        }
+        return false;
     }
 }
