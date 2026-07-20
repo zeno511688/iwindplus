@@ -12,11 +12,14 @@ import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.kafka.domain.enums.KafkaCodeEnum;
+import com.iwindplus.base.kafka.domain.enums.KafkaConsumerLocalRetryTypeEnum;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumerConfig;
+import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumerLocalRetryConfig;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaMultiClusterConfig;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaProducerConfig;
 import com.iwindplus.base.kafka.support.KafkaDynamicRegistry;
+import com.iwindplus.base.kafka.support.KafkaErrorHandler;
 import com.iwindplus.base.kafka.support.observation.CustomKafkaListenerObservationConvention;
 import com.iwindplus.base.kafka.support.observation.CustomKafkaTemplateObservationConvention;
 import io.micrometer.observation.ObservationRegistry;
@@ -44,7 +47,11 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.ContainerProperties.AckMode;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
+import org.springframework.util.backoff.BackOff;
+import org.springframework.util.backoff.ExponentialBackOff;
+import org.springframework.util.backoff.FixedBackOff;
 
 /**
  * Kafka 集群管理器（工业级增强版）.
@@ -178,6 +185,7 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
 
     /**
      * 获取集群ID.
+     *
      * @param cluster 集群名称
      * @return String
      */
@@ -344,7 +352,7 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
         templateMap.computeIfAbsent(
             clusterName,
             key -> {
-                Map<String, Object> props =property.buildProducerProps(clusterName);
+                Map<String, Object> props = property.buildProducerProps(clusterName);
 
                 DefaultKafkaProducerFactory<String, Object> factory =
                     new DefaultKafkaProducerFactory<>(props);
@@ -399,6 +407,9 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
                 factory.setConsumerFactory(consumerFactory);
                 factory.setConcurrency(consumer.getConcurrency());
                 factory.setBatchListener(consumer.getEnabledBatchListener());
+                // 消费重试
+                buildErrorHandler(clusterName, consumer, factory);
+
                 ContainerProperties containerProps = factory.getContainerProperties();
                 buildContainerProperties(clusterName, consumer, containerProps);
 
@@ -412,6 +423,50 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
                 return factory;
             }
         );
+    }
+
+    private void buildErrorHandler(
+        String clusterName,
+        KafkaConsumerConfig consumer,
+        ConcurrentKafkaListenerContainerFactory<String, Object> factory) {
+
+        final KafkaConsumerLocalRetryConfig cfg = consumer.getLocalRetry();
+        if (Boolean.FALSE.equals(cfg.getEnabled())) {
+            return;
+        }
+
+        DefaultErrorHandler errorHandler =
+            new DefaultErrorHandler(
+                new KafkaErrorHandler(
+                    clusterName,
+                    consumer,
+                    applicationContext.getBean(KafkaTemplateRouter.class)
+                ),
+                this.buildBackOff(cfg)
+            );
+
+        factory.setCommonErrorHandler(errorHandler);
+    }
+
+    private BackOff buildBackOff(KafkaConsumerLocalRetryConfig cfg) {
+        if (KafkaConsumerLocalRetryTypeEnum.FIXED.equals(cfg.getType())) {
+            return new FixedBackOff(
+                cfg.getIntervalMs(),
+                cfg.getAttempts()
+            );
+        }
+
+        if (KafkaConsumerLocalRetryTypeEnum.EXPONENTIAL.equals(cfg.getType())) {
+            ExponentialBackOff backOff = new ExponentialBackOff();
+
+            backOff.setInitialInterval(cfg.getIntervalMs());
+            backOff.setMultiplier(cfg.getMultiplier());
+            backOff.setMaxInterval(cfg.getMaxIntervalMs());
+
+            return backOff;
+        }
+
+        throw new IllegalArgumentException("Unsupported backOff type: " + cfg.getType());
     }
 
     /**

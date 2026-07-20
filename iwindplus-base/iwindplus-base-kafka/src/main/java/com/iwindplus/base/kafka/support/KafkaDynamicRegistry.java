@@ -122,12 +122,6 @@ public final class KafkaDynamicRegistry {
         KafkaDynamicRegistry.addDefaultTopic(clusterConfig, result);
 
         sourceBindings.stream().forEach(m -> {
-            if (Boolean.TRUE.equals(m.getEnabledRetry())) {
-                result.add(
-                    buildConfig(m, KafkaConstant.KAFKA_RETRY_SUFFIX)
-                );
-            }
-
             if (Boolean.TRUE.equals(m.getEnabledDlq())) {
                 result.add(
                     buildConfig(m, KafkaConstant.KAFKA_DLQ_SUFFIX)

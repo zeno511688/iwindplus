@@ -10,6 +10,7 @@ package com.iwindplus.base.kafka.domain.property;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
+import com.iwindplus.base.kafka.domain.enums.KafkaConsumerLocalRetryTypeEnum;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -231,11 +232,10 @@ public class KafkaMultiProperty {
         private Integer retries = 10;
 
         /**
-         * 总发送时间（毫秒）
-         * delivery.timeout.ms >= request.timeout.ms + retries * retry.backoff.ms.
+         * 总发送时间（毫秒） delivery.timeout.ms >= request.timeout.ms + retries * retry.backoff.ms.
          */
         @Builder.Default
-        private Long deliveryTimeoutMs = 120000L;
+        private Integer deliveryTimeoutMs = 120000;
 
         /**
          * 重连退避时间（毫秒）.
@@ -475,6 +475,13 @@ public class KafkaMultiProperty {
         private Map<String, Object> properties = new HashMap<>(16);
 
         /**
+         * 本地重试配置
+         */
+        @Builder.Default
+        @NestedConfigurationProperty
+        private KafkaConsumerLocalRetryConfig localRetry = new KafkaConsumerLocalRetryConfig();
+
+        /**
          * 绑定关系配置.
          */
         @Builder.Default
@@ -503,7 +510,7 @@ public class KafkaMultiProperty {
         private String topic;
 
         /**
-         * 消费组（覆盖集群配置）.
+         * 消费组.
          */
         private String group;
 
@@ -527,22 +534,56 @@ public class KafkaMultiProperty {
         private Map<String, String> arguments = new HashMap<>(16);
 
         /**
-         * 是否启用重试.
-         */
-        @Builder.Default
-        private Boolean enabledRetry = true;
-
-        /**
          * 是否启用死信队列.
          */
         @Builder.Default
         private Boolean enabledDlq = true;
+    }
+
+    /**
+     * 消费者本地重试配置.
+     */
+    @Data
+    @SuperBuilder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class KafkaConsumerLocalRetryConfig {
 
         /**
-         * 最大重试次数.
+         * 是否开启.
          */
         @Builder.Default
-        private Integer retryMaxCount = 10;
+        private Boolean enabled = false;
+
+        /**
+         * 重试类型（固定频率）.
+         */
+        @Builder.Default
+        private KafkaConsumerLocalRetryTypeEnum type = KafkaConsumerLocalRetryTypeEnum.FIXED;
+
+        /**
+         * 重试次数.
+         */
+        @Builder.Default
+        private Long attempts = 3L;
+
+        /**
+         * 重试间隔（毫秒）.
+         */
+        @Builder.Default
+        private Long intervalMs = 1000L;
+
+        /**
+         * 最大重试间隔（毫秒）.
+         */
+        @Builder.Default
+        private Long maxIntervalMs = 30000L;
+
+        /**
+         * 指数频率时，增长倍数.
+         */
+        @Builder.Default
+        private Double multiplier = 3.0;
     }
 
     /**

@@ -32,7 +32,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -190,7 +189,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         container.setBeanName(listenerId);
         ContainerProperties p = container.getContainerProperties();
         final String clientId = CharSequenceUtil.isBlank(p.getClientId())
-            ? p.getClientId(): clusterManager.getConsumerClientId(meta.getCluster());
+            ? p.getClientId() : clusterManager.getConsumerClientId(meta.getCluster());
 
         registerListener(clusterId, listenerId, clientId, meta, property, p);
 
@@ -366,7 +365,6 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             }
 
             ObjectReader reader = getReader(clazz);
-
             return records -> {
                 List<Object> list = new ArrayList<>(records.size());
                 for (Object x : records) {
@@ -377,7 +375,6 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         }
 
         ObjectReader reader = getReader(type);
-
         return records -> read(extractValue(records.get(0)), reader);
     }
 
