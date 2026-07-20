@@ -471,7 +471,7 @@ public class KafkaMultiProperty {
          * 是否启用死信队列.
          */
         @Builder.Default
-        private Boolean enabledDlq = true;
+        private Boolean enabledDlq = false;
 
         /**
          * 自定义扩展配置（覆盖所有以上配置）. 可配置任何Kafka原生参数
