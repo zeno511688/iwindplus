@@ -148,12 +148,6 @@ public class KafkaMultiProperty {
         private String acks = "all";
 
         /**
-         * 重试次数.
-         */
-        @Builder.Default
-        private Integer retries = Integer.MAX_VALUE;
-
-        /**
          * 幂等性.
          */
         @Builder.Default
@@ -229,6 +223,19 @@ public class KafkaMultiProperty {
          */
         @Builder.Default
         private Long retryBackoffMs = 100L;
+
+        /**
+         * 重试次数.
+         */
+        @Builder.Default
+        private Integer retries = 10;
+
+        /**
+         * 总发送时间（毫秒）
+         * delivery.timeout.ms >= request.timeout.ms + retries * retry.backoff.ms.
+         */
+        @Builder.Default
+        private Long deliveryTimeoutMs = 120000L;
 
         /**
          * 重连退避时间（毫秒）.
@@ -580,6 +587,7 @@ public class KafkaMultiProperty {
         putIfNotNull(config, ProducerConfig.METADATA_MAX_AGE_CONFIG, p.getMetadataMaxAgeMs());
         putIfNotNull(config, ProducerConfig.RETRY_BACKOFF_MS_CONFIG, p.getRetryBackoffMs());
         putIfNotNull(config, ProducerConfig.RETRIES_CONFIG, p.getRetries());
+        putIfNotNull(config, ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, p.getDeliveryTimeoutMs());
         putIfNotNull(config, ProducerConfig.RECONNECT_BACKOFF_MS_CONFIG, p.getReconnectBackoffMs());
         putIfNotNull(config, ProducerConfig.RECONNECT_BACKOFF_MAX_MS_CONFIG, p.getReconnectBackoffMaxMs());
 
