@@ -32,7 +32,7 @@ public record KafkaErrorHandler(
     @Override
     public void accept(ConsumerRecord<?, ?> record, Exception ex) {
         log.error(
-            "Kafka consume failed, send retry topic. cluster={}, topic={}, partition={}, offset={}",
+            "Kafka consume failed, Preparing to send DLQ topic. cluster={}, topic={}, partition={}, offset={}",
             clusterName,
             record.topic(),
             record.partition(),
@@ -74,9 +74,15 @@ public record KafkaErrorHandler(
             RetryHeadersConstant.LAST_FAILED_TIME, message.getLastFailedTime()
         );
 
-        kafkaTemplateRouter.send(clusterName,
-            message.getOriginalTopic() + KafkaConstant.KAFKA_DLQ_SUFFIX,
-            message.getKey(),
-            headers, record.value().toString());
+        try {
+            kafkaTemplateRouter.send(clusterName,
+                message.getOriginalTopic() + KafkaConstant.KAFKA_DLQ_SUFFIX,
+                message.getKey(),
+                headers, record.value().toString());
+        } catch(Exception e){
+            log.error("send dlq failed", e);
+
+            throw e;
+        }
     }
 }

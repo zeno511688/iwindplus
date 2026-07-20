@@ -444,6 +444,8 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
                 ),
                 this.buildBackOff(cfg)
             );
+        // 手动提交很重要这个参数，不然会导致发送dlq成功后offset没有提交，导致重复消费
+        errorHandler.setCommitRecovered(true);
 
         factory.setCommonErrorHandler(errorHandler);
     }
