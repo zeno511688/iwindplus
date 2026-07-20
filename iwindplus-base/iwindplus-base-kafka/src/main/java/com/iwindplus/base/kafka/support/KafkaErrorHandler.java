@@ -40,6 +40,10 @@ public record KafkaErrorHandler(
             ex
         );
 
+        if (Boolean.FALSE.equals(consumer.getEnabledDlq())) {
+            return;
+        }
+
         long now = System.currentTimeMillis();
 
         KafkaErrorMessageDTO message =

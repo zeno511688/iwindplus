@@ -121,16 +121,18 @@ public final class KafkaDynamicRegistry {
         // default producer topic
         KafkaDynamicRegistry.addDefaultTopic(clusterConfig, result);
 
-        sourceBindings.stream().forEach(m -> {
-            if (Boolean.TRUE.equals(m.getEnabledDlq())) {
-                result.add(
-                    buildConfig(m, KafkaConstant.KAFKA_DLQ_SUFFIX)
-                );
-                final KafkaBindingConfig config = BeanUtil.copyProperties(m, KafkaBindingConfig.class);
-                config.setTopic(m.getTopic() + KafkaConstant.KAFKA_DLQ_SUFFIX);
-                result.add(config);
-            }
-        });
+        if (Boolean.TRUE.equals(consumer.getEnabledDlq())) {
+            sourceBindings.stream().forEach(m -> {
+                if (Boolean.TRUE.equals(m.getAutoCreateDlq())) {
+                    result.add(
+                        buildConfig(m, KafkaConstant.KAFKA_DLQ_SUFFIX)
+                    );
+                    final KafkaBindingConfig config = BeanUtil.copyProperties(m, KafkaBindingConfig.class);
+                    config.setTopic(m.getTopic() + KafkaConstant.KAFKA_DLQ_SUFFIX);
+                    result.add(config);
+                }
+            });
+        }
 
         return deduplicate(result);
     }

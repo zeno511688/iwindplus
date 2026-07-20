@@ -468,6 +468,12 @@ public class KafkaMultiProperty {
         private Integer metadataMaxAgeMs = 300000;
 
         /**
+         * 是否启用死信队列.
+         */
+        @Builder.Default
+        private Boolean enabledDlq = true;
+
+        /**
          * 自定义扩展配置（覆盖所有以上配置）. 可配置任何Kafka原生参数
          */
         @Builder.Default
@@ -505,6 +511,12 @@ public class KafkaMultiProperty {
         private Boolean autoCreate = true;
 
         /**
+         * 是否自动创建死信队列.
+         */
+        @Builder.Default
+        private Boolean autoCreateDlq = true;
+
+        /**
          * Topic名称.
          */
         private String topic;
@@ -532,12 +544,6 @@ public class KafkaMultiProperty {
         @Builder.Default
         @NestedConfigurationProperty
         private Map<String, String> arguments = new HashMap<>(16);
-
-        /**
-         * 是否启用死信队列.
-         */
-        @Builder.Default
-        private Boolean enabledDlq = true;
     }
 
     /**
