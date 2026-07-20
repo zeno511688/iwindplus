@@ -12,6 +12,7 @@ import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant.RetryHeadersConstant;
 import com.iwindplus.base.kafka.domain.dto.KafkaErrorMessageDTO;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumerConfig;
+import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumerLocalRetryConfig;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -43,6 +44,7 @@ public record KafkaErrorHandler(
         if (Boolean.FALSE.equals(consumer.getEnabledDlq())) {
             return;
         }
+        final KafkaConsumerLocalRetryConfig cfg = consumer.getLocalRetry();
 
         long now = System.currentTimeMillis();
 
@@ -53,8 +55,8 @@ public record KafkaErrorHandler(
                 .originalPartition(record.partition())
                 .originalOffset(record.offset())
                 .key(String.valueOf(record.key()))
-                .retryCount(1)
-                .maxRetry(3)
+                .retryCount(cfg.getAttempts().intValue())
+                .maxRetry(cfg.getAttempts().intValue())
                 .exceptionType(ex.getClass().getName())
                 .exceptionMessage(ex.getMessage())
                 .firstFailedTime(now)
