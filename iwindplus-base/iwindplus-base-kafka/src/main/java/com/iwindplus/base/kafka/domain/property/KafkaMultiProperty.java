@@ -553,7 +553,7 @@ public class KafkaMultiProperty {
          * 是否开启.
          */
         @Builder.Default
-        private Boolean enabled = false;
+        private Boolean enabled = true;
 
         /**
          * 重试类型（固定频率）.
