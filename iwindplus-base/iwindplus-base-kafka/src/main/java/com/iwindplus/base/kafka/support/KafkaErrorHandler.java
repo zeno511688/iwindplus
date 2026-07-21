@@ -14,9 +14,11 @@ import com.iwindplus.base.kafka.domain.dto.KafkaErrorMessageDTO;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaBindingConfig;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumerConfig;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumerLocalRetryConfig;
+import com.iwindplus.base.util.JacksonUtil;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.listener.ConsumerRecordRecoverer;
 
 /**
@@ -33,26 +35,31 @@ public record KafkaErrorHandler(
 
     @Override
     public void accept(ConsumerRecord<?, ?> record, Exception ex) {
-        log.error(
-            "Kafka consume failed, Preparing to send DLQ topic. cluster={}, topic={}, partition={}, offset={}",
-            clusterName,
-            record.topic(),
-            record.partition(),
-            record.offset(),
-            ex
-        );
-
         // 判断是否启用了dlq
         if (!enabledDlqFlag(record)) {
-            return;
+            log.warn(
+                "DLQ disabled, message will not be committed. topic={}, partition={}, offset={}",
+                record.topic(),
+                record.partition(),
+                record.offset()
+            );
+
+            throw new KafkaException("Kafka DLQ disabled", ex);
         }
+
+        sendDlq(record, ex);
+    }
+
+    private void sendDlq(
+        ConsumerRecord<?, ?> record,
+        Exception ex) {
 
         final KafkaConsumerLocalRetryConfig cfg = consumer.getLocalRetry();
 
         long now = System.currentTimeMillis();
-
         KafkaErrorMessageDTO message =
-            KafkaErrorMessageDTO.builder()
+            KafkaErrorMessageDTO
+                .builder()
                 .cluster(clusterName)
                 .originalTopic(record.topic())
                 .originalPartition(record.partition())
@@ -65,8 +72,39 @@ public record KafkaErrorHandler(
                 .firstFailedTime(now)
                 .lastFailedTime(now)
                 .build();
+        Map<String, Object> headers = buildHeaders(message);
 
-        Map<String, Object> headers = Map.of(
+        try {
+            kafkaTemplateRouter.send(
+                clusterName,
+                message.getOriginalTopic()
+                    + KafkaConstant.KAFKA_DLQ_SUFFIX,
+                message.getKey(),
+                headers,
+                convertPayload(record.value())
+            );
+
+            log.info(
+                "Kafka DLQ sent. cluster={}, topic={}, offset={}",
+                clusterName,
+                record.topic(),
+                record.offset()
+            );
+        } catch (Exception e) {
+            log.error(
+                "Kafka DLQ send failed. cluster={}, topic={}, offset={}",
+                clusterName,
+                record.topic(),
+                record.offset(),
+                e
+            );
+
+            throw new KafkaException("Send kafka DLQ failed", e);
+        }
+    }
+
+    private Map<String, Object> buildHeaders(KafkaErrorMessageDTO message) {
+        return Map.of(
             KafkaConstant.CLUSTER, message.getCluster(),
             RetryHeadersConstant.ORIGINAL_TOPIC, message.getOriginalTopic(),
             RetryHeadersConstant.ORIGINAL_PARTITION, message.getOriginalPartition(),
@@ -78,28 +116,35 @@ public record KafkaErrorHandler(
             RetryHeadersConstant.FIRST_FAILED_TIME, message.getFirstFailedTime(),
             RetryHeadersConstant.LAST_FAILED_TIME, message.getLastFailedTime()
         );
-
-        try {
-            kafkaTemplateRouter.send(clusterName,
-                message.getOriginalTopic() + KafkaConstant.KAFKA_DLQ_SUFFIX,
-                message.getKey(),
-                headers, record.value().toString());
-        } catch (Exception e) {
-            log.error("send dlq failed", e);
-
-            throw e;
-        }
     }
 
     private boolean enabledDlqFlag(ConsumerRecord<?, ?> record) {
-        final String topic = record.topic();
-        KafkaBindingConfig kafkaBinding = consumer.getBindings().stream()
-            .filter(x -> x.getTopic().equals(topic))
-            .findFirst()
-            .orElse(null);
-        if (kafkaBinding != null && Boolean.TRUE.equals(kafkaBinding.getEnabledDlq())) {
-            return true;
+        if (consumer.getBindings() == null) {
+            return false;
         }
-        return false;
+
+        KafkaBindingConfig binding =
+            consumer.getBindings()
+                    .stream()
+                    .filter(
+                        x -> x.getTopic().equals(record.topic())
+                    )
+                    .findFirst()
+                    .orElse(null);
+
+        return binding != null
+            && Boolean.TRUE.equals(binding.getEnabledDlq());
+    }
+
+    private String convertPayload(Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        if (value instanceof String str) {
+            return str;
+        }
+
+        return JacksonUtil.toJsonStr(value);
     }
 }
