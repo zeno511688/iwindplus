@@ -42,6 +42,7 @@ public record KafkaErrorHandler(
             ex
         );
 
+        // 判断是否启用了dlq
         if (!enabledDlqFlag(record)) {
             return;
         }
