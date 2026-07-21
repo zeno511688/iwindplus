@@ -17,7 +17,6 @@ import com.iwindplus.base.redis.aspect.RedisLockAspect;
 import com.iwindplus.base.redis.aspect.RedisRateLimiterAspect;
 import com.iwindplus.base.redis.aspect.RedisRepeatSubmitAspect;
 import com.iwindplus.base.redis.domain.property.RedisProperty;
-import com.iwindplus.base.redis.monitor.RedisEndpoint;
 import com.iwindplus.base.redis.operation.RedissonBaseOperation;
 import com.iwindplus.base.redis.operation.RedissonIdempotentOperation;
 import com.iwindplus.base.redis.operation.RedissonLockOperation;
@@ -255,18 +254,6 @@ public class RedisConfiguration {
         ServerNodeRedisKeyResolver serverNodeRedisKeyResolver = new ServerNodeRedisKeyResolver();
         log.info("ServerNodeRedisKeyResolver={}", serverNodeRedisKeyResolver);
         return serverNodeRedisKeyResolver;
-    }
-
-    /**
-     * 创建 RedisEndpoint.
-     *
-     * @return RedisEndpoint
-     */
-    @Bean
-    public RedisEndpoint redisEndpoint() {
-        final RedisEndpoint redisEndpoint = new RedisEndpoint();
-        log.info("RedisEndpoint={}", redisEndpoint);
-        return redisEndpoint;
     }
 
     /**
