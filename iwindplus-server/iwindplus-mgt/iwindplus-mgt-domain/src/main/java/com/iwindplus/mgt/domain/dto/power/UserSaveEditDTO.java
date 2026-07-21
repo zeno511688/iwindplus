@@ -40,12 +40,6 @@ public class UserSaveEditDTO extends UserDTO {
     private Set<Long> positionIds;
 
     /**
-     * 部门主键集合.
-     */
-    @Schema(description = "部门主键集合")
-    private Set<Long> departmentIds;
-
-    /**
      * 组织主键.
      */
     @Schema(description = "组织主键")
