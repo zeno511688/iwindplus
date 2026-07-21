@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 
 
 /**
- * 序列化类型枚举. 序列化数据的大小方面：kryo < protostuff < jackson < jdk 反序列化速度方面：kryo > protostuff > jackson > jdk
+ * 序列化类型枚举. 序列化数据的大小方面：kryo < protobuf < jackson < jdk 反序列化速度方面：kryo > protobuf > jackson > jdk
  *
  * @author zengdegui
  * @since 2024/10/11
@@ -29,9 +29,9 @@ public enum RedisSerializeTypeEnum implements BaseEnum<String> {
     KRYO("kryo", "性能高，适合高性能场景，二进制格式，数据体积最小"),
 
     /**
-     * protostuff.
+     * protobuf.
      */
-    PROTOSTUFF("protostuff", "性能高，序列化/反序列化速度快，二进制格式，数据积体较小，支持多种格式"),
+    PROTOBUF("protobuf", "性能高，序列化/反序列化速度快，二进制格式，数据积体较小，支持多种格式"),
 
     /**
      * jackson.

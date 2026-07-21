@@ -431,7 +431,7 @@ public class RedisConfiguration {
                 KryoRedisSerializer kryoSerializer = new KryoRedisSerializer();
                 log.info("KryoRedisSerializer={}", kryoSerializer);
                 return kryoSerializer;
-            case PROTOSTUFF:
+            case PROTOBUF:
                 ProtostuffRedisSerializer protostuffSerializer = new ProtostuffRedisSerializer();
                 log.info("ProtostuffRedisSerializer={}", protostuffSerializer);
                 return protostuffSerializer;
