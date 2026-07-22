@@ -11,7 +11,6 @@ import com.iwindplus.base.kafka.core.KafkaTemplateRouter;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant.RetryHeadersConstant;
 import com.iwindplus.base.kafka.domain.dto.KafkaErrorMessageDTO;
-import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaBindingConfig;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumerConfig;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumerLocalRetryConfig;
 import com.iwindplus.base.util.JacksonUtil;
@@ -35,18 +34,6 @@ public record KafkaErrorHandler(
 
     @Override
     public void accept(ConsumerRecord<?, ?> record, Exception ex) {
-        // 判断是否启用了dlq
-        if (!enabledDlqFlag(record)) {
-            log.warn(
-                "DLQ disabled, message will not be committed. topic={}, partition={}, offset={}",
-                record.topic(),
-                record.partition(),
-                record.offset()
-            );
-
-            throw new KafkaException("Kafka DLQ disabled", ex);
-        }
-
         sendDlq(record, ex);
     }
 
@@ -99,6 +86,7 @@ public record KafkaErrorHandler(
                 e
             );
 
+            // 考虑兜底方案比如存储db
             throw new KafkaException("Send kafka DLQ failed", e);
         }
     }
@@ -116,24 +104,6 @@ public record KafkaErrorHandler(
             RetryHeadersConstant.FIRST_FAILED_TIME, message.getFirstFailedTime(),
             RetryHeadersConstant.LAST_FAILED_TIME, message.getLastFailedTime()
         );
-    }
-
-    private boolean enabledDlqFlag(ConsumerRecord<?, ?> record) {
-        if (consumer.getBindings() == null) {
-            return false;
-        }
-
-        KafkaBindingConfig binding =
-            consumer.getBindings()
-                    .stream()
-                    .filter(
-                        x -> x.getTopic().equals(record.topic())
-                    )
-                    .findFirst()
-                    .orElse(null);
-
-        return binding != null
-            && Boolean.TRUE.equals(binding.getEnabledDlq());
     }
 
     private String convertPayload(Object value) {

@@ -64,8 +64,8 @@ public final class KafkaDynamicRegistry {
         }
 
         int timeout = Optional.ofNullable(timeoutSec)
-            .filter(v -> v > 0)
-            .orElse(DEFAULT_TIMEOUT_SEC);
+                              .filter(v -> v > 0)
+                              .orElse(DEFAULT_TIMEOUT_SEC);
 
         try {
             List<KafkaBindingConfig> topics = KafkaDynamicRegistry.buildAllTopics(clusterConfig);
@@ -75,14 +75,14 @@ public final class KafkaDynamicRegistry {
 
             Set<String> existingTopics =
                 adminClient.listTopics()
-                    .names()
-                    .get(timeout, TimeUnit.SECONDS);
+                           .names()
+                           .get(timeout, TimeUnit.SECONDS);
 
             List<NewTopic> newTopics = topics.stream()
-                .filter(KafkaDynamicRegistry::isAutoCreate)
-                .filter(topic -> !existingTopics.contains(topic.getTopic()))
-                .map(KafkaDynamicRegistry::createTopic)
-                .toList();
+                                             .filter(KafkaDynamicRegistry::isAutoCreate)
+                                             .filter(topic -> !existingTopics.contains(topic.getTopic()))
+                                             .map(KafkaDynamicRegistry::createTopic)
+                                             .toList();
 
             if (CollUtil.isEmpty(newTopics)) {
                 log.info("No new Kafka topics need to be created, cluster={}",
@@ -93,8 +93,8 @@ public final class KafkaDynamicRegistry {
             }
 
             adminClient.createTopics(newTopics)
-                .all()
-                .get(timeout, TimeUnit.SECONDS);
+                       .all()
+                       .get(timeout, TimeUnit.SECONDS);
 
             log.info(
                 "Kafka topics created successfully, cluster={}, topics={}",
@@ -122,13 +122,11 @@ public final class KafkaDynamicRegistry {
         KafkaDynamicRegistry.addDefaultTopic(clusterConfig, result);
 
         // 判断是启用DLQ
-        sourceBindings.stream().forEach(m -> {
-            if (Boolean.TRUE.equals(m.getEnabledDlq())) {
-                result.add(
-                    buildConfig(m, KafkaConstant.KAFKA_DLQ_SUFFIX)
-                );
-            }
-        });
+        if (Boolean.TRUE.equals(consumer.getEnabledDlq())) {
+            sourceBindings.stream().forEach(m -> result.add(
+                buildConfig(m, KafkaConstant.KAFKA_DLQ_SUFFIX)
+            ));
+        }
 
         return deduplicate(result);
     }
