@@ -376,7 +376,7 @@ spring:
       time-to-live: 0
   redis:
     # 序列化类型
-    serialize-type: PROTOSTUFF
+    serialize-type: PROTOBUF
     idempotent:
       # 是否开启redis幂等（防重复提交）
       enabled: true

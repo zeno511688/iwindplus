@@ -410,7 +410,7 @@ spring:
       time-to-live: 0
   redis:
     # 序列化类型
-    serialize-type: PROTOSTUFF
+    serialize-type: PROTOBUF
     idempotent:
       # 是否开启redis幂等（防重复提交）
       enabled: true
@@ -483,17 +483,29 @@ kafka:
           enable-reactive: true
           properties:
             fetch.max.wait.ms: 500
+          localRetry:
+            # 是否开启本地重试
+            enabled: true
           # 绑定关系配置
           bindings:
             - topic: iwindplus-appCert-topic
               group: iwindplus-appCert-group
+              # 是否自动创建
               auto-create: true
+              # 是否启用死信队列
+              enabled-dlq: true
             - topic: iwindplus-apiWhiteList-topic
               group: iwindplus-apiWhiteList-group
+              # 是否自动创建
               auto-create: true
+              # 是否启用死信队列
+              enabled-dlq: true
             - topic: iwindplus-ipBlackList-topic
               group: iwindplus-ipBlackList-group
+              # 是否自动创建
               auto-create: true
+              # 是否启用死信队列
+              enabled-dlq: true
 rocket:
   multi:
     enabled: true

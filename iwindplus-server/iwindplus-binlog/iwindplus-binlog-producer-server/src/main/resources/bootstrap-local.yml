@@ -402,11 +402,17 @@ kafka:
           ack-time: 10000
           properties:
             fetch.max.wait.ms: 500
+          localRetry:
+            # 是否开启本地重试
+            enabled: true
           # 绑定关系配置
           bindings:
             - topic: iwindplus-binlog-topic
               group: iwindplus-binlog-group
+              # 是否自动创建
               auto-create: true
+              # 是否启用死信队列
+              enabled-dlq: true
 binlog:
   # 是否开启binlog
   enabled: true

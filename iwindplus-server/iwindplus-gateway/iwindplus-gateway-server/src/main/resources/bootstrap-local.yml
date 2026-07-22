@@ -72,7 +72,7 @@ gateway:
     cache-refresh: 15m
   api-sign:
     # 是否开启API签名过滤器
-    enabled: true
+    enabled: false
     # 最大缓存数量
     maxSize: 1000
     # 缓存超时时间
@@ -375,7 +375,7 @@ spring:
     context-propagation: AUTO
   redis:
     # 序列化类型
-    serialize-type: PROTOSTUFF
+    serialize-type: PROTOBUF
     idempotent:
       # 是否开启redis幂等（防重复提交）
       enabled: true
@@ -577,20 +577,35 @@ kafka:
           ack-time: 10000
           properties:
             fetch.max.wait.ms: 500
+          localRetry:
+            # 是否开启本地重试
+            enabled: true
           # 绑定关系配置
           bindings:
             - topic: iwindplus-gatewayLog-topic
               group: iwindplus-gatewayLog-group
+              # 是否自动创建
               auto-create: true
+              # 是否启用死信队列
+              enabled-dlq: true
             - topic: iwindplus-appCert-topic
               group: iwindplus-appCert-group
+              # 是否自动创建
               auto-create: true
+              # 是否启用死信队列
+              enabled-dlq: true
             - topic: iwindplus-apiWhiteList-topic
               group: iwindplus-apiWhiteList-group
+              # 是否自动创建
               auto-create: true
+              # 是否启用死信队列
+              enabled-dlq: true
             - topic: iwindplus-ipBlackList-topic
               group: iwindplus-ipBlackList-group
+              # 是否自动创建
               auto-create: true
+              # 是否启用死信队列
+              enabled-dlq: true
 logging:
   level:
     root: INFO
