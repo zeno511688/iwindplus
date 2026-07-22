@@ -29,10 +29,10 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -188,7 +188,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             factory.createContainer(meta.getTopics());
         container.setBeanName(listenerId);
         ContainerProperties p = container.getContainerProperties();
-        final String clientId = CharSequenceUtil.isBlank(p.getClientId())
+        final String clientId = CharSequenceUtil.isNotBlank(p.getClientId())
             ? p.getClientId() : clusterManager.getConsumerClientId(meta.getCluster());
 
         registerListener(clusterId, listenerId, clientId, meta, property, p);
@@ -470,16 +470,14 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
     }
 
     private Map<KafkaConsumerKeyDTO, List<KafkaMultiListenerMetaDTO>> group(List<KafkaMultiListenerMetaDTO> metas) {
-        Map<KafkaConsumerKeyDTO, List<KafkaMultiListenerMetaDTO>> grouped = new HashMap<>(16);
-
-        for (KafkaMultiListenerMetaDTO meta : metas) {
-            KafkaConsumerKeyDTO key = new KafkaConsumerKeyDTO(meta.getCluster(), meta.getGroup());
-
-            grouped.computeIfAbsent(key, k -> new ArrayList<>(10))
-                .add(meta);
-        }
-
-        return grouped;
+        return metas
+            .stream()
+            .collect(Collectors.groupingBy(
+                entity -> new KafkaConsumerKeyDTO(
+                    entity.getCluster(),
+                    entity.getGroup()
+                )
+            ));
     }
 
     private String buildId(KafkaMultiListenerMetaDTO meta) {

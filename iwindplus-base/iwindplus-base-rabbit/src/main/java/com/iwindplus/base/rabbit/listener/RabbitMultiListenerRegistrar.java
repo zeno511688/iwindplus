@@ -26,12 +26,11 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
@@ -201,10 +200,10 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
         RabbitMultiListenerMetaDTO first = list.get(0);
 
         String[] queues = list.stream()
-            .flatMap(x -> Arrays.stream(x.getQueues()))
-            .filter(CharSequenceUtil::isNotBlank)
-            .distinct()
-            .toArray(String[]::new);
+                              .flatMap(x -> Arrays.stream(x.getQueues()))
+                              .filter(CharSequenceUtil::isNotBlank)
+                              .distinct()
+                              .toArray(String[]::new);
 
         return RabbitMultiListenerMetaDTO
             .builder()
@@ -326,16 +325,14 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
     }
 
     private Map<RabbitConsumerKeyDTO, List<RabbitMultiListenerMetaDTO>> group(List<RabbitMultiListenerMetaDTO> metas) {
-        Map<RabbitConsumerKeyDTO, List<RabbitMultiListenerMetaDTO>> grouped = new HashMap<>(16);
-
-        for (RabbitMultiListenerMetaDTO meta : metas) {
-            RabbitConsumerKeyDTO key = new RabbitConsumerKeyDTO(meta.getCluster(), meta.getGroup());
-
-            grouped.computeIfAbsent(key, k -> new ArrayList<>(10))
-                .add(meta);
-        }
-
-        return grouped;
+        return metas
+            .stream()
+            .collect(Collectors.groupingBy(
+                entity -> new RabbitConsumerKeyDTO(
+                    entity.getCluster(),
+                    entity.getGroup()
+                )
+            ));
     }
 
     private String buildId(RabbitMultiListenerMetaDTO meta) {
