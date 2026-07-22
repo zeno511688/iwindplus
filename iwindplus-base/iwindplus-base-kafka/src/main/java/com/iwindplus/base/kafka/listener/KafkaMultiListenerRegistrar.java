@@ -255,7 +255,6 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
                 p.setMessageListener((AcknowledgingMessageListener<String, Object>)
                     (record, ack) -> dispatch(clusterId, listenerId, clientId, meta, Collections.singletonList(record), ack)
                 );
-
             } else {
                 p.setMessageListener((MessageListener<String, Object>)
                     record -> dispatch(clusterId, listenerId, clientId, meta, Collections.singletonList(record), null)

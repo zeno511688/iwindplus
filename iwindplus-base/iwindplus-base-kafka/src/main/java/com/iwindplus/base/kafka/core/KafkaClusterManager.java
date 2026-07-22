@@ -447,7 +447,8 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
             errorHandler.setCommitRecovered(true);
             factory.setCommonErrorHandler(errorHandler);
         } else {
-            DefaultErrorHandler errorHandler = new DefaultErrorHandler(this.buildBackOff(cfg));
+            DefaultErrorHandler errorHandler = new DefaultErrorHandler(null, this.buildBackOff(cfg));
+            errorHandler.setAckAfterHandle(false);
             errorHandler.setCommitRecovered(false);
             factory.setCommonErrorHandler(errorHandler);
         }
@@ -517,12 +518,7 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
             );
         }
         buildConsumerReBalanceListener(clusterName, containerProps);
-
-        buildThreadPool(
-            clusterName,
-            consumer,
-            containerProps
-        );
+        buildThreadPool(clusterName, consumer, containerProps);
     }
 
     /**
