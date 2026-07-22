@@ -15,6 +15,7 @@ import com.iwindplus.base.rocket.support.observation.ClusterRocketReceiverObserv
 import com.iwindplus.base.rocket.support.observation.RocketReceiverObservationContext;
 import io.micrometer.tracing.propagation.Propagator;
 import java.util.List;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.common.message.MessageExt;
 
@@ -41,12 +42,19 @@ public record RocketReceiverDispatcher(
             return;
         }
 
-        final Boolean enabledObservation =
-            manager.getProperty().getConsumerEnabledObservation(handler.getCluster());
+        runWithTrace(
+            msgs.get(0),
+            () -> execute(handler, msgs)
+        );
+    }
 
-        if (Boolean.FALSE.equals(enabledObservation)) {
+    private Void execute(
+        RocketMessageHandler handler,
+        List<MessageExt> msgs) {
+
+        if (!enabledObservation(handler)) {
             handler.handleBatch(msgs);
-            return;
+            return null;
         }
 
         RocketReceiverObservationContext context =
@@ -57,18 +65,37 @@ public record RocketReceiverDispatcher(
                 handler.getTag()
             );
 
+        observationExecutor.execute(
+            CONVENTION,
+            () -> context,
+            () -> {
+                handler.handleBatch(msgs);
+                return null;
+            }
+        );
+
+        return null;
+    }
+
+    private <T> T runWithTrace(
+        MessageExt message,
+        Supplier<T> supplier) {
+
         try (TraceScope ignored =
-            traceContextPropagator.extract(
-                msgs.get(0),
-                ROCKET_GETTER
-            )) {
-            observationExecutor.execute(
-                CONVENTION,
-                () -> context,
-                () -> {
-                    handler.handleBatch(msgs);
-                    return null;
-                });
+            traceContextPropagator
+                .extract(message, ROCKET_GETTER)) {
+
+            return supplier.get();
         }
+    }
+
+    private boolean enabledObservation(
+        RocketMessageHandler handler) {
+        return Boolean.TRUE.equals(
+            manager.getProperty()
+                   .getConsumerEnabledObservation(
+                       handler.getCluster()
+                   )
+        );
     }
 }

@@ -324,6 +324,14 @@ dynamictp:
         period: 30
         silencePeriod: 0
   executors:
+    - threadPoolName: idempotentTaskScheduler
+      threadPoolAliasName: 幂等调度线程池
+      executorType: scheduled
+      corePoolSize: 2
+      maximumPoolSize: 4
+      threadNamePrefix: idempotentTask
+      platformIds: [ 1 ]
+      runTimeout: 5000
     - threadPoolName: asyncTaskExecutor
       threadPoolAliasName: 异步任务线程池
       executorType: eager
@@ -370,6 +378,14 @@ dynamictp:
       runTimeout: 0
       queueTimeout: 0
       platformIds: [ 1 ]
+    - threadPoolName: kafkaLagTaskScheduler
+      threadPoolAliasName: kafka消息堆积调度线程池
+      executorType: scheduled
+      corePoolSize: 2
+      maximumPoolSize: 4
+      threadNamePrefix: kafkaLagTask
+      platformIds: [ 1 ]
+      runTimeout: 5000
 spring:
   reactor:
     context-propagation: AUTO

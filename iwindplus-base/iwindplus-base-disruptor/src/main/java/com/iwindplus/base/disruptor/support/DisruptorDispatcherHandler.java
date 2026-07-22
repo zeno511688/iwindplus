@@ -17,6 +17,7 @@ import com.iwindplus.base.monitor.support.TraceContextPropagator;
 import com.lmax.disruptor.EventHandler;
 import io.micrometer.tracing.propagation.Propagator;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Disruptor 事件处理器助手.
@@ -36,10 +37,18 @@ public record DisruptorDispatcherHandler<T>(
     public static final Propagator.Getter<Map<String, String>> DISRUPTOR_GETTER = Map::get;
 
     @Override
-    public void onEvent(DisruptorEvent<T> event,
+    public void onEvent(
+        DisruptorEvent<T> event,
         long sequence,
         boolean endOfBatch) {
 
+        runWithTrace(
+            event,
+            () -> execute(event, sequence, endOfBatch)
+        );
+    }
+
+    private T execute(DisruptorEvent<T> event, long sequence, boolean endOfBatch) {
         DisruptorObservationContext context =
             new DisruptorObservationContext(
                 event.getName(),
@@ -47,26 +56,32 @@ public record DisruptorDispatcherHandler<T>(
                 String.valueOf(endOfBatch),
                 event.getSource(),
                 event.getDestination());
+        observationExecutor.execute(
+            CONVENTION,
+            () -> context,
+            () -> {
+                DisruptorEventHandler handler =
+                    factory.getDisruptorEventHandler(
+                        event.getName());
+
+                handler.execute(
+                    event.getData(),
+                    sequence,
+                    endOfBatch);
+                return null;
+            });
+        return null;
+    }
+
+    private <T> T runWithTrace(
+        DisruptorEvent<T> event,
+        Supplier<T> supplier) {
 
         try (TraceScope ignored =
-            traceContextPropagator.extract(
-                event.getHeaders(),
-                DISRUPTOR_GETTER
-            )) {
-            observationExecutor.execute(
-                CONVENTION,
-                () -> context,
-                () -> {
-                    DisruptorEventHandler handler =
-                        factory.getDisruptorEventHandler(
-                            event.getName());
+            traceContextPropagator
+                .extract(event.getHeaders(), DISRUPTOR_GETTER)) {
 
-                    handler.execute(
-                        event.getData(),
-                        sequence,
-                        endOfBatch);
-                    return null;
-                });
+            return supplier.get();
         }
     }
 }

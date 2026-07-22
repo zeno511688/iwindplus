@@ -45,6 +45,7 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.ConsumerRecordRecoverer;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.ContainerProperties.AckMode;
 import org.springframework.kafka.listener.DefaultErrorHandler;
@@ -435,19 +436,21 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
             return;
         }
 
-        DefaultErrorHandler errorHandler =
-            new DefaultErrorHandler(
-                new KafkaErrorHandler(
-                    clusterName,
-                    consumer,
-                    applicationContext.getBean(KafkaTemplateRouter.class)
-                ),
-                this.buildBackOff(cfg)
+        if (Boolean.TRUE.equals(consumer.getEnabledDlq())) {
+            ConsumerRecordRecoverer recoverer = new KafkaErrorHandler(
+                clusterName,
+                consumer,
+                applicationContext.getBean(KafkaTemplateRouter.class)
             );
-        // 手动提交很重要这个参数，不然会导致发送dlq成功后offset没有提交，导致重复消费
-        errorHandler.setCommitRecovered(true);
-
-        factory.setCommonErrorHandler(errorHandler);
+            DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, this.buildBackOff(cfg));
+            // 手动提交很重要这个参数，不然会导致发送dlq成功后offset没有提交，导致重复消费
+            errorHandler.setCommitRecovered(true);
+            factory.setCommonErrorHandler(errorHandler);
+        } else {
+            DefaultErrorHandler errorHandler = new DefaultErrorHandler(this.buildBackOff(cfg));
+            errorHandler.setCommitRecovered(false);
+            factory.setCommonErrorHandler(errorHandler);
+        }
     }
 
     private BackOff buildBackOff(KafkaConsumerLocalRetryConfig cfg) {

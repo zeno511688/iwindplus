@@ -297,6 +297,12 @@ public class KafkaMultiProperty {
         private Boolean enabledObservation = Boolean.TRUE;
 
         /**
+         * 是否启用死信队列.
+         */
+        @Builder.Default
+        private Boolean enabledDlq = false;
+
+        /**
          * Bootstrap服务器（覆盖集群配置，可选）.
          */
         private String bootstrapServers;
@@ -497,12 +503,6 @@ public class KafkaMultiProperty {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class KafkaBindingConfig {
-
-        /**
-         * 是否启用死信队列.
-         */
-        @Builder.Default
-        private Boolean enabledDlq = false;
 
         /**
          * 是否自动创建.
@@ -828,6 +828,18 @@ public class KafkaMultiProperty {
 
         return CharSequenceUtil.isBlank(config.getClientId())
             ? cluster + KafkaConstant.CONSUMER_SUFFIX : config.getClientId();
+    }
+
+    /**
+     * 是否消费者启用Observation
+     *
+     * @param cluster 集群
+     * @return
+     */
+    public Boolean getConsumerEnabledObservation(String cluster) {
+        final KafkaConsumerConfig config = getConsumerConfig(cluster);
+        return config != null && config.getEnabledObservation() != null
+            && Boolean.TRUE.equals(config.getEnabledObservation());
     }
 
     /**

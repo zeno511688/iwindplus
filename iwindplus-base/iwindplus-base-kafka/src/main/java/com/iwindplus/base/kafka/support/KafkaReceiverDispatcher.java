@@ -15,6 +15,7 @@ import com.iwindplus.base.monitor.support.TraceContextPropagator;
 import io.micrometer.tracing.propagation.Propagator;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
@@ -58,29 +59,63 @@ public record KafkaReceiverDispatcher(
             return;
         }
 
-        ConsumerRecord<String,Object> record = msgs.get(0);
+
+        runWithTrace(
+            msgs.get(0),
+            () -> execute(handler, msgs)
+        );
+    }
+
+    private Void execute(
+        KafkaMessageHandler handler,
+        List<ConsumerRecord<String, Object>> msgs) {
+
+        if (!enabledObservation(handler)) {
+            handler.handleBatch(msgs);
+            return null;
+        }
 
         KafkaRecordReceiverContext context =
             new KafkaRecordReceiverContext(
-                record,
+                msgs.get(0),
                 handler.getListenerId(),
                 handler.getClientId(),
                 handler.getGroup(),
-                () -> handler.getClusterId()
+                handler::getClusterId
             );
 
+        observationExecutor.execute(
+            CONVENTION,
+            () -> context,
+            () -> {
+                handler.handleBatch(msgs);
+                return null;
+            }
+        );
+
+        return null;
+    }
+
+
+    private <T> T runWithTrace(
+        ConsumerRecord<String, Object> record,
+        Supplier<T> supplier) {
+
         try (TraceScope ignored =
-            traceContextPropagator.extract(
-                msgs.get(0).headers(),
-                KAFKA_GETTER
-            )) {
-            observationExecutor.execute(
-                CONVENTION,
-                () -> context,
-                () -> {
-                    handler.handleBatch(msgs);
-                    return null;
-                });
+            traceContextPropagator
+                .extract(record.headers(), KAFKA_GETTER)) {
+
+            return supplier.get();
         }
+    }
+
+    private boolean enabledObservation(
+        KafkaMessageHandler handler) {
+        return Boolean.TRUE.equals(
+            manager.getProperty()
+                   .getConsumerEnabledObservation(
+                       handler.getCluster()
+                   )
+        );
     }
 }

@@ -15,6 +15,7 @@ import com.iwindplus.base.rabbit.support.observation.ClusterRabbitReceiverObserv
 import com.iwindplus.base.rabbit.support.observation.RabbitReceiverObservationContext;
 import io.micrometer.tracing.propagation.Propagator;
 import java.util.List;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 
@@ -37,8 +38,8 @@ public record RabbitReceiverDispatcher(
         (message, key) -> {
             Object value =
                 message.getMessageProperties()
-                    .getHeaders()
-                    .get(key);
+                       .getHeaders()
+                       .get(key);
 
             return value == null
                 ? null
@@ -53,12 +54,19 @@ public record RabbitReceiverDispatcher(
             return;
         }
 
-        final Boolean enabledObservation =
-            manager.getProperty().getConsumerEnabledObservation(handler.getCluster());
+        runWithTrace(
+            msgs.get(0),
+            () -> execute(handler, msgs)
+        );
+    }
 
-        if (Boolean.FALSE.equals(enabledObservation)) {
+    private Void execute(
+        RabbitMessageHandler handler,
+        List<Message> msgs) {
+
+        if (!enabledObservation(handler)) {
             handler.handleBatch(msgs);
-            return;
+            return null;
         }
 
         RabbitReceiverObservationContext context =
@@ -68,18 +76,37 @@ public record RabbitReceiverDispatcher(
                 handler.getGroup()
             );
 
+        observationExecutor.execute(
+            CONVENTION,
+            () -> context,
+            () -> {
+                handler.handleBatch(msgs);
+                return null;
+            }
+        );
+
+        return null;
+    }
+
+    private <T> T runWithTrace(
+        Message message,
+        Supplier<T> supplier) {
+
         try (TraceScope ignored =
-            traceContextPropagator.extract(
-                msgs.get(0),
-                RABBIT_GETTER
-            )) {
-            observationExecutor.execute(
-                CONVENTION,
-                () -> context,
-                () -> {
-                    handler.handleBatch(msgs);
-                    return null;
-                });
+            traceContextPropagator
+                .extract(message, RABBIT_GETTER)) {
+
+            return supplier.get();
         }
+    }
+
+    private boolean enabledObservation(
+        RabbitMessageHandler handler) {
+        return Boolean.TRUE.equals(
+            manager.getProperty()
+                   .getConsumerEnabledObservation(
+                       handler.getCluster()
+                   )
+        );
     }
 }
