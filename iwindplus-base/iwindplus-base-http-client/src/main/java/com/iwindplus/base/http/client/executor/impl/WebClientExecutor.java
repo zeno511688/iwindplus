@@ -66,7 +66,15 @@ public class WebClientExecutor extends AbstractHttpClientExecutor implements Htt
 
     @Override
     protected CompletionStage<HttpExecuteResultDTO> doExecuteAsync(HttpRequestSpecDTO req) throws Exception {
-        return executeInternal(req).toFuture();
+        return executeInternal(req)
+            .doOnError(e ->
+                log.error(
+                    "WebClient request failed,url={}",
+                    req.getUrl(),
+                    e
+                )
+            )
+            .toFuture();
     }
 
     private Mono<HttpExecuteResultDTO> executeInternal(HttpRequestSpecDTO req) {
@@ -74,19 +82,15 @@ public class WebClientExecutor extends AbstractHttpClientExecutor implements Htt
 
         return spec.exchangeToMono(resp -> {
             int status = resp.statusCode().value();
-            return resp.bodyToMono(String.class)
+            return resp
+                .bodyToMono(String.class)
                 .defaultIfEmpty(SymbolConstant.EMPTY_STR)
-                .flatMap(body -> {
-                    // 非2xx统一处理
+                .map(body -> {
                     if (!resp.statusCode().is2xxSuccessful()) {
-                        return Mono.just(
-                            HttpExecuteResultDTO.error(status, body)
-                        );
+                        return HttpExecuteResultDTO.error(status, body);
                     }
 
-                    return Mono.just(
-                        HttpExecuteResultDTO.success(status, body)
-                    );
+                    return HttpExecuteResultDTO.success(status, body);
                 });
         });
     }
