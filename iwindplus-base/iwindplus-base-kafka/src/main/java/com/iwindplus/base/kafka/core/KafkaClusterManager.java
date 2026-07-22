@@ -484,6 +484,7 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
 
         containerProps.setClientId(this.getConsumerClientId(clusterName));
         containerProps.setPollTimeout(consumer.getPollTimeoutMs());
+        // 自定义注解不起作用
         containerProps.setObservationEnabled(consumer.getEnabledObservation());
         containerProps.setObservationConvention(new CustomKafkaListenerObservationConvention());
 
