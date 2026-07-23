@@ -377,6 +377,8 @@ spring:
 kafka:
   multi:
     enabled: true
+    # 是否启用动态扩容
+    enabledScale: true
     default-cluster: default
     enabled-dynamic-register: true
     default-replicas: 1
@@ -426,23 +428,22 @@ kafka:
           ack-time: 10000
           properties:
             fetch.max.wait.ms: 500
-          localRetry:
-            # 是否开启本地重试
-            enabled: true
-          # 绑定关系配置
-          bindings:
-            - topic: iwindplus-gatewayLog-topic
-              group: iwindplus-gatewayLog-group
-              # 是否自动创建
-              auto-create: true
-              # 是否启用死信队列
-              enabled-dlq: true
-            - topic: iwindplus-loginLog-topic
-              group: iwindplus-loginLog-group
-              # 是否自动创建
-              auto-create: true
-              # 是否启用死信队列
-              enabled-dlq: true
+          # 是否启用死信主题
+          enabled-dlt: false
+          # 消息堆积量最大值（该参数和maxOverloadCount判断是否需要扩容）
+          maxLag: 5
+          # 消息堆积量最小值（通过该参数判断是否需要缩容）
+          minLag: 2
+        # 绑定关系配置
+        bindings:
+          - topic: iwindplus-gatewayLog-topic
+            group: iwindplus-gatewayLog-group
+            # 是否自动创建
+            auto-create: true
+          - topic: iwindplus-loginLog-topic
+            group: iwindplus-loginLog-group
+            # 是否自动创建
+            auto-create: true
 snail-job:
   enabled: true
   port: 10003

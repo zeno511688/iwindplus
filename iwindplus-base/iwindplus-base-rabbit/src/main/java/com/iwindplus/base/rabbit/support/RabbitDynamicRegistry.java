@@ -55,7 +55,7 @@ public class RabbitDynamicRegistry {
         if (consumer == null) {
             return;
         }
-        final List<RabbitBindingConfig> bindings = consumer.getBindings();
+        final List<RabbitBindingConfig> bindings = clusterConfig.getBindings();
         if (CollUtil.isEmpty(bindings)) {
             return;
         }

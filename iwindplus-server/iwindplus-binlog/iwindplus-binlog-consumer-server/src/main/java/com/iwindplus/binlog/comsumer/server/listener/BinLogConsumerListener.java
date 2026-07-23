@@ -41,8 +41,8 @@ public class BinLogConsumerListener {
 
     @KafkaMultiListener(
         cluster = "${kafka.multi.default-cluster}",
-        topics = {"${kafka.multi.clusters.default.consumer.bindings[0].topic}"},
-        group = "${kafka.multi.clusters.default.consumer.bindings[0].group}"
+        topics = {"${kafka.multi.clusters.default.bindings[0].topic}"},
+        group = "${kafka.multi.clusters.default.bindings[0].group}"
     )
     public void listenBatch(List<ConsumerRecord<String, String>> records, Acknowledgment ack) {
         if (records == null || records.isEmpty()) {

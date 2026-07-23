@@ -544,6 +544,7 @@ spring:
 kafka:
   multi:
     enabled: true
+    enabledScale: true
     default-cluster: default
     enabled-dynamic-register: true
     default-replicas: 1
@@ -575,7 +576,7 @@ kafka:
         consumer:
           group: default-consumer-group
           client-id: default-consumer
-          concurrency: 3
+          concurrency: 1
           thread-pool-name: kafkaListerTaskExecutor
           enable-auto-commit: false
           ack-mode: MANUAL
@@ -593,35 +594,30 @@ kafka:
           ack-time: 10000
           properties:
             fetch.max.wait.ms: 500
-          localRetry:
-            # 是否开启本地重试
-            enabled: true
-          # 绑定关系配置
-          bindings:
-            - topic: iwindplus-gatewayLog-topic
-              group: iwindplus-gatewayLog-group
-              # 是否自动创建
-              auto-create: true
-              # 是否启用死信队列
-              enabled-dlq: true
-            - topic: iwindplus-appCert-topic
-              group: iwindplus-appCert-group
-              # 是否自动创建
-              auto-create: true
-              # 是否启用死信队列
-              enabled-dlq: true
-            - topic: iwindplus-apiWhiteList-topic
-              group: iwindplus-apiWhiteList-group
-              # 是否自动创建
-              auto-create: true
-              # 是否启用死信队列
-              enabled-dlq: true
-            - topic: iwindplus-ipBlackList-topic
-              group: iwindplus-ipBlackList-group
-              # 是否自动创建
-              auto-create: true
-              # 是否启用死信队列
-              enabled-dlq: true
+          # 是否启用死信主题
+          enabled-dlt: true
+          # 消息堆积量最大值（该参数和maxOverloadCount判断是否需要扩容）
+          maxLag: 50000
+          # 消息堆积量最小值（通过该参数判断是否需要缩容）
+          minLag: 1000
+        # 绑定关系配置
+        bindings:
+          - topic: iwindplus-gatewayLog-topic
+            group: iwindplus-gatewayLog-group
+            # 是否自动创建
+            auto-create: true
+          - topic: iwindplus-appCert-topic
+            group: iwindplus-appCert-group
+            # 是否自动创建
+            auto-create: true
+          - topic: iwindplus-apiWhiteList-topic
+            group: iwindplus-apiWhiteList-group
+            # 是否自动创建
+            auto-create: true
+          - topic: iwindplus-ipBlackList-topic
+            group: iwindplus-ipBlackList-group
+            # 是否自动创建
+            auto-create: true
 logging:
   level:
     root: INFO

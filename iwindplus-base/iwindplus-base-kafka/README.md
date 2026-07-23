@@ -16,8 +16,8 @@
 # 示例
     @KafkaMultiListener(
         cluster = "${kafka.multi.default-cluster}",
-        topics = {"${kafka.multi.clusters.default.consumer.bindings[1].topic}"},
-        group = "${kafka.multi.clusters.default.consumer.bindings[1].group}"
+        topics = {"${kafka.multi.clusters.default.bindings[1].topic}"},
+        group = "${kafka.multi.clusters.default.bindings[1].group}"
     )
     public void listenBatch(List<ConsumerRecord<String, String>> records, Acknowledgment ack) {
         log.info("登陆日志批量监听开始, size={}", records.size());

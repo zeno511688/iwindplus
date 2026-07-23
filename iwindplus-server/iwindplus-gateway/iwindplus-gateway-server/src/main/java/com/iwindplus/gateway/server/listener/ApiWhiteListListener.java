@@ -33,8 +33,8 @@ public class ApiWhiteListListener {
 
     @KafkaMultiListener(
         cluster = "${kafka.multi.default-cluster}",
-        topics = {"${kafka.multi.clusters.default.consumer.bindings[2].topic}"},
-        group = "${kafka.multi.clusters.default.consumer.bindings[2].group}"
+        topics = {"${kafka.multi.clusters.default.bindings[2].topic}"},
+        group = "${kafka.multi.clusters.default.bindings[2].group}"
     )
     public void listenSingle(Message<String> records, Acknowledgment ack) {
         log.info("API白名单消息消费参数={}", records);

@@ -200,10 +200,10 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
         RabbitMultiListenerMetaDTO first = list.get(0);
 
         String[] queues = list.stream()
-                              .flatMap(x -> Arrays.stream(x.getQueues()))
-                              .filter(CharSequenceUtil::isNotBlank)
-                              .distinct()
-                              .toArray(String[]::new);
+            .flatMap(x -> Arrays.stream(x.getQueues()))
+            .filter(CharSequenceUtil::isNotBlank)
+            .distinct()
+            .toArray(String[]::new);
 
         return RabbitMultiListenerMetaDTO
             .builder()
@@ -324,10 +324,20 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
             .build();
     }
 
+/**
+ * Groups a list of RabbitMultiListenerMetaDTO objects by their cluster and group properties.
+ *
+ * @param metas The list of RabbitMultiListenerMetaDTO objects to be grouped
+ * @return A Map where the key is a RabbitConsumerKeyDTO containing cluster and group information,
+ *         and the value is a list of RabbitMultiListenerMetaDTO objects that belong to that key
+ */
     private Map<RabbitConsumerKeyDTO, List<RabbitMultiListenerMetaDTO>> group(List<RabbitMultiListenerMetaDTO> metas) {
+    // Use Java Stream API to group the list of metas by creating a RabbitConsumerKeyDTO
+    // for each entity based on its cluster and group properties
         return metas
             .stream()
             .collect(Collectors.groupingBy(
+            // Create a RabbitConsumerKeyDTO for each entity using cluster and group as the key
                 entity -> new RabbitConsumerKeyDTO(
                     entity.getCluster(),
                     entity.getGroup()

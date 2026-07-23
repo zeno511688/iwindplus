@@ -11,15 +11,14 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
 import com.iwindplus.base.kafka.domain.enums.KafkaCodeEnum;
-import com.iwindplus.base.kafka.domain.enums.KafkaConsumerLocalRetryTypeEnum;
+import com.iwindplus.base.kafka.domain.enums.KafkaConsumerRetryTypeEnum;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumerConfig;
-import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumerLocalRetryConfig;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaMultiClusterConfig;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaProducerConfig;
 import com.iwindplus.base.kafka.support.KafkaDynamicRegistry;
-import com.iwindplus.base.kafka.support.KafkaErrorHandler;
 import com.iwindplus.base.kafka.support.observation.CustomKafkaListenerObservationConvention;
 import com.iwindplus.base.kafka.support.observation.CustomKafkaTemplateObservationConvention;
 import io.micrometer.observation.ObservationRegistry;
@@ -48,6 +47,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ConsumerRecordRecoverer;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.ContainerProperties.AckMode;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
 import org.springframework.util.backoff.BackOff;
@@ -276,6 +276,13 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
     }
 
     /**
+     * 获取最大并发数.
+     */
+    public Integer getMaxConcurrency(String cluster) {
+        return property.getMaxConcurrency(cluster);
+    }
+
+    /**
      * 获取消费者配置.
      */
     public KafkaConsumerConfig getConsumerConfig(String cluster) {
@@ -431,48 +438,56 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
         KafkaConsumerConfig consumer,
         ConcurrentKafkaListenerContainerFactory<String, Object> factory) {
 
-        final KafkaConsumerLocalRetryConfig cfg = consumer.getLocalRetry();
-        if (Boolean.FALSE.equals(cfg.getEnabled())) {
-            return;
-        }
-
-        if (Boolean.TRUE.equals(consumer.getEnabledDlq())) {
-            ConsumerRecordRecoverer recoverer = new KafkaErrorHandler(
-                clusterName,
-                consumer,
-                applicationContext.getBean(KafkaTemplateRouter.class)
-            );
-            DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, this.buildBackOff(cfg));
+        if (Boolean.TRUE.equals(consumer.getEnabledDlt())) {
+            ConsumerRecordRecoverer recoverer = recoverer(applicationContext.getBean(KafkaTemplateRouter.class), clusterName);
+            DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, this.buildBackOff(consumer));
             // 手动提交很重要这个参数，不然会导致发送dlq成功后offset没有提交，导致重复消费
             errorHandler.setCommitRecovered(true);
+            errorHandler.setAckAfterHandle(true);
             factory.setCommonErrorHandler(errorHandler);
         } else {
-            DefaultErrorHandler errorHandler = new DefaultErrorHandler(null, this.buildBackOff(cfg));
-            errorHandler.setAckAfterHandle(false);
+            DefaultErrorHandler errorHandler = new DefaultErrorHandler(null, this.buildBackOff(consumer));
             errorHandler.setCommitRecovered(false);
+            errorHandler.setAckAfterHandle(false);
             factory.setCommonErrorHandler(errorHandler);
         }
     }
 
-    private BackOff buildBackOff(KafkaConsumerLocalRetryConfig cfg) {
-        if (KafkaConsumerLocalRetryTypeEnum.FIXED.equals(cfg.getType())) {
+    private DeadLetterPublishingRecoverer recoverer(
+        KafkaTemplateRouter router, String cluster) {
+        DeadLetterPublishingRecoverer recoverer =
+            new DeadLetterPublishingRecoverer(
+                producerRecord -> router.manager().getTemplate(cluster),
+                (record, ex) ->
+                    new TopicPartition(
+                        record.topic()
+                            + KafkaConstant.KAFKA_DLT_SUFFIX,
+                        record.partition()
+                    )
+            );
+        return recoverer;
+    }
+
+    private BackOff buildBackOff(KafkaConsumerConfig cfg) {
+        if (KafkaConsumerRetryTypeEnum.FIXED.equals(cfg.getRetryType())) {
             return new FixedBackOff(
-                cfg.getIntervalMs(),
-                cfg.getAttempts()
+                cfg.getRetryIntervalMs(),
+                cfg.getRetryAttempts()
             );
         }
 
-        if (KafkaConsumerLocalRetryTypeEnum.EXPONENTIAL.equals(cfg.getType())) {
+        if (KafkaConsumerRetryTypeEnum.EXPONENTIAL.equals(cfg.getRetryType())) {
             ExponentialBackOff backOff = new ExponentialBackOff();
 
-            backOff.setInitialInterval(cfg.getIntervalMs());
-            backOff.setMultiplier(cfg.getMultiplier());
-            backOff.setMaxInterval(cfg.getMaxIntervalMs());
+            backOff.setInitialInterval(cfg.getRetryIntervalMs());
+            backOff.setMultiplier(cfg.getRetryMultiplier());
+            backOff.setMaxInterval(cfg.getRetryMaxIntervalMs());
+            backOff.setMaxAttempts(cfg.getRetryAttempts().intValue());
 
             return backOff;
         }
 
-        throw new IllegalArgumentException("Unsupported backOff type: " + cfg.getType());
+        throw new IllegalArgumentException("Unsupported backOff type: " + cfg.getRetryType());
     }
 
     /**
@@ -583,6 +598,6 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
         KafkaCodeEnum code) {
 
         return Optional.ofNullable(map.get(key))
-            .orElseThrow(() -> new BizException(code));
+                       .orElseThrow(() -> new BizException(code));
     }
 }

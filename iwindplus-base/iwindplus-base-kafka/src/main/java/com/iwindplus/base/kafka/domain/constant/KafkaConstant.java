@@ -42,72 +42,12 @@ public final class KafkaConstant {
     public static final String CLUSTER = "cluster";
 
     /**
-     * 死信队列后缀
+     * 死信主题
      */
-    public static final String KAFKA_DLQ_SUFFIX = ".DLQ";
+    public static final String KAFKA_DLT_SUFFIX = ".DLT";
 
     /**
-     * 死信队列消费组后缀
+     * 死信主题消费组后缀
      */
-    public static final String KAFKA_DLQ_GROUP_SUFFIX = "-group-dlq";
-
-    /**
-     * 重试请求头 .
-     */
-    public final class RetryHeadersConstant {
-
-        private RetryHeadersConstant() {
-            throw new IllegalStateException(CommonConstant.UTILITY_CLASS);
-        }
-
-        /**
-         * 头前缀 .
-         */
-        public static final String PREFIX = "kafka-retry-";
-
-        /**
-         * 原主题
-         */
-        public static final String ORIGINAL_TOPIC = PREFIX + "original-topic";
-
-        /**
-         * 原partition
-         */
-        public static final String ORIGINAL_PARTITION = PREFIX + "original-partition";
-
-        /**
-         * 原offset
-         */
-        public static final String ORIGINAL_OFFSET = PREFIX + "original-offset";
-
-        /**
-         * 重试次数
-         */
-        public static final String RETRY_COUNT = PREFIX + "retry-count";
-
-        /**
-         * 最大重试次数
-         */
-        public static final String MAX_RETRY = PREFIX + "max-retry";
-
-        /**
-         * 错误类型
-         */
-        public static final String ERROR_TYPE = PREFIX + "error-type";
-
-        /**
-         * 错误信息
-         */
-        public static final String ERROR_MESSAGE = PREFIX + "error-message";
-
-        /**
-         * 首次错误发生时间
-         */
-        public static final String FIRST_FAILED_TIME = PREFIX + "first-failed-time";
-
-        /**
-         * 最后错误发生时间
-         */
-        public static final String LAST_FAILED_TIME = PREFIX + "last-failed-time";
-    }
+    public static final String KAFKA_DLT_GROUP_SUFFIX = "-dlt";
 }

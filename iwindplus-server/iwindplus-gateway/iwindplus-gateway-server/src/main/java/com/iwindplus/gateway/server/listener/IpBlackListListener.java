@@ -33,8 +33,8 @@ public class IpBlackListListener {
 
     @KafkaMultiListener(
         cluster = "${kafka.multi.default-cluster}",
-        topics = {"${kafka.multi.clusters.default.consumer.bindings[3].topic}"},
-        group = "${kafka.multi.clusters.default.consumer.bindings[3].group}"
+        topics = {"${kafka.multi.clusters.default.bindings[3].topic}"},
+        group = "${kafka.multi.clusters.default.bindings[3].group}"
     )
     public void listenSingle(Message<String> records, Acknowledgment ack) {
         log.info("IP黑名单消息消费参数={}", records);

@@ -281,14 +281,6 @@ dynamictp:
       runTimeout: 0
       queueTimeout: 0
       platformIds: [ 1 ]
-    - threadPoolName: kafkaLagTaskScheduler
-      threadPoolAliasName: kafka消息堆积调度线程池
-      executorType: scheduled
-      corePoolSize: 2
-      maximumPoolSize: 4
-      threadNamePrefix: kafkaLagTask
-      platformIds: [ 1 ]
-      runTimeout: 5000
 spring:
   cloud:
     circuitbreaker:
@@ -410,17 +402,14 @@ kafka:
           ack-time: 10000
           properties:
             fetch.max.wait.ms: 500
-          localRetry:
-            # 是否开启本地重试
-            enabled: true
-          # 绑定关系配置
-          bindings:
-            - topic: iwindplus-binlog-topic
-              group: iwindplus-binlog-group
-              # 是否自动创建
-              auto-create: true
-              # 是否启用死信队列
-              enabled-dlq: true
+          # 是否启用死信主题
+          enabled-dlt: true
+        # 绑定关系配置
+        bindings:
+          - topic: iwindplus-binlog-topic
+            group: iwindplus-binlog-group
+            # 是否自动创建
+            auto-create: true
 binlog:
   # 是否开启binlog
   enabled: true

@@ -7,13 +7,14 @@
 
 package com.iwindplus.base.rabbit.domain.property;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.rabbit.domain.constant.RabbitConstant;
 import com.iwindplus.base.rabbit.domain.enums.RabbitExchangeTypeEnum;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -132,6 +133,13 @@ public class RabbitMultiProperty {
         @Builder.Default
         @NestedConfigurationProperty
         private RabbitConsumerConfig consumer = new RabbitConsumerConfig();
+
+        /**
+         * 绑定关系配置.
+         */
+        @Builder.Default
+        @NestedConfigurationProperty
+        private List<RabbitBindingConfig> bindings = new ArrayList<>(10);
     }
 
     /**
@@ -317,13 +325,6 @@ public class RabbitMultiProperty {
          */
         @Builder.Default
         private Integer priority = 1;
-
-        /**
-         * 绑定关系配置.
-         */
-        @Builder.Default
-        @NestedConfigurationProperty
-        private List<RabbitBindingConfig> bindings = new ArrayList<>(10);
     }
 
     /**
@@ -482,18 +483,6 @@ public class RabbitMultiProperty {
     }
 
     /**
-     * 获取绑定关系配置
-     *
-     * @param cluster 集群
-     * @return
-     */
-    public List<RabbitBindingConfig> listBindingConfig(String cluster) {
-        final RabbitConsumerConfig config = getConsumerConfig(cluster);
-        return config != null && CollUtil.isNotEmpty(config.getBindings())
-            ? config.getBindings() : new ArrayList<>(10);
-    }
-
-    /**
      * 获取并发数
      *
      * @param cluster 集群
@@ -556,5 +545,45 @@ public class RabbitMultiProperty {
     public Boolean getConsumerEnabledObservation(String cluster) {
         final RabbitConsumerConfig config = getConsumerConfig(cluster);
         return config != null && config.getEnabledObservation();
+    }
+
+    /**
+     * 获取绑定关系配置
+     *
+     * @param cluster 集群
+     * @return
+     */
+    public List<RabbitBindingConfig> listBindingConfig(String cluster) {
+        RabbitMultiClusterConfig config = clusters.get(cluster);
+        return config != null && config.getBindings() != null
+            ? config.getBindings() : new ArrayList<>(10);
+    }
+
+    /**
+     * 获取Queue集合
+     *
+     * @param cluster 集群
+     * @return
+     */
+    public List<String> listQueue(String cluster) {
+        final List<RabbitBindingConfig> bindings = listBindingConfig(cluster);
+
+        return bindings
+            .stream()
+            .filter(Objects::nonNull)
+            .map(RabbitBindingConfig::getQueue)
+            .filter(Objects::nonNull)
+            .map(Queue::getName)
+            .filter(CharSequenceUtil::isNotBlank)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取默认集群Queue集合
+     *
+     * @return
+     */
+    public List<String> listDefaultClusterQueue() {
+        return listQueue(defaultCluster);
     }
 }

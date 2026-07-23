@@ -7,10 +7,9 @@
 
 package com.iwindplus.base.kafka.domain.property;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
-import com.iwindplus.base.kafka.domain.enums.KafkaConsumerLocalRetryTypeEnum;
+import com.iwindplus.base.kafka.domain.enums.KafkaConsumerRetryTypeEnum;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +46,12 @@ public class KafkaMultiProperty {
      */
     @Builder.Default
     private Boolean enabled = true;
+
+    /**
+     * 是否启用动态扩容.
+     */
+    @Builder.Default
+    private Boolean enabledScale = false;
 
     /**
      * 默认集群（必填）.
@@ -92,6 +97,13 @@ public class KafkaMultiProperty {
         @Builder.Default
         @NestedConfigurationProperty
         private KafkaConsumerConfig consumer = new KafkaConsumerConfig();
+
+        /**
+         * 绑定关系配置.
+         */
+        @Builder.Default
+        @NestedConfigurationProperty
+        private List<KafkaBindingConfig> bindings = new ArrayList<>(10);
     }
 
     /**
@@ -110,7 +122,7 @@ public class KafkaMultiProperty {
         private Boolean enabled = true;
 
         /**
-         * 是否启用每次请求观察（自带的）.
+         * 是否启用每次请求观察.
          */
         @Builder.Default
         private Boolean enabledObservation = Boolean.TRUE;
@@ -291,16 +303,16 @@ public class KafkaMultiProperty {
         private Boolean enabled = true;
 
         /**
-         * 是否启用每次请求观察（自带的）.
+         * 是否启用每次请求观察.
          */
         @Builder.Default
         private Boolean enabledObservation = Boolean.TRUE;
 
         /**
-         * 是否启用死信队列.
+         * 是否启用死信主题.
          */
         @Builder.Default
-        private Boolean enabledDlq = false;
+        private Boolean enabledDlt = false;
 
         /**
          * Bootstrap服务器（覆盖集群配置，可选）.
@@ -399,7 +411,31 @@ public class KafkaMultiProperty {
          * 并发消费者数.
          */
         @Builder.Default
-        private Integer concurrency = 3;
+        private Integer concurrency = 1;
+
+        /**
+         * 最大并发消费者数.
+         */
+        @Builder.Default
+        private Integer maxConcurrency = 20;
+
+        /**
+         * 消息堆积量最大值（该参数和maxOverloadCount判断是否需要扩容）.
+         */
+        @Builder.Default
+        private Long maxLag = 50000L;
+
+        /**
+         * 消息堆积量最小值（通过该参数判断是否需要缩容）.
+         */
+        @Builder.Default
+        private Long minLag = 1000L;
+
+        /**
+         * 连续高lag次数最小值（该参数和maxLag判断是否需要扩容）.
+         */
+        @Builder.Default
+        private Integer minOverloadCount = 6;
 
         /**
          * 是否批量监听.
@@ -474,25 +510,41 @@ public class KafkaMultiProperty {
         private Integer metadataMaxAgeMs = 300000;
 
         /**
+         * 重试类型（固定频率）.
+         */
+        @Builder.Default
+        private KafkaConsumerRetryTypeEnum retryType = KafkaConsumerRetryTypeEnum.FIXED;
+
+        /**
+         * 重试次数.
+         */
+        @Builder.Default
+        private Long retryAttempts = 3L;
+
+        /**
+         * 重试间隔（毫秒）.
+         */
+        @Builder.Default
+        private Long retryIntervalMs = 10000L;
+
+        /**
+         * 最大重试间隔（毫秒）.
+         */
+        @Builder.Default
+        private Long retryMaxIntervalMs = 300000L;
+
+        /**
+         * 指数频率时，增长倍数.
+         */
+        @Builder.Default
+        private Double retryMultiplier = 3.0;
+
+        /**
          * 自定义扩展配置（覆盖所有以上配置）. 可配置任何Kafka原生参数
          */
         @Builder.Default
         @NestedConfigurationProperty
         private Map<String, Object> properties = new HashMap<>(16);
-
-        /**
-         * 本地重试配置
-         */
-        @Builder.Default
-        @NestedConfigurationProperty
-        private KafkaConsumerLocalRetryConfig localRetry = new KafkaConsumerLocalRetryConfig();
-
-        /**
-         * 绑定关系配置.
-         */
-        @Builder.Default
-        @NestedConfigurationProperty
-        private List<KafkaBindingConfig> bindings = new ArrayList<>(10);
     }
 
     /**
@@ -538,52 +590,6 @@ public class KafkaMultiProperty {
         @Builder.Default
         @NestedConfigurationProperty
         private Map<String, String> arguments = new HashMap<>(16);
-    }
-
-    /**
-     * 消费者本地重试配置.
-     */
-    @Data
-    @SuperBuilder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class KafkaConsumerLocalRetryConfig {
-
-        /**
-         * 是否开启.
-         */
-        @Builder.Default
-        private Boolean enabled = true;
-
-        /**
-         * 重试类型（固定频率）.
-         */
-        @Builder.Default
-        private KafkaConsumerLocalRetryTypeEnum type = KafkaConsumerLocalRetryTypeEnum.FIXED;
-
-        /**
-         * 重试次数.
-         */
-        @Builder.Default
-        private Long attempts = 3L;
-
-        /**
-         * 重试间隔（毫秒）.
-         */
-        @Builder.Default
-        private Long intervalMs = 1000L;
-
-        /**
-         * 最大重试间隔（毫秒）.
-         */
-        @Builder.Default
-        private Long maxIntervalMs = 30000L;
-
-        /**
-         * 指数频率时，增长倍数.
-         */
-        @Builder.Default
-        private Double multiplier = 3.0;
     }
 
     /**
@@ -750,7 +756,7 @@ public class KafkaMultiProperty {
      * @return
      */
     public List<KafkaBindingConfig> listBindingConfig(String cluster) {
-        final KafkaConsumerConfig config = getConsumerConfig(cluster);
+        KafkaMultiClusterConfig config = clusters.get(cluster);
         return config != null && config.getBindings() != null
             ? config.getBindings() : new ArrayList<>(10);
     }
@@ -790,6 +796,54 @@ public class KafkaMultiProperty {
         final KafkaConsumerConfig config = getConsumerConfig(cluster);
         return config != null && config.getConcurrency() != null
             ? config.getConcurrency() : 1;
+    }
+
+    /**
+     * 获取最大并发数
+     *
+     * @param cluster 集群
+     * @return
+     */
+    public Integer getMaxConcurrency(String cluster) {
+        final KafkaConsumerConfig config = getConsumerConfig(cluster);
+        return config != null && config.getMaxConcurrency() != null
+            ? config.getMaxConcurrency() : 20;
+    }
+
+    /**
+     * 获取消息堆积量最大值
+     *
+     * @param cluster 集群
+     * @return
+     */
+    public Long getMaxLag(String cluster) {
+        final KafkaConsumerConfig config = getConsumerConfig(cluster);
+        return config != null && config.getMaxLag() != null
+            ? config.getMaxLag() : 50000L;
+    }
+
+    /**
+     * 获取消息堆积量最小值
+     *
+     * @param cluster 集群
+     * @return
+     */
+    public Long getMinLag(String cluster) {
+        final KafkaConsumerConfig config = getConsumerConfig(cluster);
+        return config != null && config.getMinLag() != null
+            ? config.getMinLag() : 1000L;
+    }
+
+    /**
+     * 获取连续高lag次数最小值
+     *
+     * @param cluster 集群
+     * @return
+     */
+    public Integer getMinOverloadCount(String cluster) {
+        final KafkaConsumerConfig config = getConsumerConfig(cluster);
+        return config != null && config.getMinOverloadCount() != null
+            ? config.getMinOverloadCount() : 6;
     }
 
     /**
@@ -860,23 +914,21 @@ public class KafkaMultiProperty {
      * @return
      */
     public List<String> listTopic(String cluster) {
-        if (CharSequenceUtil.isBlank(cluster)) {
-            return new ArrayList<>();
-        }
+        final List<KafkaBindingConfig> bindings = listBindingConfig(cluster);
 
-        final KafkaConsumerConfig config = getConsumerConfig(cluster);
-        if (config == null) {
-            return new ArrayList<>();
-        }
-
-        final List<KafkaBindingConfig> bindings = config.getBindings();
-        if (CollUtil.isEmpty(bindings)) {
-            return new ArrayList<>();
-        }
-
-        return bindings.stream()
+        return bindings
+            .stream()
             .filter(binding -> binding != null && CharSequenceUtil.isNotBlank(binding.getTopic()))
             .map(KafkaBindingConfig::getTopic)
             .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取默认集群Topic集合
+     *
+     * @return
+     */
+    public List<String> listDefaultClusterTopic() {
+        return listTopic(defaultCluster);
     }
 }

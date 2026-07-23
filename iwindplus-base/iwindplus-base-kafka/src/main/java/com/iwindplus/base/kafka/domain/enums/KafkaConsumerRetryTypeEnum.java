@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public enum KafkaConsumerLocalRetryTypeEnum implements BaseEnum<String> {
+public enum KafkaConsumerRetryTypeEnum implements BaseEnum<String> {
 
     /**
      * 指数频率.

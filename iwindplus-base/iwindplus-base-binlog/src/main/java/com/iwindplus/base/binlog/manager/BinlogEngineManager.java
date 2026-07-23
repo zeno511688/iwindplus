@@ -223,7 +223,7 @@ public class BinlogEngineManager implements SmartLifecycle {
         final String defaultCluster = kafkaProperty.getDefaultCluster();
         final KafkaMultiClusterConfig kafkaClusterConfig = kafkaProperty.getClusters().get(defaultCluster);
         KafkaMultiClusterConfig config = BeanUtil.copyProperties(kafkaClusterConfig, KafkaMultiClusterConfig.class);
-        config.getConsumer().getBindings().addAll(buildTopicConfigs());
+        config.getBindings().addAll(buildTopicConfigs());
         return Mono.fromRunnable(() ->
             KafkaDynamicRegistry.createTopicsIfAbsent(defaultCluster,
                 config, kafkaTemplateRouter.getAdmin(defaultCluster), 10)

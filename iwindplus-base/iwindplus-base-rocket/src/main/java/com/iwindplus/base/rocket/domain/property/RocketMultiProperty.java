@@ -13,6 +13,8 @@ import com.iwindplus.base.rocket.domain.constant.RocketConstant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -80,6 +82,13 @@ public class RocketMultiProperty {
         @Builder.Default
         @NestedConfigurationProperty
         private RocketConsumerConfig consumer = new RocketConsumerConfig();
+
+        /**
+         * 绑定关系配置.
+         */
+        @Builder.Default
+        @NestedConfigurationProperty
+        private List<RocketBindingConfig> bindings = new ArrayList<>(10);
     }
 
     /**
@@ -229,13 +238,6 @@ public class RocketMultiProperty {
          */
         @Builder.Default
         private Boolean orderly = false;
-
-        /**
-         * 绑定关系配置.
-         */
-        @Builder.Default
-        @NestedConfigurationProperty
-        private List<RocketBindingConfig> bindings = new ArrayList<>(10);
     }
 
     /**
@@ -287,18 +289,6 @@ public class RocketMultiProperty {
         RocketMultiClusterConfig config = clusters.get(cluster);
         return config != null && config.getConsumer() != null
             ? config.getConsumer() : new RocketConsumerConfig();
-    }
-
-    /**
-     * 获取绑定关系配置
-     *
-     * @param cluster 集群
-     * @return
-     */
-    public List<RocketBindingConfig> listBindingConfig(String cluster) {
-        final RocketConsumerConfig config = getConsumerConfig(cluster);
-        return config != null && config.getBindings() != null
-            ? config.getBindings() : new ArrayList<>(10);
     }
 
     /**
@@ -355,4 +345,41 @@ public class RocketMultiProperty {
             : RocketConstant.ROCKET_DEFAULT_GROUP;
     }
 
+    /**
+     * 获取绑定关系配置
+     *
+     * @param cluster 集群
+     * @return
+     */
+    public List<RocketBindingConfig> listBindingConfig(String cluster) {
+        RocketMultiClusterConfig config = clusters.get(cluster);
+        return config != null && config.getBindings() != null
+            ? config.getBindings() : new ArrayList<>(10);
+    }
+
+    /**
+     * 获取Topic集合
+     *
+     * @param cluster 集群
+     * @return
+     */
+    public List<String> listTopic(String cluster) {
+        final List<RocketBindingConfig> bindings = listBindingConfig(cluster);
+
+        return bindings
+            .stream()
+            .filter(Objects::nonNull)
+            .map(RocketBindingConfig::getTopic)
+            .filter(CharSequenceUtil::isNotBlank)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取默认集群Topic集合
+     *
+     * @return
+     */
+    public List<String> listDefaultClusterTopic() {
+        return listTopic(defaultCluster);
+    }
 }

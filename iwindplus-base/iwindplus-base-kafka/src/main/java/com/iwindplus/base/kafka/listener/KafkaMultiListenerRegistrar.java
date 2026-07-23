@@ -15,6 +15,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.kafka.core.KafkaClusterManager;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
+import com.iwindplus.base.kafka.domain.dto.KafkaConsumerInfoDTO;
 import com.iwindplus.base.kafka.domain.dto.KafkaConsumerKeyDTO;
 import com.iwindplus.base.kafka.domain.dto.KafkaMultiListenerMetaDTO;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
@@ -29,6 +30,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,6 +45,7 @@ import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.listener.AcknowledgingMessageListener;
 import org.springframework.kafka.listener.BatchAcknowledgingMessageListener;
 import org.springframework.kafka.listener.BatchMessageListener;
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.ContainerProperties.AckMode;
 import org.springframework.kafka.listener.MessageListener;
@@ -67,12 +70,12 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
     private final Map<Method, BeanInvoker> invokerCache = new ConcurrentHashMap<>(16);
     private final Map<Method, ArgBuilder[]> argCache = new ConcurrentHashMap<>(16);
 
-    private final Map<String, AbstractMessageListenerContainer<String, Object>> containerMap = new ConcurrentHashMap<>(16);
+    private final Map<String, KafkaConsumerInfoDTO> containerMap = new ConcurrentHashMap<>(16);
 
     private final Cache<Class<?>, ObjectReader> readerCache =
         Caffeine.newBuilder()
-            .maximumSize(1024)
-            .build();
+                .maximumSize(1024)
+                .build();
 
     private volatile boolean running;
 
@@ -96,8 +99,8 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
 
         containerMap.forEach((id, c) -> {
             try {
-                c.stop();
-                c.destroy();
+                c.getContainer().stop();
+                c.getContainer().destroy();
                 log.info("Kafka listener stopped: {}", id);
             } catch (Exception e) {
                 log.error("Stop kafka listener failed: {}", id, e);
@@ -123,6 +126,102 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
     @Override
     public int getPhase() {
         return Integer.MIN_VALUE + 100;
+    }
+
+    /**
+     * 获取所有监听器.
+     *
+     * @return Map<String, KafkaConsumerInfoDTO>
+     */
+    public Map<String, KafkaConsumerInfoDTO> getContainerMap() {
+        return containerMap;
+    }
+
+    /**
+     * 按集群 + 消费组分组.
+     *
+     * @return Map<KafkaConsumerKeyDTO, List < KafkaConsumerInfoDTO>>
+     */
+    public Map<KafkaConsumerKeyDTO, List<KafkaConsumerInfoDTO>> groupByClusterAndGroup() {
+        return containerMap
+            .values()
+            .stream()
+            .collect(Collectors.groupingBy(
+                entity -> new KafkaConsumerKeyDTO(
+                    entity.getCluster(),
+                    entity.getGroup()
+                )
+            ));
+    }
+
+    /**
+     * 调整消费者并发消费者数.
+     *
+     * @param consumer 消费者信息
+     * @param target   目标并发
+     */
+    public void resize(
+        KafkaConsumerInfoDTO consumer,
+        int target) {
+
+        if (consumer == null) {
+            return;
+        }
+        if (target <= 0) {
+            throw new IllegalArgumentException("Kafka consumer concurrency must > 0");
+        }
+        if (!(consumer.getContainer()
+            instanceof ConcurrentMessageListenerContainer<?, ?> container)) {
+            log.warn("Kafka container not support resize, listenerId={}", consumer.getListenerId());
+
+            return;
+        }
+        int current = container.getContainers().size();
+        if (current == target) {
+            return;
+        }
+        log.warn(
+            "Resize kafka consumer, cluster={}, group={}, listenerId={}, {} -> {}",
+            consumer.getCluster(),
+            consumer.getGroup(),
+            consumer.getListenerId(),
+            current,
+            target
+        );
+        boolean running = container.isRunning();
+        try {
+            // 停止旧consumer
+            if (running) {
+                container.stop();
+            }
+            // 修改并发
+            container.setConcurrency(target);
+            // 重新启动
+            if (running) {
+                container.start();
+            }
+        } catch (Exception e) {
+            log.error(
+                "Resize kafka consumer failed, listenerId={}",
+                consumer.getListenerId(),
+                e
+            );
+
+            // 恢复旧配置
+            try {
+                container.setConcurrency(current);
+                if (running && !container.isRunning()) {
+                    container.start();
+                }
+            } catch (Exception rollback) {
+                log.error(
+                    "Rollback kafka consumer resize failed",
+                    rollback
+                );
+            }
+
+            throw e;
+        }
     }
 
     private void preWarm(List<KafkaMultiListenerMetaDTO> metas) {
@@ -191,12 +290,23 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         final String clientId = CharSequenceUtil.isNotBlank(p.getClientId())
             ? p.getClientId() : clusterManager.getConsumerClientId(meta.getCluster());
 
+        final KafkaConsumerInfoDTO consumerInfo = KafkaConsumerInfoDTO
+            .builder()
+            .cluster(meta.getCluster())
+            .group(meta.getGroup())
+            .topics(new HashSet<>(Arrays.asList(meta.getTopics())))
+            .listenerId(listenerId)
+            .clientId(clientId)
+            .maxConcurrency(property.getMaxConcurrency(meta.getCluster()))
+            .container(container)
+            .build();
+
         registerListener(clusterId, listenerId, clientId, meta, property, p);
 
         try {
             container.start();
 
-            containerMap.put(listenerId, container);
+            containerMap.put(listenerId, consumerInfo);
 
             log.info("Kafka listener started, cluster={}, group={}, topics={}, listenerId={}",
                 meta.getCluster(),
@@ -232,7 +342,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         boolean manualAck = AckMode.MANUAL.equals(ackMode)
             || AckMode.MANUAL_IMMEDIATE.equals(ackMode);
         boolean hasAck = Arrays.stream(meta.getMethod().getParameterTypes())
-            .anyMatch(Acknowledgment.class::isAssignableFrom);
+                               .anyMatch(Acknowledgment.class::isAssignableFrom);
         if (manualAck && !hasAck) {
             throw new IllegalStateException("Kafka listener AckMode.MANUAL requires Acknowledgment parameter, method=" + meta.getMethod());
         }
@@ -291,7 +401,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
 
         try {
             invokerCache.computeIfAbsent(m, x -> createInvoker(m, meta.getBean()))
-                .invoke(args);
+                        .invoke(args);
         } catch (Throwable e) {
             log.error(
                 "Kafka listener invoke failed, cluster={}, group={}, topics={}, method={}",
@@ -359,8 +469,8 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
 
             if (Message.class.isAssignableFrom(clazz)) {
                 return records -> records.stream()
-                    .map(x -> MessageBuilder.withPayload(extractValue(x)).build())
-                    .toList();
+                                         .map(x -> MessageBuilder.withPayload(extractValue(x)).build())
+                                         .toList();
             }
 
             ObjectReader reader = getReader(clazz);
@@ -441,7 +551,8 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             ? clusterManager.getDefaultCluster()
             : meta.getCluster();
 
-        return KafkaMultiListenerMetaDTO.builder()
+        return KafkaMultiListenerMetaDTO
+            .builder()
             .bean(meta.getBean())
             .method(meta.getMethod())
             .cluster(cluster)
@@ -453,13 +564,15 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
     private KafkaMultiListenerMetaDTO merge(List<KafkaMultiListenerMetaDTO> list) {
         KafkaMultiListenerMetaDTO first = list.get(0);
 
-        String[] topics = list.stream()
-            .flatMap(x -> Arrays.stream(x.getTopics()))
-            .filter(CharSequenceUtil::isNotBlank)
-            .distinct()
-            .toArray(String[]::new);
+        String[] topics =
+            list.stream()
+                .flatMap(x -> Arrays.stream(x.getTopics()))
+                .filter(CharSequenceUtil::isNotBlank)
+                .distinct()
+                .toArray(String[]::new);
 
-        return KafkaMultiListenerMetaDTO.builder()
+        return KafkaMultiListenerMetaDTO
+            .builder()
             .bean(first.getBean())
             .method(first.getMethod())
             .cluster(first.getCluster())

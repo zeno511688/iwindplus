@@ -16,6 +16,7 @@ import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaConsumer
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaMultiClusterConfig;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty.KafkaProducerConfig;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,11 +59,6 @@ public final class KafkaDynamicRegistry {
             return;
         }
 
-        KafkaConsumerConfig consumer = clusterConfig.getConsumer();
-        if (consumer == null || CollUtil.isEmpty(consumer.getBindings())) {
-            return;
-        }
-
         int timeout = Optional.ofNullable(timeoutSec)
                               .filter(v -> v > 0)
                               .orElse(DEFAULT_TIMEOUT_SEC);
@@ -78,11 +74,12 @@ public final class KafkaDynamicRegistry {
                            .names()
                            .get(timeout, TimeUnit.SECONDS);
 
-            List<NewTopic> newTopics = topics.stream()
-                                             .filter(KafkaDynamicRegistry::isAutoCreate)
-                                             .filter(topic -> !existingTopics.contains(topic.getTopic()))
-                                             .map(KafkaDynamicRegistry::createTopic)
-                                             .toList();
+            List<NewTopic> newTopics =
+                topics.stream()
+                      .filter(KafkaDynamicRegistry::isAutoCreate)
+                      .filter(topic -> !existingTopics.contains(topic.getTopic()))
+                      .map(KafkaDynamicRegistry::createTopic)
+                      .toList();
 
             if (CollUtil.isEmpty(newTopics)) {
                 log.info("No new Kafka topics need to be created, cluster={}",
@@ -116,15 +113,19 @@ public final class KafkaDynamicRegistry {
      */
     private static List<KafkaBindingConfig> buildAllTopics(KafkaMultiClusterConfig clusterConfig) {
         KafkaConsumerConfig consumer = clusterConfig.getConsumer();
-        List<KafkaBindingConfig> sourceBindings = new ArrayList<>(consumer.getBindings());
+        final List<KafkaBindingConfig> bindings = clusterConfig.getBindings();
+        if (consumer == null || CollUtil.isEmpty(bindings)) {
+            return Collections.emptyList();
+        }
+        List<KafkaBindingConfig> sourceBindings = new ArrayList<>(bindings);
         List<KafkaBindingConfig> result = new ArrayList<>(sourceBindings);
         // default producer topic
         KafkaDynamicRegistry.addDefaultTopic(clusterConfig, result);
 
-        // 判断是启用DLQ
-        if (Boolean.TRUE.equals(consumer.getEnabledDlq())) {
+        // 判断是启用DLT
+        if (Boolean.TRUE.equals(consumer.getEnabledDlt())) {
             sourceBindings.stream().forEach(m -> result.add(
-                buildConfig(m, KafkaConstant.KAFKA_DLQ_SUFFIX)
+                buildConfig(m, KafkaConstant.KAFKA_DLT_SUFFIX)
             ));
         }
 
