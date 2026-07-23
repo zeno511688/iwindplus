@@ -380,6 +380,8 @@ spring:
 kafka:
   multi:
     enabled: true
+    # 是否启用动态扩容
+    enabled-scale: false
     default-cluster: default
     enabled-dynamic-register: true
     clusters:
