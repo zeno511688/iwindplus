@@ -544,7 +544,7 @@ spring:
 kafka:
   multi:
     enabled: true
-    enabledScale: true
+    enabledScale: false
     default-cluster: default
     enabled-dynamic-register: true
     default-replicas: 1
