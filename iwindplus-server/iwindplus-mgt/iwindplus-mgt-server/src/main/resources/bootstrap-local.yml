@@ -520,14 +520,14 @@ rocket:
         # 消费者配置
         consumer:
           consume-message-batch-max-size: 10
-          # 绑定关系配置
-          bindings:
-            - topic: iwindplus-server-topic
-              group: iwindplus-server-group
-              tag: "*"
-            - topic: iwindplus-server1-topic
-              group: iwindplus-server-group
-              tag: "*"
+        # 绑定关系配置
+        bindings:
+          - topic: iwindplus-server-topic
+            group: iwindplus-server-group
+            tag: "*"
+          - topic: iwindplus-server1-topic
+            group: iwindplus-server-group
+            tag: "*"
 rabbit:
   multi:
     enabled: true
@@ -551,32 +551,32 @@ rabbit:
           concurrency: 1
           acknowledgeMode: MANUAL
           enabledBatchListener: false
-          # 绑定关系配置
-          bindings:
-            - auto-create: true
-              routingKeys:
-                - iwindplus.server.demo
-              exchange:
-                name: iwindplus.server.demo
-                type: topic
-              queue:
-                name: iwindplus.server.demo
-                durable: true
-                arguments:
-                  x-queue-mode: lazy
-              group: iwindplus.server.demo
-            - auto-create: true
-              routingKeys:
-                - iwindplus.server.demo.batch
-              exchange:
-                name: iwindplus.server.demo.batch
-                type: topic
-              queue:
-                name: iwindplus.server.demo.batch
-                durable: true
-                arguments:
-                  x-queue-mode: lazy
-              group: iwindplus.server.demo.batch
+        # 绑定关系配置
+        bindings:
+          - auto-create: true
+            routingKeys:
+              - iwindplus.server.demo
+            exchange:
+              name: iwindplus.server.demo
+              type: topic
+            queue:
+              name: iwindplus.server.demo
+              durable: true
+              arguments:
+                x-queue-mode: lazy
+            group: iwindplus.server.demo
+          - auto-create: true
+            routingKeys:
+              - iwindplus.server.demo.batch
+            exchange:
+              name: iwindplus.server.demo.batch
+              type: topic
+            queue:
+              name: iwindplus.server.demo.batch
+              durable: true
+              arguments:
+                x-queue-mode: lazy
+            group: iwindplus.server.demo.batch
 seata:
   enabled: true
   enable-auto-data-source-proxy: true

@@ -156,11 +156,7 @@ public class KafkaConfiguration {
      * @param kafkaLagTaskScheduler       kafkaLagTaskScheduler
      * @return KafkaLagCache
      */
-    @ConditionalOnProperty(
-        prefix = "kafka.multi",
-        name = "enabled-scale",
-        havingValue = "true"
-    )
+    @ConditionalOnProperty(prefix = "kafka.multi", name = "enabled-scale", havingValue = "true")
     @Bean
     public KafkaLagMonitor kafkaLagMonitor(
         KafkaMultiListenerRegistrar kafkaMultiListenerRegistrar,
