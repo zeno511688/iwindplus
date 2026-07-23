@@ -47,6 +47,7 @@ import org.redisson.api.RTopic;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.codec.StringCodec;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
@@ -69,6 +70,7 @@ public class RedissonIdempotentOperationImpl implements RedissonIdempotentOperat
     private RedisProperty property;
 
     @Autowired(required = false)
+    @Qualifier("idempotentTaskScheduler")
     private ScheduledDtpExecutor idempotentTaskScheduler;
 
     private static final long SINGLE_FLIGHT_TIMEOUT_MS = 5000L;

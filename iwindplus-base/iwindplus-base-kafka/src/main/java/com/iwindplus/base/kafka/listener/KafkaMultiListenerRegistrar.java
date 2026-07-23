@@ -74,8 +74,8 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
 
     private final Cache<Class<?>, ObjectReader> readerCache =
         Caffeine.newBuilder()
-                .maximumSize(1024)
-                .build();
+            .maximumSize(1024)
+            .build();
 
     private volatile boolean running;
 
@@ -180,6 +180,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         if (current == target) {
             return;
         }
+
         log.warn(
             "Resize kafka consumer, cluster={}, group={}, listenerId={}, {} -> {}",
             consumer.getCluster(),
@@ -188,18 +189,11 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             current,
             target
         );
+
         boolean running = container.isRunning();
         try {
-            // 停止旧consumer
-            if (running) {
-                container.stop();
-            }
             // 修改并发
             container.setConcurrency(target);
-            // 重新启动
-            if (running) {
-                container.start();
-            }
         } catch (Exception e) {
             log.error(
                 "Resize kafka consumer failed, listenerId={}",
@@ -210,12 +204,10 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             // 恢复旧配置
             try {
                 container.setConcurrency(current);
-                if (running && !container.isRunning()) {
-                    container.start();
-                }
             } catch (Exception rollback) {
                 log.error(
-                    "Rollback kafka consumer resize failed",
+                    "Rollback kafka consumer resize failed, listenerId={}",
+                    consumer.getListenerId(),
                     rollback
                 );
             }
@@ -342,7 +334,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         boolean manualAck = AckMode.MANUAL.equals(ackMode)
             || AckMode.MANUAL_IMMEDIATE.equals(ackMode);
         boolean hasAck = Arrays.stream(meta.getMethod().getParameterTypes())
-                               .anyMatch(Acknowledgment.class::isAssignableFrom);
+            .anyMatch(Acknowledgment.class::isAssignableFrom);
         if (manualAck && !hasAck) {
             throw new IllegalStateException("Kafka listener AckMode.MANUAL requires Acknowledgment parameter, method=" + meta.getMethod());
         }
@@ -401,7 +393,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
 
         try {
             invokerCache.computeIfAbsent(m, x -> createInvoker(m, meta.getBean()))
-                        .invoke(args);
+                .invoke(args);
         } catch (Throwable e) {
             log.error(
                 "Kafka listener invoke failed, cluster={}, group={}, topics={}, method={}",
@@ -469,8 +461,8 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
 
             if (Message.class.isAssignableFrom(clazz)) {
                 return records -> records.stream()
-                                         .map(x -> MessageBuilder.withPayload(extractValue(x)).build())
-                                         .toList();
+                    .map(x -> MessageBuilder.withPayload(extractValue(x)).build())
+                    .toList();
             }
 
             ObjectReader reader = getReader(clazz);
