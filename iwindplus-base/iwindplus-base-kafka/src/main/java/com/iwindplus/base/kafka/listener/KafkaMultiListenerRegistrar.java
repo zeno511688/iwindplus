@@ -176,73 +176,19 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
 
             return false;
         }
-        int current = container.getContainers().size();
-        if (current == target) {
-            return false;
-        }
+
+        container.setConcurrency(target);
 
         log.warn(
             "Resize kafka consumer, cluster={}, group={}, listenerId={}, {} -> {}",
             consumer.getCluster(),
             consumer.getGroup(),
             consumer.getListenerId(),
-            current,
+            container.getContainers().size(),
             target
         );
 
-        boolean running = container.isRunning();
-
-        try {
-            // 直接增加consumer
-            if (target > current) {
-                container.setConcurrency(target);
-            } else {
-                if (running) {
-                    container.stop();
-                }
-                container.setConcurrency(target);
-                if (running) {
-                    container.start();
-                }
-            }
-
-            int actual = container.getContainers().size();
-            if (actual != target) {
-                log.warn(
-                    "Kafka resize pending, listenerId={}, target={}, actual={}",
-                    consumer.getListenerId(),
-                    target,
-                    actual
-                );
-
-                consumer.setCurrentConcurrency(actual);
-            } else {
-                consumer.setCurrentConcurrency(target);
-            }
-
-            return true;
-        } catch (Exception e) {
-            log.error(
-                "Kafka resize failed, listenerId={}",
-                consumer.getListenerId(),
-                e
-            );
-
-            // 恢复旧配置
-            try {
-                if (running && !container.isRunning()) {
-                    container.start();
-                }
-            } catch (Exception recover) {
-                log.error(
-                    "Kafka container recover failed, listenerId={}",
-                    consumer.getListenerId(),
-                    recover
-                );
-            }
-
-            return false;
-        }
+        return true;
     }
 
     private void preWarm(List<KafkaMultiListenerMetaDTO> metas) {
