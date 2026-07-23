@@ -381,8 +381,6 @@ kafka:
     enabled-scale: true
     default-cluster: default
     enabled-dynamic-register: true
-    default-replicas: 1
-    default-partitions: 3
     clusters:
       default:
         bootstrap-servers: 127.0.0.1:9092
