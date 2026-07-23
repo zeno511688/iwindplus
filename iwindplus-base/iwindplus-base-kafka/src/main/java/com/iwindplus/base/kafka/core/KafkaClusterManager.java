@@ -598,6 +598,6 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
         KafkaCodeEnum code) {
 
         return Optional.ofNullable(map.get(key))
-                       .orElseThrow(() -> new BizException(code));
+            .orElseThrow(() -> new BizException(code));
     }
 }
