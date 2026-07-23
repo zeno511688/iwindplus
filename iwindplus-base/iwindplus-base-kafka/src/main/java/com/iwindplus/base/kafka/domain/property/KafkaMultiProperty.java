@@ -420,22 +420,28 @@ public class KafkaMultiProperty {
         private Integer maxConcurrency = 20;
 
         /**
-         * 消息堆积量最大值（该参数和maxOverloadCount判断是否需要扩容）.
+         * 消息堆积量最大值（该参数和overloadLagThreshold判断是否需要扩容）.
          */
         @Builder.Default
         private Long maxLag = 50000L;
 
         /**
-         * 消息堆积量最小值（通过该参数判断是否需要缩容）.
+         * 消息堆积量最小值（该参数和idleLagThreshold判断是否需要缩容）.
          */
         @Builder.Default
         private Long minLag = 1000L;
 
         /**
-         * 连续高lag次数最小值（该参数和maxLag判断是否需要扩容）.
+         * 连续高lag阈值（该参数和maxLag判断是否需要扩容）.
          */
         @Builder.Default
-        private Integer minOverloadCount = 6;
+        private Integer overloadLagThreshold = 20;
+
+        /**
+         * 连续低lag阈值（该参数和minLag判断是否需要缩容）.
+         */
+        @Builder.Default
+        private Integer idleLagThreshold = 20;
 
         /**
          * 是否批量监听.
@@ -835,15 +841,27 @@ public class KafkaMultiProperty {
     }
 
     /**
-     * 获取连续高lag次数最小值
+     * 连续高lag阈值
      *
      * @param cluster 集群
      * @return
      */
-    public Integer getMinOverloadCount(String cluster) {
+    public Integer getOverloadLagThreshold(String cluster) {
         final KafkaConsumerConfig config = getConsumerConfig(cluster);
-        return config != null && config.getMinOverloadCount() != null
-            ? config.getMinOverloadCount() : 6;
+        return config != null && config.getOverloadLagThreshold() != null
+            ? config.getOverloadLagThreshold() : 20;
+    }
+
+    /**
+     * 连续低lag阈值
+     *
+     * @param cluster 集群
+     * @return
+     */
+    public Integer getIdleLagThreshold(String cluster) {
+        final KafkaConsumerConfig config = getConsumerConfig(cluster);
+        return config != null && config.getIdleLagThreshold() != null
+            ? config.getIdleLagThreshold() : 20;
     }
 
     /**
