@@ -160,12 +160,12 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
      * @param consumer 消费者信息
      * @param target   目标并发
      */
-    public void resize(
+    public boolean resize(
         KafkaConsumerInfoDTO consumer,
         int target) {
 
         if (consumer == null) {
-            return;
+            return false;
         }
         if (target <= 0) {
             throw new IllegalArgumentException("Kafka consumer concurrency must > 0");
@@ -174,11 +174,11 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             instanceof ConcurrentMessageListenerContainer<?, ?> container)) {
             log.warn("Kafka container not support resize, listenerId={}", consumer.getListenerId());
 
-            return;
+            return false;
         }
         int current = container.getContainers().size();
         if (current == target) {
-            return;
+            return false;
         }
 
         log.warn(
@@ -191,28 +191,57 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         );
 
         boolean running = container.isRunning();
+
         try {
-            // 修改并发
-            container.setConcurrency(target);
+            // 直接增加consumer
+            if (target > current) {
+                container.setConcurrency(target);
+            } else {
+                if (running) {
+                    container.stop();
+                }
+                container.setConcurrency(target);
+                if (running) {
+                    container.start();
+                }
+            }
+
+            int actual = container.getContainers().size();
+            if (actual != target) {
+                log.warn(
+                    "Kafka resize pending, listenerId={}, target={}, actual={}",
+                    consumer.getListenerId(),
+                    target,
+                    actual
+                );
+
+                consumer.setCurrentConcurrency(actual);
+            } else {
+                consumer.setCurrentConcurrency(target);
+            }
+
+            return true;
         } catch (Exception e) {
             log.error(
-                "Resize kafka consumer failed, listenerId={}",
+                "Kafka resize failed, listenerId={}",
                 consumer.getListenerId(),
                 e
             );
 
             // 恢复旧配置
             try {
-                container.setConcurrency(current);
-            } catch (Exception rollback) {
+                if (running && !container.isRunning()) {
+                    container.start();
+                }
+            } catch (Exception recover) {
                 log.error(
-                    "Rollback kafka consumer resize failed, listenerId={}",
+                    "Kafka container recover failed, listenerId={}",
                     consumer.getListenerId(),
-                    rollback
+                    recover
                 );
             }
 
-            throw e;
+            return false;
         }
     }
 

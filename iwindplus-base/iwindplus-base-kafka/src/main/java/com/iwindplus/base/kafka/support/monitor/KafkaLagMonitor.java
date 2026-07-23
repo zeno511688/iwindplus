@@ -91,7 +91,7 @@ public class KafkaLagMonitor implements SmartLifecycle {
     /**
      * latest offset缓存.
      */
-    private final Cache<PartitionKey, Long> endOffsetCache =
+    private final Cache<PartitionKey, OffsetCacheValue> endOffsetCache =
         Caffeine.newBuilder()
             .maximumSize(100000)
             .expireAfterWrite(Duration.ofSeconds(20))
@@ -184,6 +184,8 @@ public class KafkaLagMonitor implements SmartLifecycle {
                         list
                     )
                 );
+
+            cleanup();
         } catch (Exception e) {
             log.error(
                 "Kafka lag monitor error",
@@ -205,8 +207,7 @@ public class KafkaLagMonitor implements SmartLifecycle {
      */
     private void processCluster(
         String cluster,
-        List<Map.Entry<KafkaConsumerKeyDTO,
-            List<KafkaConsumerInfoDTO>>> groups) {
+        List<Map.Entry<KafkaConsumerKeyDTO, List<KafkaConsumerInfoDTO>>> groups) {
 
         if (groups == null || groups.isEmpty()) {
             return;
@@ -285,17 +286,6 @@ public class KafkaLagMonitor implements SmartLifecycle {
                 cluster,
                 e
             );
-
-            //降级: 避免扩缩容完全失效.
-            missing.forEach(topic ->
-                partitionCache.put(
-                    new TopicKey(
-                        cluster,
-                        topic
-                    ),
-                    1
-                )
-            );
         }
     }
 
@@ -354,38 +344,42 @@ public class KafkaLagMonitor implements SmartLifecycle {
         throws Exception {
 
         Map<TopicPartition, Long> result = new HashMap<>(16);
-        Map<TopicPartition, OffsetSpec> missing = new HashMap<>(16);
+        Map<TopicPartition, OffsetSpec> remote = new HashMap<>(16);
         for (TopicPartition tp : partitions) {
-            Long offset = endOffsetCache.getIfPresent(
-                new PartitionKey(
-                    cluster,
-                    tp
-                )
-            );
+            OffsetCacheValue cache =
+                endOffsetCache.getIfPresent(
+                    new PartitionKey(
+                        cluster,
+                        tp
+                    )
+                );
 
-            if (offset != null) {
-                result.put(tp, offset);
+            if (cache != null && !cache.expired()) {
+                result.put(tp, cache.offset());
             } else {
-                missing.put(tp, OffsetSpec.latest());
+                remote.put(tp, OffsetSpec.latest());
             }
         }
 
         // 批量查询Kafka.
-        if (!missing.isEmpty()) {
-            Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> remote =
-                admin.listOffsets(missing)
+        if (!remote.isEmpty()) {
+            Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> response =
+                admin.listOffsets(remote)
                     .all()
                     .get(NumberConstant.NUMBER_FIVE, TimeUnit.SECONDS);
 
-            remote.forEach(
+            response.forEach(
                 (tp, info) -> {
                     long offset = info.offset();
+
                     endOffsetCache.put(
                         new PartitionKey(
                             cluster,
                             tp
                         ),
-                        offset
+                        OffsetCacheValue.of(
+                            offset
+                        )
                     );
 
                     result.put(tp, offset);
@@ -418,6 +412,8 @@ public class KafkaLagMonitor implements SmartLifecycle {
 
             long current = offset.offset();
 
+            long lag = Math.max(end - current, 0);
+
             result.add(
                 KafkaLagDTO.builder()
                     .cluster(key.getCluster())
@@ -426,7 +422,7 @@ public class KafkaLagMonitor implements SmartLifecycle {
                     .partition(tp.partition())
                     .currentOffset(current)
                     .endOffset(end)
-                    .lag(Math.max(end - current, 0))
+                    .lag(lag)
                     .build()
             );
         });
@@ -459,6 +455,16 @@ public class KafkaLagMonitor implements SmartLifecycle {
             );
     }
 
+    private void cleanup() {
+        scaleCache.cleanUp();
+
+        resizeLockCache.cleanUp();
+
+        partitionCache.cleanUp();
+
+        endOffsetCache.cleanUp();
+    }
+
     /**
      * listener维度扩缩容判断.
      */
@@ -488,6 +494,8 @@ public class KafkaLagMonitor implements SmartLifecycle {
                 continue;
             }
 
+            refreshCurrentConcurrency(consumer);
+
             long totalLag =
                 consumer.getTopics()
                     .stream()
@@ -495,9 +503,6 @@ public class KafkaLagMonitor implements SmartLifecycle {
                     .filter(Objects::nonNull)
                     .mapToLong(Long::longValue)
                     .sum();
-
-            refreshCurrentConcurrency(consumer);
-
             int current = getCurrentConcurrency(consumer);
 
             ScaleKey scaleKey = new ScaleKey(
@@ -539,6 +544,7 @@ public class KafkaLagMonitor implements SmartLifecycle {
         final KafkaMultiProperty property = clusterManager.getProperty();
 
         state.resetIdle();
+
         if (state.incOverload() < property.getOverloadLagThreshold(consumer.getCluster())) {
             return;
         }
@@ -549,6 +555,7 @@ public class KafkaLagMonitor implements SmartLifecycle {
 
         int target = calculateIncreaseTarget(consumer, current);
         if (target <= current) {
+            state.resetOverload();
             return;
         }
 
@@ -658,7 +665,12 @@ public class KafkaLagMonitor implements SmartLifecycle {
             return getMaxConcurrency(consumer);
         }
 
-        return Math.max(partitions, 1);
+        return Math.min(
+            partitions,
+            getMaxConcurrency(
+                consumer
+            )
+        );
     }
 
     /**
@@ -689,17 +701,23 @@ public class KafkaLagMonitor implements SmartLifecycle {
             }
 
             try {
+                if (isRebalancing(consumer)) {
+                    log.info(
+                        "Kafka container rebalance, skip resize listener={}",
+                        consumer.getListenerId()
+                    );
+
+                    return false;
+                }
+
                 log.warn(
-                    "Kafka resize listener={},{}->{}",
+                    "Kafka resize listener={} {} -> {}",
                     consumer.getListenerId(),
                     latest,
                     target
                 );
 
-                registrar.resize(consumer, target);
-                consumer.setCurrentConcurrency(target);
-
-                return true;
+                return registrar.resize(consumer, target);
             } catch (Exception e) {
                 log.error(
                     "Kafka resize failed listener={}",
@@ -710,6 +728,21 @@ public class KafkaLagMonitor implements SmartLifecycle {
                 return false;
             }
         }
+    }
+
+    /**
+     * 判断container状态.
+     */
+    private boolean isRebalancing(
+        KafkaConsumerInfoDTO consumer) {
+
+        if (!(consumer.getContainer()
+            instanceof ConcurrentMessageListenerContainer<?, ?> container)) {
+
+            return false;
+        }
+
+        return !container.isRunning();
     }
 
     /**
@@ -760,11 +793,31 @@ public class KafkaLagMonitor implements SmartLifecycle {
     }
 
     /**
-     * resize状态key.
+     * topic partition缓存key.
+     */
+    private record TopicKey(
+        String cluster,
+        String topic) {
+
+    }
+
+    /**
+     * partition offset缓存key.
+     *
      * <p>
-     * 注意： 不包含topic.
+     * 不关联group.
+     */
+    private record PartitionKey(
+        String cluster,
+        TopicPartition partition) {
+
+    }
+
+    /**
+     * listener扩缩容状态key.
+     *
      * <p>
-     * concurrency属于listener.
+     * concurrency属于listener， 不属于topic。
      */
     private record ScaleKey(
         String cluster,
@@ -774,26 +827,29 @@ public class KafkaLagMonitor implements SmartLifecycle {
     }
 
     /**
-     * partition缓存key.
+     * offset缓存对象.
      */
-    private record TopicKey(
-        String cluster,
-        String topic) {
+    private record OffsetCacheValue(
+        long offset,
+        long createTime) {
 
-    }
+        static OffsetCacheValue of(long offset) {
+            return new OffsetCacheValue(
+                offset,
+                System.currentTimeMillis()
+            );
+        }
 
-    /**
-     * partition end offset key.
-     *
-     * <p>
-     * 注意:
-     * <p>
-     * endOffset不属于group.
-     */
-    private record PartitionKey(
-        String cluster,
-        TopicPartition partition) {
-
+        /**
+         * offset缓存有效期.
+         *
+         * <p>
+         * 默认10秒。
+         */
+        boolean expired() {
+            return System.currentTimeMillis() - createTime
+                > TimeUnit.SECONDS.toMillis(10);
+        }
     }
 
     /**
