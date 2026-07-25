@@ -48,27 +48,32 @@ public final class DisruptorConstant {
     public final class DisruptorMonitorConstant {
 
         /**
+         * ringBuffer.
+         */
+        public static final String RING_BUFFER = ".ringbuffer.";
+
+        /**
          * 总容量.
          */
         public static final String RING_BUFFER_CAPACITY =
-            DISRUPTOR + ".ring_buffer." + MonitorConstant.CAPACITY;
+            DISRUPTOR + RING_BUFFER + MonitorConstant.CAPACITY;
 
         /**
          * 剩余容量.
          */
         public static final String RING_BUFFER_REMAINING =
-            DISRUPTOR + ".ring_buffer.remaining";
+            DISRUPTOR + RING_BUFFER + MonitorConstant.REMAINING;
 
         /**
          * 使用量.
          */
         public static final String RING_BUFFER_USAGE =
-            DISRUPTOR + ".ring_buffer." + MonitorConstant.USAGE;
+            DISRUPTOR + RING_BUFFER + MonitorConstant.USAGE;
 
         /**
          * 使用率.
          */
         public static final String RING_BUFFER_USAGE_PERCENT =
-            DISRUPTOR + ".ring_buffer." + MonitorConstant.USAGE_PERCENT;
+            DISRUPTOR + RING_BUFFER + MonitorConstant.USAGE_PERCENT;
     }
 }

@@ -26,9 +26,9 @@ public final class MonitorConstant {
     public static final String CAPACITY = "capacity";
 
     /**
-     * 当前使用量.
+     * 剩余容量.
      */
-    public static final String SIZE = "size";
+    public static final String REMAINING = "remaining";
 
     /**
      * 使用量.
