@@ -44,6 +44,12 @@ public class DisruptorMultiProperty {
     private Boolean enabled = true;
 
     /**
+     * 是否开启监控埋点.
+     */
+    @Builder.Default
+    private Boolean enabledMonitor = true;
+
+    /**
      * 默认Disruptor名称（必填）.
      */
     @Builder.Default

@@ -10,6 +10,7 @@ package com.iwindplus.base.disruptor.core.impl;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.disruptor.core.DisruptorManager;
+import com.iwindplus.base.disruptor.domain.constant.DisruptorConstant.DisruptorMonitorConstant;
 import com.iwindplus.base.disruptor.domain.enums.DisruptorCodeEnum;
 import com.iwindplus.base.disruptor.domain.enums.DisruptorWaitStrategyEnum;
 import com.iwindplus.base.disruptor.domain.event.DisruptorEvent;
@@ -21,17 +22,21 @@ import com.iwindplus.base.disruptor.support.DisruptorEventHandler;
 import com.iwindplus.base.disruptor.template.DisruptorTemplate;
 import com.iwindplus.base.disruptor.template.impl.DefaultDisruptorTemplateImpl;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.base.monitor.domain.constant.MonitorConstant;
+import com.iwindplus.base.monitor.support.MonitorTemplate;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
 import com.iwindplus.base.monitor.support.TraceContextPropagator;
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.BusySpinWaitStrategy;
 import com.lmax.disruptor.LiteBlockingWaitStrategy;
 import com.lmax.disruptor.LiteTimeoutBlockingWaitStrategy;
+import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.TimeoutBlockingWaitStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
+import io.micrometer.core.instrument.Tags;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,6 +60,7 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
     private final DisruptorEventHandlerStrategyFactory factory;
     private final TraceContextPropagator traceContextPropagator;
     private final ObservationExecutor observationExecutor;
+    private final MonitorTemplate monitorTemplate;
 
     private final Map<String, DisruptorTemplate<T>> templateMap = new ConcurrentHashMap<>(16);
 
@@ -147,7 +153,8 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
         // 单配置模式：所有处理器共享同一个Disruptor实例
         if (singleMode) {
             DisruptorMultiConfig defaultConfig = configs.get(property.getDefaultName());
-            Disruptor<DisruptorEvent<?>> disruptor = createDisruptor(defaultConfig);
+            // 监控名称使用defaultName，不使用handlerName，避免Gauge重复
+            Disruptor<DisruptorEvent<?>> disruptor = createDisruptor(property.getDefaultName(), defaultConfig);
             // 所有处理器共享同一个Disruptor实例
             for (String handlerName : strategyMap.keySet()) {
                 templateMap.put(handlerName, new DefaultDisruptorTemplateImpl(handlerName, disruptor, traceContextPropagator));
@@ -159,7 +166,7 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
                 String handlerName = entry.getKey();
                 // 获取对应类型的配置，如果没有则使用默认配置
                 DisruptorMultiConfig config = configs.getOrDefault(handlerName, configs.get(property.getDefaultName()));
-                Disruptor<DisruptorEvent<?>> disruptor = createDisruptor(config);
+                Disruptor<DisruptorEvent<?>> disruptor = createDisruptor(handlerName, config);
                 templateMap.put(handlerName, new DefaultDisruptorTemplateImpl(handlerName, disruptor, traceContextPropagator));
             }
             log.info("Disruptor multi mode: each handler has its own disruptor instance, handlers={}", strategyMap.keySet());
@@ -169,10 +176,11 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
     /**
      * 创建Disruptor实例.
      *
+     * @param name   名称
      * @param config 配置
      * @return Disruptor实例
      */
-    private Disruptor<DisruptorEvent<?>> createDisruptor(DisruptorMultiConfig config) {
+    private Disruptor<DisruptorEvent<?>> createDisruptor(String name, DisruptorMultiConfig config) {
         DtpExecutor dtpExecutor = DtpRegistry.getDtpExecutor(config.getThreadPoolName());
         Disruptor<DisruptorEvent<?>> disruptor = new Disruptor<>(
             DisruptorEvent::new,
@@ -185,6 +193,8 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
 
         disruptor.handleEventsWith(dispatcherHandler);
         disruptor.start();
+
+        registerMonitor(name, disruptor.getRingBuffer());
         return disruptor;
     }
 
@@ -202,5 +212,51 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
                 "Unsupported wait strategy: " + waitStrategy
             );
         };
+    }
+
+    private void registerMonitor(String name, RingBuffer<DisruptorEvent<?>> ringBuffer) {
+        if (Boolean.FALSE.equals(property.getEnabledMonitor())) {
+            return;
+        }
+
+        Tags tags = Tags.of(MonitorConstant.NAME, name);
+        // RingBuffer 总容量
+        monitorTemplate.gauge(
+            DisruptorMonitorConstant.RING_BUFFER_CAPACITY,
+            tags,
+            ringBuffer,
+            RingBuffer::getBufferSize
+        );
+
+        // RingBuffer 剩余容量
+        monitorTemplate.gauge(
+            DisruptorMonitorConstant.RING_BUFFER_REMAINING,
+            tags,
+            ringBuffer,
+            RingBuffer::remainingCapacity
+        );
+
+        // RingBuffer 使用量
+        monitorTemplate.gauge(
+            DisruptorMonitorConstant.RING_BUFFER_USAGE,
+            tags,
+            ringBuffer,
+            rb -> rb.getBufferSize() - rb.remainingCapacity()
+        );
+
+        // RingBuffer 使用率
+        monitorTemplate.gauge(
+            DisruptorMonitorConstant.RING_BUFFER_USAGE_PERCENT,
+            tags,
+            ringBuffer,
+            rb -> {
+                long capacity = rb.getBufferSize();
+                if (capacity == 0) {
+                    return 0D;
+                }
+
+                return (capacity - rb.remainingCapacity()) * 100D / capacity;
+            }
+        );
     }
 }

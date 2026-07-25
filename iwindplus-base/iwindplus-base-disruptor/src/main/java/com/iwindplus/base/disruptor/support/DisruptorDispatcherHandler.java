@@ -18,6 +18,7 @@ import com.lmax.disruptor.EventHandler;
 import io.micrometer.tracing.propagation.Propagator;
 import java.util.Map;
 import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Disruptor 事件处理器助手.
@@ -25,6 +26,7 @@ import java.util.function.Supplier;
  * @author zengdegui
  * @since 2026/06/17 20:04
  */
+@Slf4j
 public record DisruptorDispatcherHandler<T>(
     DisruptorEventHandlerStrategyFactory factory,
     TraceContextPropagator traceContextPropagator,
@@ -52,8 +54,6 @@ public record DisruptorDispatcherHandler<T>(
         DisruptorObservationContext context =
             new DisruptorObservationContext(
                 event.getName(),
-                String.valueOf(sequence),
-                String.valueOf(endOfBatch),
                 event.getSource(),
                 event.getDestination());
         observationExecutor.execute(
@@ -70,6 +70,9 @@ public record DisruptorDispatcherHandler<T>(
                     endOfBatch);
                 return null;
             });
+
+        log.info("Disruptor execute success,name={}, const={}", event.getName(), System.currentTimeMillis() - event.getPublishTime());
+
         return null;
     }
 

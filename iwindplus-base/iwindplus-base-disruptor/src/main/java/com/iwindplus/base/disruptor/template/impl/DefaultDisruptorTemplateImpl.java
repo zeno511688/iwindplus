@@ -40,6 +40,7 @@ public record DefaultDisruptorTemplateImpl<T>(
             DisruptorEvent<T> event = ringBuffer.get(seq);
             event.clear();
             event.setName(name);
+            event.setPublishTime(System.currentTimeMillis());
             event.setSource(source);
             event.setDestination(destination);
             event.setData(data);

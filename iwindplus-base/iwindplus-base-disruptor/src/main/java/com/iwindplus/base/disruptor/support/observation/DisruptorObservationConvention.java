@@ -32,7 +32,7 @@ public class DisruptorObservationConvention implements ObservationConvention<Dis
 
     @Override
     public String getName() {
-        return DisruptorConstant.DISRUPTOR_CONSUMER;
+        return DisruptorConstant.DISRUPTOR;
     }
 
     @Override
@@ -41,33 +41,66 @@ public class DisruptorObservationConvention implements ObservationConvention<Dis
     }
 
     @Override
-    public KeyValues getLowCardinalityKeyValues(DisruptorObservationContext context) {
-        List<KeyValue> list = new ArrayList<>(10);
-        add(list, DisruptorConstant.HANDLER, context.getHandler());
-        add(list, DisruptorConstant.SEQUENCE, context.getSequence());
-        add(list, DisruptorConstant.END_OF_BATCH, context.getEndOfBatch());
-        add(list, DisruptorConstant.SOURCE, context.getSource());
-        add(list, DisruptorConstant.DESTINATION, context.getDestination());
+    public KeyValues getLowCardinalityKeyValues(
+        DisruptorObservationContext context) {
 
-        String error = context.getError() == null
-            ? ObservationConstant.NONE
-            : context.getError().getClass().getSimpleName();
-        add(list, ObservationConstant.EXCEPTION, error);
+        List<KeyValue> list = new ArrayList<>(16);
+
+        // 事件处理器
+        add(list, DisruptorConstant.HANDLER, context.getHandler());
+        // 来源
+        add(list, DisruptorConstant.SOURCE, context.getSource());
+        // 目标
+        add(list, DisruptorConstant.DESTINATION, context.getDestination());
+        // 异常类型
+        add(list, ObservationConstant.EXCEPTION, getException(context));
+
         return KeyValues.of(list);
     }
 
     @Override
-    public KeyValues getHighCardinalityKeyValues(DisruptorObservationContext context) {
+    public KeyValues getHighCardinalityKeyValues(
+        DisruptorObservationContext context) {
+
         return KeyValues.empty();
     }
 
+    /**
+     * 获取异常名称.
+     *
+     * @param context context
+     * @return exception
+     */
+    private String getException(
+        DisruptorObservationContext context) {
+
+        Throwable error = context.getError();
+
+        return error == null
+            ? ObservationConstant.NONE
+            : error.getClass()
+                .getSimpleName();
+    }
+
+    /**
+     * 添加tag.
+     *
+     * @param list  tag集合
+     * @param key   key
+     * @param value value
+     */
     private void add(
         List<KeyValue> list,
         String key,
         String value) {
 
         if (CharSequenceUtil.isNotBlank(value)) {
-            list.add(KeyValue.of(key, value));
+            list.add(
+                KeyValue.of(
+                    key,
+                    value
+                )
+            );
         }
     }
 }

@@ -10,9 +10,11 @@ package com.iwindplus.base.monitor;
 import cn.hutool.extra.spring.SpringUtil;
 import com.iwindplus.base.domain.constant.CommonConstant.ObservationConstant;
 import com.iwindplus.base.monitor.domain.property.MonitorProperty;
+import com.iwindplus.base.monitor.support.MonitorTemplate;
 import com.iwindplus.base.monitor.support.ObservationContextPathResolver;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
 import com.iwindplus.base.monitor.support.TraceContextPropagator;
+import com.iwindplus.base.monitor.support.impl.MonitorTemplateImpl;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.Tracer;
@@ -20,6 +22,7 @@ import io.micrometer.tracing.propagation.Propagator;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.boot.actuate.autoconfigure.observation.ObservationRegistryCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -99,5 +102,18 @@ public class MonitorConfiguration {
             .customizer(monitorProperty);
         log.info("ObservationRegistryCustomizer<ObservationRegistry>={}", observationRegistryCustomizer);
         return observationRegistryCustomizer;
+    }
+
+    /**
+     * 创建 MonitorTemplate.
+     *
+     * @param provider provider
+     * @return MonitorTemplate
+     */
+    @Bean
+    public MonitorTemplate monitorTemplate(ObjectProvider<MeterRegistry> provider) {
+        final MonitorTemplate monitorTemplate = new MonitorTemplateImpl(provider.getObject());
+        log.info("MonitorTemplate={}", monitorTemplate);
+        return monitorTemplate;
     }
 }

@@ -80,8 +80,8 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
             );
 
         try (Observation.Scope ignored =
-                observation.start()
-                    .openScope()) {
+            observation.start()
+                .openScope()) {
 
             return supplier.get();
         } catch (Throwable e) {

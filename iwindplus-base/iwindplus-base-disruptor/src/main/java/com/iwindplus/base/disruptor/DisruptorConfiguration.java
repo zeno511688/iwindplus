@@ -12,6 +12,7 @@ import com.iwindplus.base.disruptor.core.impl.DisruptorManagerImpl;
 import com.iwindplus.base.disruptor.domain.property.DisruptorMultiProperty;
 import com.iwindplus.base.disruptor.factory.DisruptorEventHandlerStrategyFactory;
 import com.iwindplus.base.disruptor.support.DisruptorEventHandler;
+import com.iwindplus.base.monitor.support.MonitorTemplate;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
 import com.iwindplus.base.monitor.support.TraceContextPropagator;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +55,8 @@ public class DisruptorConfiguration {
      * @param property               property
      * @param factory                factory
      * @param traceContextPropagator traceContextPropagator
-     * @param observationExecutor    observationExecutor,
+     * @param observationExecutor    observationExecutor
+     * @param monitorTemplate        monitorTemplate
      * @return DisruptorManager
      */
     @Bean
@@ -62,8 +64,10 @@ public class DisruptorConfiguration {
         DisruptorMultiProperty property,
         DisruptorEventHandlerStrategyFactory factory,
         TraceContextPropagator traceContextPropagator,
-        ObservationExecutor observationExecutor) {
-        DisruptorManager manager = new DisruptorManagerImpl(property, factory, traceContextPropagator, observationExecutor);
+        ObservationExecutor observationExecutor,
+        MonitorTemplate monitorTemplate) {
+        DisruptorManager manager = new DisruptorManagerImpl(property,
+            factory, traceContextPropagator, observationExecutor, monitorTemplate);
         log.info("DisruptorManager={}", manager);
         return manager;
     }

@@ -42,6 +42,11 @@ public class DisruptorEvent<T> extends BaseEvent<T> {
     private String name;
 
     /**
+     * 发布时间
+     */
+    private Long publishTime;
+
+    /**
      * 数据来源. Kafka RabbitMQ HTTP Timer
      */
     private String source;
@@ -57,6 +62,7 @@ public class DisruptorEvent<T> extends BaseEvent<T> {
     public void clear() {
         headers.clear();
         name = null;
+        publishTime = null;
         source = null;
         destination = null;
         this.setData(null);

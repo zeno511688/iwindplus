@@ -8,6 +8,7 @@
 package com.iwindplus.base.disruptor.domain.constant;
 
 import com.iwindplus.base.domain.constant.CommonConstant;
+import com.iwindplus.base.monitor.domain.constant.MonitorConstant;
 
 /**
  * 常数.
@@ -24,22 +25,12 @@ public final class DisruptorConstant {
     /**
      * 消费者.
      */
-    public static final String DISRUPTOR_CONSUMER = "disruptor.consumer";
+    public static final String DISRUPTOR = "disruptor";
 
     /**
      * Handler名称.
      */
     public static final String HANDLER = "handler";
-
-    /**
-     * 序列号.
-     */
-    public static final String SEQUENCE = "sequence";
-
-    /**
-     * 是否是批量结束.
-     */
-    public static final String END_OF_BATCH = "endOfBatch";
 
     /**
      * 数据来源.
@@ -50,4 +41,34 @@ public final class DisruptorConstant {
      * 数据去向.
      */
     public static final String DESTINATION = "destination";
+
+    /**
+     * Disruptor监控常量.
+     */
+    public final class DisruptorMonitorConstant {
+
+        /**
+         * 总容量.
+         */
+        public static final String RING_BUFFER_CAPACITY =
+            DISRUPTOR + ".ring_buffer." + MonitorConstant.CAPACITY;
+
+        /**
+         * 剩余容量.
+         */
+        public static final String RING_BUFFER_REMAINING =
+            DISRUPTOR + ".ring_buffer.remaining";
+
+        /**
+         * 使用量.
+         */
+        public static final String RING_BUFFER_USAGE =
+            DISRUPTOR + ".ring_buffer." + MonitorConstant.USAGE;
+
+        /**
+         * 使用率.
+         */
+        public static final String RING_BUFFER_USAGE_PERCENT =
+            DISRUPTOR + ".ring_buffer." + MonitorConstant.USAGE_PERCENT;
+    }
 }

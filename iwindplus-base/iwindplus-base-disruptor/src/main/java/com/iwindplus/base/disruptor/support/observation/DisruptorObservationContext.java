@@ -32,16 +32,6 @@ public class DisruptorObservationContext extends Observation.Context {
     private String handler;
 
     /**
-     * 序列号.
-     */
-    private String sequence;
-
-    /**
-     * 是否是批量结束.
-     */
-    private String endOfBatch;
-
-    /**
      * 数据来源. Kafka RabbitMQ HTTP Timer
      */
     private String source;
