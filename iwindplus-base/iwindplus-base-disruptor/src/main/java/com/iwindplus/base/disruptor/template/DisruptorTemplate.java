@@ -21,6 +21,7 @@ public interface DisruptorTemplate<T> {
      * @param source      数据来源
      * @param destination 数据去向
      * @param data        数据
+     * @return boolean
      */
-    void publish(String source, String destination, T data);
+    boolean publish(String source, String destination, T data);
 }

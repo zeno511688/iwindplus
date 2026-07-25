@@ -96,7 +96,6 @@ public record KafkaReceiverDispatcher(
         return null;
     }
 
-
     private <T> T runWithTrace(
         ConsumerRecord<String, Object> record,
         Supplier<T> supplier) {
@@ -113,9 +112,9 @@ public record KafkaReceiverDispatcher(
         KafkaMessageHandler handler) {
         return Boolean.TRUE.equals(
             manager.getProperty()
-                   .getConsumerEnabledObservation(
-                       handler.getCluster()
-                   )
+                .getConsumerEnabledObservation(
+                    handler.getCluster()
+                )
         );
     }
 }

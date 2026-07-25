@@ -10,6 +10,7 @@ package com.iwindplus.base.disruptor.template.impl;
 import com.iwindplus.base.disruptor.domain.event.DisruptorEvent;
 import com.iwindplus.base.disruptor.template.DisruptorTemplate;
 import com.iwindplus.base.monitor.support.TraceContextPropagator;
+import com.lmax.disruptor.InsufficientCapacityException;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import io.micrometer.tracing.propagation.Propagator;
@@ -31,13 +32,17 @@ public record DefaultDisruptorTemplateImpl<T>(
     private static final Propagator.Setter<Map<String, String>> DISRUPTOR_SETTER = Map::put;
 
     @Override
-    public void publish(String source, String destination, T data) {
+    public boolean publish(String source, String destination, T data) {
         RingBuffer<DisruptorEvent<T>> ringBuffer = disruptor.getRingBuffer();
+        Long sequence = this.getSequence(ringBuffer);
+        if (sequence == null) {
+            return false;
+        }
 
-        long seq = ringBuffer.next();
+        boolean success = false;
 
         try {
-            DisruptorEvent<T> event = ringBuffer.get(seq);
+            DisruptorEvent<T> event = ringBuffer.get(sequence);
             event.clear();
             event.setName(name);
             event.setPublishTime(System.currentTimeMillis());
@@ -49,12 +54,18 @@ public record DefaultDisruptorTemplateImpl<T>(
                 event.getHeaders(),
                 DISRUPTOR_SETTER
             );
+
+            success = true;
+            return true;
         } catch (Throwable e) {
             log.error("Disruptor publish error,name={}", name, e);
 
             throw e;
         } finally {
-            ringBuffer.publish(seq);
+            // 只有填充成功才发布
+            if (success) {
+                ringBuffer.publish(sequence);
+            }
         }
     }
 
@@ -68,6 +79,21 @@ public record DefaultDisruptorTemplateImpl<T>(
                 name,
                 e
             );
+        }
+    }
+
+    private Long getSequence(RingBuffer<DisruptorEvent<T>> ringBuffer) {
+        try {
+            // 非阻塞申请槽位
+            return ringBuffer.tryNext();
+        } catch (InsufficientCapacityException e) {
+            // RingBuffer 已满
+            log.warn(
+                "Disruptor ringBuffer is full, name={}, remainingCapacity={}",
+                name,
+                ringBuffer.remainingCapacity());
+
+            return null;
         }
     }
 }
