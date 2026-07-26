@@ -53,12 +53,12 @@ public class RabbitMessageHandler {
         String[] queues,
         String group,
         List<Message> messages,
-        Consumer<List<Message>> handler) {
+        Consumer<List<Message>> batchHandler) {
         this.cluster = cluster;
         this.queues = queues;
         this.group = group;
         this.messages = messages;
-        this.batchHandler = handler;
+        this.batchHandler = batchHandler;
     }
 
     /**

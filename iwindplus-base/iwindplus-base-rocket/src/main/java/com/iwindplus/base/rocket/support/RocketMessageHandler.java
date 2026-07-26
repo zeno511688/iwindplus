@@ -65,14 +65,14 @@ public class RocketMessageHandler {
         String tag,
         List<MessageExt> messages,
         boolean orderly,
-        Consumer<List<MessageExt>> handler) {
+        Consumer<List<MessageExt>> batchHandler) {
         this.cluster = cluster;
         this.topic = topic;
         this.group = group;
         this.tag = tag;
         this.messages = messages;
         this.orderly = orderly;
-        this.batchHandler = handler;
+        this.batchHandler = batchHandler;
     }
 
     /**
