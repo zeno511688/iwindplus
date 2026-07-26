@@ -97,7 +97,7 @@ public class OffsetManager {
      */
     public void successBatch(
         String cluster,
-        List<ConsumerRecord<?, ?>> records) {
+        List<ConsumerRecord<String, Object>> records) {
 
         if (records == null || records.isEmpty()) {
             return;
@@ -106,7 +106,7 @@ public class OffsetManager {
         Map<OffsetKey, List<Long>> grouped =
             new HashMap<>(16);
 
-        for (ConsumerRecord<?, ?> record : records) {
+        for (ConsumerRecord<String, Object> record : records) {
             OffsetKey key = new OffsetKey(
                 cluster,
                 record.topic(),
@@ -134,8 +134,7 @@ public class OffsetManager {
      * Consumer线程调用.
      *
      * <p>
-     * 不直接修改已提交状态，
-     * 等 Kafka commit 成功后调用 commitSuccess.
+     * 不直接修改已提交状态， 等 Kafka commit 成功后调用 commitSuccess.
      *
      * @param cluster 集群
      * @return Kafka提交offset
@@ -202,20 +201,32 @@ public class OffsetManager {
     }
 
     /**
-     * Kafka提交失败回调.
+     * Kafka提交失败.
      *
      * <p>
-     * commitAsync失败后恢复pending状态.
+     * 将pending恢复到completed， 等下一次重新提交.
      *
      * @param cluster 集群
+     * @param offsets 本次提交offset
      */
-    public void commitFailed(String cluster) {
-        states.forEach((key, state) -> {
-            if (!key.getCluster().equals(cluster)) {
-                return;
-            }
+    public void commitFailed(
+        String cluster,
+        Map<TopicPartition, OffsetAndMetadata> offsets) {
+        offsets.forEach((tp, metadata) -> {
+            OffsetKey key =
+                new OffsetKey(
+                    cluster,
+                    tp.topic(),
+                    tp.partition()
+                );
 
-            state.commitFailed();
+            PartitionOffsetState state =
+                states.get(key);
+            if (state != null) {
+                state.commitFailed(
+                    metadata.offset() - 1
+                );
+            }
         });
     }
 
@@ -373,9 +384,7 @@ public class OffsetManager {
          * 计算连续可提交offset.
          *
          * <p>
-         * 注意：
-         * 不删除completed.
-         * 等Kafka提交成功后再清理.
+         * 注意： 不删除completed. 等Kafka提交成功后再清理.
          */
         public synchronized long prepareCommit() {
             if (nextOffset < 0) {
@@ -393,44 +402,50 @@ public class OffsetManager {
                 return -1;
             }
 
+            nextOffset = current;
+
             return pending.last();
         }
 
         /**
          * Kafka提交成功后更新状态.
          */
-        public synchronized void commitSuccess(
-            long offset) {
-
-            /**
-             * 防止commitAsync乱序回调导致offset回退.
-             */
-            if (offset <= committed) {
+        public synchronized void commitSuccess( long offset) {
+            if(offset <= committed){
                 return;
             }
 
             pending.removeIf(
-                value -> value <= offset
+                x -> x <= offset
             );
-
             completed.removeIf(
-                value -> value <= offset
+                x -> x <= offset
             );
 
             committed = offset;
-
             nextOffset = offset + 1;
         }
 
         /**
          * Kafka提交失败恢复状态.
          */
-        public synchronized void commitFailed() {
-            completed.addAll(
-                pending
-            );
+        public synchronized void commitFailed(long offset) {
+            TreeSet<Long> retry =
+                new TreeSet<>();
+            pending.forEach(x -> {
+                if (x <= offset) {
+                    retry.add(x);
+                }
+            });
 
-            pending.clear();
+            pending.removeAll(retry);
+            completed.addAll(retry);
+            if (!retry.isEmpty()) {
+                nextOffset = Math.min(
+                    nextOffset,
+                    retry.first()
+                );
+            }
         }
 
         /**
