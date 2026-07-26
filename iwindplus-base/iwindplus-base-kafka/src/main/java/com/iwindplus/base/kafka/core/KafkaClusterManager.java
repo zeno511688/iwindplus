@@ -7,7 +7,6 @@
 
 package com.iwindplus.base.kafka.core;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.domain.exception.BizException;
@@ -23,7 +22,6 @@ import com.iwindplus.base.kafka.support.observation.CustomKafkaListenerObservati
 import com.iwindplus.base.kafka.support.observation.CustomKafkaTemplateObservationConvention;
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Duration;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -33,7 +31,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.common.TopicPartition;
 import org.dromara.dynamictp.core.DtpRegistry;
 import org.dromara.dynamictp.core.executor.DtpExecutor;
@@ -532,7 +529,7 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
                 clusterName
             );
         }
-        buildConsumerReBalanceListener(clusterName, containerProps);
+
         buildThreadPool(clusterName, consumer, containerProps);
     }
 
@@ -550,33 +547,6 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
                 new ConcurrentTaskExecutor(executor)
             );
         }
-    }
-
-    private void buildConsumerReBalanceListener(String clusterName, ContainerProperties containerProps) {
-        containerProps.setConsumerRebalanceListener(
-            new ConsumerRebalanceListener() {
-
-                @Override
-                public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
-                    if (CollUtil.isNotEmpty(partitions)) {
-                        log.warn("Cluster {} revoked={}",
-                            clusterName,
-                            partitions
-                        );
-                    }
-                }
-
-                @Override
-                public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
-                    if (CollUtil.isNotEmpty(partitions)) {
-                        log.info("Cluster {} assigned={}",
-                            clusterName,
-                            partitions
-                        );
-                    }
-                }
-            }
-        );
     }
 
     private DtpExecutor getExecutor(String clusterName, String threadPoolName) {
