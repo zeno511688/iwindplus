@@ -110,6 +110,19 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
     }
 
     @Override
+    public DisruptorTemplate getOrCreate(String name) {
+        return templateMap.computeIfAbsent(
+            name,
+            key -> {
+                final Map<String, DisruptorMultiConfig> configs = property.getConfigs();
+                DisruptorMultiConfig config = configs.getOrDefault(key, configs.get(property.getDefaultName()));
+                Disruptor<DisruptorEvent<?>> disruptor = createDisruptor(key, config);
+                return new DefaultDisruptorTemplateImpl(key, disruptor, traceContextPropagator);
+            }
+        );
+    }
+
+    @Override
     public DisruptorMultiProperty getProperty() {
         return property;
     }

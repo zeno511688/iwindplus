@@ -39,6 +39,11 @@ public class RabbitMessageHandler {
     private String group;
 
     /**
+     * 消息列表.
+     */
+    private List<Message> messages;
+
+    /**
      * 批量消息处理.
      */
     private final Consumer<List<Message>> batchHandler;
@@ -47,21 +52,23 @@ public class RabbitMessageHandler {
         String cluster,
         String[] queues,
         String group,
+        List<Message> messages,
         Consumer<List<Message>> handler) {
         this.cluster = cluster;
         this.queues = queues;
         this.group = group;
+        this.messages = messages;
         this.batchHandler = handler;
     }
 
     /**
      * 处理批量消息.
      *
-     * @param msgs 消息列表
+     * @param messages 消息列表
      */
-    public void handleBatch(List<Message> msgs) {
+    public void handleBatch(List<Message> messages) {
         if (batchHandler != null) {
-            batchHandler.accept(msgs);
+            batchHandler.accept(messages);
         }
     }
 }

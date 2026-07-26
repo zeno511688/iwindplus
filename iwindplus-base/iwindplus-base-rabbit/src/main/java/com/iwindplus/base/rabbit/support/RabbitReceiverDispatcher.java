@@ -49,7 +49,8 @@ public record RabbitReceiverDispatcher(
     /**
      * 分发消息.
      */
-    public void dispatch(RabbitMessageHandler handler, List<Message> msgs) {
+    public void dispatch(RabbitMessageHandler handler) {
+        List<Message> msgs = handler.getMessages();
         if (msgs == null || msgs.isEmpty()) {
             return;
         }

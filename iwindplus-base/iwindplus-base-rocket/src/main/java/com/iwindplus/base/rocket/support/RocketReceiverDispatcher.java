@@ -37,7 +37,8 @@ public record RocketReceiverDispatcher(
     /**
      * 分发消息.
      */
-    public void dispatch(RocketMessageHandler handler, List<MessageExt> msgs) {
+    public void dispatch(RocketMessageHandler handler) {
+        List<MessageExt> msgs = handler.getMessages();
         if (msgs == null || msgs.isEmpty()) {
             return;
         }

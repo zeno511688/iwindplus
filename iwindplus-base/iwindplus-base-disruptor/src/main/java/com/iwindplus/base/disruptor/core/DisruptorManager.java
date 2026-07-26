@@ -32,4 +32,12 @@ public interface DisruptorManager<T> {
      * @return DisruptorTemplate
      */
     DisruptorTemplate<T> getTemplate(String name);
+
+    /**
+     * 获取或创建DisruptorTemplate.
+     *
+     * @param name 名称
+     * @return DisruptorTemplate
+     */
+    DisruptorTemplate getOrCreate(String name);
 }

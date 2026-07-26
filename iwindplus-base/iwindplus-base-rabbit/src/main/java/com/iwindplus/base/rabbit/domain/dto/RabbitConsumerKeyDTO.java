@@ -15,7 +15,7 @@ import lombok.experimental.SuperBuilder;
 
 /**
  * Rabbit 消费者key数据传输对象.
- *
+ * This class serves as a DTO (Data Transfer Object) for Rabbit consumer keys.
  * @author zengdegui
  * @since 2026/04/07 22:39
  */

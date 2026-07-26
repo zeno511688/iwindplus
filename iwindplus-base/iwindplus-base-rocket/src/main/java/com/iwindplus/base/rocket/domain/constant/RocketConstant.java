@@ -22,6 +22,11 @@ public final class RocketConstant {
     }
 
     /**
+     * rocket.
+     */
+    public static final String ROCKET = "rocket";
+
+    /**
      * 默认的消费者组.
      */
     public static final String ROCKET_DEFAULT_GROUP = "default-group";

@@ -44,6 +44,11 @@ public class RocketMessageHandler {
     private final String tag;
 
     /**
+     * 消息列表.
+     */
+    private List<MessageExt> messages;
+
+    /**
      * 是否顺序消费.
      */
     private final boolean orderly;
@@ -56,14 +61,16 @@ public class RocketMessageHandler {
     public RocketMessageHandler(
         String cluster,
         String topic,
-        String tag,
         String group,
+        String tag,
+        List<MessageExt> messages,
         boolean orderly,
         Consumer<List<MessageExt>> handler) {
         this.cluster = cluster;
         this.topic = topic;
-        this.tag = tag;
         this.group = group;
+        this.tag = tag;
+        this.messages = messages;
         this.orderly = orderly;
         this.batchHandler = handler;
     }
@@ -71,11 +78,11 @@ public class RocketMessageHandler {
     /**
      * 处理批量消息.
      *
-     * @param msgs 消息列表
+     * @param messages 消息列表
      */
-    public void handleBatch(List<MessageExt> msgs) {
+    public void handleBatch(List<MessageExt> messages) {
         if (batchHandler != null) {
-            batchHandler.accept(msgs);
+            batchHandler.accept(messages);
         }
     }
 }

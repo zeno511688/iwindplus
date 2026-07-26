@@ -155,9 +155,9 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
     }
 
     private void register(RabbitMultiListenerMetaDTO meta) {
-        String id = buildId(meta);
-        if (containerMap.containsKey(id)) {
-            log.warn("Rabbit listener already started, id={}", id);
+        String listenerId = buildId(meta);
+        if (containerMap.containsKey(listenerId)) {
+            log.warn("Rabbit listener already started, listenerId={}", listenerId);
             return;
         }
 
@@ -167,31 +167,32 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
         }
 
         SimpleMessageListenerContainer container = factory.createListenerContainer();
-        container.setListenerId(id);
+        container.setListenerId(listenerId);
         container.setQueueNames(meta.getQueues());
         container.setMessageListener(createListener(meta));
 
         try {
             container.start();
 
-            containerMap.put(id, container);
+            containerMap.put(listenerId, container);
 
-            log.info("Rabbit listener started, cluster={}, group={}, queues={}, id={}",
+            log.info("Rabbit listener started, cluster={}, group={}, queues={}, listenerId={}",
                 meta.getCluster(),
                 meta.getGroup(),
                 meta.getQueues(),
-                id
+                listenerId
             );
         } catch (Exception e) {
             log.error(
-                "Rabbit listener start failed, cluster={}, group={}, queues={}",
+                "Rabbit listener start failed, cluster={}, group={}, queues={}, listenerId={}",
                 meta.getCluster(),
                 meta.getGroup(),
                 meta.getQueues(),
+                listenerId,
                 e
             );
 
-            containerMap.remove(id);
+            containerMap.remove(listenerId);
             throw new RuntimeException("Rabbit listener start failed", e);
         }
     }
@@ -223,7 +224,8 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
 
     private void dispatch(RabbitMultiListenerMetaDTO meta, List<Message> messages, Channel channel) {
         dispatcher.dispatch(
-            new RabbitMessageHandler(meta.getCluster(), meta.getQueues(), meta.getGroup(), ignored -> invoke(meta, messages, channel)), messages);
+            new RabbitMessageHandler(meta.getCluster(), meta.getQueues(), meta.getGroup(), messages,
+                ignored -> invoke(meta, messages, channel)));
     }
 
     private void invoke(RabbitMultiListenerMetaDTO meta, List<Message> messages, Channel channel) {
@@ -324,20 +326,10 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
             .build();
     }
 
-/**
- * Groups a list of RabbitMultiListenerMetaDTO objects by their cluster and group properties.
- *
- * @param metas The list of RabbitMultiListenerMetaDTO objects to be grouped
- * @return A Map where the key is a RabbitConsumerKeyDTO containing cluster and group information,
- *         and the value is a list of RabbitMultiListenerMetaDTO objects that belong to that key
- */
     private Map<RabbitConsumerKeyDTO, List<RabbitMultiListenerMetaDTO>> group(List<RabbitMultiListenerMetaDTO> metas) {
-    // Use Java Stream API to group the list of metas by creating a RabbitConsumerKeyDTO
-    // for each entity based on its cluster and group properties
         return metas
             .stream()
             .collect(Collectors.groupingBy(
-            // Create a RabbitConsumerKeyDTO for each entity using cluster and group as the key
                 entity -> new RabbitConsumerKeyDTO(
                     entity.getCluster(),
                     entity.getGroup()
