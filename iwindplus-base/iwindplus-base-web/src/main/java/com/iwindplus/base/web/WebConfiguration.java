@@ -13,12 +13,9 @@ import com.iwindplus.base.web.domain.property.ResponseBodyProperty;
 import com.iwindplus.base.web.support.MicrometerTaskWrapper;
 import com.iwindplus.base.web.support.WebManager;
 import io.micrometer.context.ContextSnapshotFactory;
-import io.micrometer.observation.ObservationRegistry;
-import io.micrometer.observation.contextpropagation.ObservationThreadLocalAccessor;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -73,19 +70,6 @@ public class WebConfiguration {
         final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         log.info("PasswordEncoder={}", passwordEncoder);
         return passwordEncoder;
-    }
-
-    /**
-     * 初始化 ObservationThreadLocalAccessor.
-     *
-     * @param observationRegistry observationRegistry
-     * @return ApplicationRunner
-     */
-    @Bean
-    public ApplicationRunner observationAccessorInitializer(
-        ObservationRegistry observationRegistry) {
-        return args -> ObservationThreadLocalAccessor.getInstance()
-            .setObservationRegistry(observationRegistry);
     }
 
     /**
