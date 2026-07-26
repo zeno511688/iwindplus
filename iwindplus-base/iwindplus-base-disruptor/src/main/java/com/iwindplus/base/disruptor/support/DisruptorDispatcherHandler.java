@@ -46,11 +46,14 @@ public record DisruptorDispatcherHandler<T>(
 
         runWithTrace(
             event,
-            () -> execute(event, sequence, endOfBatch)
+            () -> {
+                execute(event, sequence, endOfBatch);
+                return null;
+            }
         );
     }
 
-    private T execute(DisruptorEvent<T> event, long sequence, boolean endOfBatch) {
+    private void execute(DisruptorEvent<T> event, long sequence, boolean endOfBatch) {
         DisruptorObservationContext context =
             new DisruptorObservationContext(
                 event.getName(),
@@ -72,8 +75,6 @@ public record DisruptorDispatcherHandler<T>(
             });
 
         log.info("Disruptor execute success,name={}, const={}", event.getName(), System.currentTimeMillis() - event.getPublishTime());
-
-        return null;
     }
 
     private <T> T runWithTrace(
