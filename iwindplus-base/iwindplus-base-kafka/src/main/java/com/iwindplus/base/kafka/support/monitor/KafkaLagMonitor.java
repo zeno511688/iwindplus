@@ -350,7 +350,8 @@ public class KafkaLagMonitor implements SmartLifecycle {
                 endOffsetCache.getIfPresent(
                     new PartitionKey(
                         cluster,
-                        tp
+                        tp.topic(),
+                        tp.partition()
                     )
                 );
 
@@ -375,7 +376,8 @@ public class KafkaLagMonitor implements SmartLifecycle {
                     endOffsetCache.put(
                         new PartitionKey(
                             cluster,
-                            tp
+                            tp.topic(),
+                            tp.partition()
                         ),
                         OffsetCacheValue.of(
                             offset
@@ -736,12 +738,7 @@ public class KafkaLagMonitor implements SmartLifecycle {
     private boolean isRebalancing(
         KafkaConsumerInfoDTO consumer) {
 
-        if (!(consumer.getContainer()
-            instanceof ConcurrentMessageListenerContainer<?, ?> container)) {
-
-            return false;
-        }
-
+        final ConcurrentMessageListenerContainer<String, Object> container = consumer.getContainer();
         return !container.isRunning();
     }
 
@@ -752,10 +749,7 @@ public class KafkaLagMonitor implements SmartLifecycle {
      */
     private void refreshCurrentConcurrency(
         KafkaConsumerInfoDTO consumer) {
-        if (!(consumer.getContainer()
-            instanceof ConcurrentMessageListenerContainer<?, ?> container)) {
-            return;
-        }
+        final ConcurrentMessageListenerContainer<String, Object> container = consumer.getContainer();
 
         int size = container.getContainers().size();
 
@@ -809,7 +803,8 @@ public class KafkaLagMonitor implements SmartLifecycle {
      */
     private record PartitionKey(
         String cluster,
-        TopicPartition partition) {
+        String topic,
+        Integer partition) {
 
     }
 

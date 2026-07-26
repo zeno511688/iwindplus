@@ -41,7 +41,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.listener.AcknowledgingMessageListener;
 import org.springframework.kafka.listener.BatchAcknowledgingMessageListener;
 import org.springframework.kafka.listener.BatchMessageListener;
@@ -170,13 +169,8 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         if (target <= 0) {
             throw new IllegalArgumentException("Kafka consumer concurrency must > 0");
         }
-        if (!(consumer.getContainer()
-            instanceof ConcurrentMessageListenerContainer<?, ?> container)) {
-            log.warn("Kafka container not support resize, listenerId={}", consumer.getListenerId());
 
-            return false;
-        }
-
+        final ConcurrentMessageListenerContainer<String, Object> container = consumer.getContainer();
         container.setConcurrency(target);
 
         log.warn(
@@ -247,10 +241,9 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         if (factory == null) {
             throw new IllegalStateException("Kafka listener factory not found, cluster=" + meta.getCluster());
         }
-
         String clusterId = clusterManager.getClusterId(meta.getCluster());
         KafkaMultiProperty property = clusterManager.getProperty();
-        AbstractMessageListenerContainer<String, Object> container =
+        ConcurrentMessageListenerContainer<String, Object> container =
             factory.createContainer(meta.getTopics());
         container.setBeanName(listenerId);
         ContainerProperties p = container.getContainerProperties();

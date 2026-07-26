@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.springframework.kafka.listener.AbstractMessageListenerContainer;
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 
 /**
  * Kafka消费者信息.
@@ -65,5 +65,5 @@ public class KafkaConsumerInfoDTO implements Serializable {
     /**
      * 监听器.
      */
-    private AbstractMessageListenerContainer<String, Object> container;
+    private ConcurrentMessageListenerContainer<String, Object> container;
 }
