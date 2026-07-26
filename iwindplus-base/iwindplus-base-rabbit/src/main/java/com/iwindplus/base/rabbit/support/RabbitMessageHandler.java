@@ -63,10 +63,8 @@ public class RabbitMessageHandler {
 
     /**
      * 处理批量消息.
-     *
-     * @param messages 消息列表
      */
-    public void handleBatch(List<Message> messages) {
+    public void execute() {
         if (batchHandler != null) {
             batchHandler.accept(messages);
         }

@@ -77,10 +77,8 @@ public class RocketMessageHandler {
 
     /**
      * 处理批量消息.
-     *
-     * @param messages 消息列表
      */
-    public void handleBatch(List<MessageExt> messages) {
+    public void execute() {
         if (batchHandler != null) {
             batchHandler.accept(messages);
         }

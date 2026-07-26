@@ -38,8 +38,8 @@ public record RabbitReceiverDispatcher(
         (message, key) -> {
             Object value =
                 message.getMessageProperties()
-                       .getHeaders()
-                       .get(key);
+                    .getHeaders()
+                    .get(key);
 
             return value == null
                 ? null
@@ -57,16 +57,13 @@ public record RabbitReceiverDispatcher(
 
         runWithTrace(
             msgs.get(0),
-            () -> execute(handler, msgs)
+            () -> execute(handler)
         );
     }
 
-    private Void execute(
-        RabbitMessageHandler handler,
-        List<Message> msgs) {
-
+    private Void execute(RabbitMessageHandler handler) {
         if (!enabledObservation(handler)) {
-            handler.handleBatch(msgs);
+            handler.execute();
             return null;
         }
 
@@ -81,7 +78,7 @@ public record RabbitReceiverDispatcher(
             CONVENTION,
             () -> context,
             () -> {
-                handler.handleBatch(msgs);
+                handler.execute();
                 return null;
             }
         );
@@ -105,9 +102,9 @@ public record RabbitReceiverDispatcher(
         RabbitMessageHandler handler) {
         return Boolean.TRUE.equals(
             manager.getProperty()
-                   .getConsumerEnabledObservation(
-                       handler.getCluster()
-                   )
+                .getConsumerEnabledObservation(
+                    handler.getCluster()
+                )
         );
     }
 }

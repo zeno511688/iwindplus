@@ -45,16 +45,13 @@ public record RocketReceiverDispatcher(
 
         runWithTrace(
             msgs.get(0),
-            () -> execute(handler, msgs)
+            () -> execute(handler)
         );
     }
 
-    private Void execute(
-        RocketMessageHandler handler,
-        List<MessageExt> msgs) {
-
+    private Void execute(RocketMessageHandler handler) {
         if (!enabledObservation(handler)) {
-            handler.handleBatch(msgs);
+            handler.execute();
             return null;
         }
 
@@ -70,7 +67,7 @@ public record RocketReceiverDispatcher(
             CONVENTION,
             () -> context,
             () -> {
-                handler.handleBatch(msgs);
+                handler.execute();
                 return null;
             }
         );
@@ -94,9 +91,9 @@ public record RocketReceiverDispatcher(
         RocketMessageHandler handler) {
         return Boolean.TRUE.equals(
             manager.getProperty()
-                   .getConsumerEnabledObservation(
-                       handler.getCluster()
-                   )
+                .getConsumerEnabledObservation(
+                    handler.getCluster()
+                )
         );
     }
 }
