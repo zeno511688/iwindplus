@@ -14,6 +14,7 @@ import com.iwindplus.base.kafka.listener.KafkaMultiListenerBeanPostProcessor;
 import com.iwindplus.base.kafka.listener.KafkaMultiListenerRegistrar;
 import com.iwindplus.base.kafka.support.KafkaReceiverDispatcher;
 import com.iwindplus.base.kafka.support.KafkaSenderDispatcher;
+import com.iwindplus.base.kafka.support.OffsetManager;
 import com.iwindplus.base.kafka.support.monitor.KafkaLagMonitor;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
 import com.iwindplus.base.monitor.support.TraceContextPropagator;
@@ -146,6 +147,22 @@ public class KafkaConfiguration {
             bpp, manager, dispatcher);
         log.info("KafkaMultiListenerRegistrar={}", registrar);
         return registrar;
+    }
+
+    /**
+     * 创建 OffsetManager.
+     *
+     * <p>
+     * 用于 Kafka 异步消费场景下管理业务成功offset.
+     *
+     * @return OffsetManager
+     */
+    @ConditionalOnProperty(prefix = "kafka.multi", name = "enabled-offset-manager", havingValue = "true")
+    @Bean
+    public OffsetManager offsetManager() {
+        final OffsetManager offsetManager = new OffsetManager();
+        log.info("OffsetManager={}", offsetManager);
+        return offsetManager;
     }
 
     /**

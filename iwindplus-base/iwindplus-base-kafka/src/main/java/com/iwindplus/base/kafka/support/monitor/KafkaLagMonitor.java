@@ -13,7 +13,6 @@ import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.kafka.core.KafkaClusterManager;
 import com.iwindplus.base.kafka.domain.dto.KafkaConsumerInfoDTO;
 import com.iwindplus.base.kafka.domain.dto.KafkaConsumerKeyDTO;
-import com.iwindplus.base.kafka.domain.dto.KafkaLagDTO;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
 import com.iwindplus.base.kafka.listener.KafkaMultiListenerRegistrar;
 import java.time.Duration;
@@ -417,15 +416,15 @@ public class KafkaLagMonitor implements SmartLifecycle {
             long lag = Math.max(end - current, 0);
 
             result.add(
-                KafkaLagDTO.builder()
-                    .cluster(key.getCluster())
-                    .group(key.getGroup())
-                    .topic(tp.topic())
-                    .partition(tp.partition())
-                    .currentOffset(current)
-                    .endOffset(end)
-                    .lag(lag)
-                    .build()
+                new KafkaLagDTO(
+                    key.getCluster(),
+                    key.getGroup(),
+                    tp.topic(),
+                    tp.partition(),
+                    current,
+                    end,
+                    lag
+                )
             );
         });
 
@@ -444,7 +443,7 @@ public class KafkaLagMonitor implements SmartLifecycle {
         }
 
         lags.stream()
-            .collect(Collectors.groupingBy(KafkaLagDTO::getTopic))
+            .collect(Collectors.groupingBy(KafkaLagDTO::topic))
             .forEach((topic, list) ->
                 lagCache.put(
                     new LagKey(
@@ -483,9 +482,9 @@ public class KafkaLagMonitor implements SmartLifecycle {
 
         Map<String, Long> topicLag = lags.stream()
             .collect(Collectors.groupingBy(
-                KafkaLagDTO::getTopic,
+                KafkaLagDTO::topic,
                 Collectors.summingLong(
-                    KafkaLagDTO::getLag
+                    KafkaLagDTO::lag
                 )
             ));
 
@@ -783,6 +782,20 @@ public class KafkaLagMonitor implements SmartLifecycle {
         String cluster,
         String group,
         String topic) {
+
+    }
+
+    /**
+     * KafkaLagDTO.
+     */
+    private record KafkaLagDTO(
+        String cluster,
+        String group,
+        String topic,
+        Integer partition,
+        Long currentOffset,
+        Long endOffset,
+        Long lag) {
 
     }
 

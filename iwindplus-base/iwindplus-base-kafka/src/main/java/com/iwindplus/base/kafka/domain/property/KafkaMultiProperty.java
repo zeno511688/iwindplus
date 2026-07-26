@@ -54,6 +54,12 @@ public class KafkaMultiProperty {
     private Boolean enabledScale = false;
 
     /**
+     * 是否启用offset管理（用于异步消费场景下管理业务成功offset）.
+     */
+    @Builder.Default
+    private boolean enabledOffsetManager = false;
+
+    /**
      * 默认集群（必填）.
      */
     private String defaultCluster;
