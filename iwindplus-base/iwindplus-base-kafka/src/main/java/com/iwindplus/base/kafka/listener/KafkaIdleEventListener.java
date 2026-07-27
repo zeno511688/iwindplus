@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.kafka.listener;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.springframework.context.event.EventListener;
@@ -29,7 +30,7 @@ public record KafkaIdleEventListener(
      */
     @EventListener
     public void onIdle(ListenerContainerIdleEvent event) {
-        String listenerId = event.getListenerId();
+        String listenerId = StrUtil.subBefore(event.getListenerId(), "-", true);
         Consumer<?, ?> consumer = event.getConsumer();
 
         registrar.tryCommit(
