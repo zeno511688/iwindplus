@@ -7,21 +7,19 @@
 
 package com.iwindplus.log.server.listener;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.iwindplus.base.disruptor.core.DisruptorManager;
 import com.iwindplus.base.domain.dto.MessageBaseDTO;
 import com.iwindplus.base.kafka.domain.annotation.KafkaMultiListener;
 import com.iwindplus.base.util.JacksonUtil;
 import com.iwindplus.log.domain.dto.LoginLogDTO;
-import com.iwindplus.log.server.handler.event.LoginLogDisruptorEventHandler;
+import com.iwindplus.log.server.service.LoginLogService;
 import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 /**
@@ -35,14 +33,14 @@ import org.springframework.stereotype.Component;
 public class LoginLogListener {
 
     @Resource
-    private DisruptorManager<List<LoginLogDTO>> disruptorManager;
+    private LoginLogService loginLogService;
 
     @KafkaMultiListener(
         cluster = "${kafka.multi.default-cluster}",
         topics = {"${kafka.multi.clusters.default.bindings[1].topic}"},
         group = "${kafka.multi.clusters.default.bindings[1].group}"
     )
-    public void listenBatch(List<ConsumerRecord<String, String>> records, Acknowledgment ack) {
+    public void listenBatch(List<ConsumerRecord<String, String>> records) {
         log.info("登陆日志批量监听开始, size={}", records.size());
         if (records == null || records.isEmpty()) {
             return;
@@ -52,16 +50,10 @@ public class LoginLogListener {
 
         try {
             buildLoginLog(records, batchList);
-
-            if (!batchList.isEmpty()) {
-                final String name = StrUtil.lowerFirst(LoginLogDisruptorEventHandler.class.getSimpleName());
-                disruptorManager.getTemplate(name).publish("kafka", "mysql", batchList);
+            if (CollUtil.isNotEmpty(batchList)) {
+                loginLogService.saveBatch(batchList);
+                log.info("LoginLogListener execute size={}", batchList.size());
             }
-
-            if (ack != null) {
-                ack.acknowledge();
-            }
-
         } catch (Exception ex) {
             log.error("登陆日志批量消费失败, size={}", records.size(), ex);
             throw ex;
