@@ -118,7 +118,7 @@ public record KafkaReceiverDispatcher(
             return;
         }
 
-        handler.execute();
+        handler.executeMessage();
     }
 
     private <T> T runWithTrace(

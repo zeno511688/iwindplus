@@ -7,6 +7,7 @@
         支持消息消费重试 （本地重试，失败后发送dlq）
         支持链路追踪
         支持监控打点
+        支持disruptor异步并行消费，提高并发，并异步提交offset
 
 # 一、对接流程
       1、在配置文件（yml,properties）中配置KafkaMultiProperty类中相关属性
@@ -30,11 +31,9 @@
         try {
             buildLoginLog(records, batchList);
 
-            if (!batchList.isEmpty()) {
-                final String name = StrUtil.lowerFirst(LoginLogDisruptorEventHandler.class.getSimpleName());
-                disruptorManager.getTemplate(name).publish("kafka", "mysql", batchList);
-            }
+            // 业务操作
 
+            // 如果是异步并发方式
             if (ack != null) {
                 ack.acknowledge();
             }
