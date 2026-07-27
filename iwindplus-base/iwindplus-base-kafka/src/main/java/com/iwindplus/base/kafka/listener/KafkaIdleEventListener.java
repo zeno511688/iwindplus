@@ -31,10 +31,6 @@ public record KafkaIdleEventListener(
     public void onIdle(ListenerContainerIdleEvent event) {
         String listenerId = event.getListenerId();
         Consumer<?, ?> consumer = event.getConsumer();
-        log.info(
-            "Kafka container idle, listenerId={}",
-            listenerId
-        );
 
         registrar.tryCommit(
             listenerId,
