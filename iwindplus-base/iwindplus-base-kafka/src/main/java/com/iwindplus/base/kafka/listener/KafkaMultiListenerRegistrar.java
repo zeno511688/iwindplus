@@ -441,7 +441,11 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
                 // 业务执行
                 records -> invoke(meta, records, acknowledgment, consumer),
                 // 业务成功
-                records -> offsetManager.successBatch(listenerId, meta.getCluster(), meta.getGroup(), records)
+                records -> {
+                    if (Boolean.TRUE.equals(clusterManager.getProperty().getEnabledConsumerAsync())) {
+                        offsetManager.successBatch(listenerId, meta.getCluster(), meta.getGroup(), records);
+                    }
+                }
             )
         );
     }

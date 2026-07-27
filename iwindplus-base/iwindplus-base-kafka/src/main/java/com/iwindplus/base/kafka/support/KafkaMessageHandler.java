@@ -91,19 +91,12 @@ public class KafkaMessageHandler {
     }
 
     /**
-     * 处理批量消息.
-     */
-    public void executeMessage() {
-        if (batchHandler != null) {
-            batchHandler.accept(messages);
-        }
-    }
-
-    /**
      * 处理批量消息和回调.
      */
     public void execute() {
-        executeMessage();
+        if (batchHandler != null) {
+            batchHandler.accept(messages);
+        }
 
         if (successCallbackHandler != null) {
             successCallbackHandler.accept(messages);
