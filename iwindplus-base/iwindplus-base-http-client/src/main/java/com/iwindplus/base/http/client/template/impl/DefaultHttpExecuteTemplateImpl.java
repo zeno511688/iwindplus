@@ -53,15 +53,17 @@ public record DefaultHttpExecuteTemplateImpl(
         String url,
         Supplier<HttpExecuteResultDTO> supplier) {
 
-        HttpClientObservationContext context = newContext(client, method, url);
-        if (context == null) {
-            return doExecute(client, null, supplier);
+        if (Boolean.FALSE.equals(property.getEnabledObservationCustom())) {
+            return doExecute(client, method, url, null, supplier);
         }
+
+        HttpClientObservationContext context =
+            new HttpClientObservationContext(client, method, url);
 
         return observationExecutor.execute(
             CONVENTION,
             () -> context,
-            () -> doExecute(client, context, supplier)
+            () -> doExecute(client, method, url, context, supplier)
         );
     }
 
@@ -72,19 +74,23 @@ public record DefaultHttpExecuteTemplateImpl(
         String url,
         Supplier<CompletionStage<HttpExecuteResultDTO>> supplier) {
 
-        HttpClientObservationContext context = newContext(client, method, url);
-        if (context == null) {
-            return doExecuteAsync(client, null, supplier);
+        if (Boolean.FALSE.equals(property.getEnabledObservationCustom())) {
+            return doExecuteAsync(client, method, url, null, supplier);
         }
+
+        HttpClientObservationContext context =
+            new HttpClientObservationContext(client, method, url);
 
         return observationExecutor.executeAsync(
             CONVENTION,
             () -> context,
-            () -> doExecuteAsync(client, context, supplier));
+            () -> doExecuteAsync(client, method, url, context, supplier));
     }
 
     private HttpExecuteResultDTO doExecute(
         String client,
+        String method,
+        String url,
         HttpClientObservationContext context,
         Supplier<HttpExecuteResultDTO> supplier) {
         final long start = System.nanoTime();
@@ -95,14 +101,14 @@ public record DefaultHttpExecuteTemplateImpl(
             updateContext(context, result, null);
 
             if (result != null && result.error() != null) {
-                exceptionProcess(client, result.error(), context, start);
+                exceptionProcess(client, method, url, result.error(), start);
             }
 
             return result;
         } catch (Throwable ex) {
             updateContext(context, null, ex);
 
-            exceptionProcess(client, ex, context, start);
+            exceptionProcess(client, method, url, ex, start);
 
             throw ex;
         }
@@ -110,6 +116,8 @@ public record DefaultHttpExecuteTemplateImpl(
 
     private CompletionStage<HttpExecuteResultDTO> doExecuteAsync(
         String client,
+        String method,
+        String url,
         HttpClientObservationContext context,
         Supplier<CompletionStage<HttpExecuteResultDTO>> supplier) {
 
@@ -119,11 +127,11 @@ public record DefaultHttpExecuteTemplateImpl(
             .whenComplete((result, ex) -> {
                 if (ex != null) {
                     updateContext(context, null, ex);
-                    exceptionProcess(client, ex, context, start);
+                    exceptionProcess(client, method, url, ex, start);
                 } else {
                     updateContext(context, result, null);
                     if (result != null && result.error() != null) {
-                        exceptionProcess(client, result.error(), context, start);
+                        exceptionProcess(client, method, url, result.error(), start);
                     }
                 }
             });
@@ -149,18 +157,6 @@ public record DefaultHttpExecuteTemplateImpl(
         if (throwable != null) {
             context.setError(throwable);
         }
-    }
-
-    private HttpClientObservationContext newContext(
-        String client,
-        String method,
-        String url) {
-
-        if (Boolean.FALSE.equals(property.getEnabledObservationCustom())) {
-            return null;
-        }
-
-        return new HttpClientObservationContext(client, method, url);
     }
 
     private HttpExecuteResultDTO executeWithCircuitBreaker(
@@ -203,66 +199,6 @@ public record DefaultHttpExecuteTemplateImpl(
         return null;
     }
 
-    private void exceptionProcess(
-        String client,
-        Object error,
-        HttpClientObservationContext context,
-        long start) {
-
-        final long cost = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
-        final String method = context != null ? context.getMethod() : "";
-        final String url = context != null ? context.getUrl() : "";
-
-        if (error instanceof BizException ex) {
-            log.warn(
-                "{} {} {} -> (cost={}ms) ERROR={} {}",
-                client,
-                method,
-                url,
-                cost,
-                ex.getClass().getSimpleName(),
-                ex.getMessage());
-
-            return;
-        }
-
-        if (error instanceof Throwable ex) {
-            // 网络瞬时异常 / 熔断 / timeout
-            // 避免大量 error stack
-            if (isRetryable(ex)) {
-                log.warn(
-                    "{} {} {} -> (cost={}ms) ERROR={} {}",
-                    client,
-                    method,
-                    url,
-                    cost,
-                    ex.getClass().getSimpleName(),
-                    ex.getMessage());
-
-                return;
-            }
-
-            log.error(
-                "{} {} {} -> (cost={}ms) ERROR={}",
-                client,
-                method,
-                url,
-                cost,
-                ex.getClass().getSimpleName(),
-                ex);
-
-            return;
-        }
-
-        log.error(
-            "{} {} {} -> (cost={}ms) ERROR={}",
-            client,
-            method,
-            url,
-            cost,
-            error);
-    }
-
     private boolean isRetryable(Throwable ex) {
         return ex instanceof ConnectException || ex instanceof ReadTimeoutException || ex instanceof WriteTimeoutException
             || ex instanceof SocketTimeoutException || ex instanceof TimeoutException || ex instanceof PrematureCloseException
@@ -280,5 +216,50 @@ public record DefaultHttpExecuteTemplateImpl(
         return msg.contains("connection reset")
             || msg.contains("broken pipe")
             || msg.contains("connection aborted");
+    }
+
+    private void exceptionProcess(
+        String client,
+        String method,
+        String url,
+        Object error,
+        long start) {
+
+        final long cost = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+
+        if (error instanceof BizException ex) {
+            log.warn("{} {} {} -> (cost={}ms) ERROR={} {}",
+                client, method, url, cost,
+                ex.getClass().getSimpleName(),
+                ex.getMessage()
+            );
+
+            return;
+        }
+
+        if (error instanceof Throwable ex) {
+            // 网络瞬时异常 / 熔断 / timeout
+            // 避免大量 error stack
+            if (isRetryable(ex)) {
+                log.warn("{} {} {} -> (cost={}ms) ERROR={} {}",
+                    client, method, url, cost,
+                    ex.getClass().getSimpleName(),
+                    ex.getMessage()
+                );
+
+                return;
+            }
+
+            log.error("{} {} {} -> (cost={}ms) ERROR={}",
+                client, method, url, cost,
+                ex.getClass().getSimpleName(),
+                ex);
+
+            return;
+        }
+
+        log.error("{} {} {} -> (cost={}ms) ERROR={}",
+            client, method, url, cost, error
+        );
     }
 }
