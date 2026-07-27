@@ -429,7 +429,7 @@ kafka:
           properties:
             fetch.max.wait.ms: 500
           # 是否启用死信主题
-          enabled-dlt: false
+          enabled-dlt: true
           # 消息堆积量最大值（该参数和overloadLagThreshold判断是否需要扩容）
           maxLag: 5
           # 消息堆积量最小值（该参数和idleLagThreshold判断是否需要缩容）
@@ -454,7 +454,7 @@ disruptor:
     enabled: true
     configs:
       # 对应kafka group
-      iwindplus-gatewayLog-groupp:
+      iwindplus-gatewayLog-group:
         # 环形缓冲区大小
         ring-buffer-size: 65536
         # 生产者类型
@@ -467,7 +467,7 @@ disruptor:
         time-unit: MILLISECONDS
         # work线程池名称
         thread-pool-name: disruptorTaskExecutor
-      iwindplus-loginLog-groupp:
+      iwindplus-loginLog-group:
         # 环形缓冲区大小
         ring-buffer-size: 65536
         # 生产者类型
