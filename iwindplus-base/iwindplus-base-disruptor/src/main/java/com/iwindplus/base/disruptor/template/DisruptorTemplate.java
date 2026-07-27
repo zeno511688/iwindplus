@@ -7,6 +7,8 @@
 
 package com.iwindplus.base.disruptor.template;
 
+import com.iwindplus.base.disruptor.domain.dto.DisruptorPublishDTO;
+
 /**
  * Disruptor模板.
  *
@@ -18,10 +20,8 @@ public interface DisruptorTemplate<T> {
     /**
      * 发送事件.
      *
-     * @param source      数据来源
-     * @param destination 数据去向
-     * @param data        数据
+     * @param entity 对象
      * @return boolean
      */
-    boolean publish(String source, String destination, T data);
+    boolean publish(DisruptorPublishDTO<T> entity);
 }

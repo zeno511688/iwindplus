@@ -54,9 +54,19 @@ public class KafkaMessageHandler {
     private String group;
 
     /**
+     * 消息列表.
+     */
+    private List<ConsumerRecord<String, Object>> messages;
+
+    /**
      * 批量消息处理.
      */
     private final Consumer<List<ConsumerRecord<String, Object>>> batchHandler;
+
+    /**
+     * 成功回调.
+     */
+    private final Consumer<List<ConsumerRecord<String, Object>>> successCallbackHandler;
 
     public KafkaMessageHandler(
         String clusterId,
@@ -65,7 +75,9 @@ public class KafkaMessageHandler {
         String cluster,
         String[] topics,
         String group,
-        Consumer<List<ConsumerRecord<String, Object>>> handler) {
+        List<ConsumerRecord<String, Object>> messages,
+        Consumer<List<ConsumerRecord<String, Object>>> batchHandler,
+        Consumer<List<ConsumerRecord<String, Object>>> successCallbackHandler) {
 
         this.clusterId = clusterId;
         this.listenerId = listenerId;
@@ -73,17 +85,21 @@ public class KafkaMessageHandler {
         this.cluster = cluster;
         this.topics = topics;
         this.group = group;
-        this.batchHandler = handler;
+        this.messages = messages;
+        this.batchHandler = batchHandler;
+        this.successCallbackHandler = successCallbackHandler;
     }
 
     /**
      * 处理批量消息.
-     *
-     * @param msgs 消息列表
      */
-    public void handleBatch(List<ConsumerRecord<String, Object>> msgs) {
+    public void execute() {
         if (batchHandler != null) {
-            batchHandler.accept(msgs);
+            batchHandler.accept(messages);
+        }
+
+        if (successCallbackHandler != null) {
+            successCallbackHandler.accept(messages);
         }
     }
 }

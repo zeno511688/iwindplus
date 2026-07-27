@@ -30,7 +30,7 @@ public final class DisruptorConstant {
     /**
      * Handler名称.
      */
-    public static final String HANDLER = "handler";
+    public static final String HANDLER_NAME = "handlerName";
 
     /**
      * 数据来源.

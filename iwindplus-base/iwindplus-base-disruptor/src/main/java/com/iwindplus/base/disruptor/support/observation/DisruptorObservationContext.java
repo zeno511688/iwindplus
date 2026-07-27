@@ -29,7 +29,7 @@ public class DisruptorObservationContext extends Observation.Context {
     /**
      * Handler名称. 例如： OrderHandler AccountHandler
      */
-    private String handler;
+    private String handlerName;
 
     /**
      * 数据来源. Kafka RabbitMQ HTTP Timer

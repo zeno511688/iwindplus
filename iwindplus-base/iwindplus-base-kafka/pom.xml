@@ -55,5 +55,9 @@
             <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-monitor</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-disruptor</artifactId>
+        </dependency>
     </dependencies>
 </project>

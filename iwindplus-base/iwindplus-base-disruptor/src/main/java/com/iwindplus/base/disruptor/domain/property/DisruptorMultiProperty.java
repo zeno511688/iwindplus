@@ -44,10 +44,16 @@ public class DisruptorMultiProperty {
     private Boolean enabled = true;
 
     /**
-     * 是否开启监控埋点.
+     * 是否开启监控埋点（监控队列的使用率等）.
      */
     @Builder.Default
     private Boolean enabledMonitor = true;
+
+    /**
+     * 是否启用监控观察.
+     */
+    @Builder.Default
+    private Boolean enabledObservation = Boolean.TRUE;
 
     /**
      * 默认Disruptor名称（必填）.
@@ -74,7 +80,7 @@ public class DisruptorMultiProperty {
          * 环形缓冲区大小.
          */
         @Builder.Default
-        private int ringBufferSize = 8192;
+        private int ringBufferSize = 65536;
 
         /**
          * 生产者类型.
@@ -92,7 +98,7 @@ public class DisruptorMultiProperty {
          * 等待超时时间.
          */
         @Builder.Default
-        private Long timeout = 100L;
+        private Long timeout = 10L;
 
         /**
          * 阻塞等待超时单位.

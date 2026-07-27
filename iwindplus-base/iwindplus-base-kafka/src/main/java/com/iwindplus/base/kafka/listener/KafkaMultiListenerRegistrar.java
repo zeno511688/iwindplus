@@ -21,33 +21,40 @@ import com.iwindplus.base.kafka.domain.dto.KafkaMultiListenerMetaDTO;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
 import com.iwindplus.base.kafka.support.KafkaMessageHandler;
 import com.iwindplus.base.kafka.support.KafkaReceiverDispatcher;
+import com.iwindplus.base.kafka.support.OffsetManager;
 import com.iwindplus.base.util.JacksonUtil;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.TopicPartition;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.listener.AcknowledgingMessageListener;
-import org.springframework.kafka.listener.BatchAcknowledgingMessageListener;
-import org.springframework.kafka.listener.BatchMessageListener;
+import org.springframework.kafka.listener.AcknowledgingConsumerAwareMessageListener;
+import org.springframework.kafka.listener.BatchAcknowledgingConsumerAwareMessageListener;
+import org.springframework.kafka.listener.BatchConsumerAwareMessageListener;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+import org.springframework.kafka.listener.ConsumerAwareMessageListener;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.ContainerProperties.AckMode;
-import org.springframework.kafka.listener.MessageListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -62,19 +69,17 @@ import org.springframework.messaging.support.MessageBuilder;
 @RequiredArgsConstructor
 public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBean {
 
+    private final ApplicationContext applicationContext;
     private final KafkaMultiListenerBeanPostProcessor bpp;
     private final KafkaClusterManager clusterManager;
     private final KafkaReceiverDispatcher dispatcher;
+    private final OffsetManager offsetManager;
 
     private final Map<Method, BeanInvoker> invokerCache = new ConcurrentHashMap<>(16);
     private final Map<Method, ArgBuilder[]> argCache = new ConcurrentHashMap<>(16);
-
+    private final Cache<Class<?>, ObjectReader> readerCache = Caffeine.newBuilder().maximumSize(1024).build();
+    private final Map<String, KafkaMultiListenerMetaDTO> metaCache = new ConcurrentHashMap<>(26);
     private final Map<String, KafkaConsumerInfoDTO> containerMap = new ConcurrentHashMap<>(16);
-
-    private final Cache<Class<?>, ObjectReader> readerCache =
-        Caffeine.newBuilder()
-            .maximumSize(1024)
-            .build();
 
     private volatile boolean running;
 
@@ -115,6 +120,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         invokerCache.clear();
         argCache.clear();
         readerCache.invalidateAll();
+        metaCache.clear();
     }
 
     @Override
@@ -154,35 +160,96 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
     }
 
     /**
-     * 调整消费者并发消费者数.
+     * 尝试提交.
      *
-     * @param consumer 消费者信息
-     * @param target   目标并发
+     * @param listenerId 监听器ID
+     * @param consumer   消费者
      */
-    public boolean resize(
-        KafkaConsumerInfoDTO consumer,
-        int target) {
-
-        if (consumer == null) {
-            return false;
-        }
-        if (target <= 0) {
-            throw new IllegalArgumentException("Kafka consumer concurrency must > 0");
+    public void tryCommit(
+        String listenerId,
+        Consumer<?, ?> consumer) {
+        if (Boolean.FALSE.equals(clusterManager.getProperty().getEnabledConsumerAsync())) {
+            return;
         }
 
-        final ConcurrentMessageListenerContainer<String, Object> container = consumer.getContainer();
-        container.setConcurrency(target);
+        if (!offsetManager.hasPending(listenerId)) {
+            return;
+        }
 
-        log.warn(
-            "Resize kafka consumer, cluster={}, group={}, listenerId={}, {} -> {}",
-            consumer.getCluster(),
-            consumer.getGroup(),
-            consumer.getListenerId(),
-            container.getContainers().size(),
-            target
+        KafkaMultiListenerMetaDTO meta = metaCache.get(listenerId);
+        if (meta == null) {
+            log.warn(
+                "Kafka commit meta not found, listenerId={}",
+                listenerId
+            );
+
+            return;
+        }
+
+        // 当前consumer负责的partition
+        Set<TopicPartition> partitions = new HashSet<>(consumer.assignment());
+        if (partitions.isEmpty()) {
+            return;
+        }
+
+        Map<TopicPartition, OffsetAndMetadata> offsets =
+            offsetManager.prepareCommit(
+                meta.getCluster(),
+                meta.getGroup(),
+                partitions
+            );
+        if (offsets.isEmpty()) {
+            return;
+        }
+
+        // 防止多个触发重复commit, 先移除pending
+        if (!offsetManager.removePending(listenerId)) {
+            return;
+        }
+
+        consumerCommitAsync(listenerId, consumer, meta, offsets);
+    }
+
+    private void consumerCommitAsync(
+        String listenerId,
+        Consumer<?, ?> consumer,
+        KafkaMultiListenerMetaDTO meta,
+        Map<TopicPartition, OffsetAndMetadata> offsets) {
+        consumer.commitAsync(
+            offsets,
+            (result, error) -> {
+                if (error == null) {
+                    offsetManager.commitSuccess(
+                        meta.getCluster(),
+                        meta.getGroup(),
+                        result
+                    );
+
+                    log.info(
+                        "Kafka commit success, listenerId={}, offsets={}",
+                        listenerId,
+                        result
+                    );
+                } else {
+                    log.error(
+                        "Kafka commit failed, listenerId={}",
+                        listenerId,
+                        error
+                    );
+
+                    offsetManager.commitFailed(
+                        meta.getCluster(),
+                        meta.getGroup(),
+                        offsets
+                    );
+
+                    // 下次重新提交
+                    offsetManager.markPending(
+                        listenerId
+                    );
+                }
+            }
         );
-
-        return true;
     }
 
     private void preWarm(List<KafkaMultiListenerMetaDTO> metas) {
@@ -236,6 +303,8 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             return;
         }
 
+        metaCache.put(listenerId, meta);
+
         ConcurrentKafkaListenerContainerFactory<String, Object> factory =
             clusterManager.getFactory(meta.getCluster());
         if (factory == null) {
@@ -246,9 +315,13 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         ConcurrentMessageListenerContainer<String, Object> container =
             factory.createContainer(meta.getTopics());
         container.setBeanName(listenerId);
+        container.setApplicationEventPublisher(applicationContext);
         ContainerProperties p = container.getContainerProperties();
         final String clientId = CharSequenceUtil.isNotBlank(p.getClientId())
             ? p.getClientId() : clusterManager.getConsumerClientId(meta.getCluster());
+        //开启空闲事件
+        p.setIdleEventInterval(Duration.ofSeconds(5).toMillis());
+        p.setIdleBeforeDataMultiplier(1);
 
         final KafkaConsumerInfoDTO consumerInfo = KafkaConsumerInfoDTO
             .builder()
@@ -276,14 +349,16 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             );
         } catch (Exception e) {
             log.error(
-                "Kafka listener start failed, cluster={}, group={}, topics={}",
+                "Kafka listener start failed, cluster={}, group={}, topics={}, listenerId={}",
                 meta.getCluster(),
                 meta.getGroup(),
                 meta.getTopics(),
+                listenerId,
                 e
             );
 
             containerMap.remove(listenerId);
+
             throw new RuntimeException("Kafka listener start failed", e);
         }
     }
@@ -303,60 +378,86 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             || AckMode.MANUAL_IMMEDIATE.equals(ackMode);
         boolean hasAck = Arrays.stream(meta.getMethod().getParameterTypes())
             .anyMatch(Acknowledgment.class::isAssignableFrom);
-        if (manualAck && !hasAck) {
+        final boolean enabledConsumerAsync = clusterManager.getProperty().getEnabledConsumerAsync();
+        // MANUAL Ack 模式下：
+        // 1. 如果监听方法没有接收 Acknowledgment 参数，则无法手动提交 offset
+        // 2. 如果同时未开启异步自动提交，则消息消费完成后无法完成 offset 提交
+        if (manualAck && !hasAck && !enabledConsumerAsync) {
             throw new IllegalStateException("Kafka listener AckMode.MANUAL requires Acknowledgment parameter, method=" + meta.getMethod());
         }
 
         // 批处理
         if (batch) {
             if (manualAck) {
-                p.setMessageListener((BatchAcknowledgingMessageListener<String, Object>)
-                    (records, ack) -> dispatch(clusterId, listenerId, clientId, meta, records, ack)
+                p.setMessageListener((BatchAcknowledgingConsumerAwareMessageListener<String, Object>)
+                    (records, ack, consumer) -> dispatchWithCommit(clusterId, listenerId, clientId, meta,
+                        records, ack, consumer)
                 );
             } else {
-                p.setMessageListener((BatchMessageListener<String, Object>)
-                    records -> dispatch(clusterId, listenerId, clientId, meta, records, null)
+                p.setMessageListener((BatchConsumerAwareMessageListener<String, Object>)
+                    (records, consumer) -> dispatchWithCommit(clusterId, listenerId, clientId, meta,
+                        records, null, consumer)
                 );
             }
             return;
         } else {
             // 单处理
             if (manualAck) {
-                p.setMessageListener((AcknowledgingMessageListener<String, Object>)
-                    (record, ack) -> dispatch(clusterId, listenerId, clientId, meta, Collections.singletonList(record), ack)
+                p.setMessageListener((AcknowledgingConsumerAwareMessageListener<String, Object>)
+                    (record, ack, consumer) -> dispatchWithCommit(clusterId, listenerId, clientId, meta,
+                        Collections.singletonList(record), ack, consumer)
                 );
             } else {
-                p.setMessageListener((MessageListener<String, Object>)
-                    record -> dispatch(clusterId, listenerId, clientId, meta, Collections.singletonList(record), null)
+                p.setMessageListener((ConsumerAwareMessageListener<String, Object>)
+                    (record, consumer) -> dispatchWithCommit(clusterId, listenerId, clientId, meta,
+                        Collections.singletonList(record), null, consumer)
                 );
             }
         }
     }
 
-    private void dispatch(
+    private void dispatchWithCommit(
         String clusterId,
         String listenerId,
         String clientId,
         KafkaMultiListenerMetaDTO meta,
         List<ConsumerRecord<String, Object>> messages,
-        Acknowledgment acknowledgment) {
+        Acknowledgment acknowledgment,
+        Consumer<?, ?> consumer) {
 
+        // 提交之前已完成offset
+        tryCommit(listenerId, consumer);
+
+        // 投递新的消息
         dispatcher.dispatch(
-            new KafkaMessageHandler(clusterId, listenerId, clientId, meta.getCluster(), meta.getTopics(), meta.getGroup(),
-                ignored -> invoke(meta, messages, acknowledgment)),
-            messages);
+            new KafkaMessageHandler(
+                clusterId,
+                listenerId,
+                clientId,
+                meta.getCluster(),
+                meta.getTopics(),
+                meta.getGroup(),
+                messages,
+                // 业务执行
+                records -> invoke(meta, records, acknowledgment, consumer),
+                // 业务成功
+                records -> offsetManager.successBatch(listenerId, meta.getCluster(), meta.getGroup(), records)
+            )
+        );
     }
 
     private void invoke(
         KafkaMultiListenerMetaDTO meta,
         List<ConsumerRecord<String, Object>> records,
-        Acknowledgment ack) {
+        Acknowledgment ack,
+        Consumer<?, ?> consumer) {
 
         Method m = meta.getMethod();
         Object[] args = buildArgs(
             argCache.computeIfAbsent(m, this::buildArgBuilders),
             records,
-            ack
+            ack,
+            consumer
         );
 
         try {
@@ -379,72 +480,88 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
     private Object[] buildArgs(
         ArgBuilder[] builders,
         List<?> records,
-        Acknowledgment ack) {
+        Acknowledgment ack,
+        Consumer<?, ?> consumer) {
 
         Object[] args = new Object[builders.length];
-        for (int i = 0; i < builders.length; i++) {
-            Object arg = builders[i].build(records);
-            if (arg == null && builders[i] instanceof AckArgBuilder) {
-                arg = ack;
-            }
 
-            args[i] = arg;
+        for (int i = 0; i < builders.length; i++) {
+            args[i] = builders[i].build(records, ack, consumer);
         }
 
         return args;
     }
 
-    private ArgBuilder[] buildArgBuilders(Method m) {
-        Class<?>[] t = m.getParameterTypes();
-        Type[] g = m.getGenericParameterTypes();
+    private ArgBuilder[] buildArgBuilders(Method method) {
+        Class<?>[] types = method.getParameterTypes();
+        Type[] genericTypes = method.getGenericParameterTypes();
+        ArgBuilder[] builders = new ArgBuilder[types.length];
 
-        ArgBuilder[] arr = new ArgBuilder[t.length];
-
-        for (int i = 0; i < t.length; i++) {
-            arr[i] = createBuilder(t[i], g[i]);
+        for (int i = 0; i < types.length; i++) {
+            builders[i] = createBuilder(types[i], genericTypes[i]);
         }
 
-        return arr;
+        return builders;
     }
 
     private ArgBuilder createBuilder(Class<?> type, Type generic) {
-        if (Acknowledgment.class == type) {
-            return new AckArgBuilder();
+        if (Acknowledgment.class.isAssignableFrom(type)) {
+            return (records, ack, consumer) -> ack;
         }
-
+        if (Consumer.class.isAssignableFrom(type)) {
+            return (records, ack, consumer) -> consumer;
+        }
+        if (ConsumerRecord.class.isAssignableFrom(type)) {
+            return (records, ack, consumer) -> records.get(0);
+        }
         if (Message.class.isAssignableFrom(type)) {
-            return records -> MessageBuilder.withPayload(extractValue(records.get(0))).build();
+            return (records, ack, consumer) ->
+                MessageBuilder
+                    .withPayload(
+                        extractValue(records.get(0))
+                    )
+                    .build();
         }
-
-        if (type == ConsumerRecord.class) {
-            return records -> records.get(0);
-        }
-
         if (List.class.isAssignableFrom(type)) {
-            Class<?> clazz = extractGeneric(generic);
-
-            if (clazz == ConsumerRecord.class) {
-                return records -> records;
+            Class<?> genericClass = extractGeneric(generic);
+            if (ConsumerRecord.class.isAssignableFrom(genericClass)) {
+                return (records, ack, consumer) -> records;
             }
 
-            if (Message.class.isAssignableFrom(clazz)) {
-                return records -> records.stream()
-                    .map(x -> MessageBuilder.withPayload(extractValue(x)).build())
-                    .toList();
+            if (Message.class.isAssignableFrom(genericClass)) {
+                return (records, ack, consumer) ->
+                    records.stream()
+                        .map(record ->
+                            MessageBuilder
+                                .withPayload(
+                                    extractValue(record)
+                                )
+                                .build()
+                        )
+                        .toList();
             }
 
-            ObjectReader reader = getReader(clazz);
-            return records -> {
-                List<Object> list = new ArrayList<>(records.size());
-                for (Object x : records) {
-                    list.add(read(extractValue(x), reader));
+            ObjectReader reader =
+                getReader(genericClass);
+
+            return (records, ack, consumer) -> {
+                List<Object> result = new ArrayList<>(records.size());
+                for (Object record : records) {
+                    result.add(
+                        read(
+                            extractValue(record),
+                            reader
+                        )
+                    );
                 }
-                return list;
+                return result;
             };
         }
 
-        ObjectReader reader = getReader(type);
-        return records -> read(extractValue(records.get(0)), reader);
+        ObjectReader reader =
+            getReader(type);
+
+        return (records, ack, consumer) -> read(extractValue(records.get(0)), reader);
     }
 
     private Object extractValue(Object obj) {
@@ -460,6 +577,10 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             Type actual = pt.getActualTypeArguments()[0];
             if (actual instanceof Class<?> c) {
                 return c;
+            }
+
+            if (actual instanceof Class<?> clazz) {
+                return clazz;
             }
 
             if (actual instanceof ParameterizedType p
@@ -567,26 +688,18 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
     private interface ArgBuilder {
 
         /**
-         * 构建
+         * 构建方法参数.
          *
-         * @param records 列表
-         * @return 结果
+         * @param records  消息列表
+         * @param ack      ack
+         * @param consumer kafka consumer
+         * @return 方法参数
          */
-        Object build(List<?> records);
-    }
-
-    private static final class AckArgBuilder implements ArgBuilder {
-
-        /**
-         * 构建
-         *
-         * @param records 记录
-         * @return 结果
-         */
-        @Override
-        public Object build(List<?> records) {
-            return null;
-        }
+        Object build(
+            List<?> records,
+            Acknowledgment ack,
+            Consumer<?, ?> consumer
+        );
     }
 
     @FunctionalInterface

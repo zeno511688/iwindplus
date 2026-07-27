@@ -18,7 +18,6 @@ import com.iwindplus.base.disruptor.domain.property.DisruptorMultiProperty;
 import com.iwindplus.base.disruptor.domain.property.DisruptorMultiProperty.DisruptorMultiConfig;
 import com.iwindplus.base.disruptor.factory.DisruptorEventHandlerStrategyFactory;
 import com.iwindplus.base.disruptor.support.DisruptorDispatcherHandler;
-import com.iwindplus.base.disruptor.support.DisruptorEventHandler;
 import com.iwindplus.base.disruptor.template.DisruptorTemplate;
 import com.iwindplus.base.disruptor.template.impl.DefaultDisruptorTemplateImpl;
 import com.iwindplus.base.domain.exception.BizException;
@@ -110,19 +109,6 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
     }
 
     @Override
-    public DisruptorTemplate getOrCreate(String name) {
-        return templateMap.computeIfAbsent(
-            name,
-            key -> {
-                final Map<String, DisruptorMultiConfig> configs = property.getConfigs();
-                DisruptorMultiConfig config = configs.getOrDefault(key, configs.get(property.getDefaultName()));
-                Disruptor<DisruptorEvent<?>> disruptor = createDisruptor(key, config);
-                return new DefaultDisruptorTemplateImpl(key, disruptor, traceContextPropagator);
-            }
-        );
-    }
-
-    @Override
     public DisruptorMultiProperty getProperty() {
         return property;
     }
@@ -144,13 +130,9 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
             throw new BizException(DisruptorCodeEnum.DISRUPTOR_CONFIG_NOT_EXIST);
         }
 
-        buildTemplate(configs);
+        configs.forEach((name, config) -> buildTemplate(name, config));
 
-        log.info("Disruptor configs initialization completed. " +
-                "configs={}, templates={}",
-            property.getConfigs().size(),
-            templateMap.size()
-        );
+        log.info("Disruptor multi initialized: {}", configs.size());
     }
 
     private String resolveName(String name) {
@@ -159,31 +141,19 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
             : name;
     }
 
-    private void buildTemplate(Map<String, DisruptorMultiConfig> configs) {
-        Map<String, DisruptorEventHandler<?>> strategyMap = factory.getStrategyMap();
-        // 判断是否为单配置模式（只有default配置）
-        boolean singleMode = configs.size() == 1 && configs.containsKey(property.getDefaultName());
-        // 单配置模式：所有处理器共享同一个Disruptor实例
-        if (singleMode) {
-            DisruptorMultiConfig defaultConfig = configs.get(property.getDefaultName());
-            // 监控名称使用defaultName，不使用handlerName，避免Gauge重复
-            Disruptor<DisruptorEvent<?>> disruptor = createDisruptor(property.getDefaultName(), defaultConfig);
-            // 所有处理器共享同一个Disruptor实例
-            for (String handlerName : strategyMap.keySet()) {
-                templateMap.put(handlerName, new DefaultDisruptorTemplateImpl(handlerName, disruptor, traceContextPropagator));
-            }
-            log.info("Disruptor single mode: all handlers share one disruptor instance, handlers={}", strategyMap.keySet());
-        } else {
-            // 多配置模式：每个处理器类型创建独立的Disruptor实例
-            for (Map.Entry<String, DisruptorEventHandler<?>> entry : strategyMap.entrySet()) {
-                String handlerName = entry.getKey();
-                // 获取对应类型的配置，如果没有则使用默认配置
-                DisruptorMultiConfig config = configs.getOrDefault(handlerName, configs.get(property.getDefaultName()));
-                Disruptor<DisruptorEvent<?>> disruptor = createDisruptor(handlerName, config);
-                templateMap.put(handlerName, new DefaultDisruptorTemplateImpl(handlerName, disruptor, traceContextPropagator));
-            }
-            log.info("Disruptor multi mode: each handler has its own disruptor instance, handlers={}", strategyMap.keySet());
-        }
+    private void buildTemplate(String name, DisruptorMultiConfig disruptorConfig) {
+        // 如果配置不存在，则使用默认配置
+        DisruptorMultiConfig config = Optional.ofNullable(disruptorConfig)
+            .orElse(property.getConfigs().get(property.getDefaultName()));
+
+        templateMap.computeIfAbsent(name, k -> {
+            Disruptor<DisruptorEvent<?>> disruptor = createDisruptor(name, config);
+            final DefaultDisruptorTemplateImpl disruptorTemplate = new DefaultDisruptorTemplateImpl(
+                name, property, disruptor, traceContextPropagator);
+
+            log.info("Disruptor template created, name={}", name);
+            return disruptorTemplate;
+        });
     }
 
     /**
@@ -202,7 +172,8 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
             config.getProducerType(),
             getWaitStrategy(config)
         );
-        DisruptorDispatcherHandler dispatcherHandler = new DisruptorDispatcherHandler<>(factory, traceContextPropagator, observationExecutor);
+        DisruptorDispatcherHandler dispatcherHandler = new DisruptorDispatcherHandler<>(
+            name, property, factory, traceContextPropagator, observationExecutor);
 
         disruptor.handleEventsWith(dispatcherHandler);
         disruptor.start();

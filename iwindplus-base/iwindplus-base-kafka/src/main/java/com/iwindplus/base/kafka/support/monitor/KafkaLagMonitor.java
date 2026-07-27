@@ -681,6 +681,10 @@ public class KafkaLagMonitor implements SmartLifecycle {
         KafkaConsumerInfoDTO consumer,
         int target) {
 
+        if (target <= 0) {
+            throw new IllegalArgumentException("Kafka consumer concurrency must > 0");
+        }
+
         int current = getCurrentConcurrency(consumer);
 
         if (current == target) {
@@ -702,7 +706,8 @@ public class KafkaLagMonitor implements SmartLifecycle {
             }
 
             try {
-                if (isRebalancing(consumer)) {
+                final ConcurrentMessageListenerContainer<String, Object> container = consumer.getContainer();
+                if (!container.isRunning()) {
                     log.info(
                         "Kafka container rebalance, skip resize listener={}",
                         consumer.getListenerId()
@@ -711,14 +716,18 @@ public class KafkaLagMonitor implements SmartLifecycle {
                     return false;
                 }
 
-                log.warn(
-                    "Kafka resize listener={} {} -> {}",
+                container.setConcurrency(target);
+
+                log.info(
+                    "Resize kafka consumer, cluster={}, group={}, listenerId={}, {} -> {}",
+                    consumer.getCluster(),
+                    consumer.getGroup(),
                     consumer.getListenerId(),
-                    latest,
+                    container.getContainers().size(),
                     target
                 );
 
-                return registrar.resize(consumer, target);
+                return true;
             } catch (Exception e) {
                 log.error(
                     "Kafka resize failed listener={}",
@@ -729,16 +738,6 @@ public class KafkaLagMonitor implements SmartLifecycle {
                 return false;
             }
         }
-    }
-
-    /**
-     * 判断container状态.
-     */
-    private boolean isRebalancing(
-        KafkaConsumerInfoDTO consumer) {
-
-        final ConcurrentMessageListenerContainer<String, Object> container = consumer.getContainer();
-        return !container.isRunning();
     }
 
     /**

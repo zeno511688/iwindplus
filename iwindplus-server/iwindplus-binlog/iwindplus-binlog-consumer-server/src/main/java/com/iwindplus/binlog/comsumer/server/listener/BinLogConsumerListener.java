@@ -8,21 +8,19 @@
 package com.iwindplus.binlog.comsumer.server.listener;
 
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.core.util.StrUtil;
-import com.iwindplus.base.disruptor.core.DisruptorManager;
+import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.kafka.domain.annotation.KafkaMultiListener;
 import com.iwindplus.base.util.JacksonUtil;
 import com.iwindplus.binlog.comsumer.server.domain.dto.BinlogRowDataDTO;
 import com.iwindplus.binlog.comsumer.server.domain.dto.SourceMetaDTO;
 import com.iwindplus.binlog.comsumer.server.domain.property.BinLogConsumerProperty;
-import com.iwindplus.binlog.comsumer.server.handler.event.BinlogRowDataDisruptorEventHandler;
+import com.iwindplus.binlog.comsumer.server.handler.BinlogActionHandler;
 import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.kafka.support.Acknowledgment;
 
 /**
  * binlog消费方日志监听器.
@@ -37,14 +35,14 @@ public class BinLogConsumerListener {
     protected BinLogConsumerProperty property;
 
     @Resource
-    private DisruptorManager<List<BinlogRowDataDTO>> disruptorManager;
+    private BinlogActionHandler handler;
 
     @KafkaMultiListener(
         cluster = "${kafka.multi.default-cluster}",
         topics = {"${kafka.multi.clusters.default.bindings[0].topic}"},
         group = "${kafka.multi.clusters.default.bindings[0].group}"
     )
-    public void listenBatch(List<ConsumerRecord<String, String>> records, Acknowledgment ack) {
+    public void listenBatch(List<ConsumerRecord<String, String>> records) {
         if (records == null || records.isEmpty()) {
             return;
         }
@@ -53,12 +51,7 @@ public class BinLogConsumerListener {
             final List<BinlogRowDataDTO> batchList = buildBinlogRowData(records);
 
             if (!batchList.isEmpty()) {
-                final String name = StrUtil.lowerFirst(BinlogRowDataDisruptorEventHandler.class.getSimpleName());
-                disruptorManager.getTemplate(name).publish("kafka", "elasticsearch", batchList);
-            }
-
-            if (ack != null) {
-                ack.acknowledge();
+                processData(batchList);
             }
         } catch (Exception ex) {
             log.error("binlog日志消息批量消费失败, size={}", records.size(), ex);
@@ -113,5 +106,18 @@ public class BinLogConsumerListener {
         }
 
         return true;
+    }
+
+    private void processData(List<BinlogRowDataDTO> entities) {
+        try {
+            this.handler.processHandler(entities);
+        } catch (Exception ex) {
+            if (ex instanceof BizException bizEx) {
+                throw bizEx;
+            }
+
+            log.error("binlog日志消息消费失败={}", ex);
+            throw new RuntimeException(ex);
+        }
     }
 }

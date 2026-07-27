@@ -48,16 +48,16 @@ public class KafkaMultiProperty {
     private Boolean enabled = true;
 
     /**
+     * 是否启用消费者异步并发消费.
+     */
+    @Builder.Default
+    private Boolean enabledConsumerAsync = false;
+
+    /**
      * 是否启用动态扩容.
      */
     @Builder.Default
     private Boolean enabledScale = false;
-
-    /**
-     * 是否启用offset管理（用于异步消费场景下管理业务成功offset）.
-     */
-    @Builder.Default
-    private boolean enabledOffsetManager = false;
 
     /**
      * 默认集群（必填）.

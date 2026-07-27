@@ -8,10 +8,8 @@
 package com.iwindplus.base.disruptor.domain.event;
 
 import com.iwindplus.base.domain.event.BaseEvent;
-import java.util.HashMap;
 import java.util.Map;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -33,13 +31,12 @@ public class DisruptorEvent<T> extends BaseEvent<T> {
     /**
      * 消息头
      */
-    @Builder.Default
-    private Map<String, String> headers = new HashMap<>(16);
+    private Map<String, String> headers;
 
     /**
-     * 处理器名称
+     * 事件处理器名称（必填，对应DisruptorEventHandler.getName()）
      */
-    private String name;
+    private String handlerName;
 
     /**
      * 发布时间
@@ -60,8 +57,10 @@ public class DisruptorEvent<T> extends BaseEvent<T> {
      * 重置
      */
     public void clear() {
-        headers.clear();
-        name = null;
+        if (headers != null) {
+            headers.clear();
+        }
+        handlerName = null;
         publishTime = null;
         source = null;
         destination = null;

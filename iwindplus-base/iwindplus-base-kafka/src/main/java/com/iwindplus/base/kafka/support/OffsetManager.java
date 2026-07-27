@@ -11,16 +11,18 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
@@ -50,6 +52,7 @@ import org.apache.kafka.common.TopicPartition;
  * @author zengdegui
  * @since 2026/07/26 10:35
  */
+@Slf4j
 public class OffsetManager {
 
     /**
@@ -61,22 +64,36 @@ public class OffsetManager {
         new ConcurrentHashMap<>(16);
 
     /**
+     * 待提交listener
+     * <p>
+     * Disruptor业务线程写入
+     * <p>
+     * Consumer线程消费
+     */
+    private final Set<String> pendingCommitListeners = ConcurrentHashMap.newKeySet();
+
+    /**
      * 单条消息处理成功.
      *
-     * @param cluster   集群
-     * @param topic     topic
-     * @param partition 分区
-     * @param offset    offset
+     * @param listenerId 监听id
+     * @param cluster    集群
+     * @param topic      topic
+     * @param groupId    分组id
+     * @param partition  分区
+     * @param offset     offset
      */
     public void success(
+        String listenerId,
         String cluster,
         String topic,
+        String groupId,
         int partition,
         long offset) {
 
         OffsetKey key = new OffsetKey(
             cluster,
             topic,
+            groupId,
             partition
         );
 
@@ -84,6 +101,8 @@ public class OffsetManager {
             key,
             k -> new PartitionOffsetState()
         ).success(offset);
+
+        markPending(listenerId);
     }
 
     /**
@@ -92,11 +111,15 @@ public class OffsetManager {
      * <p>
      * Disruptor批量消费完成后调用.
      *
-     * @param cluster 集群
-     * @param records 消息列表
+     * @param listenerId 监听id
+     * @param cluster    集群
+     * @param groupId    分组id
+     * @param records    消息列表
      */
     public void successBatch(
+        String listenerId,
         String cluster,
+        String groupId,
         List<ConsumerRecord<String, Object>> records) {
 
         if (records == null || records.isEmpty()) {
@@ -110,6 +133,7 @@ public class OffsetManager {
             OffsetKey key = new OffsetKey(
                 cluster,
                 record.topic(),
+                groupId,
                 record.partition()
             );
 
@@ -125,6 +149,47 @@ public class OffsetManager {
                 k -> new PartitionOffsetState()
             ).successBatch(offsets)
         );
+
+        // 通知Consumer线程提交
+        markPending(listenerId);
+    }
+
+    /**
+     * 标记需要提交
+     */
+    public void markPending(String listenerId) {
+        if (listenerId != null) {
+            pendingCommitListeners.add(listenerId);
+        }
+    }
+
+    /**
+     * 判断是否包含待提交listener
+     * <p>
+     * Consumer线程调用
+     */
+    public boolean hasPending(String listenerId) {
+        return pendingCommitListeners.contains(listenerId);
+    }
+
+    /**
+     * 移除待提交listener
+     * <p>
+     * Consumer线程调用
+     */
+    public boolean removePending(String listenerId) {
+        return pendingCommitListeners.remove(listenerId);
+    }
+
+    /**
+     * 获取待提交listener
+     * <p>
+     * Consumer线程调用
+     */
+    public Set<String> pollPendingCommit() {
+        Set<String> result = new HashSet<>(pendingCommitListeners);
+        pendingCommitListeners.removeAll(result);
+        return result;
     }
 
     /**
@@ -137,16 +202,30 @@ public class OffsetManager {
      * 不直接修改已提交状态， 等 Kafka commit 成功后调用 commitSuccess.
      *
      * @param cluster 集群
+     * @param groupId 分组id
+     *                 @param partitions 分组id
      * @return Kafka提交offset
      */
     public Map<TopicPartition, OffsetAndMetadata> prepareCommit(
-        String cluster) {
+        String cluster, String groupId, Set<TopicPartition> partitions) {
 
         Map<TopicPartition, OffsetAndMetadata> result =
             new HashMap<>(16);
 
         states.forEach((key, state) -> {
-            if (!key.getCluster().equals(cluster)) {
+            if (!key.getCluster().equals(cluster)
+                || !key.getGroupId().equals(groupId)) {
+                return;
+            }
+            TopicPartition tp =
+                new TopicPartition(
+                    key.topic,
+                    key.partition
+                );
+            // 只处理当前Consumer拥有的partition
+            if(partitions != null
+                && !partitions.contains(tp)) {
+
                 return;
             }
 
@@ -154,10 +233,7 @@ public class OffsetManager {
 
             if (offset >= 0) {
                 result.put(
-                    new TopicPartition(
-                        key.getTopic(),
-                        key.getPartition()
-                    ),
+                    tp,
                     new OffsetAndMetadata(
                         offset + 1
                     )
@@ -172,10 +248,12 @@ public class OffsetManager {
      * Kafka提交成功回调.
      *
      * @param cluster 集群
+     * @param groupId 分组id
      * @param offsets 提交成功offset
      */
     public void commitSuccess(
         String cluster,
+        String groupId,
         Map<TopicPartition, OffsetAndMetadata> offsets) {
 
         if (offsets == null || offsets.isEmpty()) {
@@ -186,6 +264,7 @@ public class OffsetManager {
             OffsetKey key = new OffsetKey(
                 cluster,
                 tp.topic(),
+                groupId,
                 tp.partition()
             );
 
@@ -207,16 +286,19 @@ public class OffsetManager {
      * 将pending恢复到completed， 等下一次重新提交.
      *
      * @param cluster 集群
+     * @param groupId 分组id
      * @param offsets 本次提交offset
      */
     public void commitFailed(
         String cluster,
+        String groupId,
         Map<TopicPartition, OffsetAndMetadata> offsets) {
         offsets.forEach((tp, metadata) -> {
             OffsetKey key =
                 new OffsetKey(
                     cluster,
                     tp.topic(),
+                    groupId,
                     tp.partition()
                 );
 
@@ -237,16 +319,18 @@ public class OffsetManager {
      * rebalance或者shutdown时使用.
      *
      * @param cluster 集群
+     * @param groupId 分组id
      * @return 当前offset
      */
     public Map<TopicPartition, OffsetAndMetadata> snapshot(
-        String cluster) {
+        String cluster, String groupId) {
 
         Map<TopicPartition, OffsetAndMetadata> result =
             new HashMap<>(16);
 
         states.forEach((key, state) -> {
-            if (!key.getCluster().equals(cluster)) {
+            if (!key.cluster.equals(cluster)
+                || !key.groupId.equals(groupId)) {
                 return;
             }
 
@@ -276,17 +360,20 @@ public class OffsetManager {
      *
      * @param cluster   集群
      * @param topic     topic
+     * @param groupId   分组id
      * @param partition 分区
      */
     public void remove(
         String cluster,
         String topic,
+        String groupId,
         int partition) {
 
         states.remove(
             new OffsetKey(
                 cluster,
                 topic,
+                groupId,
                 partition
             )
         );
@@ -312,6 +399,11 @@ public class OffsetManager {
         private String topic;
 
         /**
+         * 分组id.
+         */
+        private String groupId;
+
+        /**
          * 分区.
          */
         private int partition;
@@ -323,10 +415,6 @@ public class OffsetManager {
      * <p>
      * 一个partition内必须保证offset连续提交.
      */
-    @Data
-    @SuperBuilder
-    @NoArgsConstructor
-    @AllArgsConstructor
     private static class PartitionOffsetState implements Serializable {
 
         /**
@@ -344,13 +432,11 @@ public class OffsetManager {
         /**
          * Kafka已经确认提交的最大offset.
          */
-        @Builder.Default
         private Long committed = -1L;
 
         /**
          * 下一个期待完成的offset.
          */
-        @Builder.Default
         private Long nextOffset = -1L;
 
         /**
@@ -410,8 +496,8 @@ public class OffsetManager {
         /**
          * Kafka提交成功后更新状态.
          */
-        public synchronized void commitSuccess( long offset) {
-            if(offset <= committed){
+        public synchronized void commitSuccess(long offset) {
+            if (offset <= committed) {
                 return;
             }
 
@@ -430,8 +516,8 @@ public class OffsetManager {
          * Kafka提交失败恢复状态.
          */
         public synchronized void commitFailed(long offset) {
-            TreeSet<Long> retry =
-                new TreeSet<>();
+            TreeSet<Long> retry = new TreeSet<>();
+
             pending.forEach(x -> {
                 if (x <= offset) {
                     retry.add(x);
@@ -460,7 +546,6 @@ public class OffsetManager {
          */
         private void init(long offset) {
             if (nextOffset < 0) {
-
                 nextOffset = offset;
             }
         }

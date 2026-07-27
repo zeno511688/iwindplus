@@ -8,6 +8,7 @@
 package com.iwindplus.base.disruptor.support;
 
 import com.iwindplus.base.disruptor.domain.event.DisruptorEvent;
+import com.iwindplus.base.disruptor.domain.property.DisruptorMultiProperty;
 import com.iwindplus.base.disruptor.factory.DisruptorEventHandlerStrategyFactory;
 import com.iwindplus.base.disruptor.support.observation.DisruptorObservationContext;
 import com.iwindplus.base.disruptor.support.observation.DisruptorObservationConvention;
@@ -28,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public record DisruptorDispatcherHandler<T>(
+    String name,
+    DisruptorMultiProperty property,
     DisruptorEventHandlerStrategyFactory factory,
     TraceContextPropagator traceContextPropagator,
     ObservationExecutor observationExecutor)
@@ -54,19 +57,24 @@ public record DisruptorDispatcherHandler<T>(
     }
 
     private void execute(DisruptorEvent<T> event, long sequence, boolean endOfBatch) {
+        DisruptorEventHandler handler = factory.getDisruptorEventHandler(event.getHandlerName());
+
+        if (Boolean.FALSE.equals(property.getEnabledObservation())) {
+            handler.execute(
+                event.getData(),
+                sequence,
+                endOfBatch);
+        }
+
         DisruptorObservationContext context =
             new DisruptorObservationContext(
-                event.getName(),
+                event.getHandlerName(),
                 event.getSource(),
                 event.getDestination());
         observationExecutor.execute(
             CONVENTION,
             () -> context,
             () -> {
-                DisruptorEventHandler handler =
-                    factory.getDisruptorEventHandler(
-                        event.getName());
-
                 handler.execute(
                     event.getData(),
                     sequence,
@@ -74,7 +82,9 @@ public record DisruptorDispatcherHandler<T>(
                 return null;
             });
 
-        log.info("Disruptor execute success,name={}, const={}", event.getName(), System.currentTimeMillis() - event.getPublishTime());
+        log.info("Disruptor execute success, name={}, HandlerName={}, const={}",
+            name, event.getHandlerName(),
+            System.currentTimeMillis() - event.getPublishTime());
     }
 
     private <T> T runWithTrace(

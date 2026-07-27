@@ -418,6 +418,25 @@ kafka:
             group: iwindplus-binlog-group
             # 是否自动创建
             auto-create: true
+disruptor:
+  multi:
+    # 是否开启
+    enabled: true
+    configs:
+      # 对应kafka group
+      iwindplus-binlog-group:
+        # 环形缓冲区大小
+        ring-buffer-size: 65536
+        # 生产者类型
+        producer-type: SINGLE
+        # 等待策略
+        wait-strategy: YIELDING
+        # 等待超时时间
+        timeout: 10
+        # 阻塞等待超时单位
+        time-unit: MILLISECONDS
+        # work线程池名称
+        thread-pool-name: disruptorTaskExecutor
 binlog:
   consumer:
     # 是否开启

@@ -37,7 +37,7 @@ public class DisruptorObservationConvention implements ObservationConvention<Dis
 
     @Override
     public String getContextualName(DisruptorObservationContext context) {
-        return context.getHandler();
+        return context.getHandlerName();
     }
 
     @Override
@@ -47,7 +47,7 @@ public class DisruptorObservationConvention implements ObservationConvention<Dis
         List<KeyValue> list = new ArrayList<>(16);
 
         // 事件处理器
-        add(list, DisruptorConstant.HANDLER, context.getHandler());
+        add(list, DisruptorConstant.HANDLER_NAME, context.getHandlerName());
         // 来源
         add(list, DisruptorConstant.SOURCE, context.getSource());
         // 目标

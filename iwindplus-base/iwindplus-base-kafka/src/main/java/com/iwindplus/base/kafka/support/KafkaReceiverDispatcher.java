@@ -7,7 +7,11 @@
 
 package com.iwindplus.base.kafka.support;
 
+import cn.hutool.core.util.StrUtil;
+import com.iwindplus.base.disruptor.core.DisruptorManager;
+import com.iwindplus.base.disruptor.domain.dto.DisruptorPublishDTO;
 import com.iwindplus.base.kafka.core.KafkaClusterManager;
+import com.iwindplus.base.kafka.handler.KafkaDisruptorEventHandler;
 import com.iwindplus.base.kafka.support.observation.CustomKafkaListenerObservationConvention;
 import com.iwindplus.base.monitor.domain.dto.TraceScope;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
@@ -32,7 +36,8 @@ import org.springframework.kafka.support.micrometer.KafkaRecordReceiverContext;
 public record KafkaReceiverDispatcher(
     KafkaClusterManager manager,
     TraceContextPropagator traceContextPropagator,
-    ObservationExecutor observationExecutor) {
+    ObservationExecutor observationExecutor,
+    DisruptorManager<KafkaMessageHandler> disruptorManager) {
 
     private static final CustomKafkaListenerObservationConvention CONVENTION =
         new CustomKafkaListenerObservationConvention();
@@ -54,30 +59,27 @@ public record KafkaReceiverDispatcher(
     /**
      * 分发消息.
      */
-    public void dispatch(KafkaMessageHandler handler, List<ConsumerRecord<String, Object>> msgs) {
+    public void dispatch(KafkaMessageHandler handler) {
+        List<ConsumerRecord<String, Object>> msgs = handler.getMessages();
         if (msgs == null || msgs.isEmpty()) {
             return;
         }
 
-
         runWithTrace(
             msgs.get(0),
-            () -> execute(handler, msgs)
+            () -> execute(handler)
         );
     }
 
-    private Void execute(
-        KafkaMessageHandler handler,
-        List<ConsumerRecord<String, Object>> msgs) {
-
+    private Void execute(KafkaMessageHandler handler) {
         if (!enabledObservation(handler)) {
-            handler.handleBatch(msgs);
+            doExecute(handler);
             return null;
         }
 
         KafkaRecordReceiverContext context =
             new KafkaRecordReceiverContext(
-                msgs.get(0),
+                handler.getMessages().get(0),
                 handler.getListenerId(),
                 handler.getClientId(),
                 handler.getGroup(),
@@ -88,12 +90,35 @@ public record KafkaReceiverDispatcher(
             CONVENTION,
             () -> context,
             () -> {
-                handler.handleBatch(msgs);
+                doExecute(handler);
                 return null;
             }
         );
 
         return null;
+    }
+
+    private void doExecute(KafkaMessageHandler handler) {
+        // 如果启用了异步提交，则使用Disruptor进行异步处理，每个group对应一个Disruptor
+        if (Boolean.TRUE.equals(manager.getProperty().getEnabledConsumerAsync())) {
+            // 这里使用group作为disruptor名称，别忘了配置Disruptor
+            final String name = handler.getGroup();
+            final String handlerName = StrUtil.lowerFirst(KafkaDisruptorEventHandler.class.getSimpleName());
+
+            final DisruptorPublishDTO<KafkaMessageHandler> entity =
+                DisruptorPublishDTO.<KafkaMessageHandler>builder()
+                    .handlerName(handlerName)
+                    .data(handler)
+                    .source("kafka")
+                    .destination("listener")
+                    .build();
+            disruptorManager.getTemplate(name)
+                .publish(entity);
+
+            return;
+        }
+
+        handler.execute();
     }
 
     private <T> T runWithTrace(
