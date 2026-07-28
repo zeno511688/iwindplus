@@ -326,6 +326,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
                 records -> invoke(meta, records, acknowledgment, consumer),
                 // 业务成功
                 records -> {
+                    // todo 这里待处理，如果在disruptor中可能会有问题
                     if (acknowledgment != null) {
                         acknowledgment.acknowledge();
                     }
