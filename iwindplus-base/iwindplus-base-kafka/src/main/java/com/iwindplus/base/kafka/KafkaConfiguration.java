@@ -17,15 +17,11 @@ import com.iwindplus.base.kafka.listener.KafkaMultiListenerRegistrar;
 import com.iwindplus.base.kafka.support.KafkaMessageHandler;
 import com.iwindplus.base.kafka.support.KafkaReceiverDispatcher;
 import com.iwindplus.base.kafka.support.KafkaSenderDispatcher;
-import com.iwindplus.base.kafka.support.monitor.KafkaLagMonitor;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
 import com.iwindplus.base.monitor.support.TraceContextPropagator;
 import io.micrometer.observation.ObservationRegistry;
-import jakarta.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
-import org.dromara.dynamictp.core.executor.ScheduledDtpExecutor;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
@@ -165,27 +161,5 @@ public class KafkaConfiguration {
             applicationContext, bpp, manager, dispatcher);
         log.info("KafkaMultiListenerRegistrar={}", registrar);
         return registrar;
-    }
-
-    /**
-     * 创建 KafkaLagMonitor.
-     *
-     * @param kafkaMultiListenerRegistrar kafkaMultiListenerRegistrar
-     * @param clusterManager              clusterManager
-     * @param kafkaLagTaskScheduler       kafkaLagTaskScheduler
-     * @return KafkaLagCache
-     */
-    @ConditionalOnProperty(prefix = "kafka.multi", name = "enabled-scale", havingValue = "true")
-    @Bean
-    public KafkaLagMonitor kafkaLagMonitor(
-        KafkaMultiListenerRegistrar kafkaMultiListenerRegistrar,
-        KafkaClusterManager clusterManager,
-        @Nullable
-        @Qualifier("kafkaLagTaskScheduler")
-            ScheduledDtpExecutor kafkaLagTaskScheduler) {
-        final KafkaLagMonitor kafkaLagMonitor = new KafkaLagMonitor(
-            kafkaMultiListenerRegistrar, clusterManager, kafkaLagTaskScheduler);
-        log.info("kafkaLagMonitor={}", kafkaLagMonitor);
-        return kafkaLagMonitor;
     }
 }
