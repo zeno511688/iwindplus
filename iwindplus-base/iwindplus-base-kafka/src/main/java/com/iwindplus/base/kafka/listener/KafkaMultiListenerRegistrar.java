@@ -326,7 +326,8 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
                 records -> invoke(meta, records, acknowledgment, consumer),
                 // 业务成功
                 records -> {
-                    // todo 这里待处理，如果在disruptor中可能会有问题
+                    // 开启了 containerProperties.setAsyncAcks(true);
+                    // 虽然还是disruptor调用，但是 Spring Kafka 会缓存 ack，并由 Consumer线程最终提交
                     if (acknowledgment != null) {
                         acknowledgment.acknowledge();
                     }
