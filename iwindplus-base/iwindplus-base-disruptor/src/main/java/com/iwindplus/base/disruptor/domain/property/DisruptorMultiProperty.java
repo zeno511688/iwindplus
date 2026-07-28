@@ -50,12 +50,6 @@ public class DisruptorMultiProperty {
     private Boolean enabledMonitor = true;
 
     /**
-     * 是否启用监控观察.
-     */
-    @Builder.Default
-    private Boolean enabledObservation = Boolean.TRUE;
-
-    /**
      * 默认Disruptor名称（必填）.
      */
     @Builder.Default
@@ -77,10 +71,30 @@ public class DisruptorMultiProperty {
     public static class DisruptorMultiConfig {
 
         /**
+         * 是否启用监控观察.
+         */
+        @Builder.Default
+        private Boolean enabledObservation = Boolean.TRUE;
+
+        /**
          * 环形缓冲区大小.
          */
         @Builder.Default
         private int ringBufferSize = 65536;
+
+        /**
+         * 暂停消费阈值
+         * 剩余容量低于10%
+         */
+        @Builder.Default
+        private Double pauseThreshold = 0.1D;
+
+        /**
+         * 恢复消费阈值
+         * 剩余容量超过50%
+         */
+        @Builder.Default
+        private Double resumeThreshold = 0.5D;
 
         /**
          * 生产者类型.

@@ -377,8 +377,6 @@ spring:
 kafka:
   multi:
     enabled: true
-    # 是否启用消费者异步并发消费
-    enabled-consumer-async: true
     # 是否启用动态扩容
     enabled-scale: false
     default-cluster: default
@@ -426,6 +424,8 @@ kafka:
           enabled-batch-listener: true
           ack-count: 1
           ack-time: 10000
+          # 是否异步提交（并发情况）
+          enable-async-acks: true
           properties:
             fetch.max.wait.ms: 500
           # 是否启用死信主题
@@ -455,6 +455,8 @@ disruptor:
     configs:
       # 对应kafka group
       iwindplus-gatewayLog-group:
+        # 是否启用监控观察
+        enabled-observation: true
         # 环形缓冲区大小
         ring-buffer-size: 65536
         # 生产者类型
@@ -467,7 +469,13 @@ disruptor:
         time-unit: MILLISECONDS
         # work线程池名称
         thread-pool-name: disruptorTaskExecutor
+        # 恢复比例
+        resume-threshold: 0.5
+        # 暂停比例
+        pause-threshold: 0.1
       iwindplus-loginLog-group:
+        # 是否启用监控观察
+        enabled-observation: true
         # 环形缓冲区大小
         ring-buffer-size: 65536
         # 生产者类型
@@ -480,6 +488,10 @@ disruptor:
         time-unit: MILLISECONDS
         # work线程池名称
         thread-pool-name: disruptorTaskExecutor
+        # 恢复比例
+        resume-threshold: 0.5
+        # 暂停比例
+        pause-threshold: 0.1
 snail-job:
   enabled: true
   port: 10003

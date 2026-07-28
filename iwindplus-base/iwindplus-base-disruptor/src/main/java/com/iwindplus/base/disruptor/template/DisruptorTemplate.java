@@ -24,4 +24,25 @@ public interface DisruptorTemplate<T> {
      * @return boolean
      */
     boolean publish(DisruptorPublishDTO<T> entity);
+
+    /**
+     * 是否需要暂停.
+     *
+     * @return boolean
+     */
+    boolean needPause();
+
+    /**
+     * 是否可以继续投递.
+     *
+     * @return boolean
+     */
+    boolean available();
+
+    /**
+     * 使用率.
+     *
+     * @return double
+     */
+    double usage();
 }

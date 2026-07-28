@@ -8,7 +8,7 @@
 package com.iwindplus.base.disruptor.support;
 
 import com.iwindplus.base.disruptor.domain.event.DisruptorEvent;
-import com.iwindplus.base.disruptor.domain.property.DisruptorMultiProperty;
+import com.iwindplus.base.disruptor.domain.property.DisruptorMultiProperty.DisruptorMultiConfig;
 import com.iwindplus.base.disruptor.factory.DisruptorEventHandlerStrategyFactory;
 import com.iwindplus.base.disruptor.support.observation.DisruptorObservationContext;
 import com.iwindplus.base.disruptor.support.observation.DisruptorObservationConvention;
@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public record DisruptorDispatcherHandler<T>(
     String name,
-    DisruptorMultiProperty property,
+    DisruptorMultiConfig config,
     DisruptorEventHandlerStrategyFactory factory,
     TraceContextPropagator traceContextPropagator,
     ObservationExecutor observationExecutor)
@@ -59,7 +59,7 @@ public record DisruptorDispatcherHandler<T>(
     private void execute(DisruptorEvent<T> event, long sequence, boolean endOfBatch) {
         DisruptorEventHandler handler = factory.getDisruptorEventHandler(event.getHandlerName());
 
-        if (Boolean.FALSE.equals(property.getEnabledObservation())) {
+        if (Boolean.FALSE.equals(config.getEnabledObservation())) {
             handler.execute(
                 event.getData(),
                 sequence,

@@ -48,12 +48,6 @@ public class KafkaMultiProperty {
     private Boolean enabled = true;
 
     /**
-     * 是否启用消费者异步并发消费.
-     */
-    @Builder.Default
-    private Boolean enabledConsumerAsync = false;
-
-    /**
      * 是否启用动态扩容.
      */
     @Builder.Default

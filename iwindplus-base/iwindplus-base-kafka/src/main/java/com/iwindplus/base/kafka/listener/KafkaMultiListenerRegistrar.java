@@ -21,7 +21,6 @@ import com.iwindplus.base.kafka.domain.dto.KafkaMultiListenerMetaDTO;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
 import com.iwindplus.base.kafka.support.KafkaMessageHandler;
 import com.iwindplus.base.kafka.support.KafkaReceiverDispatcher;
-import com.iwindplus.base.kafka.support.OffsetManager;
 import com.iwindplus.base.util.JacksonUtil;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -35,15 +34,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.common.TopicPartition;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.SmartLifecycle;
@@ -73,12 +69,10 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
     private final KafkaMultiListenerBeanPostProcessor bpp;
     private final KafkaClusterManager clusterManager;
     private final KafkaReceiverDispatcher dispatcher;
-    private final OffsetManager offsetManager;
 
     private final Map<Method, BeanInvoker> invokerCache = new ConcurrentHashMap<>(16);
     private final Map<Method, ArgBuilder[]> argCache = new ConcurrentHashMap<>(16);
     private final Cache<Class<?>, ObjectReader> readerCache = Caffeine.newBuilder().maximumSize(1024).build();
-    private final Map<String, KafkaMultiListenerMetaDTO> metaCache = new ConcurrentHashMap<>(26);
     private final Map<String, KafkaConsumerInfoDTO> containerMap = new ConcurrentHashMap<>(16);
 
     private volatile boolean running;
@@ -120,7 +114,6 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         invokerCache.clear();
         argCache.clear();
         readerCache.invalidateAll();
-        metaCache.clear();
     }
 
     @Override
@@ -157,99 +150,6 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
                     entity.getGroup()
                 )
             ));
-    }
-
-    /**
-     * 尝试提交.
-     *
-     * @param listenerId 监听器ID
-     * @param consumer   消费者
-     */
-    public void tryCommit(
-        String listenerId,
-        Consumer<?, ?> consumer) {
-        if (Boolean.FALSE.equals(clusterManager.getProperty().getEnabledConsumerAsync())) {
-            return;
-        }
-
-        if (!offsetManager.hasPending(listenerId)) {
-            return;
-        }
-
-        KafkaMultiListenerMetaDTO meta = metaCache.get(listenerId);
-        if (meta == null) {
-            log.warn(
-                "Kafka commit meta not found, listenerId={}",
-                listenerId
-            );
-
-            return;
-        }
-
-        // 当前consumer负责的partition
-        Set<TopicPartition> partitions = new HashSet<>(consumer.assignment());
-        if (partitions.isEmpty()) {
-            return;
-        }
-
-        Map<TopicPartition, OffsetAndMetadata> offsets =
-            offsetManager.prepareCommit(
-                meta.getCluster(),
-                meta.getGroup(),
-                partitions
-            );
-        if (offsets.isEmpty()) {
-            return;
-        }
-
-        // 防止多个触发重复commit, 先移除pending
-        if (!offsetManager.removePending(listenerId)) {
-            return;
-        }
-
-        consumerCommitAsync(listenerId, consumer, meta, offsets);
-    }
-
-    private void consumerCommitAsync(
-        String listenerId,
-        Consumer<?, ?> consumer,
-        KafkaMultiListenerMetaDTO meta,
-        Map<TopicPartition, OffsetAndMetadata> offsets) {
-        consumer.commitAsync(
-            offsets,
-            (result, error) -> {
-                if (error == null) {
-                    offsetManager.commitSuccess(
-                        meta.getCluster(),
-                        meta.getGroup(),
-                        result
-                    );
-
-                    log.info(
-                        "Kafka commit success, listenerId={}, offsets={}",
-                        listenerId,
-                        result
-                    );
-                } else {
-                    log.error(
-                        "Kafka commit failed, listenerId={}",
-                        listenerId,
-                        error
-                    );
-
-                    offsetManager.commitFailed(
-                        meta.getCluster(),
-                        meta.getGroup(),
-                        offsets
-                    );
-
-                    // 下次重新提交
-                    offsetManager.markPending(
-                        listenerId
-                    );
-                }
-            }
-        );
     }
 
     private void preWarm(List<KafkaMultiListenerMetaDTO> metas) {
@@ -302,8 +202,6 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             log.warn("Kafka listener already started, listenerId={}", listenerId);
             return;
         }
-
-        metaCache.put(listenerId, meta);
 
         ConcurrentKafkaListenerContainerFactory<String, Object> factory =
             clusterManager.getFactory(meta.getCluster());
@@ -374,18 +272,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
 
         boolean batch = property.getEnabledBatchListener(meta.getCluster());
         final AckMode ackMode = p.getAckMode();
-        boolean manualAck = AckMode.MANUAL.equals(ackMode)
-            || AckMode.MANUAL_IMMEDIATE.equals(ackMode);
-        boolean hasAck = Arrays.stream(meta.getMethod().getParameterTypes())
-            .anyMatch(Acknowledgment.class::isAssignableFrom);
-        final boolean enabledConsumerAsync = clusterManager.getProperty().getEnabledConsumerAsync();
-        // MANUAL Ack 模式下：
-        // 1. 如果监听方法没有接收 Acknowledgment 参数，则无法手动提交 offset
-        // 2. 如果同时未开启异步自动提交，则消息消费完成后无法完成 offset 提交
-        if (manualAck && !hasAck && !enabledConsumerAsync) {
-            throw new IllegalStateException("Kafka listener AckMode.MANUAL requires Acknowledgment parameter, method=" + meta.getMethod());
-        }
-
+        boolean manualAck = AckMode.MANUAL.equals(ackMode) || AckMode.MANUAL_IMMEDIATE.equals(ackMode);
         // 批处理
         if (batch) {
             if (manualAck) {
@@ -425,9 +312,6 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         Acknowledgment acknowledgment,
         Consumer<?, ?> consumer) {
 
-        // 提交之前已完成offset
-        tryCommit(listenerId, consumer);
-
         // 投递新的消息
         dispatcher.dispatch(
             new KafkaMessageHandler(
@@ -442,11 +326,12 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
                 records -> invoke(meta, records, acknowledgment, consumer),
                 // 业务成功
                 records -> {
-                    if (Boolean.TRUE.equals(clusterManager.getProperty().getEnabledConsumerAsync())) {
-                        offsetManager.successBatch(listenerId, meta.getCluster(), meta.getGroup(), records);
+                    if (acknowledgment != null) {
+                        acknowledgment.acknowledge();
                     }
                 }
-            )
+            ),
+            consumer
         );
     }
 
@@ -521,9 +406,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         if (Message.class.isAssignableFrom(type)) {
             return (records, ack, consumer) ->
                 MessageBuilder
-                    .withPayload(
-                        extractValue(records.get(0))
-                    )
+                    .withPayload(extractValue(records.get(0)))
                     .build();
         }
         if (List.class.isAssignableFrom(type)) {
@@ -537,33 +420,23 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
                     records.stream()
                         .map(record ->
                             MessageBuilder
-                                .withPayload(
-                                    extractValue(record)
-                                )
+                                .withPayload(extractValue(record))
                                 .build()
-                        )
-                        .toList();
+                        ).toList();
             }
 
-            ObjectReader reader =
-                getReader(genericClass);
+            ObjectReader reader = getReader(genericClass);
 
             return (records, ack, consumer) -> {
                 List<Object> result = new ArrayList<>(records.size());
                 for (Object record : records) {
-                    result.add(
-                        read(
-                            extractValue(record),
-                            reader
-                        )
-                    );
+                    result.add(read(extractValue(record), reader));
                 }
                 return result;
             };
         }
 
-        ObjectReader reader =
-            getReader(type);
+        ObjectReader reader = getReader(type);
 
         return (records, ack, consumer) -> read(extractValue(records.get(0)), reader);
     }

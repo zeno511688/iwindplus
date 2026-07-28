@@ -12,13 +12,11 @@ import com.iwindplus.base.kafka.core.KafkaClusterManager;
 import com.iwindplus.base.kafka.core.KafkaTemplateRouter;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
 import com.iwindplus.base.kafka.handler.KafkaDisruptorEventHandler;
-import com.iwindplus.base.kafka.listener.KafkaIdleEventListener;
 import com.iwindplus.base.kafka.listener.KafkaMultiListenerBeanPostProcessor;
 import com.iwindplus.base.kafka.listener.KafkaMultiListenerRegistrar;
 import com.iwindplus.base.kafka.support.KafkaMessageHandler;
 import com.iwindplus.base.kafka.support.KafkaReceiverDispatcher;
 import com.iwindplus.base.kafka.support.KafkaSenderDispatcher;
-import com.iwindplus.base.kafka.support.OffsetManager;
 import com.iwindplus.base.kafka.support.monitor.KafkaLagMonitor;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
 import com.iwindplus.base.monitor.support.TraceContextPropagator;
@@ -137,21 +135,6 @@ public class KafkaConfiguration {
     }
 
     /**
-     * 创建 OffsetManager.
-     *
-     * <p>
-     * 用于 Kafka 异步消费场景下管理业务成功offset.
-     *
-     * @return OffsetManager
-     */
-    @Bean
-    public OffsetManager offsetManager() {
-        final OffsetManager offsetManager = new OffsetManager();
-        log.info("OffsetManager={}", offsetManager);
-        return offsetManager;
-    }
-
-    /**
      * 创建 KafkaDisruptorEventHandler.
      *
      * @return KafkaDisruptorEventHandler
@@ -170,7 +153,6 @@ public class KafkaConfiguration {
      * @param bpp                bpp
      * @param manager            集群管理器
      * @param dispatcher         接收调度器
-     * @param offsetManager      offsetManager
      * @return KafkaMultiListenerRegistrar
      */
     @Bean
@@ -178,26 +160,11 @@ public class KafkaConfiguration {
         ApplicationContext applicationContext,
         KafkaMultiListenerBeanPostProcessor bpp,
         KafkaClusterManager manager,
-        KafkaReceiverDispatcher dispatcher,
-        OffsetManager offsetManager) {
+        KafkaReceiverDispatcher dispatcher) {
         final KafkaMultiListenerRegistrar registrar = new KafkaMultiListenerRegistrar(
-            applicationContext, bpp, manager, dispatcher, offsetManager);
+            applicationContext, bpp, manager, dispatcher);
         log.info("KafkaMultiListenerRegistrar={}", registrar);
         return registrar;
-    }
-
-    /**
-     * 创建 KafkaIdleEventListener.
-     *
-     * @param kafkaMultiListenerRegistrar kafkaMultiListenerRegistrar
-     * @return KafkaIdleEventListener
-     */
-    @Bean
-    public KafkaIdleEventListener kafkaIdleEventListener(
-        KafkaMultiListenerRegistrar kafkaMultiListenerRegistrar) {
-        final KafkaIdleEventListener kafkaIdleEventListener = new KafkaIdleEventListener(
-            kafkaMultiListenerRegistrar);
-        return kafkaIdleEventListener;
     }
 
     /**

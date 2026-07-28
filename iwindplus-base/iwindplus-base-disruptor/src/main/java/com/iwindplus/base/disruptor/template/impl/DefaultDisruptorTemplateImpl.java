@@ -10,7 +10,7 @@ package com.iwindplus.base.disruptor.template.impl;
 import cn.hutool.core.map.MapUtil;
 import com.iwindplus.base.disruptor.domain.dto.DisruptorPublishDTO;
 import com.iwindplus.base.disruptor.domain.event.DisruptorEvent;
-import com.iwindplus.base.disruptor.domain.property.DisruptorMultiProperty;
+import com.iwindplus.base.disruptor.domain.property.DisruptorMultiProperty.DisruptorMultiConfig;
 import com.iwindplus.base.disruptor.template.DisruptorTemplate;
 import com.iwindplus.base.monitor.support.TraceContextPropagator;
 import com.lmax.disruptor.InsufficientCapacityException;
@@ -31,7 +31,7 @@ import org.springframework.util.Assert;
 @Slf4j
 public record DefaultDisruptorTemplateImpl<T>(
     String name,
-    DisruptorMultiProperty property,
+    DisruptorMultiConfig config,
     Disruptor<DisruptorEvent<T>> disruptor,
     TraceContextPropagator traceContextPropagator) implements DisruptorTemplate<T>, AutoCloseable {
 
@@ -44,8 +44,9 @@ public record DefaultDisruptorTemplateImpl<T>(
         Assert.hasText(handlerName, "handlerName must not be blank");
         Assert.notNull(data, "data must not be null");
 
-        RingBuffer<DisruptorEvent<T>> ringBuffer = disruptor.getRingBuffer();
+        RingBuffer<DisruptorEvent<T>> ringBuffer = getRingBuffer(disruptor);
         Long sequence = this.getSequence(ringBuffer);
+        // RingBuffer满
         if (sequence == null) {
             return false;
         }
@@ -80,10 +81,35 @@ public record DefaultDisruptorTemplateImpl<T>(
             // 只有填充成功才发布
             if (success) {
                 ringBuffer.publish(sequence);
-
-                log.info("Disruptor send success, name={}, sequence={}", name, sequence);
             }
         }
+    }
+
+    @Override
+    public boolean needPause() {
+        RingBuffer<DisruptorEvent<T>> ringBuffer = getRingBuffer(disruptor);
+        long remaining = ringBuffer.remainingCapacity();
+        long capacity = ringBuffer.getBufferSize();
+
+        return remaining <= capacity * config.getPauseThreshold();
+    }
+
+    @Override
+    public boolean available() {
+        RingBuffer<DisruptorEvent<T>> ringBuffer = getRingBuffer(disruptor);
+        long remaining = ringBuffer.remainingCapacity();
+        long capacity = ringBuffer.getBufferSize();
+
+        return remaining >= capacity * config.getResumeThreshold();
+    }
+
+    @Override
+    public double usage() {
+        RingBuffer<DisruptorEvent<T>> ringBuffer = getRingBuffer(disruptor);
+        long remaining = ringBuffer.remainingCapacity();
+        long capacity = ringBuffer.getBufferSize();
+
+        return (capacity - remaining) * 100D / capacity;
     }
 
     @Override
@@ -95,16 +121,15 @@ public record DefaultDisruptorTemplateImpl<T>(
         }
     }
 
+    private RingBuffer<DisruptorEvent<T>> getRingBuffer(Disruptor<DisruptorEvent<T>> disruptor) {
+        return disruptor.getRingBuffer();
+    }
+
     private Long getSequence(RingBuffer<DisruptorEvent<T>> ringBuffer) {
         try {
             // 非阻塞申请槽位
             return ringBuffer.tryNext();
         } catch (InsufficientCapacityException e) {
-            // RingBuffer 已满
-            log.warn(
-                "Disruptor ringBuffer is full, name={} remainingCapacity={}",
-                name, ringBuffer.remainingCapacity());
-
             return null;
         }
     }

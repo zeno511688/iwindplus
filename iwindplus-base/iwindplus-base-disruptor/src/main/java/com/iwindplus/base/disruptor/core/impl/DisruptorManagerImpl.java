@@ -149,7 +149,7 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
         templateMap.computeIfAbsent(name, k -> {
             Disruptor<DisruptorEvent<?>> disruptor = createDisruptor(name, config);
             final DefaultDisruptorTemplateImpl disruptorTemplate = new DefaultDisruptorTemplateImpl(
-                name, property, disruptor, traceContextPropagator);
+                name, config, disruptor, traceContextPropagator);
 
             log.info("Disruptor template created, name={}", name);
             return disruptorTemplate;
@@ -173,7 +173,7 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
             getWaitStrategy(config)
         );
         DisruptorDispatcherHandler dispatcherHandler = new DisruptorDispatcherHandler<>(
-            name, property, factory, traceContextPropagator, observationExecutor);
+            name, config, factory, traceContextPropagator, observationExecutor);
 
         disruptor.handleEventsWith(dispatcherHandler);
         disruptor.start();
