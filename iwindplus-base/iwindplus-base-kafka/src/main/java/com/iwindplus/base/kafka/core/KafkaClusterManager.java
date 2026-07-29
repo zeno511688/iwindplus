@@ -402,8 +402,7 @@ public class KafkaClusterManager implements SmartLifecycle, DisposableBean {
             key -> {
                 Map<String, Object> props = property.buildConsumerProps(clusterName);
 
-                DefaultKafkaConsumerFactory<String, Object>
-                    consumerFactory =
+                DefaultKafkaConsumerFactory<String, Object> consumerFactory =
                     new DefaultKafkaConsumerFactory<>(props);
 
                 ConcurrentKafkaListenerContainerFactory<String, Object>
