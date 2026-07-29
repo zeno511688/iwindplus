@@ -161,11 +161,11 @@ public class KafkaConfiguration {
     /**
      * 创建 KafkaMultiListenerRegistrar.
      *
-     * @param applicationContext   applicationContext
-     * @param bpp                  bpp
-     * @param listenerInvoker      listenerInvoker
-     * @param manager              集群管理器
-     * @param dispatcher           接收调度器
+     * @param applicationContext applicationContext
+     * @param bpp                bpp
+     * @param listenerInvoker    listenerInvoker
+     * @param manager            集群管理器
+     * @param dispatcher         接收调度器
      * @return KafkaMultiListenerRegistrar
      */
     @Bean
