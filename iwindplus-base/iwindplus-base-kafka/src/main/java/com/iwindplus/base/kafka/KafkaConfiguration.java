@@ -163,7 +163,7 @@ public class KafkaConfiguration {
      *
      * @param applicationContext   applicationContext
      * @param bpp                  bpp
-     * @param kafkaListenerInvoker kafkaListenerInvoker
+     * @param listenerInvoker      listenerInvoker
      * @param manager              集群管理器
      * @param dispatcher           接收调度器
      * @return KafkaMultiListenerRegistrar
