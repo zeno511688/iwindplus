@@ -7,10 +7,10 @@
 
 package com.iwindplus.base.monitor.support;
 
-import com.iwindplus.base.monitor.domain.dto.TraceScope;
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.TraceContext;
 import io.micrometer.tracing.Tracer;
+import io.micrometer.tracing.Tracer.SpanInScope;
 import io.micrometer.tracing.propagation.Propagator;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
@@ -27,8 +27,6 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public record TraceContextPropagator(Tracer tracer, Propagator propagator, TextMapPropagator textMapPropagator) {
-
-    public static final String TRACE_CONTEXT_KEY = "otel.trace.context";
 
     /**
      * 注入TraceContext
@@ -85,9 +83,9 @@ public record TraceContextPropagator(Tracer tracer, Propagator propagator, TextM
      * @param carrier carrier
      * @param getter  getter
      * @param <C>     泛型
-     * @return TraceScope
+     * @return SpanInScope
      */
-    public <C> TraceScope extract(
+    public <C> SpanInScope extract(
         C carrier,
         Propagator.Getter<C> getter) {
 
@@ -103,11 +101,10 @@ public record TraceContextPropagator(Tracer tracer, Propagator propagator, TextM
             log.warn(
                 "[Trace Extract] span create failed"
             );
-            return TraceScope.EMPTY;
+            return null;
         }
 
-        Tracer.SpanInScope scope = tracer.withSpan(span);
-        return new TraceScope(span, scope);
+        return tracer.withSpan(span);
     }
 
     /**

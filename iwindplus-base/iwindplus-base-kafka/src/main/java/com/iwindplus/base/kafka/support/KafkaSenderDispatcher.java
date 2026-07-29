@@ -7,12 +7,8 @@
 
 package com.iwindplus.base.kafka.support;
 
-import com.iwindplus.base.kafka.core.KafkaClusterManager;
 import com.iwindplus.base.kafka.domain.dto.KafkaMessageDTO;
-import com.iwindplus.base.monitor.support.ObservationExecutor;
 import java.util.Map;
-import java.util.Objects;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 
 /**
@@ -21,10 +17,7 @@ import org.springframework.kafka.core.KafkaTemplate;
  * @author zengdegui
  * @since 2026/05/08 16:36
  */
-@Slf4j
-public record KafkaSenderDispatcher(
-    KafkaClusterManager manager,
-    ObservationExecutor observationExecutor) {
+public interface KafkaSenderDispatcher {
 
     /**
      * 发送
@@ -38,61 +31,27 @@ public record KafkaSenderDispatcher(
      * @param <T>      泛型
      * @return T
      */
-    public <T> T dispatch(
+    <T> T dispatch(
         String cluster,
         String topic,
         String key,
         Map<String, Object> headers,
         String message,
-        KafkaSendExecutor<T> executor) {
-
-        return doDispatch(
-            cluster,
-            topic,
-            key,
-            headers,
-            message,
-            executor,
-            manager::getTemplate);
-    }
+        KafkaSendExecutor<T> executor);
 
     /**
-     * 公共调度逻辑
+     * 对外同步 Kafka 执行器
      */
-    private <T, P> T doDispatch(
-        String cluster,
-        String topic,
-        String key,
-        Map<String, Object> headers,
-        String message,
-        ExecutorWrapper<T, P> executor,
-        TemplateProvider<P> templateProvider) {
+    @FunctionalInterface
+    interface KafkaSendExecutor<T> extends ExecutorWrapper<T, KafkaTemplate<String, Object>> {
 
-        validate(cluster, topic, message);
-
-        P template = templateProvider.getTemplate(cluster);
-        KafkaMessageDTO msg = KafkaMessageDTO.builder()
-            .cluster(cluster)
-            .topic(topic)
-            .key(key)
-            .headers(headers)
-            .message(message)
-            .build();
-
-        return executor.execute(template, msg);
-    }
-
-    private void validate(String cluster, String topic, Object message) {
-        Objects.requireNonNull(cluster, "cluster must not be null");
-        Objects.requireNonNull(topic, "topic must not be null");
-        Objects.requireNonNull(message, "message must not be null");
     }
 
     /**
      * 抽象执行器接口
      */
     @FunctionalInterface
-    private interface ExecutorWrapper<T, P> {
+    interface ExecutorWrapper<T, P> {
 
         /**
          * 执行
@@ -108,7 +67,7 @@ public record KafkaSenderDispatcher(
      * 抽象模板提供者
      */
     @FunctionalInterface
-    private interface TemplateProvider<P> {
+    interface TemplateProvider<P> {
 
         /**
          * 获取模板
@@ -117,13 +76,5 @@ public record KafkaSenderDispatcher(
          * @return 模板
          */
         P getTemplate(String cluster);
-    }
-
-    /**
-     * 对外同步 Kafka 执行器
-     */
-    @FunctionalInterface
-    public interface KafkaSendExecutor<T> extends ExecutorWrapper<T, KafkaTemplate<String, Object>> {
-
     }
 }

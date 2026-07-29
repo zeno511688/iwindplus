@@ -48,12 +48,6 @@ public class KafkaMultiProperty {
     private Boolean enabled = true;
 
     /**
-     * 是否启用动态扩容.
-     */
-    @Builder.Default
-    private Boolean enabledScale = false;
-
-    /**
      * 默认集群（必填）.
      */
     private String defaultCluster;

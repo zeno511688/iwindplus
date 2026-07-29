@@ -7,93 +7,18 @@
 
 package com.iwindplus.base.rocket.support;
 
-import com.iwindplus.base.monitor.domain.dto.TraceScope;
-import com.iwindplus.base.monitor.support.ObservationExecutor;
-import com.iwindplus.base.monitor.support.TraceContextPropagator;
-import com.iwindplus.base.rocket.core.RocketClusterManager;
-import com.iwindplus.base.rocket.support.observation.ClusterRocketReceiverObservationConvention;
-import com.iwindplus.base.rocket.support.observation.RocketReceiverObservationContext;
-import io.micrometer.tracing.propagation.Propagator;
-import java.util.List;
-import java.util.function.Supplier;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.rocketmq.common.message.MessageExt;
-
 /**
  * Rocket接收调度器.
+ *
+ * @author zengdegui
+ * @since 2026/05/08 16:36
  */
-@Slf4j
-public record RocketReceiverDispatcher(
-    RocketClusterManager manager,
-    TraceContextPropagator traceContextPropagator,
-    ObservationExecutor observationExecutor) {
-
-    private static final ClusterRocketReceiverObservationConvention CONVENTION =
-        new ClusterRocketReceiverObservationConvention();
-
-    public static final Propagator.Getter<MessageExt> ROCKET_GETTER =
-        (message, key) -> message.getUserProperty(key);
+public interface RocketReceiverDispatcher {
 
     /**
-     * 分发消息.
+     * 执行分发消息.
+     *
+     * @param handler 消息处理助手
      */
-    public void dispatch(RocketMessageHandler handler) {
-        List<MessageExt> msgs = handler.getMessages();
-        if (msgs == null || msgs.isEmpty()) {
-            return;
-        }
-
-        runWithTrace(
-            msgs.get(0),
-            () -> execute(handler)
-        );
-    }
-
-    private Void execute(RocketMessageHandler handler) {
-        if (!enabledObservation(handler)) {
-            handler.execute();
-            return null;
-        }
-
-        RocketReceiverObservationContext context =
-            new RocketReceiverObservationContext(
-                handler.getCluster(),
-                handler.getTopic(),
-                handler.getGroup(),
-                handler.getTag()
-            );
-
-        observationExecutor.execute(
-            CONVENTION,
-            () -> context,
-            () -> {
-                handler.execute();
-                return null;
-            }
-        );
-
-        return null;
-    }
-
-    private <T> T runWithTrace(
-        MessageExt message,
-        Supplier<T> supplier) {
-
-        try (TraceScope ignored =
-            traceContextPropagator
-                .extract(message, ROCKET_GETTER)) {
-
-            return supplier.get();
-        }
-    }
-
-    private boolean enabledObservation(
-        RocketMessageHandler handler) {
-        return Boolean.TRUE.equals(
-            manager.getProperty()
-                .getConsumerEnabledObservation(
-                    handler.getCluster()
-                )
-        );
-    }
+    void dispatch(RocketMessageHandler handler);
 }

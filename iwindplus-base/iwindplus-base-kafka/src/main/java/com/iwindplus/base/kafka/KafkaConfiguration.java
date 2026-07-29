@@ -14,9 +14,13 @@ import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
 import com.iwindplus.base.kafka.handler.KafkaDisruptorEventHandler;
 import com.iwindplus.base.kafka.listener.KafkaMultiListenerBeanPostProcessor;
 import com.iwindplus.base.kafka.listener.KafkaMultiListenerRegistrar;
+import com.iwindplus.base.kafka.support.KafkaListenerInvoker;
 import com.iwindplus.base.kafka.support.KafkaMessageHandler;
 import com.iwindplus.base.kafka.support.KafkaReceiverDispatcher;
 import com.iwindplus.base.kafka.support.KafkaSenderDispatcher;
+import com.iwindplus.base.kafka.support.impl.KafkaListenerInvokerImpl;
+import com.iwindplus.base.kafka.support.impl.KafkaReceiverDispatcherImpl;
+import com.iwindplus.base.kafka.support.impl.KafkaSenderDispatcherImpl;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
 import com.iwindplus.base.monitor.support.TraceContextPropagator;
 import io.micrometer.observation.ObservationRegistry;
@@ -72,7 +76,7 @@ public class KafkaConfiguration {
     public KafkaSenderDispatcher kafkaSenderDispatcher(
         KafkaClusterManager manager,
         ObservationExecutor observationExecutor) {
-        final KafkaSenderDispatcher kafkaSenderDispatcher = new KafkaSenderDispatcher(manager,
+        final KafkaSenderDispatcher kafkaSenderDispatcher = new KafkaSenderDispatcherImpl(manager,
             observationExecutor);
         log.info("KafkaSenderDispatcher={}", kafkaSenderDispatcher);
         return kafkaSenderDispatcher;
@@ -112,7 +116,7 @@ public class KafkaConfiguration {
         TraceContextPropagator traceContextPropagator,
         ObservationExecutor observationExecutor,
         DisruptorManager<KafkaMessageHandler> disruptorManager) {
-        final KafkaReceiverDispatcher kafkaReceiverDispatcher = new KafkaReceiverDispatcher(manager,
+        final KafkaReceiverDispatcher kafkaReceiverDispatcher = new KafkaReceiverDispatcherImpl(manager,
             traceContextPropagator, observationExecutor, disruptorManager);
         log.info("KafkaReceiverDispatcher={}", kafkaReceiverDispatcher);
         return kafkaReceiverDispatcher;
@@ -143,22 +147,36 @@ public class KafkaConfiguration {
     }
 
     /**
+     * 创建 KafkaListenerInvoker.
+     *
+     * @return KafkaListenerInvoker
+     */
+    @Bean
+    public KafkaListenerInvoker kafkaListenerInvoker() {
+        final KafkaListenerInvoker kafkaListenerInvoker = new KafkaListenerInvokerImpl();
+        log.info("KafkaListenerInvoker={}", kafkaListenerInvoker);
+        return kafkaListenerInvoker;
+    }
+
+    /**
      * 创建 KafkaMultiListenerRegistrar.
      *
-     * @param applicationContext applicationContext
-     * @param bpp                bpp
-     * @param manager            集群管理器
-     * @param dispatcher         接收调度器
+     * @param applicationContext   applicationContext
+     * @param bpp                  bpp
+     * @param kafkaListenerInvoker kafkaListenerInvoker
+     * @param manager              集群管理器
+     * @param dispatcher           接收调度器
      * @return KafkaMultiListenerRegistrar
      */
     @Bean
     public KafkaMultiListenerRegistrar kafkaMultiListenerRegistrar(
         ApplicationContext applicationContext,
         KafkaMultiListenerBeanPostProcessor bpp,
+        KafkaListenerInvoker listenerInvoker,
         KafkaClusterManager manager,
         KafkaReceiverDispatcher dispatcher) {
         final KafkaMultiListenerRegistrar registrar = new KafkaMultiListenerRegistrar(
-            applicationContext, bpp, manager, dispatcher);
+            applicationContext, bpp, listenerInvoker, manager, dispatcher);
         log.info("KafkaMultiListenerRegistrar={}", registrar);
         return registrar;
     }

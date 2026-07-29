@@ -9,13 +9,11 @@ package com.iwindplus.base.kafka.core;
 
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
-import com.iwindplus.base.domain.constant.CommonConstant.SystemConstant;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
 import com.iwindplus.base.kafka.support.KafkaSenderDispatcher;
 import com.iwindplus.base.monitor.support.TraceContextPropagator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -163,12 +161,6 @@ public record KafkaTemplateRouter(
         }
         if (CharSequenceUtil.isNotBlank(key)) {
             builder.setHeader(KafkaHeaders.KEY, key);
-        }
-        if (MapUtil.isNotEmpty(headers)) {
-            final Object requestId = headers.get(SystemConstant.REQUEST_ID);
-            if (Objects.nonNull(requestId)) {
-                builder.setHeader(SystemConstant.REQUEST_ID, requestId);
-            }
         }
         return builder.build();
     }

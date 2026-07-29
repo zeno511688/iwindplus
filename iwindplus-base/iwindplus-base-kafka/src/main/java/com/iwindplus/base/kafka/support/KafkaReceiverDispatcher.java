@@ -7,28 +7,7 @@
 
 package com.iwindplus.base.kafka.support;
 
-import cn.hutool.core.util.StrUtil;
-import com.iwindplus.base.disruptor.core.DisruptorManager;
-import com.iwindplus.base.disruptor.domain.dto.DisruptorPublishDTO;
-import com.iwindplus.base.disruptor.template.DisruptorTemplate;
-import com.iwindplus.base.kafka.core.KafkaClusterManager;
-import com.iwindplus.base.kafka.handler.KafkaDisruptorEventHandler;
-import com.iwindplus.base.kafka.support.observation.CustomKafkaListenerObservationConvention;
-import com.iwindplus.base.monitor.domain.dto.TraceScope;
-import com.iwindplus.base.monitor.support.ObservationExecutor;
-import com.iwindplus.base.monitor.support.TraceContextPropagator;
-import io.micrometer.tracing.propagation.Propagator;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Supplier;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.header.Header;
-import org.apache.kafka.common.header.Headers;
-import org.springframework.kafka.support.micrometer.KafkaRecordReceiverContext;
 
 /**
  * Kafka接收调度器.
@@ -36,136 +15,13 @@ import org.springframework.kafka.support.micrometer.KafkaRecordReceiverContext;
  * @author zengdegui
  * @since 2026/05/08 16:36
  */
-@Slf4j
-public record KafkaReceiverDispatcher(
-    KafkaClusterManager manager,
-    TraceContextPropagator traceContextPropagator,
-    ObservationExecutor observationExecutor,
-    DisruptorManager<KafkaMessageHandler> disruptorManager) {
-
-    private static final CustomKafkaListenerObservationConvention CONVENTION =
-        new CustomKafkaListenerObservationConvention();
-
-    public static final Propagator.Getter<Headers> KAFKA_GETTER =
-        (headers, key) -> {
-            if (headers == null) {
-                return null;
-            }
-
-            Header header = headers.lastHeader(key);
-            if (header == null || header.value() == null) {
-                return null;
-            }
-
-            return new String(header.value(), StandardCharsets.UTF_8);
-        };
+public interface KafkaReceiverDispatcher {
 
     /**
-     * 分发消息.
+     * 执行分发消息.
+     *
+     * @param handler  消息处理助手
+     * @param consumer 消费者
      */
-    public void dispatch(KafkaMessageHandler handler, Consumer<?, ?> consumer) {
-        List<ConsumerRecord<String, Object>> msgs = handler.getMessages();
-        if (msgs == null || msgs.isEmpty()) {
-            return;
-        }
-
-        runWithTrace(
-            msgs.get(0),
-            () -> execute(handler, consumer)
-        );
-    }
-
-    private Void execute(KafkaMessageHandler handler, Consumer<?, ?> consumer) {
-        if (!enabledObservation(handler)) {
-            doExecute(handler, consumer);
-            return null;
-        }
-
-        KafkaRecordReceiverContext context =
-            new KafkaRecordReceiverContext(
-                handler.getMessages().get(0),
-                handler.getListenerId(),
-                handler.getClientId(),
-                handler.getGroup(),
-                handler::getClusterId
-            );
-
-        observationExecutor.execute(
-            CONVENTION,
-            () -> context,
-            () -> {
-                doExecute(handler, consumer);
-                return null;
-            }
-        );
-
-        return null;
-    }
-
-    private void doExecute(KafkaMessageHandler handler, Consumer<?, ?> consumer) {
-        final Boolean enableAsyncAcks = manager.getProperty().getConsumerConfig(handler.getCluster()).getEnableAsyncAcks();
-        // 如果启用了异步提交，则使用Disruptor进行异步处理，每个group对应一个Disruptor
-        if (Boolean.TRUE.equals(enableAsyncAcks)) {
-            // 这里使用group作为disruptor名称，别忘了配置Disruptor
-            final String name = handler.getGroup();
-            final String handlerName = StrUtil.lowerFirst(KafkaDisruptorEventHandler.class.getSimpleName());
-
-            final DisruptorTemplate<KafkaMessageHandler> template = disruptorManager.getTemplate(name);
-            // 先恢复之前暂停的partition
-            resumeIfNeeded(consumer, template);
-
-            final DisruptorPublishDTO<KafkaMessageHandler> entity =
-                DisruptorPublishDTO.<KafkaMessageHandler>builder()
-                    .handlerName(handlerName)
-                    .data(handler)
-                    .source("kafka")
-                    .destination("listener")
-                    .build();
-            final boolean success = template.publish(entity);
-            if (!success) {
-                // 暂停消费
-                consumer.pause(consumer.assignment());
-            }
-
-            return;
-        }
-
-        handler.execute();
-    }
-
-    private void resumeIfNeeded(
-        Consumer<?, ?> consumer,
-        DisruptorTemplate<KafkaMessageHandler> template) {
-        Set<TopicPartition> paused = consumer.paused();
-        if (paused.isEmpty()) {
-            return;
-        }
-        if (template.available()) {
-            consumer.resume(paused);
-
-            log.info("resume kafka partitions {}", paused);
-        }
-    }
-
-    private <T> T runWithTrace(
-        ConsumerRecord<String, Object> record,
-        Supplier<T> supplier) {
-
-        try (TraceScope ignored =
-            traceContextPropagator
-                .extract(record.headers(), KAFKA_GETTER)) {
-
-            return supplier.get();
-        }
-    }
-
-    private boolean enabledObservation(
-        KafkaMessageHandler handler) {
-        return Boolean.TRUE.equals(
-            manager.getProperty()
-                .getConsumerEnabledObservation(
-                    handler.getCluster()
-                )
-        );
-    }
+    void dispatch(KafkaMessageHandler handler, Consumer<?, ?> consumer);
 }

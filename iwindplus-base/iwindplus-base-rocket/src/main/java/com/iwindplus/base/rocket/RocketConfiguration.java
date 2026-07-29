@@ -14,8 +14,12 @@ import com.iwindplus.base.rocket.core.RocketTemplateRouter;
 import com.iwindplus.base.rocket.domain.property.RocketMultiProperty;
 import com.iwindplus.base.rocket.listener.RocketMultiListenerBeanPostProcessor;
 import com.iwindplus.base.rocket.listener.RocketMultiListenerRegistrar;
+import com.iwindplus.base.rocket.support.RocketListenerInvoker;
 import com.iwindplus.base.rocket.support.RocketReceiverDispatcher;
 import com.iwindplus.base.rocket.support.RocketSenderDispatcher;
+import com.iwindplus.base.rocket.support.impl.RocketListenerInvokerImpl;
+import com.iwindplus.base.rocket.support.impl.RocketReceiverDispatcherImpl;
+import com.iwindplus.base.rocket.support.impl.RocketSenderDispatcherImpl;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -66,7 +70,7 @@ public class RocketConfiguration {
         RocketClusterManager manager,
         TraceContextPropagator traceContextPropagator,
         ObservationExecutor observationExecutor) {
-        final RocketSenderDispatcher rocketSenderDispatcher = new RocketSenderDispatcher(manager,
+        final RocketSenderDispatcher rocketSenderDispatcher = new RocketSenderDispatcherImpl(manager,
             traceContextPropagator, observationExecutor);
         log.info("RocketSenderDispatcher={}", rocketSenderDispatcher);
         return rocketSenderDispatcher;
@@ -101,7 +105,7 @@ public class RocketConfiguration {
         RocketClusterManager manager,
         TraceContextPropagator traceContextPropagator,
         ObservationExecutor observationExecutor) {
-        final RocketReceiverDispatcher rocketReceiverDispatcher = new RocketReceiverDispatcher(manager,
+        final RocketReceiverDispatcher rocketReceiverDispatcher = new RocketReceiverDispatcherImpl(manager,
             traceContextPropagator, observationExecutor);
         log.info("RocketReceiverDispatcher={}", rocketReceiverDispatcher);
         return rocketReceiverDispatcher;
@@ -120,19 +124,34 @@ public class RocketConfiguration {
     }
 
     /**
+     * 创建 RocketListenerInvoker.
+     *
+     * @return RocketListenerInvoker
+     */
+    @Bean
+    public RocketListenerInvoker rocketListenerInvoker() {
+        final RocketListenerInvoker rocketListenerInvoker = new RocketListenerInvokerImpl();
+        log.info("rocketListenerInvoker={}", rocketListenerInvoker);
+        return rocketListenerInvoker;
+    }
+
+    /**
      * 创建 RocketMultiListenerRegistrar.
      *
-     * @param bpp        bpp
-     * @param manager    集群管理器
-     * @param dispatcher 接收调度器
+     * @param bpp             bpp
+     * @param listenerInvoker listenerInvoker
+     * @param manager         集群管理器
+     * @param dispatcher      接收调度器
      * @return RocketMultiListenerRegistrar
      */
     @Bean
     public RocketMultiListenerRegistrar rocketMultiListenerRegistrar(
         RocketMultiListenerBeanPostProcessor bpp,
+        RocketListenerInvoker listenerInvoker,
         RocketClusterManager manager,
         RocketReceiverDispatcher dispatcher) {
-        final RocketMultiListenerRegistrar registrar = new RocketMultiListenerRegistrar(bpp, manager, dispatcher);
+        final RocketMultiListenerRegistrar registrar = new RocketMultiListenerRegistrar(
+            bpp, listenerInvoker, manager, dispatcher);
         log.info("RocketMultiListenerRegistrar={}", registrar);
         return registrar;
     }

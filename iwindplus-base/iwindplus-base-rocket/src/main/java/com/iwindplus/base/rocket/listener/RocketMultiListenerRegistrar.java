@@ -8,21 +8,13 @@
 package com.iwindplus.base.rocket.listener;
 
 import cn.hutool.crypto.SecureUtil;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.rocket.core.RocketClusterManager;
 import com.iwindplus.base.rocket.domain.constant.RocketConstant;
 import com.iwindplus.base.rocket.domain.dto.RocketMultiListenerMetaDTO;
+import com.iwindplus.base.rocket.support.RocketListenerInvoker;
 import com.iwindplus.base.rocket.support.RocketMessageHandler;
 import com.iwindplus.base.rocket.support.RocketReceiverDispatcher;
-import com.iwindplus.base.util.JacksonUtil;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,12 +42,9 @@ import org.springframework.context.SmartLifecycle;
 public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableBean {
 
     private final RocketMultiListenerBeanPostProcessor bpp;
+    private final RocketListenerInvoker listenerInvoker;
     private final RocketClusterManager clusterManager;
     private final RocketReceiverDispatcher dispatcher;
-
-    private final Map<Method, BeanInvoker> invokerCache = new ConcurrentHashMap<>(16);
-    private final Map<Method, ArgMetadata[]> argCache = new ConcurrentHashMap<>(16);
-    private final Cache<Class<?>, ObjectReader> readerCache = Caffeine.newBuilder().maximumSize(1024).build();
 
     private final Map<String, DefaultMQPushConsumer> consumersMap = new ConcurrentHashMap<>(16);
 
@@ -69,7 +58,7 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
             return;
         }
 
-        preWarm(metas);
+        listenerInvoker.preWarm(metas);
         registerAll(metas);
         running = true;
     }
@@ -95,9 +84,6 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
         });
 
         consumersMap.clear();
-        invokerCache.clear();
-        argCache.clear();
-        readerCache.invalidateAll();
     }
 
     @Override
@@ -113,33 +99,6 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
     @Override
     public void destroy() throws Exception {
         stop();
-    }
-
-    private void preWarm(List<RocketMultiListenerMetaDTO> metas) {
-        for (var meta : metas) {
-            Method m = meta.getMethod();
-
-            invokerCache.computeIfAbsent(m, x -> createInvoker(m, meta.getBean()));
-            argCache.computeIfAbsent(m, this::buildArgMetadata);
-            warmReader(m);
-        }
-    }
-
-    private void warmReader(Method m) {
-        var t = m.getParameterTypes();
-        var g = m.getGenericParameterTypes();
-
-        for (int i = 0; i < t.length; i++) {
-            if (t[i] == MessageExt.class) {
-                continue;
-            }
-
-            Class<?> c = List.class.isAssignableFrom(t[i])
-                ? extract(g[i])
-                : t[i];
-
-            readerCache.get(c, k -> JacksonUtil.getMapper().readerFor(k));
-        }
     }
 
     private void registerAll(List<RocketMultiListenerMetaDTO> metas) {
@@ -275,42 +234,7 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
         dispatcher.dispatch(
             new RocketMessageHandler(meta.getCluster(), meta.getTopic(), meta.getGroup(), meta.getTag(),
                 msgs, meta.getOrderly(),
-                ignored -> invoke(meta, msgs)));
-    }
-
-    private Object invoke(RocketMultiListenerMetaDTO m, List<MessageExt> msgs) {
-        Method method = m.getMethod();
-        var meta = argCache.computeIfAbsent(method, this::buildArgMetadata);
-
-        Object[] args = new Object[meta.length];
-        for (int i = 0; i < meta.length; i++) {
-            args[i] = buildArg(meta[i], msgs);
-        }
-
-        try {
-            return invokerCache.computeIfAbsent(method, x -> createInvoker(method, m.getBean()))
-                .invoke(args);
-        } catch (Throwable e) {
-            log.error(
-                "Rocket listener invoke failed, cluster={}, group={}, topic={}, method={}",
-                m.getCluster(),
-                m.getGroup(),
-                m.getTopic(),
-                method,
-                e
-            );
-            throw new RuntimeException(e);
-        }
-    }
-
-    private BeanInvoker createInvoker(Method m, Object bean) {
-        try {
-            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(bean.getClass(), MethodHandles.lookup());
-            MethodHandle handle = lookup.unreflect(m).bindTo(bean);
-            return handle.asSpreader(Object[].class, m.getParameterCount())::invoke;
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+                ignored -> listenerInvoker.invoke(meta, msgs)));
     }
 
     private String buildId(RocketMultiListenerMetaDTO meta) {
@@ -324,81 +248,5 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
             + SymbolConstant.HORIZONTAL_LINE + meta.getCluster()
             + SymbolConstant.HORIZONTAL_LINE + meta.getGroup()
             + SymbolConstant.HORIZONTAL_LINE + SecureUtil.md5(str);
-    }
-
-    private ArgMetadata[] buildArgMetadata(Method m) {
-        var t = m.getParameterTypes();
-        var g = m.getGenericParameterTypes();
-
-        ArgMetadata[] r = new ArgMetadata[t.length];
-
-        for (int i = 0; i < t.length; i++) {
-            r[i] = buildArgMeta(t[i], g[i]);
-        }
-
-        return r;
-    }
-
-    private ArgMetadata buildArgMeta(Class<?> t, Type g) {
-        if (t == MessageExt.class) {
-            return new ArgMetadata(ArgType.MSG, null);
-        }
-
-        if (List.class.isAssignableFrom(t)) {
-            Class<?> c = extract(g);
-
-            return c == MessageExt.class
-                ? new ArgMetadata(ArgType.MSG_LIST, null)
-                : new ArgMetadata(ArgType.DTO_LIST, getReader(c));
-        }
-
-        return new ArgMetadata(ArgType.DTO, getReader(t));
-    }
-
-    private Object buildArg(ArgMetadata m, List<MessageExt> msgs) {
-        return switch (m.type) {
-            case MSG -> msgs.get(0);
-            case MSG_LIST -> msgs;
-            case DTO -> read(msgs.get(0), m.reader);
-            case DTO_LIST -> msgs.stream().map(x -> read(x, m.reader)).toList();
-        };
-    }
-
-    private ObjectReader getReader(Class<?> c) {
-        return readerCache.get(c, x -> JacksonUtil.getMapper().readerFor(x));
-    }
-
-    private Object read(MessageExt m, ObjectReader r) {
-        try {
-            return r.readValue(m.getBody());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Class<?> extract(Type t) {
-        if (t instanceof ParameterizedType p) {
-            return (Class<?>) p.getActualTypeArguments()[0];
-        }
-        throw new IllegalArgumentException();
-    }
-
-    enum ArgType {MSG, MSG_LIST, DTO, DTO_LIST}
-
-    record ArgMetadata(ArgType type, ObjectReader reader) {
-
-    }
-
-    @FunctionalInterface
-    interface BeanInvoker {
-
-        /**
-         * Invoke the method with the given arguments.
-         *
-         * @param args the arguments to invoke the method with
-         * @return the invocation result
-         * @throws Throwable in case of invocation failure
-         */
-        Object invoke(Object[] args) throws Throwable;
     }
 }

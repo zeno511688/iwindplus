@@ -12,10 +12,10 @@ import com.iwindplus.base.disruptor.domain.property.DisruptorMultiProperty.Disru
 import com.iwindplus.base.disruptor.factory.DisruptorEventHandlerStrategyFactory;
 import com.iwindplus.base.disruptor.support.observation.DisruptorObservationContext;
 import com.iwindplus.base.disruptor.support.observation.DisruptorObservationConvention;
-import com.iwindplus.base.monitor.domain.dto.TraceScope;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
 import com.iwindplus.base.monitor.support.TraceContextPropagator;
 import com.lmax.disruptor.EventHandler;
+import io.micrometer.tracing.Tracer.SpanInScope;
 import io.micrometer.tracing.propagation.Propagator;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -91,7 +91,7 @@ public record DisruptorDispatcherHandler<T>(
         DisruptorEvent<T> event,
         Supplier<T> supplier) {
 
-        try (TraceScope ignored =
+        try (SpanInScope ignored =
             traceContextPropagator
                 .extract(event.getHeaders(), DISRUPTOR_GETTER)) {
 

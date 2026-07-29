@@ -14,8 +14,12 @@ import com.iwindplus.base.rabbit.core.RabbitTemplateRouter;
 import com.iwindplus.base.rabbit.domain.property.RabbitMultiProperty;
 import com.iwindplus.base.rabbit.listener.RabbitMultiListenerBeanPostProcessor;
 import com.iwindplus.base.rabbit.listener.RabbitMultiListenerRegistrar;
+import com.iwindplus.base.rabbit.support.RabbitListenerInvoker;
 import com.iwindplus.base.rabbit.support.RabbitReceiverDispatcher;
 import com.iwindplus.base.rabbit.support.RabbitSenderDispatcher;
+import com.iwindplus.base.rabbit.support.impl.RabbitListenerInvokerImpl;
+import com.iwindplus.base.rabbit.support.impl.RabbitReceiverDispatcherImpl;
+import com.iwindplus.base.rabbit.support.impl.RabbitSenderDispatcherImpl;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -64,7 +68,7 @@ public class RabbitConfiguration {
     public RabbitSenderDispatcher rabbitSenderDispatcher(
         RabbitClusterManager manager,
         ObservationExecutor observationExecutor) {
-        final RabbitSenderDispatcher rabbitSenderDispatcher = new RabbitSenderDispatcher(manager,
+        final RabbitSenderDispatcher rabbitSenderDispatcher = new RabbitSenderDispatcherImpl(manager,
             observationExecutor);
         log.info("RabbitSenderDispatcher={}", rabbitSenderDispatcher);
         return rabbitSenderDispatcher;
@@ -101,7 +105,7 @@ public class RabbitConfiguration {
         RabbitClusterManager manager,
         TraceContextPropagator traceContextPropagator,
         ObservationExecutor observationExecutor) {
-        final RabbitReceiverDispatcher rabbitReceiverDispatcher = new RabbitReceiverDispatcher(manager,
+        final RabbitReceiverDispatcher rabbitReceiverDispatcher = new RabbitReceiverDispatcherImpl(manager,
             traceContextPropagator, observationExecutor);
         log.info("RabbitReceiverDispatcher={}", rabbitReceiverDispatcher);
         return rabbitReceiverDispatcher;
@@ -120,19 +124,34 @@ public class RabbitConfiguration {
     }
 
     /**
+     * 创建 RabbitListenerInvoker.
+     *
+     * @return RabbitListenerInvoker
+     */
+    @Bean
+    public RabbitListenerInvoker rabbitListenerInvoker() {
+        final RabbitListenerInvoker rabbitListenerInvoker = new RabbitListenerInvokerImpl();
+        log.info("RabbitListenerInvoker={}", rabbitListenerInvoker);
+        return rabbitListenerInvoker;
+    }
+
+    /**
      * 创建 RabbitMultiListenerRegistrar.
      *
-     * @param bpp        bpp
-     * @param manager    集群管理器
-     * @param dispatcher 接收调度器
+     * @param bpp             bpp
+     * @param listenerInvoker listenerInvoker
+     * @param manager         集群管理器
+     * @param dispatcher      接收调度器
      * @return RabbitMultiListenerRegistrar
      */
     @Bean
     public RabbitMultiListenerRegistrar rabbitMultiListenerRegistrar(
         RabbitMultiListenerBeanPostProcessor bpp,
+        RabbitListenerInvoker listenerInvoker,
         RabbitClusterManager manager,
         RabbitReceiverDispatcher dispatcher) {
-        final RabbitMultiListenerRegistrar registrar = new RabbitMultiListenerRegistrar(bpp, manager, dispatcher);
+        final RabbitMultiListenerRegistrar registrar = new RabbitMultiListenerRegistrar(
+            bpp, listenerInvoker, manager, dispatcher);
         log.info("RabbitMultiListenerRegistrar={}", registrar);
         return registrar;
     }

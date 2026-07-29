@@ -27,10 +27,6 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-tracing-bridge-otel</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-domain</artifactId>
         </dependency>
@@ -57,6 +53,10 @@
         <dependency>
             <groupId>org.dromara.dynamictp</groupId>
             <artifactId>dynamic-tp-spring</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>context-propagation</artifactId>
         </dependency>
     </dependencies>
 </project>

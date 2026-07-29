@@ -9,9 +9,6 @@ package com.iwindplus.base.kafka.listener;
 
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.crypto.SecureUtil;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.kafka.core.KafkaClusterManager;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
@@ -19,16 +16,10 @@ import com.iwindplus.base.kafka.domain.dto.KafkaConsumerInfoDTO;
 import com.iwindplus.base.kafka.domain.dto.KafkaConsumerKeyDTO;
 import com.iwindplus.base.kafka.domain.dto.KafkaMultiListenerMetaDTO;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
+import com.iwindplus.base.kafka.support.KafkaListenerInvoker;
 import com.iwindplus.base.kafka.support.KafkaMessageHandler;
 import com.iwindplus.base.kafka.support.KafkaReceiverDispatcher;
-import com.iwindplus.base.util.JacksonUtil;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -52,8 +43,6 @@ import org.springframework.kafka.listener.ConsumerAwareMessageListener;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.ContainerProperties.AckMode;
 import org.springframework.kafka.support.Acknowledgment;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 
 /**
  * kafka统一注册器.
@@ -67,12 +56,10 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
 
     private final ApplicationContext applicationContext;
     private final KafkaMultiListenerBeanPostProcessor bpp;
+    private final KafkaListenerInvoker listenerInvoker;
     private final KafkaClusterManager clusterManager;
     private final KafkaReceiverDispatcher dispatcher;
 
-    private final Map<Method, BeanInvoker> invokerCache = new ConcurrentHashMap<>(16);
-    private final Map<Method, ArgBuilder[]> argCache = new ConcurrentHashMap<>(16);
-    private final Cache<Class<?>, ObjectReader> readerCache = Caffeine.newBuilder().maximumSize(1024).build();
     private final Map<String, KafkaConsumerInfoDTO> containerMap = new ConcurrentHashMap<>(16);
 
     private volatile boolean running;
@@ -85,7 +72,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             return;
         }
 
-        preWarm(metas);
+        listenerInvoker.preWarm(metas);
         registerAll(metas);
 
         running = true;
@@ -111,9 +98,6 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         stop();
 
         containerMap.clear();
-        invokerCache.clear();
-        argCache.clear();
-        readerCache.invalidateAll();
     }
 
     @Override
@@ -150,35 +134,6 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
                     entity.getGroup()
                 )
             ));
-    }
-
-    private void preWarm(List<KafkaMultiListenerMetaDTO> metas) {
-        for (KafkaMultiListenerMetaDTO meta : metas) {
-            Method m = meta.getMethod();
-            invokerCache.computeIfAbsent(m, k -> createInvoker(m, meta.getBean()));
-            argCache.computeIfAbsent(m, this::buildArgBuilders);
-            warmReader(m);
-        }
-    }
-
-    private void warmReader(Method method) {
-        Class<?>[] types = method.getParameterTypes();
-        Type[] generics = method.getGenericParameterTypes();
-
-        for (int i = 0; i < types.length; i++) {
-
-            Class<?> c = List.class.isAssignableFrom(types[i])
-                ? extractGeneric(generics[i])
-                : types[i];
-
-            if (c == ConsumerRecord.class
-                || c == Message.class
-                || c == Acknowledgment.class) {
-                continue;
-            }
-
-            readerCache.get(c, k -> JacksonUtil.getMapper().readerFor(k));
-        }
     }
 
     private void registerAll(List<KafkaMultiListenerMetaDTO> metas) {
@@ -323,7 +278,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
                 meta.getGroup(),
                 messages,
                 // 业务执行
-                records -> invoke(meta, records, acknowledgment, consumer),
+                records -> listenerInvoker.invoke(meta, records, acknowledgment, consumer),
                 // 业务成功
                 records -> {
                     // 开启了 containerProperties.setAsyncAcks(true);
@@ -335,175 +290,6 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             ),
             consumer
         );
-    }
-
-    private void invoke(
-        KafkaMultiListenerMetaDTO meta,
-        List<ConsumerRecord<String, Object>> records,
-        Acknowledgment ack,
-        Consumer<?, ?> consumer) {
-
-        Method m = meta.getMethod();
-        Object[] args = buildArgs(
-            argCache.computeIfAbsent(m, this::buildArgBuilders),
-            records,
-            ack,
-            consumer
-        );
-
-        try {
-            invokerCache.computeIfAbsent(m, x -> createInvoker(m, meta.getBean()))
-                .invoke(args);
-        } catch (Throwable e) {
-            log.error(
-                "Kafka listener invoke failed, cluster={}, group={}, topics={}, method={}",
-                meta.getCluster(),
-                meta.getGroup(),
-                meta.getTopics(),
-                m,
-                e
-            );
-
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Object[] buildArgs(
-        ArgBuilder[] builders,
-        List<?> records,
-        Acknowledgment ack,
-        Consumer<?, ?> consumer) {
-
-        Object[] args = new Object[builders.length];
-
-        for (int i = 0; i < builders.length; i++) {
-            args[i] = builders[i].build(records, ack, consumer);
-        }
-
-        return args;
-    }
-
-    private ArgBuilder[] buildArgBuilders(Method method) {
-        Class<?>[] types = method.getParameterTypes();
-        Type[] genericTypes = method.getGenericParameterTypes();
-        ArgBuilder[] builders = new ArgBuilder[types.length];
-
-        for (int i = 0; i < types.length; i++) {
-            builders[i] = createBuilder(types[i], genericTypes[i]);
-        }
-
-        return builders;
-    }
-
-    private ArgBuilder createBuilder(Class<?> type, Type generic) {
-        if (Acknowledgment.class.isAssignableFrom(type)) {
-            return (records, ack, consumer) -> ack;
-        }
-        if (Consumer.class.isAssignableFrom(type)) {
-            return (records, ack, consumer) -> consumer;
-        }
-        if (ConsumerRecord.class.isAssignableFrom(type)) {
-            return (records, ack, consumer) -> records.get(0);
-        }
-        if (Message.class.isAssignableFrom(type)) {
-            return (records, ack, consumer) ->
-                MessageBuilder
-                    .withPayload(extractValue(records.get(0)))
-                    .build();
-        }
-        if (List.class.isAssignableFrom(type)) {
-            Class<?> genericClass = extractGeneric(generic);
-            if (ConsumerRecord.class.isAssignableFrom(genericClass)) {
-                return (records, ack, consumer) -> records;
-            }
-
-            if (Message.class.isAssignableFrom(genericClass)) {
-                return (records, ack, consumer) ->
-                    records.stream()
-                        .map(record ->
-                            MessageBuilder
-                                .withPayload(extractValue(record))
-                                .build()
-                        ).toList();
-            }
-
-            ObjectReader reader = getReader(genericClass);
-
-            return (records, ack, consumer) -> {
-                List<Object> result = new ArrayList<>(records.size());
-                for (Object record : records) {
-                    result.add(read(extractValue(record), reader));
-                }
-                return result;
-            };
-        }
-
-        ObjectReader reader = getReader(type);
-
-        return (records, ack, consumer) -> read(extractValue(records.get(0)), reader);
-    }
-
-    private Object extractValue(Object obj) {
-        if (obj instanceof ConsumerRecord<?, ?> r) {
-            return r.value();
-        }
-
-        return obj;
-    }
-
-    private Class<?> extractGeneric(Type type) {
-        if (type instanceof ParameterizedType pt) {
-            Type actual = pt.getActualTypeArguments()[0];
-            if (actual instanceof Class<?> c) {
-                return c;
-            }
-
-            if (actual instanceof Class<?> clazz) {
-                return clazz;
-            }
-
-            if (actual instanceof ParameterizedType p
-                && p.getRawType() instanceof Class<?> c) {
-                return c;
-            }
-        }
-
-        return Object.class;
-    }
-
-    private ObjectReader getReader(Class<?> clazz) {
-        return readerCache.get(clazz,
-            c -> JacksonUtil.getMapper().readerFor(c));
-    }
-
-    private Object read(Object value, ObjectReader reader) {
-        try {
-            if (value instanceof byte[] bytes) {
-                return reader.readValue(bytes);
-            }
-
-            if (value instanceof String str) {
-                return reader.readValue(str);
-            }
-
-            return value;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private BeanInvoker createInvoker(Method m, Object bean) {
-        try {
-            MethodHandle handle = MethodHandles
-                .privateLookupIn(bean.getClass(), MethodHandles.lookup())
-                .unreflect(m)
-                .bindTo(bean);
-
-            return handle.asSpreader(Object[].class, m.getParameterCount())::invoke;
-
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private KafkaMultiListenerMetaDTO resolve(KafkaMultiListenerMetaDTO meta) {
@@ -561,36 +347,5 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             + SymbolConstant.HORIZONTAL_LINE + meta.getCluster()
             + SymbolConstant.HORIZONTAL_LINE + meta.getGroup()
             + SymbolConstant.HORIZONTAL_LINE + SecureUtil.md5(str);
-    }
-
-    @FunctionalInterface
-    private interface ArgBuilder {
-
-        /**
-         * 构建方法参数.
-         *
-         * @param records  消息列表
-         * @param ack      ack
-         * @param consumer kafka consumer
-         * @return 方法参数
-         */
-        Object build(
-            List<?> records,
-            Acknowledgment ack,
-            Consumer<?, ?> consumer
-        );
-    }
-
-    @FunctionalInterface
-    private interface BeanInvoker {
-
-        /**
-         * 调用
-         *
-         * @param args 参数
-         * @return 结果
-         * @throws Throwable 异常
-         */
-        Object invoke(Object[] args) throws Throwable;
     }
 }

@@ -9,23 +9,15 @@ package com.iwindplus.base.rabbit.listener;
 
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.crypto.SecureUtil;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.rabbit.core.RabbitClusterManager;
 import com.iwindplus.base.rabbit.domain.constant.RabbitConstant;
 import com.iwindplus.base.rabbit.domain.dto.RabbitConsumerKeyDTO;
 import com.iwindplus.base.rabbit.domain.dto.RabbitMultiListenerMetaDTO;
+import com.iwindplus.base.rabbit.support.RabbitListenerInvoker;
 import com.iwindplus.base.rabbit.support.RabbitMessageHandler;
 import com.iwindplus.base.rabbit.support.RabbitReceiverDispatcher;
-import com.iwindplus.base.util.JacksonUtil;
 import com.rabbitmq.client.Channel;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -53,12 +45,10 @@ import org.springframework.context.SmartLifecycle;
 public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableBean {
 
     private final RabbitMultiListenerBeanPostProcessor bpp;
+    private final RabbitListenerInvoker listenerInvoker;
     private final RabbitClusterManager clusterManager;
     private final RabbitReceiverDispatcher dispatcher;
 
-    private final Map<Method, BeanInvoker> invokerCache = new ConcurrentHashMap<>(16);
-    private final Map<Method, ArgMetadata[]> argCache = new ConcurrentHashMap<>(16);
-    private final Cache<Class<?>, ObjectReader> readerCache = Caffeine.newBuilder().maximumSize(1024).build();
     private final Map<String, SimpleMessageListenerContainer> containerMap = new ConcurrentHashMap<>(16);
 
     private volatile boolean running;
@@ -71,7 +61,7 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
             return;
         }
 
-        preWarm(metas);
+        listenerInvoker.preWarm(metas);
         registerAll(metas);
         running = true;
     }
@@ -97,9 +87,6 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
         });
 
         containerMap.clear();
-        invokerCache.clear();
-        argCache.clear();
-        readerCache.invalidateAll();
     }
 
     @Override
@@ -115,27 +102,6 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
     @Override
     public void destroy() {
         stop();
-    }
-
-    private void preWarm(List<RabbitMultiListenerMetaDTO> metas) {
-        for (var meta : metas) {
-            Method m = meta.getMethod();
-            invokerCache.computeIfAbsent(m, x -> createInvoker(m, meta.getBean()));
-            argCache.computeIfAbsent(m, this::buildArgMetadata);
-            warmReader(m);
-        }
-    }
-
-    private void warmReader(Method m) {
-        Class<?>[] t = m.getParameterTypes();
-        Type[] g = m.getGenericParameterTypes();
-        for (int i = 0; i < t.length; i++) {
-            if (t[i] == Message.class || t[i] == Channel.class) {
-                continue;
-            }
-            Class<?> c = List.class.isAssignableFrom(t[i]) ? extractGeneric(g[i]) : t[i];
-            readerCache.get(c, k -> JacksonUtil.getMapper().readerFor(k));
-        }
     }
 
     private void registerAll(List<RabbitMultiListenerMetaDTO> metas) {
@@ -225,92 +191,7 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
     private void dispatch(RabbitMultiListenerMetaDTO meta, List<Message> messages, Channel channel) {
         dispatcher.dispatch(
             new RabbitMessageHandler(meta.getCluster(), meta.getQueues(), meta.getGroup(), messages,
-                ignored -> invoke(meta, messages, channel)));
-    }
-
-    private void invoke(RabbitMultiListenerMetaDTO meta, List<Message> messages, Channel channel) {
-        Method method = meta.getMethod();
-        ArgMetadata[] metadata = argCache.computeIfAbsent(method, this::buildArgMetadata);
-        Object[] args = new Object[metadata.length];
-        for (int i = 0; i < metadata.length; i++) {
-            args[i] = buildArg(metadata[i], messages, channel);
-        }
-        try {
-            invokerCache.computeIfAbsent(method, m -> createInvoker(method, meta.getBean())).invoke(args);
-        } catch (Throwable e) {
-            log.error(
-                "Rabbit listener invoke failed, cluster={}, group={}, queues={}, method={}",
-                meta.getCluster(),
-                meta.getGroup(),
-                meta.getQueues(),
-                method,
-                e
-            );
-            throw new RuntimeException(e);
-        }
-    }
-
-    private BeanInvoker createInvoker(Method m, Object bean) {
-        try {
-            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(bean.getClass(), MethodHandles.lookup());
-            MethodHandle handle = lookup.unreflect(m).bindTo(bean);
-            return handle.asSpreader(Object[].class, m.getParameterCount())::invoke;
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private ArgMetadata[] buildArgMetadata(Method m) {
-        Class<?>[] types = m.getParameterTypes();
-        Type[] generics = m.getGenericParameterTypes();
-        ArgMetadata[] arr = new ArgMetadata[types.length];
-        for (int i = 0; i < types.length; i++) {
-            arr[i] = buildArgMetadata(types[i], generics[i]);
-        }
-        return arr;
-    }
-
-    private ArgMetadata buildArgMetadata(Class<?> type, Type generic) {
-        if (type == Message.class) {
-            return new ArgMetadata(ArgType.MSG, null);
-        }
-        if (type == Channel.class) {
-            return new ArgMetadata(ArgType.CHANNEL, null);
-        }
-        if (List.class.isAssignableFrom(type)) {
-            Class<?> clazz = extractGeneric(generic);
-            return clazz == Message.class ? new ArgMetadata(ArgType.MSG_LIST, null) : new ArgMetadata(ArgType.DTO_LIST, getReader(clazz));
-        }
-        return new ArgMetadata(ArgType.DTO, getReader(type));
-    }
-
-    private Object buildArg(ArgMetadata meta, List<Message> messages, Channel channel) {
-        return switch (meta.type) {
-            case MSG -> messages.get(0);
-            case CHANNEL -> channel;
-            case MSG_LIST -> messages;
-            case DTO -> read(messages.get(0), meta.reader);
-            case DTO_LIST -> messages.stream().map(m -> read(m, meta.reader)).toList();
-        };
-    }
-
-    private ObjectReader getReader(Class<?> clazz) {
-        return readerCache.get(clazz, c -> JacksonUtil.getMapper().readerFor(c));
-    }
-
-    private Object read(Message message, ObjectReader reader) {
-        try {
-            return reader.readValue(message.getBody());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Class<?> extractGeneric(Type type) {
-        if (type instanceof ParameterizedType pt) {
-            return (Class<?>) pt.getActualTypeArguments()[0];
-        }
-        throw new IllegalArgumentException("Unsupported generic type");
+                ignored -> listenerInvoker.invoke(meta, messages, channel)));
     }
 
     private RabbitMultiListenerMetaDTO resolve(RabbitMultiListenerMetaDTO meta) {
@@ -346,24 +227,5 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
             + SymbolConstant.HORIZONTAL_LINE + meta.getCluster()
             + SymbolConstant.HORIZONTAL_LINE + meta.getGroup()
             + SymbolConstant.HORIZONTAL_LINE + SecureUtil.md5(str);
-    }
-
-    enum ArgType {MSG, MSG_LIST, DTO, DTO_LIST, CHANNEL}
-
-    record ArgMetadata(ArgType type, ObjectReader reader) {
-
-    }
-
-    @FunctionalInterface
-    interface BeanInvoker {
-
-        /**
-         * Invoke the method with the given arguments.
-         *
-         * @param args the arguments to invoke the method with
-         * @return the result of the method invocation
-         * @throws Throwable if the method invocation failed
-         */
-        Object invoke(Object[] args) throws Throwable;
     }
 }
