@@ -12,7 +12,6 @@ import cn.hutool.crypto.SecureUtil;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.kafka.core.KafkaClusterManager;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
-import com.iwindplus.base.kafka.domain.dto.KafkaConsumerInfoDTO;
 import com.iwindplus.base.kafka.domain.dto.KafkaConsumerKeyDTO;
 import com.iwindplus.base.kafka.domain.dto.KafkaMultiListenerMetaDTO;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
@@ -22,7 +21,6 @@ import com.iwindplus.base.kafka.support.KafkaReceiverDispatcher;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,7 +58,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
     private final KafkaClusterManager clusterManager;
     private final KafkaReceiverDispatcher dispatcher;
 
-    private final Map<String, KafkaConsumerInfoDTO> containerMap = new ConcurrentHashMap<>(16);
+    private final Map<String, ConcurrentMessageListenerContainer<String, Object>> containerMap = new ConcurrentHashMap<>(16);
 
     private volatile boolean running;
 
@@ -84,8 +82,8 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
 
         containerMap.forEach((id, c) -> {
             try {
-                c.getContainer().stop();
-                c.getContainer().destroy();
+                c.stop();
+                c.destroy();
                 log.info("Kafka listener stopped: {}", id);
             } catch (Exception e) {
                 log.error("Stop kafka listener failed: {}", id, e);
@@ -113,27 +111,10 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
     /**
      * 获取所有监听器.
      *
-     * @return Map<String, KafkaConsumerInfoDTO>
+     * @return Map<String, ConcurrentMessageListenerContainer<String, Object>>
      */
-    public Map<String, KafkaConsumerInfoDTO> getContainerMap() {
+    public Map<String, ConcurrentMessageListenerContainer<String, Object>> getContainerMap() {
         return containerMap;
-    }
-
-    /**
-     * 按集群 + 消费组分组.
-     *
-     * @return Map<KafkaConsumerKeyDTO, List < KafkaConsumerInfoDTO>>
-     */
-    public Map<KafkaConsumerKeyDTO, List<KafkaConsumerInfoDTO>> groupByClusterAndGroup() {
-        return containerMap
-            .values()
-            .stream()
-            .collect(Collectors.groupingBy(
-                entity -> new KafkaConsumerKeyDTO(
-                    entity.getCluster(),
-                    entity.getGroup()
-                )
-            ));
     }
 
     private void registerAll(List<KafkaMultiListenerMetaDTO> metas) {
@@ -163,6 +144,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         if (factory == null) {
             throw new IllegalStateException("Kafka listener factory not found, cluster=" + meta.getCluster());
         }
+
         String clusterId = clusterManager.getClusterId(meta.getCluster());
         KafkaMultiProperty property = clusterManager.getProperty();
         ConcurrentMessageListenerContainer<String, Object> container =
@@ -176,23 +158,12 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         p.setIdleEventInterval(Duration.ofSeconds(5).toMillis());
         p.setIdleBeforeDataMultiplier(1);
 
-        final KafkaConsumerInfoDTO consumerInfo = KafkaConsumerInfoDTO
-            .builder()
-            .cluster(meta.getCluster())
-            .group(meta.getGroup())
-            .topics(new HashSet<>(Arrays.asList(meta.getTopics())))
-            .listenerId(listenerId)
-            .clientId(clientId)
-            .maxConcurrency(property.getMaxConcurrency(meta.getCluster()))
-            .container(container)
-            .build();
-
         registerListener(clusterId, listenerId, clientId, meta, property, p);
 
         try {
             container.start();
 
-            containerMap.put(listenerId, consumerInfo);
+            containerMap.put(listenerId, container);
 
             log.info("Kafka listener started, cluster={}, group={}, topics={}, listenerId={}",
                 meta.getCluster(),
