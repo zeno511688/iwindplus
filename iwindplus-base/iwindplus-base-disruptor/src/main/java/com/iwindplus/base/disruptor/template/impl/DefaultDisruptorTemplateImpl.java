@@ -104,15 +104,6 @@ public record DefaultDisruptorTemplateImpl<T>(
     }
 
     @Override
-    public double usagePercent() {
-        RingBuffer<DisruptorEvent<T>> ringBuffer = getRingBuffer(disruptor);
-        long remaining = ringBuffer.remainingCapacity();
-        long capacity = ringBuffer.getBufferSize();
-
-        return (capacity - remaining) * 1D / capacity;
-    }
-
-    @Override
     public void close() throws Exception {
         try {
             disruptor.shutdown();

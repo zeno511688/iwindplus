@@ -38,11 +38,4 @@ public interface DisruptorTemplate<T> {
      * @return boolean
      */
     boolean available();
-
-    /**
-     * 使用率.
-     *
-     * @return double
-     */
-    double usagePercent();
 }

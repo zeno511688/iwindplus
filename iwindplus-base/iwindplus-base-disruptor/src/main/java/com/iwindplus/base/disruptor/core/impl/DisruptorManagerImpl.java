@@ -219,28 +219,5 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
             ringBuffer,
             RingBuffer::remainingCapacity
         );
-
-        // RingBuffer 使用量
-        monitorTemplate.gauge(
-            DisruptorMonitorConstant.RING_BUFFER_USAGE,
-            tags,
-            ringBuffer,
-            rb -> rb.getBufferSize() - rb.remainingCapacity()
-        );
-
-        // RingBuffer 使用率
-        monitorTemplate.gauge(
-            DisruptorMonitorConstant.RING_BUFFER_USAGE_PERCENT,
-            tags,
-            ringBuffer,
-            rb -> {
-                long capacity = rb.getBufferSize();
-                if (capacity == 0) {
-                    return 0D;
-                }
-
-                return (capacity - rb.remainingCapacity()) * 1D / capacity;
-            }
-        );
     }
 }

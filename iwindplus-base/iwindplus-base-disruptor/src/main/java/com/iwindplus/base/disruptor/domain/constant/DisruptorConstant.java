@@ -63,17 +63,5 @@ public final class DisruptorConstant {
          */
         public static final String RING_BUFFER_REMAINING =
             DISRUPTOR + RING_BUFFER + MonitorConstant.REMAINING;
-
-        /**
-         * 使用量.
-         */
-        public static final String RING_BUFFER_USAGE =
-            DISRUPTOR + RING_BUFFER + MonitorConstant.USAGE;
-
-        /**
-         * 使用率.
-         */
-        public static final String RING_BUFFER_USAGE_PERCENT =
-            DISRUPTOR + RING_BUFFER + MonitorConstant.USAGE_PERCENT;
     }
 }
