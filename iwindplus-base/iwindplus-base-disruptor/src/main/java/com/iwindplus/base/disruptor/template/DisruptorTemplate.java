@@ -44,5 +44,5 @@ public interface DisruptorTemplate<T> {
      *
      * @return double
      */
-    double usage();
+    double usagePercent();
 }

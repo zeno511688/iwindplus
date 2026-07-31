@@ -239,7 +239,7 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
                     return 0D;
                 }
 
-                return (capacity - rb.remainingCapacity()) * 100D / capacity;
+                return (capacity - rb.remainingCapacity()) * 1D / capacity;
             }
         );
     }
