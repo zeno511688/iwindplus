@@ -16,7 +16,6 @@ import com.iwindplus.base.domain.constant.CommonConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.OauthConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
-import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.util.domain.dto.ReactorRequestDTO;
 import com.iwindplus.base.util.domain.dto.ReactorResponseDTO;
@@ -169,38 +168,38 @@ public class ReactorUtil {
             return function.apply(exchange).thenReturn(collector);
         }
 
-        return Mono.defer(() ->
-                DataBufferUtils.join(request.getBody())
-                    .flatMap(
-                        dataBuffer -> buildReactorRequest(
-                            exchange, function, contentType, collector, dataBuffer)
-                    )
+        return DataBufferUtils.join(
+                request.getBody()
             )
-            .doOnError(e -> {
-                if (!(e instanceof BizException)) {
-                    log.error("Failed to read request body.", e);
-                }
-            });
+            .flatMap(buffer ->
+                buildReactorRequest(
+                    exchange,
+                    function,
+                    contentType,
+                    collector,
+                    buffer
+                )
+            );
     }
 
     /**
      * 构建新请求（重新包装请求体）.
      *
-     * @param exchange  请求
-     * @param bodyBytes 请求体字节数组
+     * @param exchange 请求
+     * @param body     请求体字节数组
      * @return ServerHttpRequest
      */
-    public static ServerHttpRequest buildNewServerHttpRequest(ServerWebExchange exchange, byte[] bodyBytes) {
+    public static ServerHttpRequest buildNewServerHttpRequest(ServerWebExchange exchange, byte[] body) {
         return new ServerHttpRequestDecorator(exchange.getRequest()) {
 
             @Override
             public Flux<DataBuffer> getBody() {
-                return Flux.defer(() -> {
-                    DataBuffer buffer = exchange.getResponse()
-                        .bufferFactory().wrap(bodyBytes);
+                DataBuffer buffer =
+                    exchange.getResponse()
+                        .bufferFactory()
+                        .wrap(body);
 
-                    return Mono.just(buffer);
-                });
+                return Flux.just(buffer);
             }
         };
     }
@@ -229,22 +228,35 @@ public class ReactorUtil {
         final ReactorResponseDTO collector = new ReactorResponseDTO();
 
         // 1. 构造可重复读的响应
-        final ServerHttpResponseDecorator newResp = buildNewResponseDecorator(exchange, collector);
-        final ServerWebExchange newExchange = exchange.mutate().response(newResp).build();
+        ServerHttpResponseDecorator response =
+            buildNewResponseDecorator(
+                exchange,
+                collector
+            );
+
+        ServerWebExchange newExchange =
+            exchange.mutate()
+                .response(response)
+                .build();
+
         // 2. 执行业务逻辑
         return function.apply(newExchange)
-            .then(Mono.fromCallable(() -> {
-                fillResponseMeta(newExchange, collector);
-                setAttribute(newExchange, RESPONSE_BODY, collector);
-                return collector;
-            }))
-            .doOnError(ex -> {
-                if (ex instanceof BizException bizEx) {
-                    throw bizEx;
-                } else {
-                    log.error("Failed to read response body", ex);
-                }
-            });
+            .then(
+                Mono.fromCallable(() -> {
+                    fillResponseMeta(
+                        newExchange,
+                        collector
+                    );
+
+                    setAttribute(
+                        newExchange,
+                        RESPONSE_BODY,
+                        collector
+                    );
+
+                    return collector;
+                })
+            );
     }
 
     /**
@@ -258,14 +270,10 @@ public class ReactorUtil {
         ServerWebExchange exchange, ReactorResponseDTO collector) {
         final ServerHttpResponse original = exchange.getResponse();
 
-        final StringBuilder bodyBuffer = new StringBuilder(512);
+        final StringBuilder bodyBuffer = new StringBuilder(64 * 1024);
         return new ServerHttpResponseDecorator(original) {
             @Override
             public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
-                if (!(body instanceof Flux<?>)) {
-                    return super.writeWith(body);
-                }
-
                 return super.writeWith(Flux.from(body)
                     .cast(DataBuffer.class)
                     .doOnNext(buffer ->
@@ -358,9 +366,11 @@ public class ReactorUtil {
     private static <T> Mono<ReactorRequestDTO> buildReactorRequest(
         ServerWebExchange exchange, Function<ServerWebExchange, Mono<T>> function,
         MediaType contentType, ReactorRequestDTO collector, DataBuffer dataBuffer) {
+
+        byte[] body;
         try {
             int readable = dataBuffer.readableByteCount();
-            byte[] body = new byte[readable];
+            body = new byte[readable];
             dataBuffer.read(body);
 
             if (needCaptureBody(contentType)) {
@@ -368,20 +378,20 @@ public class ReactorUtil {
                     new String(body, StandardCharsets.UTF_8)
                 );
             }
-
-            ServerHttpRequest newRequest =
-                ReactorUtil.buildNewServerHttpRequest(exchange, body);
-
-            ServerWebExchange newExchange = exchange.mutate()
-                .request(newRequest)
-                .build();
-
-            setAttribute(newExchange, REQUEST_BODY, collector);
-
-            return function.apply(newExchange).thenReturn(collector);
         } finally {
             DataBufferUtils.release(dataBuffer);
         }
+
+        ServerHttpRequest newRequest =
+            ReactorUtil.buildNewServerHttpRequest(exchange, body);
+
+        ServerWebExchange newExchange = exchange.mutate()
+            .request(newRequest)
+            .build();
+
+        setAttribute(newExchange, REQUEST_BODY, collector);
+
+        return function.apply(newExchange).thenReturn(collector);
     }
 
     private static void captureToString(DataBuffer buffer, StringBuilder out) {
