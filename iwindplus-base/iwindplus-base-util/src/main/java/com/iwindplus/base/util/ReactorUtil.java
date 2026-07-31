@@ -20,6 +20,7 @@ import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.util.domain.dto.ReactorRequestDTO;
 import com.iwindplus.base.util.domain.dto.ReactorResponseDTO;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;
@@ -163,36 +164,18 @@ public class ReactorUtil {
         collector.setRequestHeaders(headers.toSingleValueMap());
         collector.setQueryParams(request.getQueryParams().toSingleValueMap());
 
-        if (!isReadableRequest(contentType)) {
+        if (!needReadBody(contentType)) {
             setAttribute(exchange, REQUEST_BODY, collector);
             return function.apply(exchange).thenReturn(collector);
         }
 
         return Mono.defer(() ->
                 DataBufferUtils.join(request.getBody())
-                    .flatMap(dataBuffer -> {
-                            byte[] body;
-                            try {
-                                body = new byte[dataBuffer.readableByteCount()];
-                                dataBuffer.read(body);
-                            } finally {
-                                DataBufferUtils.release(dataBuffer);
-                            }
-
-                            collector.setRequestBody(new String(body, StandardCharsets.UTF_8));
-
-                            ServerHttpRequest newRequest =
-                                ReactorUtil.buildNewServerHttpRequest(exchange, body);
-
-                            ServerWebExchange newExchange = exchange.mutate()
-                                .request(newRequest)
-                                .build();
-
-                            setAttribute(newExchange, REQUEST_BODY, collector);
-
-                            return function.apply(newExchange).thenReturn(collector);
-                        }
-                    ))
+                    .flatMap(
+                        dataBuffer -> buildReactorRequest(
+                            exchange, function, contentType, collector, dataBuffer)
+                    )
+            )
             .doOnError(e -> {
                 if (!(e instanceof BizException)) {
                     log.error("Failed to read request body.", e);
@@ -208,14 +191,16 @@ public class ReactorUtil {
      * @return ServerHttpRequest
      */
     public static ServerHttpRequest buildNewServerHttpRequest(ServerWebExchange exchange, byte[] bodyBytes) {
-        DataBuffer buffer = exchange.getResponse()
-            .bufferFactory()
-            .wrap(bodyBytes);
-
         return new ServerHttpRequestDecorator(exchange.getRequest()) {
+
             @Override
             public Flux<DataBuffer> getBody() {
-                return Flux.just(buffer);
+                return Flux.defer(() -> {
+                    DataBuffer buffer = exchange.getResponse()
+                        .bufferFactory().wrap(bodyBytes);
+
+                    return Mono.just(buffer);
+                });
             }
         };
     }
@@ -277,37 +262,43 @@ public class ReactorUtil {
         return new ServerHttpResponseDecorator(original) {
             @Override
             public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
-                if (!(body instanceof Flux<?> flux)) {
+                if (!(body instanceof Flux<?>)) {
                     return super.writeWith(body);
                 }
 
-                return super.writeWith(
-                    ((Flux<DataBuffer>) flux)
-                        .map(buffer -> {
-                            DataBuffer retained = DataBufferUtils.retain(buffer);
-                            captureToString(retained, bodyBuffer);
-                            return retained;
-                        })
-                        .doOnComplete(() ->
-                            collector.setResponseBody(bodyBuffer.toString()))
+                return super.writeWith(Flux.from(body)
+                    .cast(DataBuffer.class)
+                    .doOnNext(buffer ->
+                        captureToString(
+                            buffer,
+                            bodyBuffer
+                        )
+                    )
+                    .doFinally(signal ->
+                        collector.setResponseBody(
+                            bodyBuffer.toString()
+                        )
+                    )
                 );
             }
 
             @Override
             public Mono<Void> writeAndFlushWith(Publisher<? extends Publisher<? extends DataBuffer>> body) {
-                return super.writeAndFlushWith(
-                    Flux.from(body)
-                        .map(inner ->
-                            Flux.from(inner)
-                                .map(buffer -> {
-                                    DataBuffer retained =
-                                        DataBufferUtils.retain(buffer);
-                                    captureToString(retained, bodyBuffer);
-                                    return retained;
-                                })
+                return super.writeAndFlushWith(Flux.from(body)
+                    .map(inner -> Flux.from(inner)
+                        .cast(DataBuffer.class)
+                        .doOnNext(buffer ->
+                            captureToString(
+                                buffer,
+                                bodyBuffer
+                            )
                         )
-                        .doOnComplete(() ->
-                            collector.setResponseBody(bodyBuffer.toString()))
+                    )
+                    .doFinally(signal ->
+                        collector.setResponseBody(
+                            bodyBuffer.toString()
+                        )
+                    )
                 );
             }
         };
@@ -364,12 +355,33 @@ public class ReactorUtil {
         return exchange.getAttribute(key);
     }
 
-    private static boolean isReadableRequest(MediaType contentType) {
-        if (contentType == null) {
-            return false;
+    private static <T> Mono<ReactorRequestDTO> buildReactorRequest(
+        ServerWebExchange exchange, Function<ServerWebExchange, Mono<T>> function,
+        MediaType contentType, ReactorRequestDTO collector, DataBuffer dataBuffer) {
+        try {
+            int readable = dataBuffer.readableByteCount();
+            byte[] body = new byte[readable];
+            dataBuffer.read(body);
+
+            if (needCaptureBody(contentType)) {
+                collector.setRequestBody(
+                    new String(body, StandardCharsets.UTF_8)
+                );
+            }
+
+            ServerHttpRequest newRequest =
+                ReactorUtil.buildNewServerHttpRequest(exchange, body);
+
+            ServerWebExchange newExchange = exchange.mutate()
+                .request(newRequest)
+                .build();
+
+            setAttribute(newExchange, REQUEST_BODY, collector);
+
+            return function.apply(newExchange).thenReturn(collector);
+        } finally {
+            DataBufferUtils.release(dataBuffer);
         }
-        return MediaType.APPLICATION_JSON.isCompatibleWith(contentType)
-            || MediaType.APPLICATION_FORM_URLENCODED.isCompatibleWith(contentType);
     }
 
     private static void captureToString(DataBuffer buffer, StringBuilder out) {
@@ -378,14 +390,14 @@ public class ReactorUtil {
             return;
         }
 
-        int pos = buffer.readPosition();
-        byte[] bytes = new byte[readable];
-
-        for (int i = 0; i < readable; i++) {
-            bytes[i] = buffer.getByte(pos + i);
+        try (DataBuffer.ByteBufferIterator iterator = buffer.readableByteBuffers()) {
+            while (iterator.hasNext()) {
+                ByteBuffer byteBuffer = iterator.next();
+                byte[] bytes = new byte[byteBuffer.remaining()];
+                byteBuffer.get(bytes);
+                out.append(new String(bytes, StandardCharsets.UTF_8));
+            }
         }
-
-        out.append(new String(bytes, StandardCharsets.UTF_8));
     }
 
     private static void fillResponseMeta(ServerWebExchange exchange, ReactorResponseDTO collector) {
@@ -398,5 +410,56 @@ public class ReactorUtil {
                 ? exchange.getResponse().getStatusCode().value()
                 : null
         );
+    }
+
+    /**
+     * 是否需要读取body
+     * <p>
+     * JSON/Text/Form
+     */
+    private static boolean needReadBody(MediaType contentType) {
+        if (contentType == null) {
+            return false;
+        }
+
+        return isJson(contentType)
+            || isXml(contentType)
+            || isText(contentType)
+            || isForm(contentType);
+    }
+
+    /**
+     * 是否需要记录body内容
+     * <p>
+     * 不记录form，避免密码等敏感信息
+     */
+    private static boolean needCaptureBody(MediaType contentType) {
+        if (contentType == null) {
+            return false;
+        }
+
+        return isJson(contentType)
+            || isXml(contentType)
+            || isText(contentType);
+    }
+
+    private static boolean isJson(MediaType mediaType) {
+        return MediaType.APPLICATION_JSON
+            .includes(mediaType);
+    }
+
+    private static boolean isXml(MediaType mediaType) {
+        return MediaType.APPLICATION_XML
+            .includes(mediaType);
+    }
+
+    private static boolean isText(MediaType mediaType) {
+        return MediaType.TEXT_PLAIN
+            .includes(mediaType);
+    }
+
+    private static boolean isForm(MediaType mediaType) {
+        return MediaType.APPLICATION_FORM_URLENCODED
+            .includes(mediaType);
     }
 }
