@@ -18,6 +18,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.util.function.SingletonSupplier;
 
 /**
@@ -27,7 +28,7 @@ import org.springframework.util.function.SingletonSupplier;
  * @since 2026/03/03 17:47
  */
 @Slf4j
-public class AlertExecutorStrategyFactory {
+public class AlertExecutorStrategyFactory implements SmartInitializingSingleton {
 
     private final AlertProperty property;
     private final Supplier<Map<AlertChannelTypeEnum, AlertExecutor>> strategyMapSupplier;
@@ -96,5 +97,10 @@ public class AlertExecutorStrategyFactory {
      */
     private Map<AlertChannelTypeEnum, AlertExecutor> getStrategyMap() {
         return strategyMapSupplier.get();
+    }
+
+    @Override
+    public void afterSingletonsInstantiated() {
+        getStrategyMap();
     }
 }

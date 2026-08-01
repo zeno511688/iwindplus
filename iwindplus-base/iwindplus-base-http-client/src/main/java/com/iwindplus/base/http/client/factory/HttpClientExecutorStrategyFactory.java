@@ -18,6 +18,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.util.function.SingletonSupplier;
 
 /**
@@ -27,7 +28,7 @@ import org.springframework.util.function.SingletonSupplier;
  * @since 2026/01/21 00:54
  */
 @Slf4j
-public class HttpClientExecutorStrategyFactory {
+public class HttpClientExecutorStrategyFactory implements SmartInitializingSingleton {
 
     private final HttpClientProperty property;
     private final Supplier<Map<HttpClientTypeEnum, HttpClientExecutor>> strategyMapSupplier;
@@ -96,5 +97,10 @@ public class HttpClientExecutorStrategyFactory {
      */
     private Map<HttpClientTypeEnum, HttpClientExecutor> getStrategyMap() {
         return strategyMapSupplier.get();
+    }
+
+    @Override
+    public void afterSingletonsInstantiated() {
+        getStrategyMap();
     }
 }

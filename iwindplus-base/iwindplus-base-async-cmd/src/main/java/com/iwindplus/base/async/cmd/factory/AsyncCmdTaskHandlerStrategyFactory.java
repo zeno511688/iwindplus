@@ -16,6 +16,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.util.function.SingletonSupplier;
 
 /**
@@ -25,7 +26,7 @@ import org.springframework.util.function.SingletonSupplier;
  * @since 2025/11/29 23:50
  */
 @Slf4j
-public class AsyncCmdTaskHandlerStrategyFactory {
+public class AsyncCmdTaskHandlerStrategyFactory implements SmartInitializingSingleton {
 
     private final Supplier<Map<String, AsyncCmdTaskHandler>> strategyMapSupplier;
 
@@ -79,5 +80,10 @@ public class AsyncCmdTaskHandlerStrategyFactory {
      */
     private Map<String, AsyncCmdTaskHandler> getStrategyMap() {
         return strategyMapSupplier.get();
+    }
+
+    @Override
+    public void afterSingletonsInstantiated() {
+        getStrategyMap();
     }
 }

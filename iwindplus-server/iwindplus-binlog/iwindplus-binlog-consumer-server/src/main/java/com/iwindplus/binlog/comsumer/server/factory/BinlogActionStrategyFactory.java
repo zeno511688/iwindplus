@@ -18,6 +18,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.stereotype.Component;
 import org.springframework.util.function.SingletonSupplier;
 
@@ -31,7 +32,7 @@ import org.springframework.util.function.SingletonSupplier;
  */
 @Slf4j
 @Component
-public class BinlogActionStrategyFactory<T, R> {
+public class BinlogActionStrategyFactory<T, R> implements SmartInitializingSingleton {
 
     private final Supplier<Map<DbActionTypeEnum, BinlogActionStrategy<T, R>>> strategyMapSupplier;
 
@@ -82,5 +83,10 @@ public class BinlogActionStrategyFactory<T, R> {
      */
     private Map<DbActionTypeEnum, BinlogActionStrategy<T, R>> getStrategyMap() {
         return strategyMapSupplier.get();
+    }
+
+    @Override
+    public void afterSingletonsInstantiated() {
+        getStrategyMap();
     }
 }
