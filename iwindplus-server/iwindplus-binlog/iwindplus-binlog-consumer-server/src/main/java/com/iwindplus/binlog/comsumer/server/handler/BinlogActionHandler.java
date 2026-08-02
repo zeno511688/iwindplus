@@ -90,7 +90,11 @@ public class BinlogActionHandler {
         final ValidListDTO<BinlogAlertDTO> paramList = new ValidListDTO<>(dtoList);
 
         this.binlogTaskExecutor.execute(() -> {
-            this.binlogAlertClient.saveBatch(paramList);
+            try {
+                this.binlogAlertClient.saveBatch(paramList);
+            } catch (Exception e) {
+                log.error("binlogAlertClient.saveBatch error: {}", e.getMessage());
+            }
 
             for (BinlogRowDataProcessDTO entity : list) {
                 final BinlogAlertDTO binlogAlert = entity.getBinlogAlert();
