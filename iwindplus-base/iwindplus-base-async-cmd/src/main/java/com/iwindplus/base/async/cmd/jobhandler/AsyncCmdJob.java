@@ -42,9 +42,20 @@ public class AsyncCmdJob {
         log.info("异步命令，参数={}，开始时间={}", jobArgs.getJobParams()
             , DatesUtil.parseDate(beginMillis, DatePattern.NORM_DATETIME_MS_PATTERN));
 
+        int failed = 0;
         final AsyncCmdJobEnum[] jobEnums = AsyncCmdJobEnum.values();
         for (AsyncCmdJobEnum entity : jobEnums) {
-            factory.getJobHandler(entity).execute(0);
+            try {
+                factory.getJobHandler(entity).execute(0);
+            } catch (Exception e) {
+                failed++;
+
+                log.error("异步命令，任务={}，失败", entity, e);
+            }
+        }
+
+        if (failed > 0) {
+            return ExecuteResult.failure(false, "异步命令部分失败，failed=" + failed);
         }
 
         final long endTimeMillis = System.currentTimeMillis();

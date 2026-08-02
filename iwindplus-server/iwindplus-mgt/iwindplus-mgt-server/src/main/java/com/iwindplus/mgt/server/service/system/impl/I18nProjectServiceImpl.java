@@ -13,7 +13,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.google.common.collect.ImmutableMap;
-import com.iwindplus.base.async.cmd.domain.bo.AsyncCmdExecutorBO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
 import com.iwindplus.base.async.cmd.executor.AsyncCmdExecutor;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
@@ -330,7 +330,7 @@ public class I18nProjectServiceImpl implements I18nProjectService {
     }
 
     private boolean pushData(String fileName, String content) {
-        final AsyncCmdExecutorBO build = AsyncCmdExecutorBO.builder()
+        final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
             .bizType("I18N_MSG")
             .eventType("I18N_MSG_PUSH")
             .bizNumber(IdUtil.fastSimpleUUID())
@@ -343,7 +343,7 @@ public class I18nProjectServiceImpl implements I18nProjectService {
     }
 
     private boolean removeData(String fileName) {
-        final AsyncCmdExecutorBO build = AsyncCmdExecutorBO.builder()
+        final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
             .bizType("I18N_MSG")
             .eventType("I18N_MSG_REMOVE")
             .bizNumber(IdUtil.fastSimpleUUID())

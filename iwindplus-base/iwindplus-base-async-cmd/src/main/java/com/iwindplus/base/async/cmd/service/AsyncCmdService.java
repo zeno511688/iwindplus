@@ -10,9 +10,12 @@ package com.iwindplus.base.async.cmd.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdEditDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGrouSaveDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGroupSearchDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSearchDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdGroupVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdPageVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import java.time.LocalDateTime;
@@ -30,9 +33,17 @@ public interface AsyncCmdService {
      * 添加.
      *
      * @param entity 对象
-     * @return Long
+     * @return AsyncCmdVO
      */
-    Long save(AsyncCmdSaveDTO entity);
+    AsyncCmdVO save(AsyncCmdSaveDTO entity);
+
+    /**
+     * 添加组任务.
+     *
+     * @param entity 对象
+     * @return AsyncCmdVO
+     */
+    AsyncCmdVO saveGroup(AsyncCmdGrouSaveDTO entity);
 
     /**
      * 删除.
@@ -55,14 +66,11 @@ public interface AsyncCmdService {
     /**
      * 通过业务流水号删除.
      *
-     * @param bizType   业务类型
-     * @param eventType 事件类型
      * @param bizNumber 业务流水号
      * @param deleted   是否真删
      * @return boolean
      */
-    boolean removeByCondition(String bizType,
-        String eventType, String bizNumber, boolean deleted);
+    boolean removeByBizNumber(String bizNumber, boolean deleted);
 
     /**
      * 编辑.
@@ -102,6 +110,17 @@ public interface AsyncCmdService {
     boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to);
 
     /**
+     * 通过主键修改状态（抢占执行权，待执行-> 执行中，同时重置执行续约 expireTime）.
+     *
+     * @param id        主键
+     * @param from      从状态
+     * @param to        到状态
+     * @param renewFlag 是否重置续约时间
+     * @return boolean
+     */
+    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, boolean renewFlag);
+
+    /**
      * 通过主键修改状态.
      *
      * @param id            主键
@@ -116,6 +135,14 @@ public interface AsyncCmdService {
         , Integer retryCount, LocalDateTime nextRetryTime);
 
     /**
+     * 续订租期时间.
+     *
+     * @param id 主键
+     * @return boolean
+     */
+    boolean editExpireTime(Long id);
+
+    /**
      * 列表.
      *
      * @param entity 对象
@@ -124,7 +151,7 @@ public interface AsyncCmdService {
     IPage<AsyncCmdPageVO> page(AsyncCmdSearchDTO entity);
 
     /**
-     * 通过主键端查找.
+     * 通过主键查找.
      *
      * @param id 主键
      * @return AsyncCmdVO
@@ -132,18 +159,25 @@ public interface AsyncCmdService {
     AsyncCmdVO getDetail(Long id);
 
     /**
+     * 通过业务流水号查找.
+     *
+     * @param bizNumber 业务流水号
+     * @return AsyncCmdVO
+     */
+    AsyncCmdVO getDetailByBizNumber(String bizNumber);
+
+    /**
+     * 通过条件查找.
+     *
+     * @param entity 对象
+     * @return AsyncCmdGroupVO
+     */
+    AsyncCmdGroupVO getGroupDetail(AsyncCmdGroupSearchDTO entity);
+
+    /**
      * 获取每页条数.
      *
      * @return Integer
      */
     Integer getSize();
-
-    /**
-     * 获取下次重试时间.
-     *
-     * @param baseTime   基准时间
-     * @param retryCount 重试次数
-     * @return LocalDateTime
-     */
-    LocalDateTime getNextRetryTime(LocalDateTime baseTime, Integer retryCount);
 }

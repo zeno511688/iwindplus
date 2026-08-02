@@ -12,6 +12,7 @@ import com.iwindplus.base.disruptor.core.DisruptorManager;
 import com.iwindplus.base.disruptor.domain.dto.DisruptorPublishDTO;
 import com.iwindplus.base.disruptor.template.DisruptorTemplate;
 import com.iwindplus.base.kafka.core.KafkaClusterManager;
+import com.iwindplus.base.kafka.domain.event.KafkaDisruptorEvent;
 import com.iwindplus.base.kafka.handler.KafkaDisruptorEventHandler;
 import com.iwindplus.base.kafka.support.KafkaMessageHandler;
 import com.iwindplus.base.kafka.support.KafkaReceiverDispatcher;
@@ -43,7 +44,7 @@ public record KafkaReceiverDispatcherImpl(
     KafkaClusterManager manager,
     TraceContextPropagator traceContextPropagator,
     ObservationExecutor observationExecutor,
-    DisruptorManager<KafkaMessageHandler> disruptorManager) implements KafkaReceiverDispatcher {
+    DisruptorManager<KafkaDisruptorEvent> disruptorManager) implements KafkaReceiverDispatcher {
 
     private static final CustomKafkaListenerObservationConvention CONVENTION =
         new CustomKafkaListenerObservationConvention();
@@ -104,29 +105,22 @@ public record KafkaReceiverDispatcherImpl(
 
     private void doExecute(KafkaMessageHandler handler, Consumer<?, ?> consumer) {
         final Boolean enableAsyncAcks = manager.getProperty().getConsumerConfig(handler.getCluster()).getEnableAsyncAcks();
-        // 如果启用了异步提交，则使用Disruptor进行异步处理，每个group对应一个Disruptor
         if (Boolean.TRUE.equals(enableAsyncAcks)) {
-            // 这里使用group作为disruptor名称，别忘了配置Disruptor
             final String name = handler.getGroup();
             final String handlerName = StrUtil.lowerFirst(KafkaDisruptorEventHandler.class.getSimpleName());
-
-            final DisruptorTemplate<KafkaMessageHandler> template = disruptorManager.getTemplate(name);
-            // 先恢复之前暂停的partition
+            final DisruptorTemplate<KafkaDisruptorEvent> template = disruptorManager.getTemplate(name);
             resumeIfNeeded(consumer, template);
 
-            final DisruptorPublishDTO<KafkaMessageHandler> entity =
-                DisruptorPublishDTO.<KafkaMessageHandler>builder()
+            final DisruptorPublishDTO<KafkaDisruptorEvent> entity =
+                DisruptorPublishDTO.<KafkaDisruptorEvent>builder()
                     .handlerName(handlerName)
-                    .data(handler)
+                    .data(handler.getEvent())
                     .source("kafka")
                     .destination("listener")
                     .build();
-            final boolean success = template.publish(entity);
-            if (!success) {
-                // 暂停消费
+            if (!template.publish(entity)) {
                 consumer.pause(consumer.assignment());
             }
-
             return;
         }
 
@@ -135,14 +129,10 @@ public record KafkaReceiverDispatcherImpl(
 
     private void resumeIfNeeded(
         Consumer<?, ?> consumer,
-        DisruptorTemplate<KafkaMessageHandler> template) {
+        DisruptorTemplate<KafkaDisruptorEvent> template) {
         Set<TopicPartition> paused = consumer.paused();
-        if (paused.isEmpty()) {
-            return;
-        }
-        if (template.available()) {
+        if (!paused.isEmpty() && template.available()) {
             consumer.resume(paused);
-
             log.info("resume kafka partitions {}", paused);
         }
     }
@@ -150,22 +140,15 @@ public record KafkaReceiverDispatcherImpl(
     private <T> T runWithTrace(
         ConsumerRecord<String, Object> record,
         Supplier<T> supplier) {
-
         try (SpanInScope ignored =
-            traceContextPropagator
-                .extract(record.headers(), KAFKA_GETTER)) {
-
+            traceContextPropagator.extract(record.headers(), KAFKA_GETTER)) {
             return supplier.get();
         }
     }
 
-    private boolean enabledObservation(
-        KafkaMessageHandler handler) {
+    private boolean enabledObservation(KafkaMessageHandler handler) {
         return Boolean.TRUE.equals(
-            manager.getProperty()
-                .getConsumerEnabledObservation(
-                    handler.getCluster()
-                )
+            manager.getProperty().getConsumerEnabledObservation(handler.getCluster())
         );
     }
 }

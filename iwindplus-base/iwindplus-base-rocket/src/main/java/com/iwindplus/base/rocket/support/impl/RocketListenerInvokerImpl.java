@@ -7,9 +7,13 @@
 
 package com.iwindplus.base.rocket.support.impl;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.crypto.SecureUtil;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
+import com.iwindplus.base.rocket.domain.constant.RocketConstant;
 import com.iwindplus.base.rocket.domain.dto.RocketMultiListenerMetaDTO;
 import com.iwindplus.base.rocket.support.RocketListenerInvoker;
 import com.iwindplus.base.util.JacksonUtil;
@@ -18,7 +22,10 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.springframework.beans.factory.DisposableBean;
@@ -56,33 +63,22 @@ public class RocketListenerInvokerImpl implements RocketListenerInvoker, Disposa
             .maximumSize(2048)
             .build();
 
-    /**
-     * 预热缓存.
-     *
-     * @param metas listener元数据
-     */
     @Override
-    public void preWarm(List<RocketMultiListenerMetaDTO> metas) {
-        metas.forEach(meta -> {
-            Method method = meta.getMethod();
-            invokerCache.get(method,
-                m -> createInvoker(m, meta.getBean()));
-            argCache.get(method, this::buildArgMetadata);
-            warmReader(method);
-        });
+    public List<RocketMultiListenerMetaDTO> listGroupMergePreWarm(List<RocketMultiListenerMetaDTO> metas) {
+        if (CollUtil.isEmpty(metas)) {
+            return Collections.emptyList();
+        }
 
-        log.info(
-            "RocketListenerInvoker cache warm success,size={}",
-            metas.size()
-        );
+        final List<RocketMultiListenerMetaDTO> list = listGroupMergeData(metas);
+        if (CollUtil.isEmpty(list)) {
+            return Collections.emptyList();
+        }
+
+        preWarmData(list);
+
+        return list;
     }
 
-    /**
-     * 调用监听方法.
-     *
-     * @param meta Rocket监听元数据
-     * @param msgs 消息列表
-     */
     @Override
     public void invoke(RocketMultiListenerMetaDTO meta, List<MessageExt> msgs) {
         Method method = meta.getMethod();
@@ -268,5 +264,53 @@ public class RocketListenerInvokerImpl implements RocketListenerInvoker, Disposa
 
         Object invoke(Object[] args)
             throws Throwable;
+    }
+
+    private void preWarmData(List<RocketMultiListenerMetaDTO> list) {
+        Set<Method> warmedReaders = new HashSet<>();
+
+        list.stream().forEach(meta -> {
+            Method method = meta.getMethod();
+
+            invokerCache.get(
+                method,
+                m -> createInvoker(
+                    m,
+                    meta.getBean()
+                )
+            );
+
+            argCache.get(
+                method,
+                this::buildArgMetadata
+            );
+
+            //  reader只需要预热一次
+            if (warmedReaders.add(method)) {
+                warmReader(method);
+            }
+        });
+    }
+
+    private List<RocketMultiListenerMetaDTO> listGroupMergeData(List<RocketMultiListenerMetaDTO> entities) {
+        return entities
+            .stream()
+            .map(meta -> {
+                meta.setListenerId(buildId(meta));
+                return meta;
+            }).toList();
+    }
+
+    private String buildId(RocketMultiListenerMetaDTO meta) {
+        String str = meta.getMethod().toGenericString()
+            + SymbolConstant.WELL_NO
+            + meta.getTopic()
+            + SymbolConstant.WELL_NO
+            + meta.getTag();
+
+        return RocketConstant.ROCKET
+            + SymbolConstant.HORIZONTAL_LINE + meta.getCluster()
+            + SymbolConstant.HORIZONTAL_LINE + meta.getGroup()
+            + SymbolConstant.HORIZONTAL_LINE + SecureUtil.md5(str);
     }
 }

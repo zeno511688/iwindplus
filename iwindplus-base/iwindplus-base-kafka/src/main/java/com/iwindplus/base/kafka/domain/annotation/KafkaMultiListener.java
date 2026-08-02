@@ -32,16 +32,16 @@ public @interface KafkaMultiListener {
     String cluster() default "";
 
     /**
+     * 消费组名称.
+     *
+     * @return String
+     */
+    String group();
+
+    /**
      * 主题名称.
      *
      * @return String[]
      */
     String[] topics();
-
-    /**
-     * 消费组名称.
-     *
-     * @return String
-     */
-    String group() default "";
 }

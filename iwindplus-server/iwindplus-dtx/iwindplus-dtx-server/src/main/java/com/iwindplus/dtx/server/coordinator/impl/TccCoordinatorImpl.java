@@ -123,25 +123,11 @@ public class TccCoordinatorImpl implements TccCoordinator {
 
     @Override
     public Integer getSize() {
-        int active = tccTaskExecutor.getActiveCount();
-        int max = tccTaskExecutor.getMaximumPoolSize();
-        return Math.max(1, Math.min(property.getMaxPageSize(), max - active));
-    }
-
-    @Override
-    public LocalDateTime getNextRetryTime(LocalDateTime base, Integer retryCount) {
-        List<LocalDateTime> times =
-            DatesUtil.convertFrequencyToLocalDateTime(
-                Optional.ofNullable(base).orElse(LocalDateTime.now()),
-                property.getRetry().getFrequency()
-            );
-
-        if (CollUtil.isEmpty(times)) {
-            return LocalDateTime.now().plusSeconds(5);
-        }
-
-        int index = Math.max(0, retryCount - 1);
-        return times.get(Math.min(index, times.size() - 1));
+        int activeCount = tccTaskExecutor.getActiveCount();
+        int maxPoolSize = tccTaskExecutor.getMaximumPoolSize();
+        final int queueSize = tccTaskExecutor.getQueue().size();
+        int available = maxPoolSize - activeCount - queueSize;
+        return Math.max(0, Math.min(this.property.getMaxPageSize(), available));
     }
 
     private boolean executeGlobalTx(String xid, TxActionEnum action) {
@@ -518,5 +504,11 @@ public class TccCoordinatorImpl implements TccCoordinator {
             : branch.getCancelUrl();
 
         return String.format("%s%s", branch.getContextPath(), path);
+    }
+
+    private LocalDateTime getNextRetryTime(LocalDateTime base, Integer retryCount) {
+        return DatesUtil.getNextRetryTime(base,
+            this.property.getRetry().getFrequency(),
+            retryCount);
     }
 }

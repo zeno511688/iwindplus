@@ -20,11 +20,12 @@ import org.apache.rocketmq.common.message.MessageExt;
 public interface RocketListenerInvoker {
 
     /**
-     * 预热，创建参数解析器.
+     * 分组合并数据，预热
      *
-     * @param metas Rocket监听器元数据集合
+     * @param metas 元数据集合
+     * @return List<RocketMultiListenerMetaDTO>
      */
-    void preWarm(List<RocketMultiListenerMetaDTO> metas);
+    List<RocketMultiListenerMetaDTO> listGroupMergePreWarm(List<RocketMultiListenerMetaDTO> metas);
 
     /**
      * 调用监听器.

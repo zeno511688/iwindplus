@@ -10,12 +10,12 @@ package com.iwindplus.base.kafka;
 import com.iwindplus.base.disruptor.core.DisruptorManager;
 import com.iwindplus.base.kafka.core.KafkaClusterManager;
 import com.iwindplus.base.kafka.core.KafkaTemplateRouter;
+import com.iwindplus.base.kafka.domain.event.KafkaDisruptorEvent;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
 import com.iwindplus.base.kafka.handler.KafkaDisruptorEventHandler;
 import com.iwindplus.base.kafka.listener.KafkaMultiListenerBeanPostProcessor;
 import com.iwindplus.base.kafka.listener.KafkaMultiListenerRegistrar;
 import com.iwindplus.base.kafka.support.KafkaListenerInvoker;
-import com.iwindplus.base.kafka.support.KafkaMessageHandler;
 import com.iwindplus.base.kafka.support.KafkaReceiverDispatcher;
 import com.iwindplus.base.kafka.support.KafkaSenderDispatcher;
 import com.iwindplus.base.kafka.support.impl.KafkaListenerInvokerImpl;
@@ -115,7 +115,7 @@ public class KafkaConfiguration {
         KafkaClusterManager manager,
         TraceContextPropagator traceContextPropagator,
         ObservationExecutor observationExecutor,
-        DisruptorManager<KafkaMessageHandler> disruptorManager) {
+        DisruptorManager<KafkaDisruptorEvent> disruptorManager) {
         final KafkaReceiverDispatcher kafkaReceiverDispatcher = new KafkaReceiverDispatcherImpl(manager,
             traceContextPropagator, observationExecutor, disruptorManager);
         log.info("KafkaReceiverDispatcher={}", kafkaReceiverDispatcher);
@@ -138,10 +138,13 @@ public class KafkaConfiguration {
      * 创建 KafkaDisruptorEventHandler.
      *
      * @return KafkaDisruptorEventHandler
+     * @Param listenerInvoker KafkaListenerInvoker
      */
     @Bean
-    public KafkaDisruptorEventHandler kafkaDisruptorEventHandler() {
-        final KafkaDisruptorEventHandler kafkaDisruptorEventHandler = new KafkaDisruptorEventHandler();
+    public KafkaDisruptorEventHandler kafkaDisruptorEventHandler(
+        KafkaListenerInvoker listenerInvoker) {
+        final KafkaDisruptorEventHandler kafkaDisruptorEventHandler =
+            new KafkaDisruptorEventHandler(listenerInvoker);
         log.info("KafkaDisruptorEventHandler={}", kafkaDisruptorEventHandler);
         return kafkaDisruptorEventHandler;
     }

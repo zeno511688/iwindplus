@@ -21,11 +21,12 @@ import org.springframework.amqp.core.Message;
 public interface RabbitListenerInvoker {
 
     /**
-     * 预热，创建参数解析器.
+     * 分组合并数据，预热
      *
-     * @param metas Rabbit监听器元数据集合
+     * @param metas 元数据集合
+     * @return List<RabbitMultiListenerMetaDTO>
      */
-    void preWarm(List<RabbitMultiListenerMetaDTO> metas);
+    List<RabbitMultiListenerMetaDTO> listGroupMergePreWarm(List<RabbitMultiListenerMetaDTO> metas);
 
     /**
      * 调用监听器.

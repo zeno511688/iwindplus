@@ -8,7 +8,6 @@
 package com.iwindplus.dtx.server.coordinator;
 
 import com.iwindplus.dtx.domain.dto.TccBranchTxDTO;
-import java.time.LocalDateTime;
 
 /**
  * tcc协调器.
@@ -73,13 +72,4 @@ public interface TccCoordinator {
      * @return Integer
      */
     Integer getSize();
-
-    /**
-     * 获取下次重试时间.
-     *
-     * @param baseTime   基准时间
-     * @param retryCount 重试次数
-     * @return LocalDateTime
-     */
-    LocalDateTime getNextRetryTime(LocalDateTime baseTime, Integer retryCount);
 }

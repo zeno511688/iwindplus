@@ -92,7 +92,7 @@ gateway:
     # 是否开启权限过滤器
     enabled: true
     # 是否启用远程token校验
-    enabled-remote-token: false
+    enabled-remote-token: true
     # 是否开启API权限过滤器
     enabled-api-permission: false
     # token最大缓存数量
@@ -386,6 +386,15 @@ dynamictp:
       threadNamePrefix: kafkaLagTask
       platformIds: [ 1 ]
       runTimeout: 5000
+    - threadPoolName: disruptorTaskExecutor
+      threadPoolAliasName: disruptor线程池
+      executorType: eager
+      corePoolSize: 16
+      maximumPoolSize: 32
+      queueCapacity: 100
+      threadNamePrefix: disruptorTask
+      runTimeout: 5000
+      platformIds: [ 1 ]
 spring:
   reactor:
     context-propagation: AUTO

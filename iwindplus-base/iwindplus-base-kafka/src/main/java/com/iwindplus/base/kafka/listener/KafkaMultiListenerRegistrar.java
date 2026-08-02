@@ -8,23 +8,18 @@
 package com.iwindplus.base.kafka.listener;
 
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.crypto.SecureUtil;
-import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.kafka.core.KafkaClusterManager;
-import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
-import com.iwindplus.base.kafka.domain.dto.KafkaConsumerKeyDTO;
 import com.iwindplus.base.kafka.domain.dto.KafkaMultiListenerMetaDTO;
+import com.iwindplus.base.kafka.domain.event.KafkaDisruptorEvent;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
 import com.iwindplus.base.kafka.support.KafkaListenerInvoker;
 import com.iwindplus.base.kafka.support.KafkaMessageHandler;
 import com.iwindplus.base.kafka.support.KafkaReceiverDispatcher;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -70,8 +65,8 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             return;
         }
 
-        listenerInvoker.preWarm(metas);
-        registerAll(metas);
+        final List<KafkaMultiListenerMetaDTO> dataList = listenerInvoker.listGroupMergePreWarm(metas);
+        registerAll(dataList);
 
         running = true;
     }
@@ -111,19 +106,17 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
     /**
      * 获取所有监听器.
      *
-     * @return Map<String, ConcurrentMessageListenerContainer<String, Object>>
+     * @return Map<String, ConcurrentMessageListenerContainer < String, Object>>
      */
     public Map<String, ConcurrentMessageListenerContainer<String, Object>> getContainerMap() {
         return containerMap;
     }
 
     private void registerAll(List<KafkaMultiListenerMetaDTO> metas) {
-        Map<KafkaConsumerKeyDTO, List<KafkaMultiListenerMetaDTO>> grouped = group(metas);
 
         int count = 0;
 
-        for (var entry : grouped.entrySet()) {
-            KafkaMultiListenerMetaDTO meta = merge(entry.getValue());
+        for (KafkaMultiListenerMetaDTO meta : metas) {
             register(meta);
 
             count++;
@@ -133,7 +126,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
     }
 
     private void register(KafkaMultiListenerMetaDTO meta) {
-        String listenerId = buildId(meta);
+        String listenerId = meta.getListenerId();
         if (containerMap.containsKey(listenerId)) {
             log.warn("Kafka listener already started, listenerId={}", listenerId);
             return;
@@ -238,7 +231,17 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
         Acknowledgment acknowledgment,
         Consumer<?, ?> consumer) {
 
-        // 投递新的消息
+        // 消息发送到disruptor时使用
+        final KafkaDisruptorEvent event = KafkaDisruptorEvent.builder()
+            .listenerId(listenerId)
+            .messages(messages)
+            .successCallbackHandler(records -> {
+                // 开启了 asyncAcks;
+                // 虽然还是disruptor调用，但是 Spring Kafka 会缓存 ack，并由 Consumer线程最终提交
+                ack(acknowledgment);
+            })
+            .build();
+
         dispatcher.dispatch(
             new KafkaMessageHandler(
                 clusterId,
@@ -252,15 +255,19 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
                 records -> listenerInvoker.invoke(meta, records, acknowledgment, consumer),
                 // 业务成功
                 records -> {
-                    // 开启了 containerProperties.setAsyncAcks(true);
-                    // 虽然还是disruptor调用，但是 Spring Kafka 会缓存 ack，并由 Consumer线程最终提交
-                    if (acknowledgment != null) {
-                        acknowledgment.acknowledge();
-                    }
-                }
+                    // 同步调用使用
+                    ack(acknowledgment);
+                },
+                event
             ),
             consumer
         );
+    }
+
+    private void ack(Acknowledgment acknowledgment) {
+        if (acknowledgment != null) {
+            acknowledgment.acknowledge();
+        }
     }
 
     private KafkaMultiListenerMetaDTO resolve(KafkaMultiListenerMetaDTO meta) {
@@ -268,7 +275,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             ? clusterManager.getDefaultCluster()
             : meta.getCluster();
 
-        return KafkaMultiListenerMetaDTO
+        KafkaMultiListenerMetaDTO resolved = KafkaMultiListenerMetaDTO
             .builder()
             .bean(meta.getBean())
             .method(meta.getMethod())
@@ -276,47 +283,7 @@ public class KafkaMultiListenerRegistrar implements SmartLifecycle, DisposableBe
             .topics(meta.getTopics())
             .group(meta.getGroup())
             .build();
-    }
 
-    private KafkaMultiListenerMetaDTO merge(List<KafkaMultiListenerMetaDTO> list) {
-        KafkaMultiListenerMetaDTO first = list.get(0);
-
-        String[] topics =
-            list.stream()
-                .flatMap(x -> Arrays.stream(x.getTopics()))
-                .filter(CharSequenceUtil::isNotBlank)
-                .distinct()
-                .toArray(String[]::new);
-
-        return KafkaMultiListenerMetaDTO
-            .builder()
-            .bean(first.getBean())
-            .method(first.getMethod())
-            .cluster(first.getCluster())
-            .group(first.getGroup())
-            .topics(topics)
-            .build();
-    }
-
-    private Map<KafkaConsumerKeyDTO, List<KafkaMultiListenerMetaDTO>> group(List<KafkaMultiListenerMetaDTO> metas) {
-        return metas
-            .stream()
-            .collect(Collectors.groupingBy(
-                entity -> new KafkaConsumerKeyDTO(
-                    entity.getCluster(),
-                    entity.getGroup()
-                )
-            ));
-    }
-
-    private String buildId(KafkaMultiListenerMetaDTO meta) {
-        String str = meta.getMethod().toGenericString()
-            + SymbolConstant.WELL_NO
-            + String.join(SymbolConstant.COMMA, meta.getTopics());
-
-        return KafkaConstant.KAFKA
-            + SymbolConstant.HORIZONTAL_LINE + meta.getCluster()
-            + SymbolConstant.HORIZONTAL_LINE + meta.getGroup()
-            + SymbolConstant.HORIZONTAL_LINE + SecureUtil.md5(str);
+        return resolved;
     }
 }

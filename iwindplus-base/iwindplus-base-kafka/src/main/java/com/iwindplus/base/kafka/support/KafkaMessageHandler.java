@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.kafka.support;
 
+import com.iwindplus.base.kafka.domain.event.KafkaDisruptorEvent;
 import java.util.List;
 import java.util.function.Consumer;
 import lombok.Getter;
@@ -68,6 +69,11 @@ public class KafkaMessageHandler {
      */
     private final Consumer<List<ConsumerRecord<String, Object>>> successCallbackHandler;
 
+    /**
+     * disruptor事件（异步使用）.
+     */
+    private final KafkaDisruptorEvent event;
+
     public KafkaMessageHandler(
         String clusterId,
         String listenerId,
@@ -77,7 +83,8 @@ public class KafkaMessageHandler {
         String group,
         List<ConsumerRecord<String, Object>> messages,
         Consumer<List<ConsumerRecord<String, Object>>> batchHandler,
-        Consumer<List<ConsumerRecord<String, Object>>> successCallbackHandler) {
+        Consumer<List<ConsumerRecord<String, Object>>> successCallbackHandler,
+        KafkaDisruptorEvent event) {
 
         this.clusterId = clusterId;
         this.listenerId = listenerId;
@@ -88,6 +95,7 @@ public class KafkaMessageHandler {
         this.messages = messages;
         this.batchHandler = batchHandler;
         this.successCallbackHandler = successCallbackHandler;
+        this.event = event;
     }
 
     /**

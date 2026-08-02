@@ -7,10 +7,7 @@
 
 package com.iwindplus.base.rocket.listener;
 
-import cn.hutool.crypto.SecureUtil;
-import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.rocket.core.RocketClusterManager;
-import com.iwindplus.base.rocket.domain.constant.RocketConstant;
 import com.iwindplus.base.rocket.domain.dto.RocketMultiListenerMetaDTO;
 import com.iwindplus.base.rocket.support.RocketListenerInvoker;
 import com.iwindplus.base.rocket.support.RocketMessageHandler;
@@ -52,14 +49,15 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
 
     @Override
     public void start() {
-        var metas = bpp.getMetadata().stream().map(this::resolve).toList();
+        final List<RocketMultiListenerMetaDTO> metas = bpp.getMetadata().stream().map(this::resolve).toList();
         if (metas.isEmpty()) {
             log.warn("No Rocket listeners found");
             return;
         }
 
-        listenerInvoker.preWarm(metas);
-        registerAll(metas);
+        final List<RocketMultiListenerMetaDTO> dataList = listenerInvoker.listGroupMergePreWarm(metas);
+        registerAll(dataList);
+
         running = true;
     }
 
@@ -103,8 +101,10 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
 
     private void registerAll(List<RocketMultiListenerMetaDTO> metas) {
         int count = 0;
-        for (var m : metas) {
-            register(m);
+
+        for (RocketMultiListenerMetaDTO meta : metas) {
+            register(meta);
+
             count++;
         }
 
@@ -128,7 +128,7 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
     }
 
     private void register(RocketMultiListenerMetaDTO meta) {
-        String listenerId = buildId(meta);
+        String listenerId = meta.getListenerId();
         if (consumersMap.containsKey(listenerId)) {
             log.warn("Rocket consumer already started, listenerId={}", listenerId);
             return;
@@ -235,18 +235,5 @@ public class RocketMultiListenerRegistrar implements SmartLifecycle, DisposableB
             new RocketMessageHandler(meta.getCluster(), meta.getTopic(), meta.getGroup(), meta.getTag(),
                 msgs, meta.getOrderly(),
                 ignored -> listenerInvoker.invoke(meta, msgs)));
-    }
-
-    private String buildId(RocketMultiListenerMetaDTO meta) {
-        String str = meta.getMethod().toGenericString()
-            + SymbolConstant.WELL_NO
-            + meta.getTopic()
-            + SymbolConstant.WELL_NO
-            + meta.getTag();
-
-        return RocketConstant.ROCKET
-            + SymbolConstant.HORIZONTAL_LINE + meta.getCluster()
-            + SymbolConstant.HORIZONTAL_LINE + meta.getGroup()
-            + SymbolConstant.HORIZONTAL_LINE + SecureUtil.md5(str);
     }
 }

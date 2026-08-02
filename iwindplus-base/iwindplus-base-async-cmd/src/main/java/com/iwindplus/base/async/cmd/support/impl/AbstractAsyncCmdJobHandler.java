@@ -11,10 +11,10 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.iwindplus.base.async.cmd.domain.bo.AsyncCmdBO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSearchDTO;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdPageVO;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdJobHandler;
 import java.util.ArrayList;
@@ -43,7 +43,7 @@ public abstract class AbstractAsyncCmdJobHandler implements AsyncCmdJobHandler {
      *
      * @param entityList 集合
      */
-    protected abstract void doExecute(List<AsyncCmdBO> entityList);
+    protected abstract void doExecute(List<AsyncCmdVO> entityList);
 
     /**
      * 获取查询参数.
@@ -58,7 +58,7 @@ public abstract class AbstractAsyncCmdJobHandler implements AsyncCmdJobHandler {
         param.setEnv(SpringUtil.getActiveProfile());
         param.setCurrent(shardingIndex + 1);
         param.setSize(asyncCmdService.getSize());
-        List<AsyncCmdBO> list = this.list(param);
+        List<AsyncCmdVO> list = this.list(param);
 
         log.info("任务={} 当前页={} 每页条数={} 结果总数={}",
             param.getTaskName(), param.getCurrent(),
@@ -72,11 +72,11 @@ public abstract class AbstractAsyncCmdJobHandler implements AsyncCmdJobHandler {
         proxy.doExecute(list);
     }
 
-    private List<AsyncCmdBO> list(AsyncCmdSearchDTO param) {
-        List<AsyncCmdBO> list = new ArrayList<>(10);
+    private List<AsyncCmdVO> list(AsyncCmdSearchDTO param) {
+        List<AsyncCmdVO> list = new ArrayList<>(10);
         IPage<AsyncCmdPageVO> page = this.asyncCmdService.page(param);
         if (Objects.nonNull(page) && CollUtil.isNotEmpty(page.getRecords())) {
-            list.addAll(BeanUtil.copyToList(page.getRecords(), AsyncCmdBO.class));
+            list.addAll(BeanUtil.copyToList(page.getRecords(), AsyncCmdVO.class));
         }
         return list;
     }

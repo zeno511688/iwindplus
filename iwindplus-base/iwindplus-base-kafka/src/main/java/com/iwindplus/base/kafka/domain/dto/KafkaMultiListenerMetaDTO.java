@@ -27,6 +27,11 @@ import lombok.experimental.SuperBuilder;
 public class KafkaMultiListenerMetaDTO implements Serializable {
 
     /**
+     * 监听器ID
+     */
+    private String listenerId;
+
+    /**
      * 监听器bean
      */
     private Object bean;

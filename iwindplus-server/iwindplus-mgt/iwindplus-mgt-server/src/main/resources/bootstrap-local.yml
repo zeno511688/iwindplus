@@ -317,6 +317,15 @@ dynamictp:
       threadNamePrefix: kafkaLagTask
       platformIds: [ 1 ]
       runTimeout: 5000
+    - threadPoolName: disruptorTaskExecutor
+      threadPoolAliasName: disruptor线程池
+      executorType: eager
+      corePoolSize: 16
+      maximumPoolSize: 32
+      queueCapacity: 100
+      threadNamePrefix: disruptorTask
+      runTimeout: 5000
+      platformIds: [ 1 ]
 spring:
   cloud:
     circuitbreaker:

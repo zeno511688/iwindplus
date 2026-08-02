@@ -7,8 +7,9 @@
 
 package com.iwindplus.base.async.cmd.executor;
 
-import com.iwindplus.base.async.cmd.domain.bo.AsyncCmdExecutorBO;
-import com.iwindplus.base.async.cmd.domain.bo.AsyncCmdExecutorBaseBO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGroupSubmitDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubmitVO;
 
 /**
  * 异步命令执行器接口.
@@ -19,17 +20,34 @@ import com.iwindplus.base.async.cmd.domain.bo.AsyncCmdExecutorBaseBO;
 public interface AsyncCmdExecutor {
 
     /**
-     * 提交任务.
+     * 提交任务（无子任务）.
      *
      * @param entity 对象
+     * @return AsyncCmdSubmitVO
      */
-    void submit(AsyncCmdExecutorBO entity);
+    AsyncCmdSubmitVO submit(AsyncCmdSubmitDTO entity);
+
+    /**
+     * 提交任务（带子任务）.
+     *
+     * @param entity 对象
+     * @return AsyncCmdSubmitVO
+     */
+    AsyncCmdSubmitVO submitGroup(AsyncCmdGroupSubmitDTO entity);
+
+    /**
+     * 移除任务.
+     *
+     * @param id 主键
+     * @return boolean
+     */
+    boolean removeById(Long id);
 
     /**
      * 通过业务流水号移除任务.
      *
-     * @param entity 对象
+     * @param bizNumber 业务流水号
      * @return boolean
      */
-    boolean removeByCondition(AsyncCmdExecutorBaseBO entity);
+    boolean removeByBizNumber(String bizNumber);
 }

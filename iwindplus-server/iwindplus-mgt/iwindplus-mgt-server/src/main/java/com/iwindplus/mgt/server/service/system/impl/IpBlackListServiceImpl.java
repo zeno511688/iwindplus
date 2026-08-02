@@ -13,7 +13,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.google.common.collect.ImmutableMap;
-import com.iwindplus.base.async.cmd.domain.bo.AsyncCmdExecutorBO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
 import com.iwindplus.base.async.cmd.executor.AsyncCmdExecutor;
 import com.iwindplus.base.domain.dto.MessageBaseDTO;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
@@ -224,7 +224,7 @@ public class IpBlackListServiceImpl implements IpBlackListService {
         messageDTO.setData(ipBlackListChangeDTO);
         final String content = JacksonUtil.toJsonStr(messageDTO);
 
-        final AsyncCmdExecutorBO build = AsyncCmdExecutorBO.builder()
+        final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
             .bizType("IP_BLACK_LIST")
             .eventType("IP_BLACK_PUSH")
             .bizNumber(IdUtil.fastSimpleUUID())

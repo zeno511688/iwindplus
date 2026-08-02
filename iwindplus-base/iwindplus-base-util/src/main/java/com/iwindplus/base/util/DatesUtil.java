@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.util;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateTime;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -152,6 +154,7 @@ public class DatesUtil extends DateUtil {
             DateField.WEEK_OF_YEAR);
         return datesBetween.stream().map(p -> buildRangeString(DateUtil.beginOfWeek(p), DateUtil.endOfWeek(p), "~")).toList();
     }
+
     private static String buildRangeString(DateTime start, DateTime end, String symbol) {
         return DateUtil.format(start, DatePattern.NORM_DATE_PATTERN) + symbol + DateUtil.format(end, DatePattern.NORM_DATE_PATTERN);
     }
@@ -232,13 +235,36 @@ public class DatesUtil extends DateUtil {
     }
 
     /**
+     * 获取下一次重试时间.
+     *
+     * @param baseTime   基准时间
+     * @param frequency  时间频率字符串，例如 "5s,10s,20s,30s,1m,30m,1h"
+     * @param retryCount 当前重试次数
+     * @return LocalDateTime
+     */
+    public static LocalDateTime getNextRetryTime(LocalDateTime baseTime, String frequency, Integer retryCount) {
+        baseTime = Optional.ofNullable(baseTime).orElse(LocalDateTime.now());
+        retryCount = Optional.ofNullable(retryCount).orElse(0);
+
+        final List<LocalDateTime> times = DatesUtil
+            .convertFrequencyToLocalDateTime(baseTime, frequency);
+        if (CollUtil.isEmpty(times)) {
+            return baseTime.plusSeconds(5);
+        }
+
+        // 超过最大次数，取最后一个
+        int index = Math.min(Math.max(0, retryCount), times.size() - 1);
+        return times.get(index);
+    }
+
+    /**
      * 将时间频率字符串转换为LocalDateTime。
      *
      * @param baseTime  基准时间
      * @param frequency 时间频率字符串，例如 "5s,10s,20s,30s,1m,30m,1h"
      * @return List<LocalDateTime>
      */
-    public static List<LocalDateTime> convertFrequencyToLocalDateTime(LocalDateTime baseTime, String frequency) {
+    private static List<LocalDateTime> convertFrequencyToLocalDateTime(LocalDateTime baseTime, String frequency) {
         if (CharSequenceUtil.isEmpty(frequency)) {
             return Collections.emptyList();
         }
@@ -247,7 +273,7 @@ public class DatesUtil extends DateUtil {
         List<LocalDateTime> result = new ArrayList<>(10);
         for (String freq : frequencies) {
             final String digitStr = freq.replaceAll("[^\\d]", "");
-            if(CharSequenceUtil.isBlank(digitStr)) {
+            if (CharSequenceUtil.isBlank(digitStr)) {
                 throw new IllegalArgumentException("Unsupported frequency format: " + freq);
             }
             long amount = Long.parseLong(digitStr);

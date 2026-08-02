@@ -34,5 +34,9 @@
             <groupId>org.dromara.dynamictp</groupId>
             <artifactId>dynamic-tp-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-web</artifactId>
+        </dependency>
     </dependencies>
 </project>

@@ -146,7 +146,7 @@ public class TccGlobalTxServiceImpl implements TccGlobalTxService {
         page.setOptimizeCountSql(Boolean.FALSE);
         page.setOptimizeJoinOfCountSql(Boolean.FALSE);
         LambdaQueryWrapper<TccGlobalTxDO> queryWrapper = Wrappers.lambdaQuery(TccGlobalTxDO.class)
-            .orderByDesc(TccGlobalTxDO::getModifiedTime);
+            .orderByAsc(TccGlobalTxDO::getId);
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(TccGlobalTxDO::getStatus, entity.getStatus());
         }

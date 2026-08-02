@@ -7,9 +7,9 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
-import com.iwindplus.base.async.cmd.domain.bo.AsyncCmdBO;
 import com.iwindplus.base.async.cmd.domain.enums.DispatchModeEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdBizProcessor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +39,7 @@ public class AsyncCmdDispatchHandlerAsync extends AbstractAsyncCmdDispatchHandle
     }
 
     @Override
-    protected void doExecute(AsyncCmdBO entity) {
+    protected void doExecute(AsyncCmdVO entity) {
         asyncCmdBizProcessor.execute(entity);
     }
 }

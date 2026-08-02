@@ -7,9 +7,15 @@
 
 package com.iwindplus.base.kafka.support.impl;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.text.CharSequenceUtil;
+import cn.hutool.crypto.SecureUtil;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
+import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
+import com.iwindplus.base.kafka.domain.dto.KafkaConsumerKeyDTO;
 import com.iwindplus.base.kafka.domain.dto.KafkaMultiListenerMetaDTO;
 import com.iwindplus.base.kafka.support.KafkaListenerInvoker;
 import com.iwindplus.base.util.JacksonUtil;
@@ -19,7 +25,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -62,24 +74,38 @@ public class KafkaListenerInvokerImpl implements KafkaListenerInvoker, Disposabl
             .build();
 
     /**
-     * 预热缓存.
+     * 监听器元数据缓存. listenerId -> KafkaMultiListenerMetaDTO
+     */
+    private final Cache<String, KafkaMultiListenerMetaDTO> metaCache =
+        Caffeine.newBuilder()
+            .maximumSize(2048)
+            .build();
+
+    @Override
+    public List<KafkaMultiListenerMetaDTO> listGroupMergePreWarm(List<KafkaMultiListenerMetaDTO> metas) {
+        if (CollUtil.isEmpty(metas)) {
+            return Collections.emptyList();
+        }
+
+        final List<KafkaMultiListenerMetaDTO> list = listGroupMergeData(metas);
+        if (CollUtil.isEmpty(list)) {
+            return Collections.emptyList();
+        }
+
+        preWarmData(list);
+
+        return list;
+    }
+
+    /**
+     * 根据listenerId获取监听器元数据.
      *
-     * @param metas listener元数据
+     * @param listenerId listenerId
+     * @return 监听器元数据，不存在时返回null
      */
     @Override
-    public void preWarm(List<KafkaMultiListenerMetaDTO> metas) {
-        metas.forEach(meta -> {
-            Method method = meta.getMethod();
-            invokerCache.get(method,
-                m -> createInvoker(m, meta.getBean()));
-            argCache.get(method, this::buildArgBuilders);
-            warmReader(method);
-        });
-
-        log.info(
-            "KafkaListenerInvoker cache warm success,size={}",
-            metas.size()
-        );
+    public KafkaMultiListenerMetaDTO getMeta(String listenerId) {
+        return metaCache.getIfPresent(listenerId);
     }
 
     /**
@@ -433,5 +459,89 @@ public class KafkaListenerInvokerImpl implements KafkaListenerInvoker, Disposabl
 
         Object invoke(Object[] args)
             throws Throwable;
+    }
+
+    private void preWarmData(List<KafkaMultiListenerMetaDTO> list) {
+        Set<Method> warmedReaders = new HashSet<>();
+
+        list.stream().forEach(meta -> {
+            Method method = meta.getMethod();
+
+            invokerCache.get(
+                method,
+                m -> createInvoker(
+                    m,
+                    meta.getBean()
+                )
+            );
+
+            argCache.get(
+                method,
+                this::buildArgBuilders
+            );
+
+            //  reader只需要预热一次
+            if (warmedReaders.add(method)) {
+                warmReader(method);
+            }
+
+            // 缓存元数据，使用listenerId作为key
+            metaCache.put(meta.getListenerId(), meta);
+        });
+    }
+
+    private List<KafkaMultiListenerMetaDTO> listGroupMergeData(List<KafkaMultiListenerMetaDTO> entities) {
+        return entities.stream()
+            .collect(
+                Collectors.groupingBy(
+                    entity ->
+                        new KafkaConsumerKeyDTO(
+                            entity.getCluster(),
+                            entity.getGroup()
+                        )
+                )
+            )
+            .values()
+            .stream()
+            .filter(CollUtil::isNotEmpty)
+            .map(metas -> {
+                String[] topics =
+                    metas.stream()
+                        .flatMap(meta ->
+                            Arrays.stream(
+                                Optional.ofNullable(meta.getTopics())
+                                    .orElse(new String[0])
+                            )
+                        )
+                        .filter(CharSequenceUtil::isNotBlank)
+                        .distinct()
+                        .toArray(String[]::new);
+
+                KafkaMultiListenerMetaDTO first =
+                    metas.get(0);
+
+                KafkaMultiListenerMetaDTO data =
+                    KafkaMultiListenerMetaDTO.builder()
+                        .bean(first.getBean())
+                        .method(first.getMethod())
+                        .cluster(first.getCluster())
+                        .group(first.getGroup())
+                        .topics(topics)
+                        .build();
+
+                data.setListenerId(buildId(data));
+                return data;
+            }).toList();
+    }
+
+    private String buildId(KafkaMultiListenerMetaDTO meta) {
+        String str = meta.getMethod().toGenericString()
+            + SymbolConstant.WELL_NO
+            + String.join(SymbolConstant.COMMA, meta.getTopics());
+
+        return KafkaConstant.KAFKA
+            + SymbolConstant.HORIZONTAL_LINE + meta.getCluster()
+            + SymbolConstant.HORIZONTAL_LINE + meta.getGroup()
+            + SymbolConstant.HORIZONTAL_LINE + SecureUtil.md5(str);
     }
 }

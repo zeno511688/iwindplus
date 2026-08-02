@@ -7,23 +7,33 @@
 
 package com.iwindplus.base.async.cmd;
 
+import com.iwindplus.base.async.cmd.dal.mapper.AsyncCmdSubMapper;
 import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdRepository;
+import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdSubRepository;
 import com.iwindplus.base.async.cmd.domain.constant.AsyncCmdConstant;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.executor.AsyncCmdExecutor;
 import com.iwindplus.base.async.cmd.executor.impl.AsyncCmdExecutorImpl;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdDispatchHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdJobHandlerStrategyFactory;
+import com.iwindplus.base.async.cmd.factory.AsyncCmdSubTaskHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdTaskHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.jobhandler.AsyncCmdJob;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
+import com.iwindplus.base.async.cmd.service.AsyncCmdSubService;
 import com.iwindplus.base.async.cmd.service.impl.AsyncCmdServiceImpl;
+import com.iwindplus.base.async.cmd.service.impl.AsyncCmdSubServiceImpl;
 import com.iwindplus.base.async.cmd.support.AsyncCmdBizProcessor;
 import com.iwindplus.base.async.cmd.support.AsyncCmdDispatchHandler;
+import com.iwindplus.base.async.cmd.support.AsyncCmdExecuteHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdJobHandler;
+import com.iwindplus.base.async.cmd.support.AsyncCmdStateSupport;
+import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdDispatchHandlerAsync;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdDispatchHandlerCenter;
+import com.iwindplus.base.async.cmd.support.impl.AsyncCmdExecuteGroupHandler;
+import com.iwindplus.base.async.cmd.support.impl.AsyncCmdExecuteMainHandler;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdJobResetHandler;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdJobRetryHandler;
 import jakarta.annotation.PostConstruct;
@@ -63,16 +73,18 @@ public class AsyncCmdConfiguration {
      * @param asyncCmdService                        asyncCmdService
      * @param asyncCmdDispatchHandlerStrategyFactory asyncCmdDispatchHandlerStrategyFactory
      * @param asyncCmdTaskHandlerStrategyFactory     asyncCmdTaskHandlerStrategyFactory
+     * @param asyncCmdSubTaskHandlerStrategyFactory  asyncCmdSubTaskHandlerStrategyFactory
      * @return AsyncCmdExecutor
      */
     @Bean
     public AsyncCmdExecutor asyncCmdExecutor(
         AsyncCmdService asyncCmdService,
         AsyncCmdDispatchHandlerStrategyFactory asyncCmdDispatchHandlerStrategyFactory,
-        AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory) {
+        AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory,
+        AsyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory) {
         AsyncCmdExecutor asyncCmdExecutor = new AsyncCmdExecutorImpl(
             asyncCmdService, asyncCmdDispatchHandlerStrategyFactory,
-            asyncCmdTaskHandlerStrategyFactory);
+            asyncCmdTaskHandlerStrategyFactory, asyncCmdSubTaskHandlerStrategyFactory);
         log.info("AsyncCmdExecutor={}", asyncCmdExecutor);
         return asyncCmdExecutor;
     }
@@ -80,99 +92,213 @@ public class AsyncCmdConfiguration {
     /**
      * 创建 AsyncCmdRepository.
      *
+     * @param property          property
+     * @param asyncCmdSubMapper asyncCmdSubMapper
      * @return AsyncCmdRepository
      */
     @Bean
-    public AsyncCmdRepository asyncCmdRepository() {
-        AsyncCmdRepository asyncCmdRepository = new AsyncCmdRepository();
+    public AsyncCmdRepository asyncCmdRepository(
+        AsyncCmdProperty property,
+        AsyncCmdSubMapper asyncCmdSubMapper) {
+        AsyncCmdRepository asyncCmdRepository = new AsyncCmdRepository(property, asyncCmdSubMapper);
         log.info("AsyncCmdRepository={}", asyncCmdRepository);
         return asyncCmdRepository;
     }
 
     /**
-     * 创建 AsyncCMdService.
+     * 创建 AsyncCmdSubRepository.
      *
-     * @param property             property
-     * @param asyncCmdRepository   asyncCmdRepository
-     * @param asyncCmdTaskExecutor asyncCmdTaskExecutor
+     * @return AsyncCmdSubRepository
+     */
+    @Bean
+    public AsyncCmdSubRepository asyncCmdSubRepository() {
+        AsyncCmdSubRepository asyncCmdSubRepository = new AsyncCmdSubRepository();
+        log.info("AsyncCmdSubRepository={}", asyncCmdSubRepository);
+        return asyncCmdSubRepository;
+    }
+
+    /**
+     * 创建 AsyncCmdService.
+     *
+     * @param property              property
+     * @param asyncCmdRepository    asyncCmdRepository
+     * @param asyncCmdSubRepository asyncCmdSubRepository
+     * @param asyncCmdTaskExecutor  asyncCmdTaskExecutor
+     * @param transactionTemplate   transactionTemplate
      * @return AsyncCmdService
      */
     @Bean
     public AsyncCmdService asyncCmdService(
         AsyncCmdProperty property,
         AsyncCmdRepository asyncCmdRepository,
-        DtpExecutor asyncCmdTaskExecutor) {
+        AsyncCmdSubRepository asyncCmdSubRepository,
+        DtpExecutor asyncCmdTaskExecutor,
+        TransactionTemplate transactionTemplate) {
         AsyncCmdService asyncCmdService = new AsyncCmdServiceImpl(
-            property, asyncCmdRepository, asyncCmdTaskExecutor);
+            property, asyncCmdRepository, asyncCmdSubRepository,
+            asyncCmdTaskExecutor, transactionTemplate);
         log.info("AsyncCmdService={}", asyncCmdService);
         return asyncCmdService;
     }
 
     /**
-     * 创建 AsyncCmdJobStrategyFactory.
+     * 创建 AsyncCmdSubService.
      *
-     * @param executorProvider 执行器提供者
-     * @return AsyncCmdJobStrategyFactory
+     * @param asyncCmdSubRepository asyncCmdSubRepository
+     * @return AsyncCmdSubService
      */
     @Bean
-    public AsyncCmdJobHandlerStrategyFactory asyncCmdJobStrategyFactory(
+    public AsyncCmdSubService asyncCmdSubService(
+        AsyncCmdSubRepository asyncCmdSubRepository) {
+        AsyncCmdSubService asyncCmdSubService = new AsyncCmdSubServiceImpl(
+            asyncCmdSubRepository);
+        log.info("AsyncCmdSubService={}", asyncCmdSubService);
+        return asyncCmdSubService;
+    }
+
+    /**
+     * 创建 AsyncCmdJobHandlerStrategyFactory.
+     *
+     * @param executorProvider 执行器提供者
+     * @return AsyncCmdJobHandlerStrategyFactory
+     */
+    @Bean
+    public AsyncCmdJobHandlerStrategyFactory asyncCmdJobHandlerStrategyFactory(
         ObjectProvider<AsyncCmdJobHandler> executorProvider) {
-        AsyncCmdJobHandlerStrategyFactory asyncCmdJobStrategyFactory = new AsyncCmdJobHandlerStrategyFactory(executorProvider);
-        log.info("AsyncCmdJobStrategyFactory={}", asyncCmdJobStrategyFactory);
-        return asyncCmdJobStrategyFactory;
+        AsyncCmdJobHandlerStrategyFactory asyncCmdJobHandlerStrategyFactory = new AsyncCmdJobHandlerStrategyFactory(executorProvider);
+        log.info("AsyncCmdJobHandlerStrategyFactory={}", asyncCmdJobHandlerStrategyFactory);
+        return asyncCmdJobHandlerStrategyFactory;
     }
 
     /**
-     * 创建 AsyncCmdDispatchStrategyFactory.
+     * 创建 AsyncCmdDispatchHandlerStrategyFactory.
      *
      * @param executorProvider 执行器提供者
-     * @return AsyncCmdDispatchStrategyFactory
+     * @return AsyncCmdDispatchHandlerStrategyFactory
      */
     @Bean
-    public AsyncCmdDispatchHandlerStrategyFactory asyncCmdDispatchStrategyFactory(
+    public AsyncCmdDispatchHandlerStrategyFactory asyncCmdDispatchHandlerStrategyFactory(
         ObjectProvider<AsyncCmdDispatchHandler> executorProvider) {
-        AsyncCmdDispatchHandlerStrategyFactory asyncCmdDispatchStrategyFactory = new AsyncCmdDispatchHandlerStrategyFactory(executorProvider);
-        log.info("AsyncCmdDispatchStrategyFactory={}", asyncCmdDispatchStrategyFactory);
-        return asyncCmdDispatchStrategyFactory;
+        AsyncCmdDispatchHandlerStrategyFactory asyncCmdDispatchHandlerStrategyFactory = new AsyncCmdDispatchHandlerStrategyFactory(executorProvider);
+        log.info("AsyncCmdDispatchHandlerStrategyFactory={}", asyncCmdDispatchHandlerStrategyFactory);
+        return asyncCmdDispatchHandlerStrategyFactory;
     }
 
     /**
-     * 创建 AsyncCmdExecutorStrategyFactory.
+     * 创建 AsyncCmdTaskHandlerStrategyFactory.
      *
      * @param executorProvider 执行器提供者
-     * @return AsyncCmdExecutorStrategyFactory
+     * @return AsyncCmdTaskHandlerStrategyFactory
      */
     @Bean
-    public AsyncCmdTaskHandlerStrategyFactory asyncCmdExecutorStrategyFactory(
+    public AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory(
         ObjectProvider<AsyncCmdTaskHandler> executorProvider) {
-        AsyncCmdTaskHandlerStrategyFactory asyncCmdExecutorStrategyFactory = new AsyncCmdTaskHandlerStrategyFactory(executorProvider);
-        log.info("AsyncCmdExecutorStrategyFactory={}", asyncCmdExecutorStrategyFactory);
-        return asyncCmdExecutorStrategyFactory;
+        AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory =
+            new AsyncCmdTaskHandlerStrategyFactory(executorProvider);
+        log.info("AsyncCmdTaskHandlerStrategyFactory={}", asyncCmdTaskHandlerStrategyFactory);
+        return asyncCmdTaskHandlerStrategyFactory;
+    }
+
+    /**
+     * 创建 AsyncCmdSubTaskHandlerStrategyFactory.
+     *
+     * @param executorProvider 执行器提供者
+     * @return AsyncCmdSubTaskHandlerStrategyFactory
+     */
+    @Bean
+    public AsyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory(
+        ObjectProvider<AsyncCmdSubTaskHandler> executorProvider) {
+        AsyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory =
+            new AsyncCmdSubTaskHandlerStrategyFactory(executorProvider);
+        log.info("AsyncCmdSubTaskHandlerStrategyFactory={}", asyncCmdSubTaskHandlerStrategyFactory);
+        return asyncCmdSubTaskHandlerStrategyFactory;
+    }
+
+    /**
+     * 创建 AsyncCmdStateSupport.
+     *
+     * @param property            property
+     * @param asyncCmdService     asyncCmdService
+     * @param asyncCmdSubService  asyncCmdSubService
+     * @param transactionTemplate transactionTemplate
+     * @return AsyncCmdStateSupport
+     */
+    @Bean
+    public AsyncCmdStateSupport asyncCmdStateSupport(
+        AsyncCmdProperty property,
+        AsyncCmdService asyncCmdService,
+        AsyncCmdSubService asyncCmdSubService,
+        TransactionTemplate transactionTemplate) {
+        AsyncCmdStateSupport asyncCmdStateSupport =
+            new AsyncCmdStateSupport(property, asyncCmdService, asyncCmdSubService, transactionTemplate);
+        log.info("AsyncCmdStateSupport={}", asyncCmdStateSupport);
+        return asyncCmdStateSupport;
+    }
+
+    /**
+     * 创建 AsyncCmdExecuteMainHandler.
+     *
+     * @param asyncCmdTaskHandlerStrategyFactor asyncCmdTaskHandlerStrategyFactor
+     * @param asyncCmdStateSupport              asyncCmdStateSupport
+     * @param asyncCmdService                   asyncCmdService
+     * @return AsyncCmdExecuteMainHandler
+     */
+    @Bean
+    public AsyncCmdExecuteMainHandler asyncCmdExecuteMainHandler(
+        AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactor,
+        AsyncCmdStateSupport asyncCmdStateSupport,
+        AsyncCmdService asyncCmdService) {
+        AsyncCmdExecuteMainHandler asyncCmdExecuteMainHandler = new AsyncCmdExecuteMainHandler(
+            asyncCmdTaskHandlerStrategyFactor, asyncCmdStateSupport, asyncCmdService);
+        log.info("AsyncCmdExecuteMainHandler={}", asyncCmdExecuteMainHandler);
+        return asyncCmdExecuteMainHandler;
+    }
+
+    /**
+     * 创建 AsyncCmdExecuteGroupHandler.
+     *
+     * @param asyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory
+     * @param asyncCmdStateSupport               asyncCmdStateSupport
+     * @param asyncCmdService                    asyncCmdService
+     * @return AsyncCmdExecuteGroupHandler
+     */
+    @Bean
+    public AsyncCmdExecuteGroupHandler asyncCmdExecuteGroupHandler(
+        AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory,
+        AsyncCmdStateSupport asyncCmdStateSupport,
+        AsyncCmdService asyncCmdService,
+        AsyncCmdSubService asyncCmdSubService,
+        AsyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory) {
+        AsyncCmdExecuteGroupHandler asyncCmdExecuteGroupHandler = new AsyncCmdExecuteGroupHandler(
+            asyncCmdTaskHandlerStrategyFactory, asyncCmdStateSupport, asyncCmdService,
+            asyncCmdSubService, asyncCmdSubTaskHandlerStrategyFactory);
+        log.info("AsyncCmdExecuteGroupHandler={}", asyncCmdExecuteGroupHandler);
+        return asyncCmdExecuteGroupHandler;
     }
 
     /**
      * 创建 AsyncCmdBizProcessor.
      *
+     * @param property                    property
+     * @param asyncCmdService             asyncCmdService
+     * @param asyncCmdSubService          asyncCmdSubService
+     * @param asyncCmdExecuteMainHandler  asyncCmdExecuteMainHandler
+     * @param asyncCmdExecuteGroupHandler asyncCmdExecuteGroupHandler
+     * @param asyncCmdTaskExecutor        asyncCmdTaskExecutor
      * @return AsyncCmdBizProcessor
-     */
-    /**
-     * @param property                           property
-     * @param asyncCmdService                    asyncCmdService
-     * @param asyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory
-     * @param asyncCmdTaskExecutor               asyncCmdTaskExecutor
-     * @param transactionTemplate                transactionTemplate
-     * @return
      */
     @Bean
     public AsyncCmdBizProcessor asyncCmdBizProcessor(
         AsyncCmdProperty property,
         AsyncCmdService asyncCmdService,
-        AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory,
-        DtpExecutor asyncCmdTaskExecutor,
-        TransactionTemplate transactionTemplate) {
+        AsyncCmdSubService asyncCmdSubService,
+        AsyncCmdStateSupport asyncCmdStateSupport,
+        AsyncCmdExecuteHandler asyncCmdExecuteMainHandler,
+        AsyncCmdExecuteHandler asyncCmdExecuteGroupHandler,
+        DtpExecutor asyncCmdTaskExecutor) {
         AsyncCmdBizProcessor asyncCmdBizProcessor = new AsyncCmdBizProcessor(
-            property, asyncCmdService, asyncCmdTaskHandlerStrategyFactory,
-            asyncCmdTaskExecutor, transactionTemplate);
+            property, asyncCmdService, asyncCmdSubService, asyncCmdStateSupport,
+            asyncCmdExecuteMainHandler, asyncCmdExecuteGroupHandler, asyncCmdTaskExecutor);
         log.info("AsyncCmdBizProcessor={}", asyncCmdBizProcessor);
         return asyncCmdBizProcessor;
     }
@@ -235,8 +361,8 @@ public class AsyncCmdConfiguration {
     /**
      * 创建 AsyncCmdJobResetHandler.
      *
-     * @param property             property
-     * @param asyncCmdService      asyncCmdService
+     * @param property        property
+     * @param asyncCmdService asyncCmdService
      * @return AsyncCmdJobResetHandler
      */
     @Bean

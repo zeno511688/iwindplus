@@ -45,9 +45,20 @@ public class DtxJob {
         log.info("分布式事务任务，参数={}，开始时间={}", jobArgs.getJobParams()
             , DatesUtil.parseDate(beginMillis, DatePattern.NORM_DATETIME_MS_PATTERN));
 
+        int failed = 0;
         final DtxJobEnum[] jobEnums = DtxJobEnum.values();
-        for (DtxJobEnum job : jobEnums) {
-            factory.getJobHandler(job).execute(0);
+        for (DtxJobEnum entity : jobEnums) {
+            try {
+                factory.getJobHandler(entity).execute(0);
+            } catch (Exception e) {
+                failed++;
+
+                log.error("分布式事务任务，任务={}，失败", entity, e);
+            }
+        }
+
+        if (failed > 0) {
+            return ExecuteResult.failure(false, "异步命令部分失败，failed=" + failed);
         }
 
         final long endTimeMillis = System.currentTimeMillis();

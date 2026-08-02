@@ -22,11 +22,12 @@ import org.springframework.kafka.support.Acknowledgment;
 public interface KafkaListenerInvoker {
 
     /**
-     * 预热，创建参数解析器.
+     * 分组合并数据，预热
      *
-     * @param metas kafka监听器元数据集合
+     * @param metas 元数据集合
+     * @return List<KafkaMultiListenerMetaDTO>
      */
-    void preWarm(List<KafkaMultiListenerMetaDTO> metas);
+    List<KafkaMultiListenerMetaDTO> listGroupMergePreWarm(List<KafkaMultiListenerMetaDTO> metas);
 
     /**
      * 调用监听器.
@@ -41,4 +42,13 @@ public interface KafkaListenerInvoker {
         List<ConsumerRecord<String, Object>> records,
         Acknowledgment ack,
         Consumer<?, ?> consumer);
+
+    /**
+     * 根据listenerId获取监听器元数据.
+     *
+     * @param listenerId listenerId
+     * @return 监听器元数据，不存在时返回null
+     */
+    KafkaMultiListenerMetaDTO getMeta(String listenerId);
 }
+

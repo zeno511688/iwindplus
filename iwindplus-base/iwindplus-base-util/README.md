@@ -38,5 +38,6 @@
     SensitiveUtil -- 脱敏工具类
     TemplateUtil -- freemark模板变量替换工具类
     TreesUtil -- 树形工具类
+    TransactionUtil -- 事务工具类
     ValidUtil -- validate校验工具类（支持国际化，分组）
     YubikeyUtil -- yubikey 校验工具类

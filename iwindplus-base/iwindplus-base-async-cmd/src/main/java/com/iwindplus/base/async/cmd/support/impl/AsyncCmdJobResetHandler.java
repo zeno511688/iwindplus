@@ -7,21 +7,17 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
-import cn.hutool.core.collection.CollUtil;
-import com.iwindplus.base.async.cmd.domain.bo.AsyncCmdBO;
-import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdEditDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSearchDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSearchDTO.AsyncCmdSearchDTOBuilder;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdJobEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty.RetryConfig;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 异步命令重置job助手策略实现类.
@@ -44,33 +40,42 @@ public class AsyncCmdJobResetHandler extends AbstractAsyncCmdJobHandler {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    protected void doExecute(List<AsyncCmdBO> entityList) {
+    protected void doExecute(List<AsyncCmdVO> entityList) {
         final RetryConfig retryConfig = super.getProperty().getRetry();
         final boolean unlimited = Boolean.TRUE.equals(retryConfig.getEnabledUnlimitedRetry());
         final int maxAttempts = retryConfig.getMaxAttempts();
 
-        List<AsyncCmdEditDTO> entities = new ArrayList<>(10);
-        entityList.forEach(entity -> {
-            boolean exceed = entity.getRetryCount() > maxAttempts;
-            AsyncCmdEditDTO.AsyncCmdEditDTOBuilder builder = AsyncCmdEditDTO.builder()
-                .id(entity.getId());
-            if (!unlimited && exceed) {
-                // 超过最大次数并且不是无限重试 → 丢弃
-                builder.status(AsyncCmdStatusEnum.DISCARD);
-            } else {
-                // 否则继续执行
-                builder.status(AsyncCmdStatusEnum.TO_BE_EXECUTE);
-            }
-            entities.add(builder.build());
-        });
-
-        if (CollUtil.isEmpty(entities)) {
+        if (entityList.isEmpty()) {
             return;
         }
 
-        log.info("重置任务，size={}", entities.size());
-        super.getAsyncCmdService().editBatch(entities);
+        int reset = 0;
+        int discard = 0;
+        int skipped = 0;
+
+        for (AsyncCmdVO entity : entityList) {
+            boolean exceed = !unlimited && entity.getRetryCount() > maxAttempts;
+            AsyncCmdStatusEnum status = exceed
+                ? AsyncCmdStatusEnum.DISCARD
+                : AsyncCmdStatusEnum.TO_BE_EXECUTE;
+            final boolean result = super.getAsyncCmdService()
+                .editStatusById(entity.getId(), entity.getStatus(), status);
+            if (!result) {
+                skipped++;
+                log.warn("重置任务调过，id={} from={}", entity.getId(), entity.getStatus());
+
+                continue;
+            }
+
+            if (exceed) {
+                discard++;
+            } else {
+                reset++;
+            }
+        }
+
+        log.info("重置任务，size={} reset={}, discard={}, skipped={}",
+            entityList.size(), reset, discard, skipped);
     }
 
     @Override

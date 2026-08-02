@@ -85,6 +85,13 @@ public class AsyncCmdProperty {
     private JobConfig job = new JobConfig();
 
     /**
+     * web接口配置.
+     */
+    @Builder.Default
+    @NestedConfigurationProperty
+    private WebConfig web = new WebConfig();
+
+    /**
      * 重试策略相关属性.
      *
      * @author zengdegui
@@ -112,7 +119,7 @@ public class AsyncCmdProperty {
          * 最大重试次数.
          */
         @Builder.Default
-        private Integer maxAttempts = 15;
+        private Integer maxAttempts = 30;
     }
 
     /**
@@ -132,5 +139,30 @@ public class AsyncCmdProperty {
          */
         @Builder.Default
         private Boolean enabled = Boolean.TRUE;
+    }
+
+
+    /**
+     * web接口相关属性.
+     *
+     * @author zengdegui
+     * @since 2024/4/6
+     */
+    @Data
+    @SuperBuilder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class WebConfig {
+
+        /**
+         * 是否启用.
+         */
+        @Builder.Default
+        private Boolean enabled = Boolean.TRUE;
+
+        /**
+         * 接口路径（不同的服务不同的路径）.
+         */
+        private String path;
     }
 }

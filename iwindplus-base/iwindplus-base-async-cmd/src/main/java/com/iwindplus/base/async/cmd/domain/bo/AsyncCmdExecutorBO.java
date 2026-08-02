@@ -10,6 +10,7 @@ package com.iwindplus.base.async.cmd.domain.bo;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import com.iwindplus.base.util.JacksonUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -47,6 +48,12 @@ public class AsyncCmdExecutorBO extends AsyncCmdExecutorBaseBO {
      */
     @Schema(description = "备注")
     private String remark;
+
+    /**
+     * 子任务列表.
+     */
+    @Schema(description = "子任务列表")
+    private List<AsyncCmdSubExecutorBO> subTasks;
 
     /**
      * 设置数据.

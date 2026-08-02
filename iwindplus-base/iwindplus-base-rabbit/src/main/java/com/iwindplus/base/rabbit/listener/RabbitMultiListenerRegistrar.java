@@ -8,11 +8,7 @@
 package com.iwindplus.base.rabbit.listener;
 
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.crypto.SecureUtil;
-import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.rabbit.core.RabbitClusterManager;
-import com.iwindplus.base.rabbit.domain.constant.RabbitConstant;
-import com.iwindplus.base.rabbit.domain.dto.RabbitConsumerKeyDTO;
 import com.iwindplus.base.rabbit.domain.dto.RabbitMultiListenerMetaDTO;
 import com.iwindplus.base.rabbit.support.RabbitListenerInvoker;
 import com.iwindplus.base.rabbit.support.RabbitMessageHandler;
@@ -22,7 +18,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
@@ -55,14 +50,15 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
 
     @Override
     public void start() {
-        var metas = bpp.getMetadata().stream().map(this::resolve).toList();
+        List<RabbitMultiListenerMetaDTO> metas = bpp.getMetadata().stream().map(this::resolve).toList();
         if (metas.isEmpty()) {
             log.warn("No Rabbit listeners found");
             return;
         }
 
-        listenerInvoker.preWarm(metas);
-        registerAll(metas);
+        final List<RabbitMultiListenerMetaDTO> dataList = listenerInvoker.listGroupMergePreWarm(metas);
+        registerAll(dataList);
+
         running = true;
     }
 
@@ -105,13 +101,9 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
     }
 
     private void registerAll(List<RabbitMultiListenerMetaDTO> metas) {
-        Map<RabbitConsumerKeyDTO, List<RabbitMultiListenerMetaDTO>> grouped = group(metas);
-
         int count = 0;
 
-        for (var entry : grouped.entrySet()) {
-            RabbitMultiListenerMetaDTO meta = merge(entry.getValue());
-
+        for (RabbitMultiListenerMetaDTO meta : metas) {
             register(meta);
 
             count++;
@@ -121,7 +113,7 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
     }
 
     private void register(RabbitMultiListenerMetaDTO meta) {
-        String listenerId = buildId(meta);
+        String listenerId = meta.getListenerId();
         if (containerMap.containsKey(listenerId)) {
             log.warn("Rabbit listener already started, listenerId={}", listenerId);
             return;
@@ -205,27 +197,5 @@ public class RabbitMultiListenerRegistrar implements SmartLifecycle, DisposableB
             .group(group)
             .queues(meta.getQueues())
             .build();
-    }
-
-    private Map<RabbitConsumerKeyDTO, List<RabbitMultiListenerMetaDTO>> group(List<RabbitMultiListenerMetaDTO> metas) {
-        return metas
-            .stream()
-            .collect(Collectors.groupingBy(
-                entity -> new RabbitConsumerKeyDTO(
-                    entity.getCluster(),
-                    entity.getGroup()
-                )
-            ));
-    }
-
-    private String buildId(RabbitMultiListenerMetaDTO meta) {
-        String str = meta.getMethod().toGenericString()
-            + SymbolConstant.WELL_NO
-            + String.join(SymbolConstant.COMMA, meta.getQueues());
-
-        return RabbitConstant.RABBIT
-            + SymbolConstant.HORIZONTAL_LINE + meta.getCluster()
-            + SymbolConstant.HORIZONTAL_LINE + meta.getGroup()
-            + SymbolConstant.HORIZONTAL_LINE + SecureUtil.md5(str);
     }
 }

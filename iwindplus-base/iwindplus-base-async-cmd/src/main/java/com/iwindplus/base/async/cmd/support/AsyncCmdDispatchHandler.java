@@ -7,8 +7,8 @@
 
 package com.iwindplus.base.async.cmd.support;
 
-import com.iwindplus.base.async.cmd.domain.bo.AsyncCmdBO;
 import com.iwindplus.base.async.cmd.domain.enums.DispatchModeEnum;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 
 /**
  * 异步命令调度助手接口.
@@ -30,5 +30,5 @@ public interface AsyncCmdDispatchHandler {
      *
      * @param entity 对象
      */
-    void execute(AsyncCmdBO entity);
+    void execute(AsyncCmdVO entity);
 }

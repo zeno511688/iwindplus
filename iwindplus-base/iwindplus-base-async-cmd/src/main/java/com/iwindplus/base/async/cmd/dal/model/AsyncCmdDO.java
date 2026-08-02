@@ -68,9 +68,9 @@ public class AsyncCmdDO extends DbBaseDO {
     private String bizNumber;
 
     /**
-     * 调度模式（ASYNC：异步，DISPATCH：调度中心，UNKNOWN：未知）.
+     * 调度模式（ASYNC：异步，CENTER：调度中心，UNKNOWN：未知）.
      */
-    @Schema(description = "调度模式（ASYNC：异步，DISPATCH：调度中心，UNKNOWN：未知）")
+    @Schema(description = "调度模式（ASYNC：异步，CENTER：调度中心，UNKNOWN：未知）")
     private DispatchModeEnum dispatchMode;
 
     /**
@@ -109,4 +109,10 @@ public class AsyncCmdDO extends DbBaseDO {
      */
     @Schema(description = "错误信息")
     private String errorMsg;
+
+    /**
+     * 子任务总数.
+     */
+    @Schema(description = "子任务总数")
+    private Integer subTaskCount;
 }

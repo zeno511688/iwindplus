@@ -67,4 +67,13 @@ public enum AsyncCmdStatusEnum implements BaseEnum<Integer> {
     public static List<AsyncCmdStatusEnum> getPendingStatus() {
         return List.of(AsyncCmdStatusEnum.EXECUTE, AsyncCmdStatusEnum.FAILED);
     }
+
+    /**
+     * 获取未完成状态
+     *
+     * @return List<AsyncCmdStatusEnum>
+     */
+    public static List<AsyncCmdStatusEnum> getUnfinishedStatus() {
+        return List.of(AsyncCmdStatusEnum.TO_BE_EXECUTE, AsyncCmdStatusEnum.EXECUTE, AsyncCmdStatusEnum.FAILED);
+    }
 }

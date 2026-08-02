@@ -1,0 +1,83 @@
+/*
+ *
+ *  * Copyright (c) iwindplus Technologies Co., Ltd.2024-2030, All rights reserved.
+ *
+ *
+ */
+
+package com.iwindplus.base.async.cmd.dal.model;
+
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
+import com.iwindplus.base.mybatis.domain.DbBaseDO;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
+/**
+ * 异步命令子表对象.
+ */
+
+/**
+ * 异步命令表.
+ *
+ * @author zengdegui
+ * @since 2025/9/14
+ */
+@TableName(value = "`async_cmd_sub`", autoResultMap = true)
+@Data
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
+@AllArgsConstructor
+public class AsyncCmdSubDO extends DbBaseDO {
+
+    /**
+     * 状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，SUCCESS：成功，FAILED：失败）.
+     */
+    @Schema(description = "状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，SUCCESS：成功，FAILED：失败）")
+    private AsyncCmdStatusEnum status;
+
+    /**
+     * 排序号.
+     */
+    @Schema(description = "排序号")
+    private Integer seq;
+
+    /**
+     * 执行器名称.
+     */
+    @Schema(description = "执行器名称")
+    private String executeName;
+
+    /**
+     * 内容.
+     */
+    @Schema(description = "内容")
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private Map<String, Object> content;
+
+    /**
+     * 重试次数.
+     */
+    @Schema(description = "重试次数")
+    private Integer retryCount;
+
+    /**
+     * 错误信息.
+     */
+    @Schema(description = "错误信息")
+    private String errorMsg;
+
+    /**
+     * 重试次数.
+     */
+    @Schema(description = "异步命令主键")
+    private Long asyncCmdId;
+}

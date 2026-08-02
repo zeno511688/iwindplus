@@ -7,7 +7,7 @@
 
 package com.iwindplus.mgt.server.service.asynccmd;
 
-import com.iwindplus.base.async.cmd.domain.bo.AsyncCmdExecutorBO;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import com.iwindplus.base.kafka.core.KafkaTemplateRouter;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
@@ -34,7 +34,7 @@ public class IpBlackListTaskHandler implements AsyncCmdTaskHandler {
     private final KafkaMultiProperty kafkaProperty;
 
     @Override
-    public void execute(AsyncCmdExecutorBO entity) {
+    public void execute(AsyncCmdVO entity) {
         final Map<String, Object> contentMap = entity.getContent();
         final String content = contentMap.get("content").toString();
 

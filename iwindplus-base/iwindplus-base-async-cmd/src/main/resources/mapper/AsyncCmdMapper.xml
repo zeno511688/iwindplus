@@ -9,21 +9,24 @@
     </sql>
 
     <delete id="deleteDataByIds">
-        delete from async_cmd
-        where id in
+        delete ac, acs
+        from async_cmd ac
+        left join async_cmd_sub acs on acs.async_cmd_id = ac.id
+        where ac.id in
         <include refid="inSql"/>
     </delete>
 
     <delete id="deleteDataById">
-        delete from async_cmd
-        where id = #{id}
+        delete ac, acs
+        from async_cmd ac
+        left join async_cmd_sub acs on acs.async_cmd_id = ac.id
+        where ac.id = #{id}
     </delete>
 
-    <delete id="deleteByCondition">
-        delete from async_cmd
-        where env = #{env}
-        and biz_type = #{bizType}
-        and event_type = #{eventType}
-        and biz_number = #{bizNumber}
+    <delete id="deleteByBizNumber">
+        delete ac, acs
+        from async_cmd ac
+        left join async_cmd_sub acs on acs.async_cmd_id = ac.id
+        where ac.env = #{env} and ac.biz_number = #{bizNumber}
     </delete>
 </mapper>

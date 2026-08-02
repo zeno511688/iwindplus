@@ -8,8 +8,8 @@
 package com.iwindplus.base.async.cmd.support.impl;
 
 import cn.hutool.extra.spring.SpringUtil;
-import com.iwindplus.base.async.cmd.domain.bo.AsyncCmdBO;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdDispatchHandler;
 import lombok.Getter;
@@ -31,7 +31,7 @@ public abstract class AbstractAsyncCmdDispatchHandler implements AsyncCmdDispatc
     private final AsyncCmdService asyncCmdService;
 
     @Override
-    public void execute(AsyncCmdBO entity) {
+    public void execute(AsyncCmdVO entity) {
         final AbstractAsyncCmdDispatchHandler proxy = SpringUtil.getBean(this.getClass());
         proxy.doExecute(entity);
     }
@@ -41,5 +41,5 @@ public abstract class AbstractAsyncCmdDispatchHandler implements AsyncCmdDispatc
      *
      * @param entity 对象
      */
-    protected abstract void doExecute(AsyncCmdBO entity);
+    protected abstract void doExecute(AsyncCmdVO entity);
 }

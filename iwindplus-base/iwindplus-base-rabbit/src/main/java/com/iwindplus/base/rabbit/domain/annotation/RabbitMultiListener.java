@@ -32,16 +32,16 @@ public @interface RabbitMultiListener {
     String cluster() default "";
 
     /**
+     * 消费组.
+     *
+     * @return String
+     */
+    String group();
+
+    /**
      * 监听队列.
      *
      * @return String[]
      */
     String[] queues();
-
-    /**
-     * 消费组.
-     *
-     * @return String
-     */
-    String group() default "";
 }

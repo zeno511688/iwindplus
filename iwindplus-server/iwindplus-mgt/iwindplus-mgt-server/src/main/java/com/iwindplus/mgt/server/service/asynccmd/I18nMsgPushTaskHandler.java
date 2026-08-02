@@ -9,7 +9,7 @@ package com.iwindplus.mgt.server.service.asynccmd;
 
 import com.alibaba.cloud.nacos.NacosConfigManager;
 import com.alibaba.nacos.api.config.ConfigType;
-import com.iwindplus.base.async.cmd.domain.bo.AsyncCmdExecutorBO;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import com.iwindplus.base.i18n.domain.constant.I18nConstant;
 import java.util.Map;
@@ -32,7 +32,7 @@ public class I18nMsgPushTaskHandler implements AsyncCmdTaskHandler {
     private final Optional<NacosConfigManager> nacosConfigManagerOpt;
 
     @Override
-    public void execute(AsyncCmdExecutorBO entity) {
+    public void execute(AsyncCmdVO entity) {
         final Map<String, Object> contentMap = entity.getContent();
         final String fileName = contentMap.get("fileName").toString();
         final String content = contentMap.get("content").toString();
