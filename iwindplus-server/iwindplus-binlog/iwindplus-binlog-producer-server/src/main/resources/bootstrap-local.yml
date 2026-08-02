@@ -281,6 +281,15 @@ dynamictp:
       runTimeout: 0
       queueTimeout: 0
       platformIds: [ 1 ]
+    - threadPoolName: disruptorTaskExecutor
+      threadPoolAliasName: disruptor线程池
+      executorType: eager
+      corePoolSize: 16
+      maximumPoolSize: 32
+      queueCapacity: 100
+      threadNamePrefix: disruptorTask
+      runTimeout: 5000
+      platformIds: [ 1 ]
 spring:
   cloud:
     circuitbreaker:
