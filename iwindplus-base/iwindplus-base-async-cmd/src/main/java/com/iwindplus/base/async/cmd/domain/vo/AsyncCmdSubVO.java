@@ -74,6 +74,12 @@ public class AsyncCmdSubVO extends DbVersionBaseDTO {
     private String errorMsg;
 
     /**
+     * 耗时.
+     */
+    @Schema(description = "耗时")
+    private Long costTime;
+
+    /**
      * 重试次数.
      */
     @Schema(description = "异步命令主键")

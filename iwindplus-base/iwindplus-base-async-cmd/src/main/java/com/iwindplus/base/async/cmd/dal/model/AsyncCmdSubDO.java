@@ -86,4 +86,10 @@ public class AsyncCmdSubDO extends DbBaseDO {
      */
     @Schema(description = "异步命令主键")
     private Long asyncCmdId;
+
+    /**
+     * 耗时.
+     */
+    @Schema(description = "耗时")
+    private Long costTime;
 }

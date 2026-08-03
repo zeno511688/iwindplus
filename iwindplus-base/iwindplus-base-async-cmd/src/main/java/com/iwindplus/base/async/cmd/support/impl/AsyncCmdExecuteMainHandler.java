@@ -33,16 +33,17 @@ public class AsyncCmdExecuteMainHandler extends AbstractAsyncCmdExecuteHandler {
     @Override
     public void execute(AsyncCmdVO entity) {
         final AsyncCmdTaskHandler handler = this.getTaskHandler(entity.getExecuteName());
+        final long start = System.currentTimeMillis();
 
         try {
             // 执行业务逻辑（无事务）
             handler.execute(entity);
             // 成功
-            this.getAsyncCmdStateSupport().taskSuccess(entity, handler);
+            this.getAsyncCmdStateSupport().taskSuccess(entity, handler, System.currentTimeMillis() - start);
         } catch (Exception ex) {
             log.error("asyncCmd execute failed. id={}", entity.getId(), ex);
             // 失败
-            this.getAsyncCmdStateSupport().taskFail(entity, handler, ex);
+            this.getAsyncCmdStateSupport().taskFail(entity, handler, System.currentTimeMillis() - start, ex);
         }
     }
 }

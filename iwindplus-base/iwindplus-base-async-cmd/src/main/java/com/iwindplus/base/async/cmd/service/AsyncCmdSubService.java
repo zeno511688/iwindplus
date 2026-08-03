@@ -27,12 +27,13 @@ public interface AsyncCmdSubService {
     /**
      * 通过主键修改状态.
      *
-     * @param id   主键
-     * @param from 从状态
-     * @param to   到状态
+     * @param id       主键
+     * @param from     从状态
+     * @param to       到状态
+     * @param costTime 耗时
      * @return boolean
      */
-    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to);
+    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, Long costTime);
 
     /**
      * 通过主键修改状态.
@@ -40,12 +41,13 @@ public interface AsyncCmdSubService {
      * @param id         主键
      * @param from       从状态
      * @param to         到状态
+     * @param costTime   耗时
      * @param errorMsg   错误信息
      * @param retryCount 重试次数
      * @return boolean
      */
     boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        String errorMsg, Integer retryCount);
+        Long costTime, String errorMsg, Integer retryCount);
 
     /**
      * 通过异步命令主键获取子任务数量.

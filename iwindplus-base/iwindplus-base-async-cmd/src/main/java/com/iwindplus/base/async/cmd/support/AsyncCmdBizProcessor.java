@@ -65,12 +65,14 @@ public record AsyncCmdBizProcessor(
             return;
         }
 
+        final long start = System.currentTimeMillis();
         try {
             final long subTaskCount = Optional.of(entity.getSubTaskCount()).orElse(0);
             this.getExecuteHandler(subTaskCount).execute(entity);
         } catch (Exception ex) {
             // 兜底主任务卡在执行中只能等重置状态
-            this.asyncCmdStateSupport.taskFail(entity, null, ex);
+            this.asyncCmdStateSupport.taskFail(entity, null,
+                System.currentTimeMillis() - start, ex);
         }
     }
 

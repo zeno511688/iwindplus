@@ -46,6 +46,7 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
     @Override
     public void execute(AsyncCmdVO entity) {
         final AsyncCmdTaskHandler handler = this.getTaskHandler(entity.getExecuteName());
+        final long start = System.currentTimeMillis();
 
         final List<AsyncCmdSubVO> subEntities = this.asyncCmdSubService.listUnfinished(entity.getId());
         int subTaskSuccessAdvanced = 0;
@@ -60,6 +61,7 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
                     entity.getId(), unfinished, subTaskSuccessAdvanced);
 
                 this.getAsyncCmdStateSupport().taskFail(entity, handler,
+                    System.currentTimeMillis() - start,
                     new RuntimeException("asyncCmd group has unfinished subTask"),
                     subTaskSuccessAdvanced > 0);
                 return;
@@ -67,11 +69,11 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
 
             // 子任务全部成功 -> 主任务收尾业务 -> 主任务置成功
             handler.execute(entity);
-            this.getAsyncCmdStateSupport().taskSuccess(entity, handler);
+            this.getAsyncCmdStateSupport().taskSuccess(entity, handler, System.currentTimeMillis() - start);
         } catch (Exception ex) {
             log.error("asyncCmd group execute failed, id={}", entity.getId(), ex);
 
-            this.getAsyncCmdStateSupport().taskFail(entity, handler, ex, subTaskSuccessAdvanced > 0);
+            this.getAsyncCmdStateSupport().taskFail(entity, handler, System.currentTimeMillis() - start, ex, subTaskSuccessAdvanced > 0);
         }
     }
 
@@ -79,7 +81,7 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
         int subTaskSuccessAdvanced = 0;
         for (AsyncCmdSubVO subEntity : subEntities) {
             final AsyncCmdSubTaskHandler handler = this.getSubTaskHandler(subEntity.getExecuteName());
-
+            final long start = System.currentTimeMillis();
             this.getAsyncCmdService().editExpireTime(entity.getId());
             asyncCmdSubService.editStatusById(subEntity.getId(), AsyncCmdStatusEnum.EXECUTE);
 
@@ -87,8 +89,8 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
                 handler.executeSub(subEntity);
 
                 // 执行成功后，状态落库才计数累加
-                boolean result = this.getAsyncCmdStateSupport().subTaskSuccess(subEntity, handler);
-                if(!result) {
+                boolean result = this.getAsyncCmdStateSupport().subTaskSuccess(subEntity, handler, System.currentTimeMillis() - start);
+                if (!result) {
                     return subTaskSuccessAdvanced;
                 }
 
@@ -97,7 +99,7 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
                 log.error("asyncCmd subTask execute failed, id={} asyncCmdId={} seq={}",
                     subEntity.getId(), entity.getId(), subEntity.getSeq(), ex);
 
-                this.getAsyncCmdStateSupport().subTaskFail(subEntity, handler, ex);
+                this.getAsyncCmdStateSupport().subTaskFail(subEntity, handler, System.currentTimeMillis() - start, ex);
 
                 // 后续任务不在执行
                 return subTaskSuccessAdvanced;

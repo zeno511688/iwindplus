@@ -112,12 +112,14 @@ public interface AsyncCmdService {
     /**
      * 通过主键修改状态.
      *
-     * @param id   主键
-     * @param from 从状态
-     * @param to   到状态
+     * @param id       主键
+     * @param from     从状态
+     * @param to       到状态
+     * @param costTime 耗时
      * @return boolean
      */
-    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to);
+    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
+        Long costTime);
 
     /**
      * 通过主键修改状态（抢占执行权，待执行-> 执行中，同时重置执行续约 expireTime）.
@@ -125,10 +127,12 @@ public interface AsyncCmdService {
      * @param id        主键
      * @param from      从状态
      * @param to        到状态
+     * @param costTime  耗时
      * @param renewFlag 是否重置续约时间
      * @return boolean
      */
-    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, boolean renewFlag);
+    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
+        Long costTime, boolean renewFlag);
 
     /**
      * 通过主键修改状态.
@@ -136,13 +140,14 @@ public interface AsyncCmdService {
      * @param id            主键
      * @param from          从状态
      * @param to            到状态
+     * @param costTime      耗时
      * @param errorMsg      错误信息
      * @param retryCount    重试次数
      * @param nextRetryTime 下一次重试时间
      * @return boolean
      */
-    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, String errorMsg
-        , Integer retryCount, LocalDateTime nextRetryTime);
+    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
+        Long costTime, String errorMsg, Integer retryCount, LocalDateTime nextRetryTime);
 
     /**
      * 续订租期时间.

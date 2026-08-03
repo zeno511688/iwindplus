@@ -110,4 +110,10 @@ public class AsyncCmdVO extends DbVersionBaseVO {
      */
     @Schema(description = "子任务总数")
     private Integer subTaskCount;
+
+    /**
+     * 累计耗时.
+     */
+    @Schema(description = "耗时")
+    private Long costTime;
 }

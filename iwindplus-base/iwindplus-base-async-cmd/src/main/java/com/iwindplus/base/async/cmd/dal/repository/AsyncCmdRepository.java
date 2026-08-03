@@ -33,6 +33,7 @@ import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -194,14 +195,16 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
     /**
      * 通过主键修改状态.
      *
-     * @param id   主键
-     * @param from 从状态
-     * @param to   到状态
+     * @param id       主键
+     * @param from     从状态
+     * @param to       到状态
+     * @param costTime 耗时
      * @return boolean
      */
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to) {
-        return updateStatusById(id, from, to, false);
+    public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
+        Long costTime) {
+        return updateStatusById(id, from, to, costTime, false);
     }
 
     /**
@@ -210,12 +213,14 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
      * @param id        主键
      * @param from      从状态
      * @param to        到状态
+     * @param costTime  耗时
      * @param renewFlag 是否重置续约时间
      * @return boolean
      */
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, boolean renewFlag) {
-        return updateStatusById(id, from, to, null, null, null, renewFlag);
+    public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
+        Long costTime, boolean renewFlag) {
+        return updateStatusById(id, from, to, costTime, null, null, null, renewFlag);
     }
 
     /**
@@ -224,6 +229,7 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
      * @param id            主键
      * @param from          从状态
      * @param to            到状态
+     * @param costTime      耗时
      * @param errorMsg      错误信息
      * @param retryCount    重试次数
      * @param nextRetryTime 下次重试时间
@@ -231,12 +237,15 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
      * @return boolean
      */
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to
-        , String errorMsg, Integer retryCount, LocalDateTime nextRetryTime, boolean renewFlag) {
+    public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
+        Long costTime, String errorMsg, Integer retryCount, LocalDateTime nextRetryTime, boolean renewFlag) {
         final AsyncCmdDOBuilder<?, ?> builder = AsyncCmdDO.builder()
             .status(to)
             .modifiedTime(LocalDateTime.now())
             .modifiedTimestamp(System.currentTimeMillis());
+        if (Objects.nonNull(costTime)) {
+            builder.costTime(costTime);
+        }
         if (CharSequenceUtil.isNotBlank(errorMsg)) {
             builder.errorMsg(errorMsg);
         }

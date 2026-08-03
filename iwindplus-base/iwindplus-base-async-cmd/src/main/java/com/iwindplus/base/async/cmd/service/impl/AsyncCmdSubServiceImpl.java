@@ -36,13 +36,14 @@ public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
     }
 
     @Override
-    public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to) {
-        return this.asyncCmdSubRepository.updateStatusById(id, from, to);
+    public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, Long costTime) {
+        return this.asyncCmdSubRepository.updateStatusById(id, from, to, costTime);
     }
 
     @Override
-    public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, String errorMsg, Integer retryCount) {
-        return this.asyncCmdSubRepository.updateStatusById(id, from, to, errorMsg, retryCount);
+    public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
+        Long costTime, String errorMsg, Integer retryCount) {
+        return this.asyncCmdSubRepository.updateStatusById(id, from, to, costTime, errorMsg, retryCount);
     }
 
     @Override

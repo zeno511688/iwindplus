@@ -29,6 +29,7 @@ CREATE TABLE `async_cmd`
     `content`            text             NOT NULL DEFAULT '' COMMENT '内容',
     `error_msg`          text             NOT NULL DEFAULT '' COMMENT '错误信息',
     `sub_task_count`     int unsigned     NOT NULL DEFAULT 0 COMMENT '子任务总数',
+    `cost_time`          bigint unsigned  NOT NULL DEFAULT 0 COMMENT '累计耗时',
     PRIMARY KEY (`id`),
     KEY `idx_env_biz_number` (`env`, `biz_number`) COMMENT '复合索引（环境, 业务流水号）',
     KEY `idx_env_biz_key_biz_type` (`env`, `biz_key`, `biz_type`) COMMENT '复合索引（环境，业务key，业务类型）',
@@ -60,6 +61,7 @@ CREATE TABLE `async_cmd_sub`
     `retry_count`        int unsigned     NOT NULL DEFAULT 0 COMMENT '重试次数',
     `content`            text             NOT NULL DEFAULT '' COMMENT '内容',
     `error_msg`          text             NOT NULL DEFAULT '' COMMENT '错误信息',
+    `cost_time`          bigint unsigned  NOT NULL DEFAULT 0 COMMENT '耗时',
     `async_cmd_id`       bigint unsigned  NOT NULL DEFAULT 0 COMMENT '异步命令主键',
     PRIMARY KEY (`id`),
     KEY `idx_async_cmd_id_status` (`async_cmd_id`, `status`) COMMENT '复合索引（异步命令主键, 状态）'

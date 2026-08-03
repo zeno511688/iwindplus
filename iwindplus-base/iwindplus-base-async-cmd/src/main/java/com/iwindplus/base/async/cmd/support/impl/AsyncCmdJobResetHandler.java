@@ -59,7 +59,7 @@ public class AsyncCmdJobResetHandler extends AbstractAsyncCmdJobHandler {
                 ? AsyncCmdStatusEnum.DISCARD
                 : AsyncCmdStatusEnum.TO_BE_EXECUTE;
             final boolean result = super.getAsyncCmdService()
-                .editStatusById(entity.getId(), entity.getStatus(), status);
+                .editStatusById(entity.getId(), entity.getStatus(), status, null);
             if (!result) {
                 skipped++;
                 log.warn("重置任务调过，id={} from={}", entity.getId(), entity.getStatus());

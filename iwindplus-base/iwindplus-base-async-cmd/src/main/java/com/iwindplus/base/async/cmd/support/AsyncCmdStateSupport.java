@@ -50,6 +50,7 @@ public record AsyncCmdStateSupport(
                     entity.getId(),
                     AsyncCmdStatusEnum.TO_BE_EXECUTE,
                     AsyncCmdStatusEnum.EXECUTE,
+                    null,
                     true
                 )
             )
@@ -59,34 +60,39 @@ public record AsyncCmdStateSupport(
     /**
      * 任务执行成功
      *
-     * @param entity  对象
-     * @param handler 任务助手
+     * @param entity   对象
+     * @param handler  任务助手
+     * @param costTime 耗时
      * @return boolean
      */
     public boolean taskSuccess(
         AsyncCmdVO entity,
-        AsyncCmdTaskHandler handler) {
+        AsyncCmdTaskHandler handler,
+        Long costTime) {
+
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
-                    boolean updated = asyncCmdService.editStatusById(
-                        entity.getId(),
-                        AsyncCmdStatusEnum.EXECUTE,
-                        AsyncCmdStatusEnum.SUCCESS);
-                    if (updated) {
-                        // 删除记录（可选）
-                        if (Boolean.TRUE.equals(this.property.getEnabledSuccessDelete())) {
-                            asyncCmdService.removeById(entity.getId(), this.property.getEnabledSuccessRealDelete());
-                        }
+                boolean updated = asyncCmdService.editStatusById(
+                    entity.getId(),
+                    AsyncCmdStatusEnum.EXECUTE,
+                    AsyncCmdStatusEnum.SUCCESS,
+                    costTime);
+                if (updated) {
+                    // 删除记录（可选）
+                    if (Boolean.TRUE.equals(this.property.getEnabledSuccessDelete())) {
+                        asyncCmdService.removeById(entity.getId(), this.property.getEnabledSuccessRealDelete());
                     }
-                    return updated;
                 }
-            )
+                return updated;
+            })
         );
 
         if (!result || Objects.isNull(handler)) {
             return result;
         }
 
+        entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
+        entity.setCostTime(this.accumulate(entity.getCostTime(), costTime));
         this.safeCallback(() -> handler.onTaskSuccess(entity), "onTaskSuccess", entity.getId());
         return true;
     }
@@ -94,16 +100,18 @@ public record AsyncCmdStateSupport(
     /**
      * 任务执行失败
      *
-     * @param entity  对象
-     * @param handler 任务助手
-     * @param ex      异常
+     * @param entity   对象
+     * @param handler  任务助手
+     * @param costTime 耗时
+     * @param ex       异常
      * @return boolean
      */
     public boolean taskFail(
         AsyncCmdVO entity,
         AsyncCmdTaskHandler handler,
+        Long costTime,
         Exception ex) {
-        return this.taskFail(entity, handler, ex, false);
+        return this.taskFail(entity, handler, costTime, ex, false);
     }
 
     /**
@@ -111,6 +119,7 @@ public record AsyncCmdStateSupport(
      *
      * @param entity                 对象
      * @param handler                任务助手
+     * @param costTime               耗时
      * @param ex                     异常
      * @param subTaskSuccessAdvanced 本轮是否有子任务成功推进
      * @return boolean
@@ -118,6 +127,7 @@ public record AsyncCmdStateSupport(
     public boolean taskFail(
         AsyncCmdVO entity,
         AsyncCmdTaskHandler handler,
+        Long costTime,
         Exception ex,
         boolean subTaskSuccessAdvanced) {
 
@@ -131,6 +141,7 @@ public record AsyncCmdStateSupport(
                     entity.getId(),
                     AsyncCmdStatusEnum.EXECUTE,
                     AsyncCmdStatusEnum.FAILED,
+                    costTime,
                     stack,
                     retryCount,
                     nextRetryTime
@@ -142,6 +153,11 @@ public record AsyncCmdStateSupport(
             return result;
         }
 
+        entity.setStatus(AsyncCmdStatusEnum.FAILED);
+        entity.setRetryCount(retryCount);
+        entity.setNextRetryTime(nextRetryTime);
+        entity.setErrorMsg(stack);
+        entity.setCostTime(this.accumulate(entity.getCostTime(), costTime));
         this.safeCallback(() -> handler.onTaskFail(entity), "onTaskFail", entity.getId());
         return true;
     }
@@ -149,19 +165,22 @@ public record AsyncCmdStateSupport(
     /**
      * 子任务执行成功
      *
-     * @param entity  对象
-     * @param handler 任务助手
+     * @param entity   对象
+     * @param handler  任务助手
+     * @param costTime 耗时
      * @return boolean
      */
     public boolean subTaskSuccess(
         AsyncCmdSubVO entity,
-        AsyncCmdSubTaskHandler handler) {
+        AsyncCmdSubTaskHandler handler,
+        Long costTime) {
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
                 asyncCmdSubService.editStatusById(
                     entity.getId(),
                     AsyncCmdStatusEnum.EXECUTE,
-                    AsyncCmdStatusEnum.SUCCESS
+                    AsyncCmdStatusEnum.SUCCESS,
+                    costTime
                 )
             )
         );
@@ -170,6 +189,8 @@ public record AsyncCmdStateSupport(
             return result;
         }
 
+        entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
+        entity.setCostTime(costTime);
         this.safeCallback(() -> handler.onSubTaskSuccess(entity), "onSubTaskSuccess", entity.getId());
         return true;
     }
@@ -177,14 +198,16 @@ public record AsyncCmdStateSupport(
     /**
      * 子任务执行失败
      *
-     * @param entity  对象
-     * @param handler 任务助手
-     * @param ex      异常
+     * @param entity   对象
+     * @param handler  任务助手
+     * @param costTime 耗时
+     * @param ex       异常
      * @return boolean
      */
     public boolean subTaskFail(
         AsyncCmdSubVO entity,
         AsyncCmdSubTaskHandler handler,
+        Long costTime,
         Exception ex) {
 
         int retryCount = Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
@@ -196,6 +219,7 @@ public record AsyncCmdStateSupport(
                     entity.getId(),
                     AsyncCmdStatusEnum.EXECUTE,
                     AsyncCmdStatusEnum.FAILED,
+                    costTime,
                     stack,
                     retryCount
                 )
@@ -206,6 +230,10 @@ public record AsyncCmdStateSupport(
             return result;
         }
 
+        entity.setStatus(AsyncCmdStatusEnum.FAILED);
+        entity.setRetryCount(retryCount);
+        entity.setErrorMsg(stack);
+        entity.setCostTime(costTime);
         this.safeCallback(() -> handler.onSubTaskFail(entity), "onSubTaskFail", entity.getId());
         return true;
     }
@@ -255,4 +283,14 @@ public record AsyncCmdStateSupport(
             : stack;
     }
 
+    /**
+     * 累计耗时
+     *
+     * @param current  当前耗时
+     * @param costTime 耗时
+     * @return Long
+     */
+    private Long accumulate(Long current, Long costTime) {
+        return Optional.ofNullable(current).orElse(0L) + Math.max(0L, costTime);
+    }
 }
