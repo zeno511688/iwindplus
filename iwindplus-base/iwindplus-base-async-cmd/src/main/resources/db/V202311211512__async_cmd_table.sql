@@ -54,6 +54,7 @@ CREATE TABLE `async_cmd_sub`
     `version`            int unsigned     NOT NULL DEFAULT 0 COMMENT '乐观锁（处理并发）',
     `remark`             varchar(255)     NOT NULL DEFAULT '' COMMENT '备注',
     `status`             int unsigned     NOT NULL DEFAULT 0 COMMENT '状态（0：待执行，1：执行中，2：成功，3：失败，4：废弃）',
+    `biz_type`           varchar(50)      NOT NULL DEFAULT '' COMMENT '业务类型，例如 ORDER、USER',
     `seq`                int(10) unsigned NOT NULL DEFAULT 1 COMMENT '排序号',
     `execute_name`       varchar(50)      NOT NULL DEFAULT '' COMMENT '执行器名称',
     `retry_count`        int unsigned     NOT NULL DEFAULT 0 COMMENT '重试次数',
