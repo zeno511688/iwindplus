@@ -91,10 +91,4 @@ public class AsyncCmdSearchDTO extends DbPageDTO {
      */
     @Schema(description = "重试时间")
     private LocalDateTime retryTime;
-
-    /**
-     * 是否显示内容.
-     */
-    @Schema(description = "是否显示内容")
-    private Boolean showContent;
 }

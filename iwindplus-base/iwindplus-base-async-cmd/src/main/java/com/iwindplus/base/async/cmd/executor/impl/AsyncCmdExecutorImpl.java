@@ -119,6 +119,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
     private void checkSubSubmitParam(AsyncCmdSubSubmitDTO entity, Integer index) {
         Assert.notNull(entity, "sub entity must not be null");
+        Assert.notNull(entity.getBizType(), "sub[" + index + "].bizType must not be null");
         Assert.notNull(entity.getSeq(), "sub[" + index + "].seq must not be null");
         Assert.notEmpty(entity.getContent(), "sub[" + index + "].content must not be null");
         Assert.notNull(entity.getExecutorClass(), "sub[" + index + "].executorClass must not be null");

@@ -54,7 +54,6 @@ public class AsyncCmdJobRetryHandler extends AbstractAsyncCmdJobHandler {
             .taskName("retry job")
             .status(AsyncCmdStatusEnum.TO_BE_EXECUTE)
             .retryTime(LocalDateTime.now())
-            .showContent(true)
             .build();
     }
 

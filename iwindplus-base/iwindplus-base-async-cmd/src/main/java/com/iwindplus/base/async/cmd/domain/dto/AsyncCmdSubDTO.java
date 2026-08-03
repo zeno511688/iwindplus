@@ -44,6 +44,14 @@ public class AsyncCmdSubDTO extends DbVersionBaseDTO {
     private AsyncCmdStatusEnum status;
 
     /**
+     * 业务类型，例如 ORDER、USER.
+     */
+    @Schema(description = "业务类型，例如 ORDER、USER")
+    @NotBlank(message = "{bizType.notEmpty}", groups = {SaveGroup.class, EditGroup.class})
+    @Length(max = 100, message = "{bizType.length}", groups = {SaveGroup.class, EditGroup.class})
+    private String bizType;
+
+    /**
      * 排序号
      */
     @Schema(description = "排序号")

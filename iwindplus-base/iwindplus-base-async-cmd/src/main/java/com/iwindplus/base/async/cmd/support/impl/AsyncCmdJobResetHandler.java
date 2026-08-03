@@ -83,8 +83,7 @@ public class AsyncCmdJobResetHandler extends AbstractAsyncCmdJobHandler {
         final AsyncCmdSearchDTOBuilder<?, ?> builder = AsyncCmdSearchDTO.builder()
             .taskName("reset job")
             .statusList(AsyncCmdStatusEnum.getPendingStatus())
-            .expireTime(LocalDateTime.now())
-            .showContent(true);
+            .expireTime(LocalDateTime.now());
         return builder.build();
     }
 }

@@ -169,13 +169,6 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
         if (Objects.nonNull(entity.getRetryTime())) {
             queryWrapper.le(AsyncCmdDO::getNextRetryTime, entity.getRetryTime());
         }
-        if (Objects.isNull(entity.getShowContent()) || Boolean.FALSE.equals(entity.getShowContent())) {
-            queryWrapper.select(AsyncCmdDO::getId, AsyncCmdDO::getCreatedTime, AsyncCmdDO::getCreatedTimestamp, AsyncCmdDO::getCreatedBy,
-                AsyncCmdDO::getModifiedTime, AsyncCmdDO::getModifiedTimestamp, AsyncCmdDO::getModifiedBy, AsyncCmdDO::getVersion,
-                AsyncCmdDO::getStatus, AsyncCmdDO::getEnv, AsyncCmdDO::getExecuteName, AsyncCmdDO::getDispatchMode, AsyncCmdDO::getBizNumber,
-                AsyncCmdDO::getRetryCount, AsyncCmdDO::getNextRetryTime
-            );
-        }
 
         final PageDTO<AsyncCmdDO> modelPage = this.asyncCmdRepository.page(page, queryWrapper);
         return modelPage.convert(model -> BeanUtil.copyProperties(model, AsyncCmdPageVO.class));
