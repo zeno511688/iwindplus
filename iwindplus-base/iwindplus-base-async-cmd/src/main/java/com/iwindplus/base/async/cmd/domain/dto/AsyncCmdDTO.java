@@ -51,27 +51,25 @@ public class AsyncCmdDTO extends DbVersionBaseDTO {
     private String env;
 
     /**
-     * 业务类型，例如 ORDER、USER.
+     * 业务key，例如 ORDER.
      */
-    @Schema(description = "业务类型，例如 ORDER、USER")
+    @Schema(description = "业务key，例如 ORDER")
+    @NotBlank(message = "{bizKey.notEmpty}", groups = {SaveGroup.class, EditGroup.class})
+    @Length(max = 100, message = "{bizKey.length}", groups = {SaveGroup.class, EditGroup.class})
+    private String bizKey;
+
+    /**
+     * 业务类型，例如 ORDER_CREATE.
+     */
+    @Schema(description = "业务类型，例如 ORDER_CREATE")
     @NotBlank(message = "{bizType.notEmpty}", groups = {SaveGroup.class, EditGroup.class})
     @Length(max = 100, message = "{bizType.length}", groups = {SaveGroup.class, EditGroup.class})
     private String bizType;
 
     /**
-     * 事件类型，例如 ORDER_CREATED.
-     */
-    @Schema(description = "事件类型，例如 ORDER_CREATED")
-    @NotBlank(message = "{eventType.notEmpty}", groups = {SaveGroup.class, EditGroup.class})
-    @Length(max = 100, message = "{eventType.length}", groups = {SaveGroup.class, EditGroup.class})
-    private String eventType;
-
-    /**
      * 业务流水号.
      */
     @Schema(description = "业务流水号")
-    @NotBlank(message = "{bizNumber.notEmpty}", groups = {SaveGroup.class, EditGroup.class})
-    @Length(max = 100, message = "{bizNumber.length}", groups = {SaveGroup.class, EditGroup.class})
     private String bizNumber;
 
     /**

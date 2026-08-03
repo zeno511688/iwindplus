@@ -7,7 +7,6 @@ package com.iwindplus.mgt.server.service.system.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -331,9 +330,8 @@ public class I18nProjectServiceImpl implements I18nProjectService {
 
     private boolean pushData(String fileName, String content) {
         final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
-            .bizType("I18N_MSG")
-            .eventType("I18N_MSG_PUSH")
-            .bizNumber(IdUtil.fastSimpleUUID())
+            .bizKey("I18N_MSG")
+            .bizType("I18N_MSG_PUSH")
             .content(ImmutableMap.of("fileName", fileName, "content", content))
             .executorClass(I18nMsgPushTaskHandler.class)
             .remark("国际化消息推送数据至Nacos")
@@ -344,9 +342,8 @@ public class I18nProjectServiceImpl implements I18nProjectService {
 
     private boolean removeData(String fileName) {
         final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
-            .bizType("I18N_MSG")
-            .eventType("I18N_MSG_REMOVE")
-            .bizNumber(IdUtil.fastSimpleUUID())
+            .bizKey("I18N_MSG")
+            .bizType("I18N_MSG_REMOVE")
             .content(ImmutableMap.of("fileName", fileName))
             .executorClass(I18nMsgRemoveTaskHandler.class)
             .remark("删除Nacos国际化消息数据")

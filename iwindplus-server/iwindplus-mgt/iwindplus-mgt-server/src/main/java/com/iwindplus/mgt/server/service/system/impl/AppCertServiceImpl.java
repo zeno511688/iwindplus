@@ -331,9 +331,8 @@ public class AppCertServiceImpl implements AppCertService {
         final String content = JacksonUtil.toJsonStr(messageDTO);
 
         final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
-            .bizType("APP_CERT")
-            .eventType("APP_CERT_PUSH")
-            .bizNumber(IdUtil.fastSimpleUUID())
+            .bizKey("APP_CERT")
+            .bizType("APP_CERT_PUSH")
             .content(ImmutableMap.of("content", content))
             .executorClass(AppCertTaskHandler.class)
             .remark("应用凭证数据发送kafka")

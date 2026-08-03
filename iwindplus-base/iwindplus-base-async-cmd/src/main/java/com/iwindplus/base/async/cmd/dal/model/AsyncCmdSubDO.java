@@ -45,9 +45,9 @@ public class AsyncCmdSubDO extends DbBaseDO {
     private AsyncCmdStatusEnum status;
 
     /**
-     * 业务类型，例如 ORDER、USER.
+     * 业务类型，例如 ORDER_CREATE.
      */
-    @Schema(description = "业务类型，例如 ORDER、USER")
+    @Schema(description = "业务类型，例如 ORDER_CREATE")
     private String bizType;
 
     /**

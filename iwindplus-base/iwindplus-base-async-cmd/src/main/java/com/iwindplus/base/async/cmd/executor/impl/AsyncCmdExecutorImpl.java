@@ -86,6 +86,11 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
     }
 
     @Override
+    public boolean removeByBizKeyAndType(String bizKey, String bizType) {
+        return asyncCmdService.removeByBizKeyAndType(bizKey, bizType, true);
+    }
+
+    @Override
     public boolean removeByBizNumber(String bizNumber) {
         return asyncCmdService.removeByBizNumber(bizNumber, true);
     }
@@ -100,9 +105,8 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
     private void checkBaseParam(AsyncCmdSubmitBaseDTO entity) {
         Assert.notNull(entity, "entity must not be null");
+        Assert.hasText(entity.getBizKey(), "bizKey must not be blank");
         Assert.hasText(entity.getBizType(), "bizType must not be blank");
-        Assert.hasText(entity.getEventType(), "eventType must not be blank");
-        Assert.hasText(entity.getBizNumber(), "bizNumber must not be blank");
     }
 
     private void checkSubmitParam(AsyncCmdSubmitDTO entity) {
@@ -168,6 +172,8 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         return AsyncCmdSubmitVO
             .builder()
             .id(param.getId())
+            .bizKey(param.getBizKey())
+            .bizType(param.getBizType())
             .bizNumber(param.getBizNumber())
             .build();
     }

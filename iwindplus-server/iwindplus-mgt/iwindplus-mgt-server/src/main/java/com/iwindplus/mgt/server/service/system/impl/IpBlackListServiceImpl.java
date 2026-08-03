@@ -7,7 +7,6 @@ package com.iwindplus.mgt.server.service.system.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -225,9 +224,8 @@ public class IpBlackListServiceImpl implements IpBlackListService {
         final String content = JacksonUtil.toJsonStr(messageDTO);
 
         final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
-            .bizType("IP_BLACK_LIST")
-            .eventType("IP_BLACK_PUSH")
-            .bizNumber(IdUtil.fastSimpleUUID())
+            .bizKey("IP_BLACK_LIST")
+            .bizType("IP_BLACK_PUSH")
             .content(ImmutableMap.of("content", content))
             .executorClass(ApiWhiteListTaskHandler.class)
             .remark("IP黑名单数据发送kafka")

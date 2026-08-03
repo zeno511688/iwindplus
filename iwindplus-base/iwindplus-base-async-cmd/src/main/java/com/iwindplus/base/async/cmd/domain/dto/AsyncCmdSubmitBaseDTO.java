@@ -27,20 +27,14 @@ import lombok.experimental.SuperBuilder;
 public class AsyncCmdSubmitBaseDTO implements Serializable {
 
     /**
+     * 业务key（必填），例如 ORDER.
+     */
+    @Schema(description = "业务key，例如 ORDER")
+    private String bizKey;
+
+    /**
      * 业务类型（必填），例如 ORDER、USER.
      */
-    @Schema(description = "业务类型，例如 ORDER、USER")
+    @Schema(description = "业务类型，例如 ORDER_CREATE")
     private String bizType;
-
-    /**
-     * 事件类型（必填），例如 ORDER_CREATED.
-     */
-    @Schema(description = "事件类型，例如 ORDER_CREATED")
-    private String eventType;
-
-    /**
-     * 业务流水号（必填）.
-     */
-    @Schema(description = "业务流水号")
-    private String bizNumber;
 }

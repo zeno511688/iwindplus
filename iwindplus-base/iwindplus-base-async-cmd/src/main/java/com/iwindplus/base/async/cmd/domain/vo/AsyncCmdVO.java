@@ -46,16 +46,16 @@ public class AsyncCmdVO extends DbVersionBaseVO {
     private String env;
 
     /**
-     * 业务类型，例如 ORDER、USER.
+     * 业务key，例如 ORDER.
      */
-    @Schema(description = "业务类型，例如 ORDER、USER")
-    private String bizType;
+    @Schema(description = "业务key，例如 ORDER")
+    private String bizKey;
 
     /**
-     * 事件类型，例如 ORDER_CREATED.
+     * 业务类型，例如 ORDER_CREATE.
      */
-    @Schema(description = "事件类型，例如 ORDER_CREATED")
-    private String eventType;
+    @Schema(description = "业务类型，例如 ORDER_CREATE")
+    private String bizType;
 
     /**
      * 业务流水号.

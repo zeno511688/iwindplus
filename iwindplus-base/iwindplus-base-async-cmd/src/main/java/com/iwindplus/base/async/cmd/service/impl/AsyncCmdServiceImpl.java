@@ -88,10 +88,20 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
     }
 
     @Override
+    public boolean removeByBizKeyAndType(String bizKey, String bizType, boolean deleted) {
+        return Boolean.TRUE.equals(
+            this.transactionTemplate.execute(status ->
+                this.asyncCmdRepository.deleteByBizKeyAndType(
+                    SpringUtil.getActiveProfile(), bizKey, bizType, deleted)
+            )
+        );
+    }
+
+    @Override
     public boolean removeByBizNumber(String bizNumber, boolean deleted) {
         return Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
-                this.asyncCmdRepository.deleteByCondition(
+                this.asyncCmdRepository.deleteByBizNumber(
                     SpringUtil.getActiveProfile(), bizNumber, deleted)
             )
         );
@@ -151,8 +161,11 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
         if (CharSequenceUtil.isNotBlank(entity.getBizType())) {
             queryWrapper.eq(AsyncCmdDO::getBizType, entity.getBizType().trim());
         }
-        if (CharSequenceUtil.isNotBlank(entity.getEventType())) {
-            queryWrapper.eq(AsyncCmdDO::getEventType, entity.getEventType().trim());
+        if (CharSequenceUtil.isNotBlank(entity.getBizKey())) {
+            queryWrapper.eq(AsyncCmdDO::getBizKey, entity.getBizKey().trim());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getBizType())) {
+            queryWrapper.eq(AsyncCmdDO::getBizType, entity.getBizType().trim());
         }
         if (CharSequenceUtil.isNotBlank(entity.getBizNumber())) {
             queryWrapper.eq(AsyncCmdDO::getBizNumber, entity.getBizNumber().trim());

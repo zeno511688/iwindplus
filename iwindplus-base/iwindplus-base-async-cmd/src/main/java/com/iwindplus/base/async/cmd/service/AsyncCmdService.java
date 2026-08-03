@@ -64,6 +64,16 @@ public interface AsyncCmdService {
     boolean removeByIds(List<Long> ids, boolean deleted);
 
     /**
+     * 通过业务键和类型删除.
+     *
+     * @param bizKey  业务键
+     * @param bizType 业务类型
+     * @param deleted 是否真删
+     * @return boolean
+     */
+    boolean removeByBizKeyAndType(String bizKey, String bizType, boolean deleted);
+
+    /**
      * 通过业务流水号删除.
      *
      * @param bizNumber 业务流水号

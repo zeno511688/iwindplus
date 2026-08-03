@@ -8,10 +8,12 @@
 package com.iwindplus.base.async.cmd.dal.repository;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.repository.CrudRepository;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
@@ -31,7 +33,6 @@ import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,7 +84,7 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
     }
 
     /**
-     * 通过环境和业务流水号删除.
+     * 通过业务流水号删除.
      *
      * @param env       环境
      * @param bizNumber 业务流水号
@@ -91,25 +92,53 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
      * @return boolean
      */
     @Transactional(rollbackFor = Exception.class)
-    public boolean deleteByCondition(String env, String bizNumber, boolean deleted) {
+    public boolean deleteByBizNumber(
+        String env, String bizNumber, boolean deleted) {
         // 真实删除
         if (Boolean.TRUE.equals(deleted)) {
             return super.baseMapper.deleteByBizNumber(env, bizNumber) > 0;
         }
 
-        final AsyncCmdDO result = super.getOne(Wrappers.lambdaQuery(AsyncCmdDO.class)
-            .eq(AsyncCmdDO::getEnv, env.trim())
-            .eq(AsyncCmdDO::getBizNumber, bizNumber.trim()));
-        if (Objects.nonNull(result)) {
-            final Long id = result.getId();
+        final List<Long> ids = super.listObjs(Wrappers.lambdaQuery(AsyncCmdDO.class)
+                .eq(AsyncCmdDO::getEnv, env.trim())
+                .eq(AsyncCmdDO::getBizNumber, bizNumber.trim())
+            , value -> Long.valueOf(value.toString()));
+        if (CollUtil.isNotEmpty(ids)) {
             this.asyncCmdSubMapper.delete(Wrappers.lambdaQuery(AsyncCmdSubDO.class)
-                .eq(AsyncCmdSubDO::getAsyncCmdId, id));
-            return super.removeById(id);
+                .in(AsyncCmdSubDO::getAsyncCmdId, ids));
         }
 
-        return super.remove(Wrappers.lambdaQuery(AsyncCmdDO.class)
-            .eq(AsyncCmdDO::getEnv, env.trim())
-            .eq(AsyncCmdDO::getBizNumber, bizNumber.trim()));
+        return super.removeByIds(ids);
+    }
+
+    /**
+     * 通过业务键和类型删除.
+     *
+     * @param env     环境
+     * @param bizKey  业务键
+     * @param bizType 业务类型
+     * @param deleted 是否真删
+     * @return boolean
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteByBizKeyAndType(
+        String env, String bizKey, String bizType, boolean deleted) {
+        // 真实删除
+        if (Boolean.TRUE.equals(deleted)) {
+            return super.baseMapper.deleteByBizKeyAndType(env, bizKey, bizType) > 0;
+        }
+
+        final List<Long> ids = super.listObjs(Wrappers.lambdaQuery(AsyncCmdDO.class)
+                .eq(AsyncCmdDO::getEnv, env.trim())
+                .eq(AsyncCmdDO::getBizKey, bizKey.trim())
+                .eq(AsyncCmdDO::getBizType, bizType.trim())
+            , value -> Long.valueOf(value.toString()));
+        if (CollUtil.isNotEmpty(ids)) {
+            this.asyncCmdSubMapper.delete(Wrappers.lambdaQuery(AsyncCmdSubDO.class)
+                .in(AsyncCmdSubDO::getAsyncCmdId, ids));
+        }
+
+        return super.removeByIds(ids);
     }
 
     /**
@@ -252,19 +281,22 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
     }
 
     /**
-     * 获取业务流水号是否已存在.
+     * 获取业务key和业务类型是否已存在.
      *
-     * @param bizNumber 业务流水号
+     * @param bizKey  业务key
+     * @param bizType 业务类型
      */
-    public void getBizNumberIsExist(String bizNumber) {
+    public void getBizKeyAndBizTypeIsExist(String bizKey, String bizType) {
         boolean result = SqlHelper.retBool(super.count(Wrappers.lambdaQuery(AsyncCmdDO.class)
-            .eq(AsyncCmdDO::getBizNumber, bizNumber)));
+            .eq(AsyncCmdDO::getBizKey, bizKey)
+            .eq(AsyncCmdDO::getBizType, bizType)));
         if (Boolean.TRUE.equals(result)) {
-            throw new BizException(BizCodeEnum.BIZ_NUMBER_EXIST, new Object[]{bizNumber});
+            throw new BizException(BizCodeEnum.DATA_EXIST);
         }
     }
 
     private AsyncCmdDO buildAsyncCmd(AsyncCmdSaveDTO entity) {
+        entity.setBizNumber(IdWorker.getIdStr());
         entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
         entity.setDispatchMode(DispatchModeEnum.ASYNC);
         entity.setEnv(SpringUtil.getActiveProfile());
@@ -273,7 +305,7 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
         if (MapUtil.isEmpty(entity.getContent())) {
             entity.setContent(MapUtil.newHashMap());
         }
-        this.getBizNumberIsExist(entity.getBizNumber().trim());
+        this.getBizKeyAndBizTypeIsExist(entity.getBizKey().trim(), entity.getBizType().trim());
         return BeanUtil.copyProperties(entity, AsyncCmdDO.class);
     }
 

@@ -31,18 +31,6 @@ import lombok.experimental.SuperBuilder;
 public class AsyncCmdSubSubmitDTO implements Serializable {
 
     /**
-     * 业务类型（必填）.
-     */
-    @Schema(description = "业务类型，例如 ORDER、USER")
-    private String bizType;
-
-    /**
-     * 排序号（必填）
-     */
-    @Schema(description = "排序号")
-    private Integer seq;
-
-    /**
      * 内容（必填）.
      */
     @Schema(description = "内容")
@@ -53,6 +41,18 @@ public class AsyncCmdSubSubmitDTO implements Serializable {
      */
     @Schema(description = "执行器类")
     private Class<? extends AsyncCmdSubTaskHandler> executorClass;
+
+    /**
+     * 业务类型（必填），例如 ORDER、USER.
+     */
+    @Schema(description = "业务类型，例如 ORDER_CREATE")
+    private String bizType;
+
+    /**
+     * 排序号（必填）
+     */
+    @Schema(description = "排序号")
+    private Integer seq;
 
     /**
      * 备注（可选）.

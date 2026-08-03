@@ -44,6 +44,15 @@ public interface AsyncCmdExecutor {
     boolean removeById(Long id);
 
     /**
+     * 通过业务key和类型移除任务.
+     *
+     * @param bizKey  业务key
+     * @param bizType 业务类型
+     * @return boolean
+     */
+    boolean removeByBizKeyAndType(String bizKey, String bizType);
+
+    /**
      * 通过业务流水号移除任务.
      *
      * @param bizNumber 业务流水号

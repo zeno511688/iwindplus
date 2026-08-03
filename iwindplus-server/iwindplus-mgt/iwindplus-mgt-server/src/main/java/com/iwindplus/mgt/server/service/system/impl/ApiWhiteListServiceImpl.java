@@ -7,7 +7,6 @@ package com.iwindplus.mgt.server.service.system.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -251,9 +250,8 @@ public class ApiWhiteListServiceImpl implements ApiWhiteListService {
         final String content = JacksonUtil.toJsonStr(messageDTO);
 
         final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
-            .bizType("API_WHITE_LIST")
-            .eventType("API_WHITE_LIST_PUSH")
-            .bizNumber(IdUtil.fastSimpleUUID())
+            .bizKey("API_WHITE_LIST")
+            .bizType("API_WHITE_LIST_PUSH")
             .content(ImmutableMap.of("content", content))
             .executorClass(ApiWhiteListTaskHandler.class)
             .remark("API白名单数据发送kafka")
