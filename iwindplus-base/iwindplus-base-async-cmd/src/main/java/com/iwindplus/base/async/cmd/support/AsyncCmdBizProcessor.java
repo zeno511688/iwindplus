@@ -52,11 +52,9 @@ public record AsyncCmdBizProcessor(
     }
 
     private void doExecute(Long id) {
-        AsyncCmdVO entity;
-        try {
-            entity = this.asyncCmdService.getDetail(id);
-        } catch (Exception e) {
-            log.error("asyncCmd not exist, skip. id={}", id, e);
+        AsyncCmdVO entity = this.asyncCmdService.getDetail(id);
+        if (entity == null) {
+            log.info("asyncCmd not exist, skip. id={}", id);
             return;
         }
 
