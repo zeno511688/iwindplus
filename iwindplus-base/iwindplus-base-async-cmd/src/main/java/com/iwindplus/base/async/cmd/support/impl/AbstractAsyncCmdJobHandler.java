@@ -7,19 +7,15 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.extra.spring.SpringUtil;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSearchDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdShardSearchDTO;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
-import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdPageVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdJobHandler;
-import java.util.ArrayList;
+import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import java.util.List;
-import java.util.Objects;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,36 +44,44 @@ public abstract class AbstractAsyncCmdJobHandler implements AsyncCmdJobHandler {
     /**
      * 获取查询参数.
      *
-     * @return AsyncCmdSearchDTO
+     * @return AsyncCmdShardSearchDTO
      */
-    protected abstract AsyncCmdSearchDTO buildJobSearchDTO();
+    protected abstract AsyncCmdShardSearchDTO buildJobSearchDTO();
 
     @Override
-    public void execute(int shardingIndex) {
-        final AsyncCmdSearchDTO param = this.buildJobSearchDTO();
-        param.setEnv(SpringUtil.getActiveProfile());
-        param.setCurrent(shardingIndex + 1);
-        param.setSize(asyncCmdService.getSize());
-        List<AsyncCmdVO> list = this.list(param);
-
-        log.info("任务={} 当前页={} 每页条数={} 结果总数={}",
-            param.getTaskName(), param.getCurrent(),
-            param.getSize(), list.size());
-
-        if (CollUtil.isEmpty(list)) {
-            return;
-        }
-
+    public void execute(Integer shardIndex, Integer shardTotal) {
         final AbstractAsyncCmdJobHandler proxy = SpringUtil.getBean(this.getClass());
-        proxy.doExecute(list);
+
+        final AsyncCmdShardSearchDTO param = this.buildJobSearchDTO();
+        param.setShardIndex(shardIndex);
+        param.setShardTotal(shardTotal);
+
+        long lastId = 0;
+        int loop = 0;
+        int total = 0;
+        while (loop < NumberConstant.NUMBER_ONE_HUNDRED) {
+            if (Thread.currentThread().isInterrupted()) {
+                break;
+            }
+
+            param.setLastId(lastId);
+
+            final List<AsyncCmdVO> list = this.asyncCmdService.listByShard(param);
+            if (CollUtil.isEmpty(list)) {
+                break;
+            }
+
+            proxy.doExecute(list);
+
+            // 更新游标
+            lastId = list.get(list.size() - 1).getId();
+            loop++;
+            total += list.size();
+        }
+
+        log.info("【{}】执行完成，分片={}/{} 轮次={}, 共处理【{}】条数据",
+            this.getClass().getSimpleName(), shardIndex, shardTotal,
+            loop, total);
     }
 
-    private List<AsyncCmdVO> list(AsyncCmdSearchDTO param) {
-        List<AsyncCmdVO> list = new ArrayList<>(10);
-        IPage<AsyncCmdPageVO> page = this.asyncCmdService.page(param);
-        if (Objects.nonNull(page) && CollUtil.isNotEmpty(page.getRecords())) {
-            list.addAll(BeanUtil.copyToList(page.getRecords(), AsyncCmdVO.class));
-        }
-        return list;
-    }
 }

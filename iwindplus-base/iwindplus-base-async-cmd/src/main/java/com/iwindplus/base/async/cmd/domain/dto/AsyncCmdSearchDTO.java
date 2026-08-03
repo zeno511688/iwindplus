@@ -10,7 +10,6 @@ package com.iwindplus.base.async.cmd.domain.dto;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.domain.dto.DbPageDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -31,12 +30,6 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AsyncCmdSearchDTO extends DbPageDTO {
-
-    /**
-     * 任务名称.
-     */
-    @Schema(description = "任务名称")
-    private String taskName;
 
     /**
      * 状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，SUCCESS：成功，FAILED：失败，DISCARD：丢弃）.
@@ -79,16 +72,4 @@ public class AsyncCmdSearchDTO extends DbPageDTO {
      */
     @Schema(description = "执行器名称")
     private String executeName;
-
-    /**
-     * 过期时间.
-     */
-    @Schema(description = "过期时间")
-    private LocalDateTime expireTime;
-
-    /**
-     * 重试时间.
-     */
-    @Schema(description = "重试时间")
-    private LocalDateTime retryTime;
 }

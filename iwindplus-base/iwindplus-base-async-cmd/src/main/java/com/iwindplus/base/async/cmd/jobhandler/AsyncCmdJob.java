@@ -8,12 +8,15 @@
 package com.iwindplus.base.async.cmd.jobhandler;
 
 import cn.hutool.core.date.DatePattern;
-import com.aizuda.snailjob.client.job.core.annotation.JobExecutor;
-import com.aizuda.snailjob.client.job.core.dto.JobArgs;
-import com.aizuda.snailjob.model.dto.ExecuteResult;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdJobEnum;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdJobHandlerStrategyFactory;
 import com.iwindplus.base.util.DatesUtil;
+import com.xxl.job.core.context.XxlJobHelper;
+import com.xxl.job.core.handler.annotation.XxlJob;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,43 +27,53 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2024/11/19 01:42
  */
 @Slf4j
-@JobExecutor(name = "asyncCmdJob")
 @RequiredArgsConstructor
 public class AsyncCmdJob {
 
     private final AsyncCmdJobHandlerStrategyFactory factory;
 
     /**
-     * 异步命令.
-     *
-     * @param jobArgs 任务参数
-     * @return ExecuteResult
+     * 异步命令定时任务.
      */
-    public ExecuteResult jobExecute(JobArgs jobArgs) {
-        long beginMillis = System.currentTimeMillis();
+    @XxlJob("asyncCmdJob")
+    public void jobExecute() {
+        final long beginMillis = System.currentTimeMillis();
+        final String start = DatesUtil.parseDate(beginMillis, DatePattern.NORM_DATETIME_MS_PATTERN);
 
-        log.info("异步命令，参数={}，开始时间={}", jobArgs.getJobParams()
-            , DatesUtil.parseDate(beginMillis, DatePattern.NORM_DATETIME_MS_PATTERN));
+        final int shardIndex = Math.max(XxlJobHelper.getShardIndex(), 0);
+        final int shardTotal = Math.max(XxlJobHelper.getShardTotal(), 1);
+        final String jobParam = XxlJobHelper.getJobParam();
 
-        int failed = 0;
+        XxlJobHelper.log("异步命令，参数={}，开始时间={}，分片索引={}, 分片总数={}", jobParam, start, shardIndex, shardTotal);
+
+        final AtomicInteger failed = new AtomicInteger(0);
         final AsyncCmdJobEnum[] jobEnums = AsyncCmdJobEnum.values();
-        for (AsyncCmdJobEnum entity : jobEnums) {
-            try {
-                factory.getJobHandler(entity).execute(0);
-            } catch (Exception e) {
-                failed++;
+        List<CompletableFuture<Void>> futures =
+            Arrays.stream(AsyncCmdJobEnum.values())
+                .map(entity ->
+                    CompletableFuture.runAsync(() -> {
+                        try {
+                            factory.getJobHandler(entity).execute(shardIndex, shardTotal);
+                        } catch (Exception e) {
+                            failed.incrementAndGet();
 
-                log.error("异步命令，任务={}，失败", entity, e);
-            }
-        }
+                            XxlJobHelper.log("异步命令任务={}失败", entity.getDesc(), e);
+                        }
+                    })
+                ).toList();
 
-        if (failed > 0) {
-            return ExecuteResult.failure(false, "异步命令部分失败，failed=" + failed);
+        // 等待所有任务完成
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        if (failed.get() > 0) {
+            XxlJobHelper.handleFail("异步命令部分失败，失败个数=" + failed.get());
+            return;
         }
 
         final long endTimeMillis = System.currentTimeMillis();
-        log.info("异步命令，总任务个数={}, 结束时间={}，总执行毫秒数={}", jobEnums.length,
+        XxlJobHelper.log("异步命令，总任务个数={}, 结束时间={}，总执行毫秒数={}", jobEnums.length,
             DatesUtil.parseDate(endTimeMillis, DatePattern.NORM_DATETIME_MS_PATTERN), endTimeMillis - beginMillis);
-        return ExecuteResult.success(true);
+
+        XxlJobHelper.handleSuccess();
     }
 }

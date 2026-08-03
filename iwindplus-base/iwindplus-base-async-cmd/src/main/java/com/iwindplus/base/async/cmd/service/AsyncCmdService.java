@@ -14,6 +14,7 @@ import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGrouSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGroupSearchDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSearchDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdShardSearchDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdGroupVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdPageVO;
@@ -195,4 +196,12 @@ public interface AsyncCmdService {
      * @return Integer
      */
     Integer getSize();
+
+    /**
+     * 分片查询.
+     *
+     * @param entity 搜索条件
+     * @return List<AsyncCmdVO>
+     */
+    List<AsyncCmdVO> listByShard(AsyncCmdShardSearchDTO entity);
 }

@@ -7,7 +7,7 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
-import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSearchDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdShardSearchDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdJobEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
@@ -44,14 +44,19 @@ public class AsyncCmdJobRetryHandler extends AbstractAsyncCmdJobHandler {
 
     @Override
     protected void doExecute(List<AsyncCmdVO> entityList) {
-        entityList.forEach(asyncCmdBizProcessor::execute);
+        entityList.forEach(entity -> {
+            try {
+                asyncCmdBizProcessor.execute(entity);
+            } catch (Exception e) {
+                log.error("重试任务执行失败，id={}", entity.getId(), e);
+            }
+        });
     }
 
     @Override
-    protected AsyncCmdSearchDTO buildJobSearchDTO() {
+    protected AsyncCmdShardSearchDTO buildJobSearchDTO() {
         // 查询状态为待执行
-        return AsyncCmdSearchDTO.builder()
-            .taskName("retry job")
+        return AsyncCmdShardSearchDTO.builder()
             .status(AsyncCmdStatusEnum.TO_BE_EXECUTE)
             .retryTime(LocalDateTime.now())
             .build();

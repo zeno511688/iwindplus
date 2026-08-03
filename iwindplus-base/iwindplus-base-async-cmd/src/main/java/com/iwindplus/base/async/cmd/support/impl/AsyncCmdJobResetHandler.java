@@ -7,8 +7,7 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
-import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSearchDTO;
-import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSearchDTO.AsyncCmdSearchDTOBuilder;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdShardSearchDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdJobEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
@@ -52,38 +51,42 @@ public class AsyncCmdJobResetHandler extends AbstractAsyncCmdJobHandler {
         int reset = 0;
         int discard = 0;
         int skipped = 0;
+        int failed = 0;
 
         for (AsyncCmdVO entity : entityList) {
-            boolean exceed = !unlimited && entity.getRetryCount() > maxAttempts;
-            AsyncCmdStatusEnum status = exceed
-                ? AsyncCmdStatusEnum.DISCARD
-                : AsyncCmdStatusEnum.TO_BE_EXECUTE;
-            final boolean result = super.getAsyncCmdService()
-                .editStatusById(entity.getId(), entity.getStatus(), status, null);
-            if (!result) {
-                skipped++;
-                log.warn("重置任务调过，id={} from={}", entity.getId(), entity.getStatus());
+            try {
+                boolean exceed = !unlimited && entity.getRetryCount() > maxAttempts;
+                AsyncCmdStatusEnum status = exceed
+                    ? AsyncCmdStatusEnum.DISCARD
+                    : AsyncCmdStatusEnum.TO_BE_EXECUTE;
+                final boolean result = super.getAsyncCmdService()
+                    .editStatusById(entity.getId(), entity.getStatus(), status, null);
+                if (!result) {
+                    skipped++;
+                    log.warn("重置任务调过，id={} from={}", entity.getId(), entity.getStatus());
 
-                continue;
-            }
+                    continue;
+                }
 
-            if (exceed) {
-                discard++;
-            } else {
-                reset++;
+                if (exceed) {
+                    discard++;
+                } else {
+                    reset++;
+                }
+            } catch (Exception e) {
+                failed++;
             }
         }
 
-        log.info("重置任务，size={} reset={}, discard={}, skipped={}",
-            entityList.size(), reset, discard, skipped);
+        log.info("重置任务，size={} reset={}, discard={}, skipped={}, failed={}",
+            entityList.size(), reset, discard, skipped, failed);
     }
 
     @Override
-    protected AsyncCmdSearchDTO buildJobSearchDTO() {
-        final AsyncCmdSearchDTOBuilder<?, ?> builder = AsyncCmdSearchDTO.builder()
-            .taskName("reset job")
+    protected AsyncCmdShardSearchDTO buildJobSearchDTO() {
+        return AsyncCmdShardSearchDTO.builder()
             .statusList(AsyncCmdStatusEnum.getPendingStatus())
-            .expireTime(LocalDateTime.now());
-        return builder.build();
+            .expireTime(LocalDateTime.now())
+            .build();
     }
 }

@@ -24,6 +24,7 @@ import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGrouSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGroupSearchDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSearchDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdShardSearchDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdGroupVO;
@@ -159,9 +160,6 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(AsyncCmdDO::getStatus, entity.getStatus());
         }
-        if (CharSequenceUtil.isNotBlank(entity.getBizType())) {
-            queryWrapper.eq(AsyncCmdDO::getBizType, entity.getBizType().trim());
-        }
         if (CharSequenceUtil.isNotBlank(entity.getBizKey())) {
             queryWrapper.eq(AsyncCmdDO::getBizKey, entity.getBizKey().trim());
         }
@@ -177,12 +175,8 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
         if (CharSequenceUtil.isNotBlank(entity.getExecuteName())) {
             queryWrapper.eq(AsyncCmdDO::getExecuteName, entity.getExecuteName().trim());
         }
-        if (Objects.nonNull(entity.getExpireTime())) {
-            queryWrapper.lt(AsyncCmdDO::getExpireTime, entity.getExpireTime());
-        }
-        if (Objects.nonNull(entity.getRetryTime())) {
-            queryWrapper.le(AsyncCmdDO::getNextRetryTime, entity.getRetryTime());
-        }
+
+        showField(queryWrapper);
 
         final PageDTO<AsyncCmdDO> modelPage = this.asyncCmdRepository.page(page, queryWrapper);
         return modelPage.convert(model -> BeanUtil.copyProperties(model, AsyncCmdPageVO.class));
@@ -237,5 +231,53 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
         final int queueSize = asyncCmdTaskExecutor.getQueue().size();
         int available = maxPoolSize - activeCount - queueSize;
         return Math.max(0, Math.min(this.property.getMaxPageSize(), available));
+    }
+
+    @Override
+    public List<AsyncCmdVO> listByShard(AsyncCmdShardSearchDTO entity) {
+        final Integer size = this.getSize();
+        if (size == 0) {
+            return null;
+        }
+
+        LambdaQueryWrapper<AsyncCmdDO> queryWrapper = Wrappers.lambdaQuery(AsyncCmdDO.class)
+            .eq(AsyncCmdDO::getEnv, SpringUtil.getActiveProfile())
+            .gt(AsyncCmdDO::getId, entity.getLastId())
+            .apply("MOD(id, {0}) = {1}",
+                entity.getShardTotal(),
+                entity.getShardIndex()
+            )
+            .orderByAsc(AsyncCmdDO::getId)
+            .last("LIMIT " + size);
+        if (Objects.nonNull(entity.getStatus())) {
+            queryWrapper.eq(AsyncCmdDO::getStatus, entity.getStatus());
+        }
+        if (CollUtil.isNotEmpty(entity.getStatusList())) {
+            queryWrapper.in(AsyncCmdDO::getStatus, entity.getStatusList());
+        }
+        if (Objects.nonNull(entity.getExpireTime())) {
+            queryWrapper.lt(AsyncCmdDO::getExpireTime, entity.getExpireTime());
+        }
+        if (Objects.nonNull(entity.getRetryTime())) {
+            queryWrapper.le(AsyncCmdDO::getNextRetryTime, entity.getRetryTime());
+        }
+
+        showField(queryWrapper);
+
+        final List<AsyncCmdDO> list = this.asyncCmdRepository.list(queryWrapper);
+        if (CollUtil.isEmpty(list)) {
+            return null;
+        }
+
+        return BeanUtil.copyToList(list, AsyncCmdVO.class);
+    }
+
+    private void showField(LambdaQueryWrapper<AsyncCmdDO> queryWrapper) {
+        queryWrapper.select(AsyncCmdDO::getId, AsyncCmdDO::getCreatedTime, AsyncCmdDO::getCreatedTimestamp, AsyncCmdDO::getCreatedBy,
+            AsyncCmdDO::getModifiedTime, AsyncCmdDO::getModifiedTimestamp, AsyncCmdDO::getModifiedBy, AsyncCmdDO::getVersion,
+            AsyncCmdDO::getStatus, AsyncCmdDO::getEnv, AsyncCmdDO::getBizKey, AsyncCmdDO::getBizType, AsyncCmdDO::getExecuteName,
+            AsyncCmdDO::getDispatchMode, AsyncCmdDO::getBizNumber, AsyncCmdDO::getExpireTime, AsyncCmdDO::getRetryCount,
+            AsyncCmdDO::getNextRetryTime, AsyncCmdDO::getSubTaskCount, AsyncCmdDO::getCostTime, AsyncCmdDO::getRemark
+        );
     }
 }
