@@ -68,7 +68,7 @@ public class AsyncCmdProperty {
      * 任务执行最大时间，超过这个时间任务将被重置
      */
     @Builder.Default
-    private Long timeoutSeconds = 60L;
+    private Long timeoutSeconds = 120L;
 
     /**
      * 重试策略配置.
