@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 异步命令.
+ * 异步命令任务.
  *
  * @author zengdegui
  * @since 2024/11/19 01:42
@@ -33,7 +33,7 @@ public class AsyncCmdJob {
     private final AsyncCmdJobHandlerStrategyFactory factory;
 
     /**
-     * 异步命令定时任务.
+     * 异步命令任务.
      */
     @XxlJob("asyncCmdJob")
     public void jobExecute() {

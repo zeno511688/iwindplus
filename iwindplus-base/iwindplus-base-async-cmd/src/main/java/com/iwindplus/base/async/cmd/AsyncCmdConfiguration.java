@@ -218,6 +218,7 @@ public class AsyncCmdConfiguration {
      * 创建 AsyncCmdStateSupport.
      *
      * @param property            property
+     * @param asyncCmdRepository  asyncCmdRepository
      * @param asyncCmdService     asyncCmdService
      * @param asyncCmdSubService  asyncCmdSubService
      * @param transactionTemplate transactionTemplate
@@ -226,11 +227,12 @@ public class AsyncCmdConfiguration {
     @Bean
     public AsyncCmdStateSupport asyncCmdStateSupport(
         AsyncCmdProperty property,
+        AsyncCmdRepository asyncCmdRepository,
         AsyncCmdService asyncCmdService,
         AsyncCmdSubService asyncCmdSubService,
         TransactionTemplate transactionTemplate) {
-        AsyncCmdStateSupport asyncCmdStateSupport =
-            new AsyncCmdStateSupport(property, asyncCmdService, asyncCmdSubService, transactionTemplate);
+        AsyncCmdStateSupport asyncCmdStateSupport = new AsyncCmdStateSupport(
+            property, asyncCmdRepository, asyncCmdService, asyncCmdSubService, transactionTemplate);
         log.info("AsyncCmdStateSupport={}", asyncCmdStateSupport);
         return asyncCmdStateSupport;
     }

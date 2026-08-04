@@ -36,21 +36,26 @@ public interface AsyncCmdExecutor {
     AsyncCmdSubmitVO submitGroup(AsyncCmdGroupSubmitDTO entity);
 
     /**
-     * 移除任务.
+     * 通过主键人工触发重试.
+     *
+     * @param id 主键
+     */
+    void retryById(Long id);
+
+    /**
+     * 通过业务流水号人工触发重试.
+     *
+     * @param bizNumber 业务流水号
+     */
+    void retryByBizNumber(String bizNumber);
+
+    /**
+     * 通过主键移除任务.
      *
      * @param id 主键
      * @return boolean
      */
     boolean removeById(Long id);
-
-    /**
-     * 通过业务key和类型移除任务.
-     *
-     * @param bizKey  业务key
-     * @param bizType 业务类型
-     * @return boolean
-     */
-    boolean removeByBizKeyAndType(String bizKey, String bizType);
 
     /**
      * 通过业务流水号移除任务.

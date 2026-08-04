@@ -47,14 +47,4 @@ public interface AsyncCmdMapper extends BaseMapper<AsyncCmdDO> {
      * @return int
      */
     int deleteByBizNumber(@Param("env") String env, @Param("bizNumber") String bizNumber);
-
-    /**
-     * 通过业务键和类型删除.
-     *
-     * @param env     环境
-     * @param bizKey  业务键
-     * @param bizType 业务类型
-     * @return boolean
-     */
-    int deleteByBizKeyAndType(@Param("env") String env, @Param("bizKey") String bizKey, @Param("bizType") String bizType);
 }

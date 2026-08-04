@@ -15,6 +15,7 @@ import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitBaseDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
+import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubmitVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.executor.AsyncCmdExecutor;
@@ -25,8 +26,12 @@ import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdDispatchHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
+import com.iwindplus.base.domain.enums.BizCodeEnum;
+import com.iwindplus.base.domain.exception.BizException;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -81,24 +86,36 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
     }
 
     @Override
+    public void retryById(Long id) {
+        Assert.notNull(id, "id must not be null");
+
+        this.retry(this.asyncCmdService.getDetail(id));
+    }
+
+    @Override
+    public void retryByBizNumber(String bizNumber) {
+        Assert.hasText(bizNumber, "bizNumber must not be null");
+
+        this.retry(this.asyncCmdService.getDetailByBizNumber(bizNumber));
+    }
+
+    @Override
     public boolean removeById(Long id) {
+        Assert.notNull(id, "id must not be null");
+
         return asyncCmdService.removeById(id, true);
     }
 
     @Override
-    public boolean removeByBizKeyAndType(String bizKey, String bizType) {
-        return asyncCmdService.removeByBizKeyAndType(bizKey, bizType, true);
-    }
-
-    @Override
     public boolean removeByBizNumber(String bizNumber) {
+        Assert.hasText(bizNumber, "bizNumber must not be null");
+
         return asyncCmdService.removeByBizNumber(bizNumber, true);
     }
 
     private void dispatch(AsyncCmdVO entity) {
-        final AsyncCmdDispatchHandler dispatchHandler =
-            this.asyncCmdDispatchHandlerStrategyFactory
-                .getDispatchHandler(entity.getDispatchMode());
+        final AsyncCmdDispatchHandler dispatchHandler = this.asyncCmdDispatchHandlerStrategyFactory
+            .getDispatchHandler(entity.getDispatchMode());
 
         dispatchHandler.execute(entity);
     }
@@ -176,5 +193,28 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             .bizType(param.getBizType())
             .bizNumber(param.getBizNumber())
             .build();
+    }
+
+    public void retry(AsyncCmdVO entity) {
+        if (Objects.isNull(entity)) {
+            return;
+        }
+
+        final AsyncCmdStatusEnum from = entity.getStatus();
+        if (AsyncCmdStatusEnum.DISCARD != from) {
+            throw new BizException(BizCodeEnum.CURRENT_STATUS_NOT_SUPPORT_RETRY, new Object[]{from});
+        }
+
+        final boolean status = this.asyncCmdService.editStatusById(entity.getId(), from, AsyncCmdStatusEnum.TO_BE_EXECUTE,
+            null, null, 0, LocalDateTime.now(), null);
+        if (!status) {
+            log.warn("Failed to retry trigger, task status has been changed, id={}", entity.getId());
+
+            return;
+        }
+
+        entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
+        entity.setRetryCount(0);
+        this.dispatch(entity);
     }
 }

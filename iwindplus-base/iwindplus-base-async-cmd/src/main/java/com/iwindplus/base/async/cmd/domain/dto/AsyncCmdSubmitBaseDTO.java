@@ -37,4 +37,10 @@ public class AsyncCmdSubmitBaseDTO implements Serializable {
      */
     @Schema(description = "业务类型，例如 ORDER_CREATE")
     private String bizType;
+
+    /**
+     * 业务流水号（可选）.
+     */
+    @Schema(description = "业务流水号")
+    private String bizNumber;
 }

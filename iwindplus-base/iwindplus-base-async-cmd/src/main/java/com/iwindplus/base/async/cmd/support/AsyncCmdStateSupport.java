@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.async.cmd.support;
 
+import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdRepository;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
@@ -33,6 +34,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Slf4j
 public record AsyncCmdStateSupport(
     AsyncCmdProperty property,
+    AsyncCmdRepository asyncCmdRepository,
     AsyncCmdService asyncCmdService,
     AsyncCmdSubService asyncCmdSubService,
     TransactionTemplate transactionTemplate) {
@@ -51,7 +53,7 @@ public record AsyncCmdStateSupport(
                     AsyncCmdStatusEnum.TO_BE_EXECUTE,
                     AsyncCmdStatusEnum.EXECUTE,
                     null,
-                    true
+                    this.asyncCmdRepository.getNextExpireTime()
                 )
             )
         );
@@ -76,7 +78,8 @@ public record AsyncCmdStateSupport(
                     entity.getId(),
                     AsyncCmdStatusEnum.EXECUTE,
                     AsyncCmdStatusEnum.SUCCESS,
-                    costTime);
+                    costTime,
+                    null);
                 if (updated) {
                     // 删除记录（可选）
                     if (Boolean.TRUE.equals(this.property.getEnabledSuccessDelete())) {
@@ -92,7 +95,7 @@ public record AsyncCmdStateSupport(
         }
 
         entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
-        entity.setCostTime(this.accumulate(entity.getCostTime(), costTime));
+        entity.setCostTime(costTime);
         this.safeCallback(() -> handler.onTaskSuccess(entity), "onTaskSuccess", entity.getId());
         return true;
     }
@@ -137,6 +140,7 @@ public record AsyncCmdStateSupport(
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
+                // 任务失败时，释放执行租约，任务成功时，不释放执行租约，任务执行中时，不释放执行租约
                 this.asyncCmdService.editStatusById(
                     entity.getId(),
                     AsyncCmdStatusEnum.EXECUTE,
@@ -144,7 +148,8 @@ public record AsyncCmdStateSupport(
                     costTime,
                     stack,
                     retryCount,
-                    nextRetryTime
+                    nextRetryTime,
+                    LocalDateTime.now()
                 )
             )
         );
@@ -157,7 +162,7 @@ public record AsyncCmdStateSupport(
         entity.setRetryCount(retryCount);
         entity.setNextRetryTime(nextRetryTime);
         entity.setErrorMsg(stack);
-        entity.setCostTime(this.accumulate(entity.getCostTime(), costTime));
+        entity.setCostTime(costTime);
         this.safeCallback(() -> handler.onTaskFail(entity), "onTaskFail", entity.getId());
         return true;
     }
@@ -281,16 +286,5 @@ public record AsyncCmdStateSupport(
         return Boolean.TRUE.equals(property.getEnabledExceptionCapture())
             ? StringUtils.abbreviate(stack, property.getExceptionCaptureLength())
             : stack;
-    }
-
-    /**
-     * 累计耗时
-     *
-     * @param current  当前耗时
-     * @param costTime 耗时
-     * @return Long
-     */
-    private Long accumulate(Long current, Long costTime) {
-        return Optional.ofNullable(current).orElse(0L) + Math.max(0L, costTime);
     }
 }

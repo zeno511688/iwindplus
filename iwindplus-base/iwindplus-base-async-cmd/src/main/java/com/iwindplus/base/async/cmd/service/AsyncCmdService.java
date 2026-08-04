@@ -65,16 +65,6 @@ public interface AsyncCmdService {
     boolean removeByIds(List<Long> ids, boolean deleted);
 
     /**
-     * 通过业务键和类型删除.
-     *
-     * @param bizKey  业务键
-     * @param bizType 业务类型
-     * @param deleted 是否真删
-     * @return boolean
-     */
-    boolean removeByBizKeyAndType(String bizKey, String bizType, boolean deleted);
-
-    /**
      * 通过业务流水号删除.
      *
      * @param bizNumber 业务流水号
@@ -113,27 +103,15 @@ public interface AsyncCmdService {
     /**
      * 通过主键修改状态.
      *
-     * @param id       主键
-     * @param from     从状态
-     * @param to       到状态
-     * @param costTime 耗时
+     * @param id         主键
+     * @param from       从状态
+     * @param to         到状态
+     * @param costTime   耗时
+     * @param expireTime 续约时间
      * @return boolean
      */
     boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime);
-
-    /**
-     * 通过主键修改状态（抢占执行权，待执行-> 执行中，同时重置执行续约 expireTime）.
-     *
-     * @param id        主键
-     * @param from      从状态
-     * @param to        到状态
-     * @param costTime  耗时
-     * @param renewFlag 是否重置续约时间
-     * @return boolean
-     */
-    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, boolean renewFlag);
+        Long costTime, LocalDateTime expireTime);
 
     /**
      * 通过主键修改状态.
@@ -145,10 +123,12 @@ public interface AsyncCmdService {
      * @param errorMsg      错误信息
      * @param retryCount    重试次数
      * @param nextRetryTime 下一次重试时间
+     * @param expireTime    续约时间
      * @return boolean
      */
     boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, LocalDateTime nextRetryTime);
+        Long costTime, String errorMsg, Integer retryCount,
+        LocalDateTime nextRetryTime, LocalDateTime expireTime);
 
     /**
      * 续订租期时间.

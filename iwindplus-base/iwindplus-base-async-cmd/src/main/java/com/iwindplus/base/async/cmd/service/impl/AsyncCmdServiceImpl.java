@@ -37,6 +37,7 @@ import com.iwindplus.base.domain.exception.BizException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.dromara.dynamictp.core.executor.DtpExecutor;
@@ -50,6 +51,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @Slf4j
 @RequiredArgsConstructor
+@Getter
 public class AsyncCmdServiceImpl implements AsyncCmdService {
 
     private final AsyncCmdProperty property;
@@ -89,16 +91,6 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
     }
 
     @Override
-    public boolean removeByBizKeyAndType(String bizKey, String bizType, boolean deleted) {
-        return Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
-                this.asyncCmdRepository.deleteByBizKeyAndType(
-                    SpringUtil.getActiveProfile(), bizKey, bizType, deleted)
-            )
-        );
-    }
-
-    @Override
     public boolean removeByBizNumber(String bizNumber, boolean deleted) {
         return Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
@@ -128,20 +120,14 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
 
     @Override
     public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime) {
-        return this.asyncCmdRepository.updateStatusById(id, from, to, costTime);
+        Long costTime, LocalDateTime expireTime) {
+        return this.asyncCmdRepository.updateStatusById(id, from, to, costTime, expireTime);
     }
 
     @Override
     public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, boolean renewFlag) {
-        return this.asyncCmdRepository.updateStatusById(id, from, to, costTime, renewFlag);
-    }
-
-    @Override
-    public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, LocalDateTime nextRetryTime) {
-        return this.asyncCmdRepository.updateStatusById(id, from, to, costTime, errorMsg, retryCount, nextRetryTime, false);
+        Long costTime, String errorMsg, Integer retryCount, LocalDateTime nextRetryTime, LocalDateTime expireTime) {
+        return this.asyncCmdRepository.updateStatusById(id, from, to, costTime, errorMsg, retryCount, nextRetryTime, expireTime);
     }
 
     @Override
@@ -206,9 +192,15 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
 
     @Override
     public AsyncCmdGroupVO getGroupDetail(AsyncCmdGroupSearchDTO entity) {
-        final AsyncCmdVO data = Objects.nonNull(entity.getId())
-            ? this.getDetail(entity.getId())
-            : this.getDetailByBizNumber(entity.getBizNumber());
+        AsyncCmdVO data = null;
+        if (Objects.nonNull(entity.getId())) {
+            data = this.getDetail(entity.getId());
+        } else if (CharSequenceUtil.isNotBlank(entity.getBizNumber())) {
+            data = this.getDetailByBizNumber(entity.getBizNumber());
+        } else if (CharSequenceUtil.isNotBlank(entity.getBizKey())
+            && CharSequenceUtil.isNotBlank(entity.getBizType())) {
+            data = this.getDetailByBizKeyAndType(entity.getBizKey(), entity.getBizType());
+        }
 
         if (Objects.nonNull(data)) {
             final AsyncCmdGroupVO result = BeanUtil.copyProperties(data, AsyncCmdGroupVO.class);
@@ -270,6 +262,20 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
         }
 
         return BeanUtil.copyToList(list, AsyncCmdVO.class);
+    }
+
+    private AsyncCmdVO getDetailByBizKeyAndType(String bizKey, String bizType) {
+        final AsyncCmdDO data = this.asyncCmdRepository.getOne(Wrappers.lambdaQuery(AsyncCmdDO.class)
+            .eq(AsyncCmdDO::getEnv, SpringUtil.getActiveProfile())
+            .eq(AsyncCmdDO::getBizKey, bizKey)
+            .eq(AsyncCmdDO::getBizType, bizType)
+            .orderByDesc(AsyncCmdDO::getId)
+            .last("LIMIT 1"));
+        if (Objects.isNull(data)) {
+            throw new BizException(BizCodeEnum.DATA_NOT_EXIST);
+        }
+
+        return BeanUtil.copyProperties(data, AsyncCmdVO.class);
     }
 
     private void showField(LambdaQueryWrapper<AsyncCmdDO> queryWrapper) {

@@ -36,6 +36,18 @@ public class AsyncCmdGroupSearchDTO extends DbPageDTO {
     private Long id;
 
     /**
+     * 业务key，例如 ORDER.
+     */
+    @Schema(description = "业务key，例如 ORDER")
+    private String bizKey;
+
+    /**
+     * 业务类型，例如 ORDER_CREATE.
+     */
+    @Schema(description = "业务类型，例如 ORDER_CREATE")
+    private String bizType;
+
+    /**
      * 业务流水号.
      */
     @Schema(description = "业务流水号")

@@ -16,7 +16,6 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.repository.CrudRepository;
-import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.iwindplus.base.async.cmd.dal.mapper.AsyncCmdMapper;
 import com.iwindplus.base.async.cmd.dal.mapper.AsyncCmdSubMapper;
 import com.iwindplus.base.async.cmd.dal.model.AsyncCmdDO;
@@ -29,8 +28,6 @@ import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.enums.DispatchModeEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
-import com.iwindplus.base.domain.enums.BizCodeEnum;
-import com.iwindplus.base.domain.exception.BizException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -75,11 +72,6 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
         final List<AsyncCmdSubSaveDTO> subTasks = entity.getSubTasks();
         subTasks.forEach(subTask -> subTask.setAsyncCmdId(result.getId()));
         final List<AsyncCmdSubDO> subEntities = BeanUtil.copyToList(subTasks, AsyncCmdSubDO.class);
-        final Long count = this.asyncCmdSubMapper.selectCount(Wrappers.lambdaQuery(AsyncCmdSubDO.class)
-            .eq(AsyncCmdSubDO::getAsyncCmdId, result.getId()));
-        if (count > 0) {
-            throw new BizException(BizCodeEnum.DATA_EXIST);
-        }
         this.asyncCmdSubMapper.insert(subEntities);
         return result;
     }
@@ -104,41 +96,12 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
                 .eq(AsyncCmdDO::getEnv, env.trim())
                 .eq(AsyncCmdDO::getBizNumber, bizNumber.trim())
             , value -> Long.valueOf(value.toString()));
-        if (CollUtil.isNotEmpty(ids)) {
-            this.asyncCmdSubMapper.delete(Wrappers.lambdaQuery(AsyncCmdSubDO.class)
-                .in(AsyncCmdSubDO::getAsyncCmdId, ids));
+        if (CollUtil.isEmpty(ids)) {
+            return false;
         }
 
-        return super.removeByIds(ids);
-    }
-
-    /**
-     * 通过业务键和类型删除.
-     *
-     * @param env     环境
-     * @param bizKey  业务键
-     * @param bizType 业务类型
-     * @param deleted 是否真删
-     * @return boolean
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public boolean deleteByBizKeyAndType(
-        String env, String bizKey, String bizType, boolean deleted) {
-        // 真实删除
-        if (Boolean.TRUE.equals(deleted)) {
-            return super.baseMapper.deleteByBizKeyAndType(env, bizKey, bizType) > 0;
-        }
-
-        final List<Long> ids = super.listObjs(Wrappers.lambdaQuery(AsyncCmdDO.class)
-                .eq(AsyncCmdDO::getEnv, env.trim())
-                .eq(AsyncCmdDO::getBizKey, bizKey.trim())
-                .eq(AsyncCmdDO::getBizType, bizType.trim())
-            , value -> Long.valueOf(value.toString()));
-        if (CollUtil.isNotEmpty(ids)) {
-            this.asyncCmdSubMapper.delete(Wrappers.lambdaQuery(AsyncCmdSubDO.class)
-                .in(AsyncCmdSubDO::getAsyncCmdId, ids));
-        }
-
+        this.asyncCmdSubMapper.delete(Wrappers.lambdaQuery(AsyncCmdSubDO.class)
+            .in(AsyncCmdSubDO::getAsyncCmdId, ids));
         return super.removeByIds(ids);
     }
 
@@ -195,32 +158,17 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
     /**
      * 通过主键修改状态.
      *
-     * @param id       主键
-     * @param from     从状态
-     * @param to       到状态
-     * @param costTime 耗时
+     * @param id         主键
+     * @param from       从状态
+     * @param to         到状态
+     * @param costTime   耗时
+     * @param expireTime 续约时间
      * @return boolean
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime) {
-        return updateStatusById(id, from, to, costTime, false);
-    }
-
-    /**
-     * 通过主键修改状态.
-     *
-     * @param id        主键
-     * @param from      从状态
-     * @param to        到状态
-     * @param costTime  耗时
-     * @param renewFlag 是否重置续约时间
-     * @return boolean
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, boolean renewFlag) {
-        return updateStatusById(id, from, to, costTime, null, null, null, renewFlag);
+        Long costTime, LocalDateTime expireTime) {
+        return updateStatusById(id, from, to, costTime, null, null, null, expireTime);
     }
 
     /**
@@ -233,12 +181,12 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
      * @param errorMsg      错误信息
      * @param retryCount    重试次数
      * @param nextRetryTime 下次重试时间
-     * @param renewFlag     是否重置续约时间
+     * @param expireTime    续约时间
      * @return boolean
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, LocalDateTime nextRetryTime, boolean renewFlag) {
+        Long costTime, String errorMsg, Integer retryCount, LocalDateTime nextRetryTime, LocalDateTime expireTime) {
         final AsyncCmdDOBuilder<?, ?> builder = AsyncCmdDO.builder()
             .status(to)
             .modifiedTime(LocalDateTime.now())
@@ -255,12 +203,8 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
         if (nextRetryTime != null) {
             builder.nextRetryTime(nextRetryTime);
         }
-        // 任务失败时，释放执行租约，任务成功时，不释放执行租约，任务执行中时，不释放执行租约
-        if (AsyncCmdStatusEnum.FAILED == to) {
-            builder.expireTime(LocalDateTime.now());
-        }
-        if (renewFlag) {
-            builder.expireTime(this.getNextExpireTime());
+        if (expireTime != null) {
+            builder.expireTime(expireTime);
         }
 
         final LambdaUpdateWrapper<AsyncCmdDO> updateWrapper = Wrappers.<AsyncCmdDO>lambdaUpdate()
@@ -289,32 +233,18 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
         return super.updateById(entity);
     }
 
-    /**
-     * 获取业务key和业务类型是否已存在.
-     *
-     * @param bizKey  业务key
-     * @param bizType 业务类型
-     */
-    public void getBizKeyAndBizTypeIsExist(String bizKey, String bizType) {
-        boolean result = SqlHelper.retBool(super.count(Wrappers.lambdaQuery(AsyncCmdDO.class)
-            .eq(AsyncCmdDO::getBizKey, bizKey)
-            .eq(AsyncCmdDO::getBizType, bizType)));
-        if (Boolean.TRUE.equals(result)) {
-            throw new BizException(BizCodeEnum.DATA_EXIST);
-        }
-    }
-
     private AsyncCmdDO buildAsyncCmd(AsyncCmdSaveDTO entity) {
-        entity.setBizNumber(IdWorker.getIdStr());
         entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
         entity.setDispatchMode(DispatchModeEnum.ASYNC);
         entity.setEnv(SpringUtil.getActiveProfile());
         entity.setExpireTime(this.getNextExpireTime());
         entity.setNextRetryTime(LocalDateTime.now());
+        if (CharSequenceUtil.isBlank(entity.getBizNumber())) {
+            entity.setBizNumber(IdWorker.getIdStr());
+        }
         if (MapUtil.isEmpty(entity.getContent())) {
             entity.setContent(MapUtil.newHashMap());
         }
-        this.getBizKeyAndBizTypeIsExist(entity.getBizKey().trim(), entity.getBizType().trim());
         return BeanUtil.copyProperties(entity, AsyncCmdDO.class);
     }
 

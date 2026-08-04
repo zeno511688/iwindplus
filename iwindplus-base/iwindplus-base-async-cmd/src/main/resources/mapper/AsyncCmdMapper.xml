@@ -29,11 +29,4 @@
         left join async_cmd_sub acs on acs.async_cmd_id = ac.id
         where ac.env = #{env} and ac.biz_number = #{bizNumber}
     </delete>
-
-    <delete id="deleteByBizKeyAndType">
-        delete ac, acs
-        from async_cmd ac
-        left join async_cmd_sub acs on acs.async_cmd_id = ac.id
-        where ac.env = #{env} and ac.biz_key = #{bizKey} and ac.biz_type = #{bizType}
-    </delete>
 </mapper>

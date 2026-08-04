@@ -674,6 +674,11 @@ public enum BizCodeEnum implements CommonException {
     REQUEST_TOO_FAST("request_too_fast", "请求过快，请稍后重试"),
 
     /**
+     * 当前状态不支持重试.
+     */
+    CURRENT_STATUS_NOT_SUPPORT_RETRY("current_status_not_support_retry", "当前状态不支持重试，status={0}"),
+
+    /**
      * 重试耗尽.
      */
     RETRY_EXHAUSTED("retry_exhausted", "重试耗尽"),
