@@ -38,10 +38,10 @@ public class AsyncCmdSearchDTO extends DbPageDTO {
     private AsyncCmdStatusEnum status;
 
     /**
-     * 环境.
+     * 状态列表.
      */
-    @Schema(description = "环境")
-    private String env;
+    @Schema(description = "状态列表")
+    private List<AsyncCmdStatusEnum> statusList;
 
     /**
      * 业务key，例如 ORDER.
@@ -60,16 +60,4 @@ public class AsyncCmdSearchDTO extends DbPageDTO {
      */
     @Schema(description = "业务流水号")
     private String bizNumber;
-
-    /**
-     * 状态列表.
-     */
-    @Schema(description = "状态列表")
-    private List<AsyncCmdStatusEnum> statusList;
-
-    /**
-     * 执行器名称.
-     */
-    @Schema(description = "执行器名称")
-    private String executeName;
 }

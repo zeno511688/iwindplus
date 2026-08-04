@@ -35,6 +35,7 @@ import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import lombok.Getter;
@@ -141,10 +142,13 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
         page.setOptimizeCountSql(Boolean.FALSE);
         page.setOptimizeJoinOfCountSql(Boolean.FALSE);
         LambdaQueryWrapper<AsyncCmdDO> queryWrapper = Wrappers.lambdaQuery(AsyncCmdDO.class)
-            .orderByAsc(AsyncCmdDO::getId)
+            .orderByDesc(AsyncCmdDO::getModifiedTime)
             .eq(AsyncCmdDO::getEnv, SpringUtil.getActiveProfile());
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(AsyncCmdDO::getStatus, entity.getStatus());
+        }
+        if (CollUtil.isNotEmpty(entity.getStatusList())) {
+            queryWrapper.in(AsyncCmdDO::getStatus, entity.getStatusList());
         }
         if (CharSequenceUtil.isNotBlank(entity.getBizKey())) {
             queryWrapper.eq(AsyncCmdDO::getBizKey, entity.getBizKey().trim());
@@ -154,12 +158,6 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
         }
         if (CharSequenceUtil.isNotBlank(entity.getBizNumber())) {
             queryWrapper.eq(AsyncCmdDO::getBizNumber, entity.getBizNumber().trim());
-        }
-        if (CollUtil.isNotEmpty(entity.getStatusList())) {
-            queryWrapper.in(AsyncCmdDO::getStatus, entity.getStatusList());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getExecuteName())) {
-            queryWrapper.eq(AsyncCmdDO::getExecuteName, entity.getExecuteName().trim());
         }
 
         showField(queryWrapper);
@@ -228,8 +226,8 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
     @Override
     public List<AsyncCmdVO> listByShard(AsyncCmdShardSearchDTO entity) {
         final Integer size = this.getSize();
-        if (size == 0) {
-            return null;
+        if (size <= 0) {
+            return Collections.emptyList();
         }
 
         LambdaQueryWrapper<AsyncCmdDO> queryWrapper = Wrappers.lambdaQuery(AsyncCmdDO.class)
