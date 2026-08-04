@@ -49,7 +49,7 @@ public class AsyncCmdJob {
         final AtomicInteger failed = new AtomicInteger(0);
         final AsyncCmdJobEnum[] jobEnums = AsyncCmdJobEnum.values();
         List<CompletableFuture<Void>> futures =
-            Arrays.stream(jobEnums)
+            Arrays.stream(AsyncCmdJobEnum.values())
                 .map(entity ->
                     CompletableFuture.runAsync(() -> {
                         try {

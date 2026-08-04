@@ -32,8 +32,7 @@ CREATE TABLE `async_cmd`
     `cost_time`          bigint unsigned  NOT NULL DEFAULT 0 COMMENT '累计耗时',
     PRIMARY KEY (`id`),
     KEY `idx_env_biz_number` (`env`, `biz_number`) COMMENT '复合索引（环境, 业务流水号）',
-    KEY `idx_env_biz_key_biz_type` (`env`, `biz_key`, `biz_type`) COMMENT '复合索引（环境，业务key，业务类型）',
-    KEY `idx_env_status_next_retry_time` (`env`, `status`, `next_retry_time`) COMMENT '复合索引（环境，状态，下次重试时间）'
+    KEY `idx_env_biz_key_biz_type` (`env`, `biz_key`, `biz_type`) COMMENT '复合索引（环境，业务key，业务类型）'
 ) COMMENT ='异步命令表';
 
 -- ----------------------------
@@ -64,5 +63,5 @@ CREATE TABLE `async_cmd_sub`
     `cost_time`          bigint unsigned  NOT NULL DEFAULT 0 COMMENT '耗时',
     `async_cmd_id`       bigint unsigned  NOT NULL DEFAULT 0 COMMENT '异步命令主键',
     PRIMARY KEY (`id`),
-    KEY `idx_async_cmd_id_status` (`async_cmd_id`, `status`) COMMENT '复合索引（异步命令主键, 状态）'
+    KEY `idx_async_cmd_id_seq_status` (`async_cmd_id`, `seq`, `status`) COMMENT '复合索引（异步命令主键, 排序号, 状态）'
 ) COMMENT ='异步命令子表';

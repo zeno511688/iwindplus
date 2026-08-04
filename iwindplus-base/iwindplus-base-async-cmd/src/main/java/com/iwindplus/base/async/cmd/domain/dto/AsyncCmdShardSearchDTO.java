@@ -31,6 +31,12 @@ import lombok.experimental.SuperBuilder;
 public class AsyncCmdShardSearchDTO implements Serializable {
 
     /**
+     * 每页显示条数.
+     */
+    @Schema(description = "每页显示条数")
+    private Integer size;
+
+    /**
      * 分片索引.
      */
     @Schema(description = "分片索引")

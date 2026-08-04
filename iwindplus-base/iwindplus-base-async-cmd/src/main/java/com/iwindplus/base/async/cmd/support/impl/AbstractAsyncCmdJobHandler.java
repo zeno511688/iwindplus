@@ -16,6 +16,7 @@ import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdJobHandler;
 import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import java.util.List;
+import java.util.Objects;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,11 +51,18 @@ public abstract class AbstractAsyncCmdJobHandler implements AsyncCmdJobHandler {
 
     @Override
     public void execute(Integer shardIndex, Integer shardTotal) {
+        final Integer size = this.asyncCmdService.getSize();
+        if (Objects.isNull(size) || size <= 0) {
+            log.error("【{}】每条捞取条数={}, 请检查配置", this.support(), size);
+            return;
+        }
+
         final AbstractAsyncCmdJobHandler proxy = SpringUtil.getBean(this.getClass());
 
         final AsyncCmdShardSearchDTO param = this.buildJobSearchDTO();
         param.setShardIndex(shardIndex);
         param.setShardTotal(shardTotal);
+        param.setSize(size);
 
         long lastId = 0;
         int loop = 0;
@@ -80,7 +88,7 @@ public abstract class AbstractAsyncCmdJobHandler implements AsyncCmdJobHandler {
         }
 
         log.info("【{}】执行完成，分片={}/{} 轮次={}, 共处理【{}】条数据",
-            this.support(), shardIndex, shardTotal,
+            this.getClass().getSimpleName(), shardIndex, shardTotal,
             loop, total);
     }
 
