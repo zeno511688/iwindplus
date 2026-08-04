@@ -353,6 +353,15 @@ snail-job:
   namespace: 764d604ec6fc45f68cd92514c40e9e1a
   group: iwindplus-dtx
   token: SJ_Wyz3dmsdbDOkDujOTSSoBjGQP1BMsVnj
+xxl-job:
+  enabled: true
+  admin:
+    addresses: http://127.0.0.1:9880/xxl-job-admin
+    access-token: c61909bdde7b5cbeb27adeeff43ac55c
+  executor:
+    log-path: logs/job
+    log-retention-days: 30
+    app-name: ${spring.application.name}
 logging:
   level:
     root: INFO
