@@ -80,7 +80,7 @@ public abstract class AbstractAsyncCmdJobHandler implements AsyncCmdJobHandler {
         }
 
         log.info("【{}】执行完成，分片={}/{} 轮次={}, 共处理【{}】条数据",
-            this.getClass().getSimpleName(), shardIndex, shardTotal,
+            this.support(), shardIndex, shardTotal,
             loop, total);
     }
 
