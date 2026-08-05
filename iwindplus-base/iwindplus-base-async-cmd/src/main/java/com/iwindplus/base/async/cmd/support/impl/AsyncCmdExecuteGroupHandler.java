@@ -92,7 +92,8 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
         final List<List<AsyncCmdSubVO>> batches = this.groupByStage(subEntities);
         for (List<AsyncCmdSubVO> batch : batches) {
             // 设置前置成功子任务结果
-            batch.forEach(item -> item.setPriorSubTasks(new ArrayList<>(successResults)));
+            final List<AsyncCmdSubVO> snapshot = List.copyOf(successResults);
+            batch.forEach(item -> item.setPriorSubTasks(snapshot));
 
             final List<AsyncCmdSubVO> results = this.executeSubTaskGroups(entity, batch, advanced);
 
@@ -109,7 +110,7 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
     }
 
     private List<AsyncCmdSubVO> listPriorSuccess(AsyncCmdVO entity, List<AsyncCmdSubVO> subEntities) {
-        if (subEntities.size() == entity.getSubTaskCount()) {
+        if (subEntities.size() >= entity.getSubTaskCount()) {
             return new ArrayList<>(10);
         }
 
@@ -127,7 +128,7 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
         for (AsyncCmdSubVO subEntity : subEntities) {
             Integer stage = subEntity.getStage();
             // stage=0，每个任务单独一组
-            if (stage == 0) {
+            if (stage <= 0) {
                 batches.add(new ArrayList<>(List.of(subEntity)));
                 currentBatch = null;
                 currentStage = null;
@@ -197,6 +198,9 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
                     , asyncCmdSubTaskExecutor
                 )
             ).toList();
+
+        // 等待所有任务完成
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
         return futures.stream()
             .map(CompletableFuture::join)
