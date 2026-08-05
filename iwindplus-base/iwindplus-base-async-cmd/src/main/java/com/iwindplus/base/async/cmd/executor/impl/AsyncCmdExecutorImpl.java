@@ -29,6 +29,7 @@ import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -149,6 +150,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
     }
 
     private List<AsyncCmdSubSaveDTO> buildSubTasks(List<AsyncCmdSubSubmitDTO> subTasks) {
+        List<AsyncCmdSubSaveDTO> entities = new ArrayList<>(10);
         final Set<Object> seqSet = new HashSet<>(subTasks.size());
 
         for (int index = 0; index < subTasks.size(); index++) {
@@ -158,9 +160,12 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             boolean unique = seqSet.add(subTask.getSeq());
             Assert.isTrue(unique, "sub[" + index + "].seq must not be unique");
 
-            this.resolveSubTaskExecuteName(subTask.getExecutorClass());
+            final String executeName = this.resolveSubTaskExecuteName(subTask.getExecutorClass());
+            final AsyncCmdSubSaveDTO entity = BeanUtil.copyProperties(subTasks, AsyncCmdSubSaveDTO.class);
+            entity.setExecuteName(executeName);
+            entities.add(entity);
         }
-        return BeanUtil.copyToList(subTasks, AsyncCmdSubSaveDTO.class);
+        return entities;
     }
 
     /**
