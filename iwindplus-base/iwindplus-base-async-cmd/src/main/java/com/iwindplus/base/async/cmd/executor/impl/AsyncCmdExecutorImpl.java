@@ -161,7 +161,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             Assert.isTrue(unique, "sub[" + index + "].seq must not be unique");
 
             final String executeName = this.resolveSubTaskExecuteName(subTask.getExecutorClass());
-            final AsyncCmdSubSaveDTO entity = BeanUtil.copyProperties(subTasks, AsyncCmdSubSaveDTO.class);
+            final AsyncCmdSubSaveDTO entity = BeanUtil.copyProperties(subTask, AsyncCmdSubSaveDTO.class);
             entity.setExecuteName(executeName);
             entities.add(entity);
         }
