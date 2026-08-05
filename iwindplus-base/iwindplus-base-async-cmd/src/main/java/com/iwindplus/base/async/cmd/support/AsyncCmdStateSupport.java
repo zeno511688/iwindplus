@@ -185,7 +185,8 @@ public record AsyncCmdStateSupport(
                     entity.getId(),
                     AsyncCmdStatusEnum.EXECUTE,
                     AsyncCmdStatusEnum.SUCCESS,
-                    costTime
+                    costTime,
+                    entity.getResult()
                 )
             )
         );

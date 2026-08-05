@@ -6,6 +6,7 @@ package com.iwindplus.base.async.cmd.service;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 异步命令子表业务层接口类.
@@ -31,9 +32,11 @@ public interface AsyncCmdSubService {
      * @param from     从状态
      * @param to       到状态
      * @param costTime 耗时
+     * @param result   结果
      * @return boolean
      */
-    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, Long costTime);
+    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
+        Long costTime, Map<String, Object> result);
 
     /**
      * 通过主键修改状态.
@@ -66,10 +69,11 @@ public interface AsyncCmdSubService {
     long countUnfinished(Long asyncCmdId);
 
     /**
-     * 通过异步命令主键获取未执行成功的子任务列表（按排序号升序）.
+     * 通过异步命令主键和状态获取子任务列表（按排序号升序）.
      *
      * @param asyncCmdId 异步命令主键
+     * @param statusList 状态集合
      * @return List<AsyncCmdSubVO>
      */
-    List<AsyncCmdSubVO> listUnfinished(Long asyncCmdId);
+    List<AsyncCmdSubVO> listByAsyncCmdIdAndStatus(Long asyncCmdId, List<AsyncCmdStatusEnum> statusList);
 }

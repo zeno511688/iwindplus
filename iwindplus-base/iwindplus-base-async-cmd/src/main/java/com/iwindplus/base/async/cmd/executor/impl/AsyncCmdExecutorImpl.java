@@ -142,6 +142,8 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         Assert.notNull(entity, "sub entity must not be null");
         Assert.notNull(entity.getBizType(), "sub[" + index + "].bizType must not be null");
         Assert.notNull(entity.getSeq(), "sub[" + index + "].seq must not be null");
+        Assert.isTrue(Objects.isNull(entity.getStage()) || entity.getStage() > 0, "sub[" + index + "].stage must be greater than 0");
+        Assert.isTrue(entity.getSeq() > 0, "sub[" + index + "].seq must be greater than 0");
         Assert.notEmpty(entity.getContent(), "sub[" + index + "].content must not be null");
         Assert.notNull(entity.getExecutorClass(), "sub[" + index + "].executorClass must not be null");
     }

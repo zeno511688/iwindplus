@@ -15,6 +15,7 @@ import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdSubService;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,14 +37,14 @@ public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
     }
 
     @Override
-    public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, Long costTime) {
-        return this.asyncCmdSubRepository.updateStatusById(id, from, to, costTime);
+    public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, Long costTime, Map<String, Object> result) {
+        return this.asyncCmdSubRepository.updateStatusById(id, from, to, costTime, result);
     }
 
     @Override
     public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
         Long costTime, String errorMsg, Integer retryCount) {
-        return this.asyncCmdSubRepository.updateStatusById(id, from, to, costTime, errorMsg, retryCount);
+        return this.asyncCmdSubRepository.updateStatusById(id, from, to, costTime, errorMsg, retryCount, null);
     }
 
     @Override
@@ -57,8 +58,9 @@ public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
     }
 
     @Override
-    public List<AsyncCmdSubVO> listUnfinished(Long asyncCmdId) {
-        final List<AsyncCmdSubDO> list = this.asyncCmdSubRepository.listByAsyncCmdId(asyncCmdId, AsyncCmdStatusEnum.getUnfinishedStatus());
+    public List<AsyncCmdSubVO> listByAsyncCmdIdAndStatus(Long asyncCmdId, List<AsyncCmdStatusEnum> statusList) {
+        final List<AsyncCmdSubDO> list = this.asyncCmdSubRepository.listByAsyncCmdId(asyncCmdId,
+            statusList, true);
         if (CollUtil.isEmpty(list)) {
             return CollUtil.newArrayList();
         }

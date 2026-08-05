@@ -9,6 +9,7 @@
 package com.iwindplus.base.async.cmd.dal.repository;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -23,6 +24,7 @@ import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,7 +51,7 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateStatusById(Long id, AsyncCmdStatusEnum to) {
-        return updateStatusById(id, null, to, null);
+        return updateStatusById(id, null, to, null, null);
     }
 
     /**
@@ -59,11 +61,12 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
      * @param from     从状态
      * @param to       到状态
      * @param costTime 耗时
+     * @param result   结果
      * @return boolean
      */
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, Long costTime) {
-        return updateStatusById(id, from, to, costTime, null, null);
+    public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, Long costTime, Map<String, Object> result) {
+        return updateStatusById(id, from, to, costTime, null, null, result);
     }
 
     /**
@@ -75,11 +78,12 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
      * @param costTime   耗时
      * @param errorMsg   错误信息
      * @param retryCount 重试次数
+     * @param result     结果
      * @return boolean
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount) {
+        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result) {
         final AsyncCmdSubDOBuilder<?, ?> builder = AsyncCmdSubDO.builder()
             .status(to)
             .modifiedTime(LocalDateTime.now())
@@ -92,6 +96,9 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
         }
         if (retryCount != null) {
             builder.retryCount(retryCount);
+        }
+        if (MapUtil.isNotEmpty(result)) {
+            builder.result(result);
         }
 
         final LambdaUpdateWrapper<AsyncCmdSubDO> updateWrapper = Wrappers.<AsyncCmdSubDO>lambdaUpdate()
@@ -122,11 +129,12 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
     /**
      * 通过异步命令主键获取子任务列表（按排序号升序）.
      *
-     * @param asyncCmdId 异步命令主键
-     * @param statusList 状态列表
+     * @param asyncCmdId    异步命令主键
+     * @param statusList    状态列表
+     * @param showTextField 是否获取text字段
      * @return List<AsyncCmdSubDO>
      */
-    public List<AsyncCmdSubDO> listByAsyncCmdId(Long asyncCmdId, List<AsyncCmdStatusEnum> statusList) {
+    public List<AsyncCmdSubDO> listByAsyncCmdId(Long asyncCmdId, List<AsyncCmdStatusEnum> statusList, Boolean showTextField) {
         final LambdaQueryWrapper<AsyncCmdSubDO> queryWrapper = Wrappers.<AsyncCmdSubDO>lambdaQuery()
             .eq(AsyncCmdSubDO::getAsyncCmdId, asyncCmdId)
             .orderByAsc(AsyncCmdSubDO::getSeq)
@@ -134,6 +142,15 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
         if (CollUtil.isNotEmpty(statusList)) {
             queryWrapper.in(AsyncCmdSubDO::getStatus, statusList);
         }
+
+        if (Boolean.FALSE.equals(showTextField)) {
+            queryWrapper.select(AsyncCmdSubDO::getId, AsyncCmdSubDO::getCreatedTime, AsyncCmdSubDO::getCreatedTimestamp, AsyncCmdSubDO::getCreatedBy,
+                AsyncCmdSubDO::getModifiedTime, AsyncCmdSubDO::getModifiedTimestamp, AsyncCmdSubDO::getModifiedBy, AsyncCmdSubDO::getVersion,
+                AsyncCmdSubDO::getStatus, AsyncCmdSubDO::getBizType, AsyncCmdSubDO::getStage, AsyncCmdSubDO::getSeq,
+                AsyncCmdSubDO::getRetryCount, AsyncCmdSubDO::getCostTime, AsyncCmdSubDO::getAsyncCmdId, AsyncCmdSubDO::getRemark
+            );
+        }
+
         return super.list(queryWrapper);
     }
 

@@ -52,6 +52,12 @@ public class AsyncCmdSubDTO extends DbVersionBaseDTO {
     private String bizType;
 
     /**
+     * 阶段（同阶段子任务并发）.
+     */
+    @Schema(description = "阶段")
+    private Integer stage;
+
+    /**
      * 排序号
      */
     @Schema(description = "排序号")
@@ -72,6 +78,12 @@ public class AsyncCmdSubDTO extends DbVersionBaseDTO {
     @Schema(description = "内容")
     @NotEmpty(message = "{content.notEmpty}", groups = {SaveGroup.class, EditGroup.class})
     private Map<String, Object> content;
+
+    /**
+     * 结果（供后续任务读取，同一批互相不可见，由于是并发）.
+     */
+    @Schema(description = "结果")
+    private Map<String, Object> result;
 
     /**
      * 重试次数.

@@ -7,10 +7,15 @@
 
 package com.iwindplus.base.async.cmd.domain.vo;
 
+import cn.hutool.core.collection.CollUtil;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.domain.dto.DbVersionBaseDTO;
+import com.iwindplus.base.util.JacksonUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -44,6 +49,12 @@ public class AsyncCmdSubVO extends DbVersionBaseDTO {
     private String bizType;
 
     /**
+     * 阶段（同阶段子任务并发）.
+     */
+    @Schema(description = "阶段")
+    private Integer stage;
+
+    /**
      * 排序号
      */
     @Schema(description = "排序号")
@@ -60,6 +71,12 @@ public class AsyncCmdSubVO extends DbVersionBaseDTO {
      */
     @Schema(description = "内容")
     private Map<String, Object> content;
+
+    /**
+     * 结果（供后续任务读取，同一批互相不可见，由于是并发）.
+     */
+    @Schema(description = "结果")
+    private Map<String, Object> result;
 
     /**
      * 重试次数.
@@ -84,4 +101,102 @@ public class AsyncCmdSubVO extends DbVersionBaseDTO {
      */
     @Schema(description = "异步命令主键")
     private Long asyncCmdId;
+
+    /**
+     * 前一批次子任务列表.
+     */
+    @JsonIgnore
+    @Schema(description = "前一批次子任务列表", hidden = true)
+    private transient List<AsyncCmdSubVO> priorSubTasks;
+
+    /**
+     * 获取数据并转换为指定类型.
+     *
+     * @param clazz 目标类型
+     * @param <T>   泛型
+     * @return T
+     */
+    public <T> T getData(Class<T> clazz) {
+        if (content == null) {
+            return null;
+        }
+        // 使用 JSON 序列化/反序列化转换
+        String json = JacksonUtil.toJsonStr(content);
+        return JacksonUtil.parseObject(json, clazz);
+    }
+
+    /**
+     * 获取结果数据并转换为指定类型.
+     *
+     * @param clazz 目标类型
+     * @param <T>   泛型
+     * @return T
+     */
+    public <T> T getResultData(Class<T> clazz) {
+        if (result == null) {
+            return null;
+        }
+        // 使用 JSON 序列化/反序列化转换
+        String json = JacksonUtil.toJsonStr(result);
+        return JacksonUtil.parseObject(json, clazz);
+    }
+
+    /**
+     * 通过业务类型获取前一批次子任务列表结果数据.
+     *
+     * @param bizType 业务类型
+     * @param clazz   目标类型
+     * @param <T>     泛型
+     * @return List<T>
+     */
+    public <T> List<T> getPriorSubTaskResults(String bizType, Class<T> clazz) {
+        if (CollUtil.isEmpty(priorSubTasks)) {
+            return null;
+        }
+
+        return priorSubTasks.stream()
+            .filter(subTask -> bizType.equals(subTask.getBizType()))
+            .map(subTask -> subTask.getResultData(clazz))
+            .filter(Objects::nonNull)
+            .toList();
+    }
+
+    /**
+     * 通过业务类型获取前一批次子任务列表结果数据.
+     *
+     * @param clazz 目标类型
+     * @param <T>   泛型
+     * @return <T>
+     */
+    public <T> T getPriorSubTaskResult(String bizType, Class<T> clazz) {
+        if (CollUtil.isEmpty(priorSubTasks)) {
+            return null;
+        }
+
+        return priorSubTasks.stream()
+            .filter(subTask -> bizType.equals(subTask.getBizType()))
+            .findFirst()
+            .map(subTask -> subTask.getResultData(clazz))
+            .orElse(null);
+    }
+
+    /**
+     * 通过排序号获取前一批次子任务列表结果数据.
+     *
+     * @param seq   排序号
+     * @param clazz 目标类型
+     * @param <T>   泛型
+     * @return <T>
+     */
+    public <T> T getPriorSubTaskResult(Integer seq, Class<T> clazz) {
+        if (CollUtil.isEmpty(priorSubTasks)) {
+            return null;
+        }
+
+        return priorSubTasks.stream()
+            .filter(subTask -> seq.equals(subTask.getSeq()))
+            .findFirst()
+            .map(subTask -> subTask.getResultData(clazz))
+            .orElse(null);
+    }
 }

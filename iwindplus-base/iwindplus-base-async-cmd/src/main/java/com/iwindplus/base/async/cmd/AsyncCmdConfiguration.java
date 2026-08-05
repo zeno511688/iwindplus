@@ -37,6 +37,7 @@ import com.iwindplus.base.async.cmd.support.impl.AsyncCmdExecuteMainHandler;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdJobResetHandler;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdJobRetryHandler;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.dromara.dynamictp.core.executor.DtpExecutor;
 import org.mybatis.spring.annotation.MapperScan;
@@ -61,6 +62,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 @MapperScan(AsyncCmdConstant.ASYNC_CMD_MAPPER_SCAN_BASE_PACKAGE)
 @ComponentScan(AsyncCmdConstant.ASYNC_CMD_COMPONENT_SCAN_BASE_PACKAGE)
 public class AsyncCmdConfiguration {
+
+    @Resource(name = "asyncCmdTaskExecutor")
+    private DtpExecutor asyncCmdTaskExecutor;
+
+    @Resource(name = "asyncCmdSubTaskExecutor")
+    private DtpExecutor asyncCmdSubTaskExecutor;
 
     @PostConstruct
     public void init() {
@@ -123,7 +130,6 @@ public class AsyncCmdConfiguration {
      * @param property              property
      * @param asyncCmdRepository    asyncCmdRepository
      * @param asyncCmdSubRepository asyncCmdSubRepository
-     * @param asyncCmdTaskExecutor  asyncCmdTaskExecutor
      * @param transactionTemplate   transactionTemplate
      * @return AsyncCmdService
      */
@@ -132,7 +138,6 @@ public class AsyncCmdConfiguration {
         AsyncCmdProperty property,
         AsyncCmdRepository asyncCmdRepository,
         AsyncCmdSubRepository asyncCmdSubRepository,
-        DtpExecutor asyncCmdTaskExecutor,
         TransactionTemplate transactionTemplate) {
         AsyncCmdService asyncCmdService = new AsyncCmdServiceImpl(
             property, asyncCmdRepository, asyncCmdSubRepository,
@@ -259,9 +264,11 @@ public class AsyncCmdConfiguration {
     /**
      * 创建 AsyncCmdExecuteGroupHandler.
      *
-     * @param asyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory
-     * @param asyncCmdStateSupport               asyncCmdStateSupport
-     * @param asyncCmdService                    asyncCmdService
+     * @param asyncCmdTaskHandlerStrategyFactory    asyncCmdTaskHandlerStrategyFactory
+     * @param asyncCmdStateSupport                  asyncCmdStateSupport
+     * @param asyncCmdService                       asyncCmdService
+     * @param asyncCmdSubService                    asyncCmdSubService
+     * @param asyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory
      * @return AsyncCmdExecuteGroupHandler
      */
     @Bean
@@ -273,7 +280,7 @@ public class AsyncCmdConfiguration {
         AsyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory) {
         AsyncCmdExecuteGroupHandler asyncCmdExecuteGroupHandler = new AsyncCmdExecuteGroupHandler(
             asyncCmdTaskHandlerStrategyFactory, asyncCmdStateSupport, asyncCmdService,
-            asyncCmdSubService, asyncCmdSubTaskHandlerStrategyFactory);
+            asyncCmdSubService, asyncCmdSubTaskHandlerStrategyFactory, asyncCmdSubTaskExecutor);
         log.info("AsyncCmdExecuteGroupHandler={}", asyncCmdExecuteGroupHandler);
         return asyncCmdExecuteGroupHandler;
     }
@@ -286,7 +293,6 @@ public class AsyncCmdConfiguration {
      * @param asyncCmdSubService          asyncCmdSubService
      * @param asyncCmdExecuteMainHandler  asyncCmdExecuteMainHandler
      * @param asyncCmdExecuteGroupHandler asyncCmdExecuteGroupHandler
-     * @param asyncCmdTaskExecutor        asyncCmdTaskExecutor
      * @return AsyncCmdBizProcessor
      */
     @Bean
@@ -296,8 +302,7 @@ public class AsyncCmdConfiguration {
         AsyncCmdSubService asyncCmdSubService,
         AsyncCmdStateSupport asyncCmdStateSupport,
         AsyncCmdExecuteHandler asyncCmdExecuteMainHandler,
-        AsyncCmdExecuteHandler asyncCmdExecuteGroupHandler,
-        DtpExecutor asyncCmdTaskExecutor) {
+        AsyncCmdExecuteHandler asyncCmdExecuteGroupHandler) {
         AsyncCmdBizProcessor asyncCmdBizProcessor = new AsyncCmdBizProcessor(
             property, asyncCmdService, asyncCmdSubService, asyncCmdStateSupport,
             asyncCmdExecuteMainHandler, asyncCmdExecuteGroupHandler, asyncCmdTaskExecutor);

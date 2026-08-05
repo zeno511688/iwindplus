@@ -7,12 +7,17 @@
 
 package com.iwindplus.base.async.cmd.domain.vo;
 
+import cn.hutool.core.collection.CollUtil;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.enums.DispatchModeEnum;
 import com.iwindplus.base.domain.vo.DbVersionBaseVO;
+import com.iwindplus.base.util.JacksonUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -116,4 +121,86 @@ public class AsyncCmdVO extends DbVersionBaseVO {
      */
     @Schema(description = "耗时")
     private Long costTime;
+
+    /**
+     * 子任务列表.
+     */
+    @JsonIgnore
+    @Schema(description = "子任务列表", hidden = true)
+    private transient List<AsyncCmdSubVO> subTasks;
+
+    /**
+     * 获取数据并转换为指定类型.
+     *
+     * @param clazz 目标类型
+     * @param <T>   泛型
+     * @return T
+     */
+    public <T> T getData(Class<T> clazz) {
+        if (content == null) {
+            return null;
+        }
+        // 使用 JSON 序列化/反序列化转换
+        String json = JacksonUtil.toJsonStr(content);
+        return JacksonUtil.parseObject(json, clazz);
+    }
+
+    /**
+     * 通过业务类型获取子任务列表结果数据.
+     *
+     * @param bizType 业务类型
+     * @param clazz   目标类型
+     * @param <T>     泛型
+     * @return List<T>
+     */
+    public <T> List<T> getSubTaskResults(String bizType, Class<T> clazz) {
+        if (CollUtil.isEmpty(subTasks)) {
+            return null;
+        }
+
+        return subTasks.stream()
+            .filter(subTask -> bizType.equals(subTask.getBizType()))
+            .map(subTask -> subTask.getResultData(clazz))
+            .filter(Objects::nonNull)
+            .toList();
+    }
+
+    /**
+     * 通过业务类型获取子任务列表结果数据.
+     *
+     * @param clazz 目标类型
+     * @param <T>   泛型
+     * @return <T>
+     */
+    public <T> T getSubTaskResult(String bizType, Class<T> clazz) {
+        if (CollUtil.isEmpty(subTasks)) {
+            return null;
+        }
+
+        return subTasks.stream()
+            .filter(subTask -> bizType.equals(subTask.getBizType()))
+            .findFirst()
+            .map(subTask -> subTask.getResultData(clazz))
+            .orElse(null);
+    }
+
+    /**
+     * 通过排序号获取子任务列表结果数据.
+     *
+     * @param seq   排序号
+     * @param clazz 目标类型
+     * @param <T>   泛型
+     * @return <T>
+     */
+    public <T> T getSubTaskResult(Integer seq, Class<T> clazz) {
+        if (CollUtil.isEmpty(subTasks)) {
+            return null;
+        }
+
+        return subTasks.stream()
+            .filter(subTask -> seq.equals(subTask.getSeq()))
+            .findFirst()
+            .map(subTask -> subTask.getResultData(clazz))
+            .orElse(null);
+    }
 }

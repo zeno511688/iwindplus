@@ -51,6 +51,12 @@ public class AsyncCmdSubDO extends DbBaseDO {
     private String bizType;
 
     /**
+     * 阶段.
+     */
+    @Schema(description = "阶段")
+    private Integer stage;
+
+    /**
      * 排序号.
      */
     @Schema(description = "排序号")
@@ -68,6 +74,13 @@ public class AsyncCmdSubDO extends DbBaseDO {
     @Schema(description = "内容")
     @TableField(typeHandler = JacksonTypeHandler.class)
     private Map<String, Object> content;
+
+    /**
+     * 结果（供后续任务读取，同一批互相不可见，由于是并发）.
+     */
+    @Schema(description = "结果")
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private Map<String, Object> result;
 
     /**
      * 重试次数.

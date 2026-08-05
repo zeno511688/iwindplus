@@ -49,6 +49,12 @@ public class AsyncCmdSubSubmitDTO implements Serializable {
     private String bizType;
 
     /**
+     * 阶段（同阶段子任务并发）.
+     */
+    @Schema(description = "阶段")
+    private Integer stage;
+
+    /**
      * 排序号（必填）
      */
     @Schema(description = "排序号")
