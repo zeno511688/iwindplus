@@ -13,10 +13,6 @@ import com.iwindplus.base.async.cmd.factory.AsyncCmdJobHandlerStrategyFactory;
 import com.iwindplus.base.util.DatesUtil;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,27 +42,21 @@ public class AsyncCmdJob {
 
         XxlJobHelper.log("异步命令，参数={}，开始时间={}，分片索引={}, 分片总数={}", jobParam, start, shardIndex, shardTotal);
 
-        final AtomicInteger failed = new AtomicInteger(0);
+        int failedJobs = 0;
         final AsyncCmdJobEnum[] jobEnums = AsyncCmdJobEnum.values();
-        List<CompletableFuture<Void>> futures =
-            Arrays.stream(AsyncCmdJobEnum.values())
-                .map(entity ->
-                    CompletableFuture.runAsync(() -> {
-                        try {
-                            factory.getJobHandler(entity).execute(shardIndex, shardTotal);
-                        } catch (Exception e) {
-                            failed.incrementAndGet();
+        for (AsyncCmdJobEnum entity : jobEnums) {
+            try {
+                factory.getJobHandler(entity).execute(shardIndex, shardTotal);
+            } catch (Exception e) {
+                failedJobs++;
 
-                            XxlJobHelper.log("异步命令任务={}失败", entity.getDesc(), e);
-                        }
-                    })
-                ).toList();
+                log.error("异步命令任务={}失败", entity.getDesc(), e);
+                XxlJobHelper.log("异步命令任务={}失败", entity.getDesc(), e);
+            }
+        }
 
-        // 等待所有任务完成
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-
-        if (failed.get() > 0) {
-            XxlJobHelper.handleFail("异步命令部分失败，失败个数=" + failed.get());
+        if (failedJobs > 0) {
+            XxlJobHelper.handleFail("异步命令部分失败，失败个数=" + failedJobs);
             return;
         }
 
