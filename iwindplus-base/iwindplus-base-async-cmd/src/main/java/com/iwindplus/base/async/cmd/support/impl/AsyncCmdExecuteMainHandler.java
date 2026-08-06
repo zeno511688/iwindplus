@@ -39,7 +39,10 @@ public class AsyncCmdExecuteMainHandler extends AbstractAsyncCmdExecuteHandler {
             // 执行业务逻辑（无事务）
             handler.execute(entity);
             // 成功
-            this.getAsyncCmdStateSupport().taskSuccess(entity, handler, System.currentTimeMillis() - start);
+            final boolean taskSuccess = this.getAsyncCmdStateSupport().taskSuccess(entity, handler, System.currentTimeMillis() - start);
+            if (!taskSuccess) {
+                log.warn("asyncCmd execute success, but taskSuccess failed, id={}", entity.getId());
+            }
         } catch (Exception ex) {
             log.error("asyncCmd execute failed. id={}", entity.getId(), ex);
 

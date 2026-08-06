@@ -78,7 +78,10 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
             // 子任务全部成功 -> 主任务收尾业务 -> 主任务置成功
             entity.setSubTasks(subResults);
             handler.execute(entity);
-            this.getAsyncCmdStateSupport().taskSuccess(entity, handler, System.currentTimeMillis() - start);
+            final boolean taskSuccess = this.getAsyncCmdStateSupport().taskSuccess(entity, handler, System.currentTimeMillis() - start);
+            if (!taskSuccess) {
+                log.warn("asyncCmd group execute success, but taskSuccess failed, id={}", entity.getId());
+            }
         } catch (Exception ex) {
             log.error("asyncCmd group execute failed, id={}", entity.getId(), ex);
 
@@ -149,36 +152,38 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
     }
 
     private List<AsyncCmdSubVO> executeSubTaskGroups(AsyncCmdVO entity, List<AsyncCmdSubVO> batch, AtomicInteger advanced) {
-        final List<AsyncCmdSubVO> results;
         // 单任务直接执行
         if (batch.size() == 1) {
-            results = List.of(executeOneSubTask(entity, batch.get(0)));
-        } else {
-            // 多任务并发执行
-            results = this.executeBatchSubTask(entity, batch);
+            return List.of(executeOneSubTask(entity, batch.get(0), advanced));
         }
-
-        int successCount =
-            (int) results.stream()
-                .filter(this::isSuccess)
-                .count();
-        advanced.addAndGet(successCount);
-        return results;
+        // 多任务并发执行
+        return this.executeBatchSubTask(entity, batch, advanced);
     }
 
-    private AsyncCmdSubVO executeOneSubTask(AsyncCmdVO entity, AsyncCmdSubVO subEntity) {
+    private AsyncCmdSubVO executeOneSubTask(AsyncCmdVO entity, AsyncCmdSubVO subEntity, AtomicInteger advanced) {
         AsyncCmdSubTaskHandler handler = getSubTaskHandler(subEntity.getExecuteName());
-        long start = System.currentTimeMillis();
 
         // 续期
         this.getAsyncCmdService().editExpireTime(entity.getId());
-        asyncCmdSubService.editStatusById(subEntity.getId(), AsyncCmdStatusEnum.EXECUTE);
+        final boolean status = asyncCmdSubService.editStatusById(subEntity.getId(), AsyncCmdStatusEnum.EXECUTE);
+        if (!status) {
+            log.warn("asyncCmd subTask execute failed, id={} asyncCmdId={} seq={}",
+                subEntity.getId(), entity.getId(), subEntity.getSeq());
+            return subEntity;
+        }
 
+        long start = System.currentTimeMillis();
         try {
             // 执行业务逻辑（无事务）
             handler.executeSub(subEntity);
             // 成功
-            this.getAsyncCmdStateSupport().subTaskSuccess(subEntity, handler, System.currentTimeMillis() - start);
+            final boolean subTaskSuccess = this.getAsyncCmdStateSupport().subTaskSuccess(subEntity, handler, System.currentTimeMillis() - start);
+            if (!subTaskSuccess) {
+                log.warn("asyncCmd subTask execute failed, id={} asyncCmdId={} seq={}",
+                    subEntity.getId(), entity.getId(), subEntity.getSeq());
+                return subEntity;
+            }
+            advanced.incrementAndGet();
         } catch (Exception ex) {
             log.error("asyncCmd subTask execute failed, id={} asyncCmdId={} seq={}",
                 subEntity.getId(), entity.getId(), subEntity.getSeq(), ex);
@@ -189,12 +194,12 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
         return subEntity;
     }
 
-    private List<AsyncCmdSubVO> executeBatchSubTask(AsyncCmdVO entity, List<AsyncCmdSubVO> batch) {
+    private List<AsyncCmdSubVO> executeBatchSubTask(AsyncCmdVO entity, List<AsyncCmdSubVO> batch, AtomicInteger advanced) {
         List<CompletableFuture<AsyncCmdSubVO>> futures = batch.stream()
             .map(task ->
                 CompletableFuture.supplyAsync(
                     () ->
-                        executeOneSubTask(entity, task)
+                        executeOneSubTask(entity, task, advanced)
                     , asyncCmdSubTaskExecutor
                 )
             ).toList();
