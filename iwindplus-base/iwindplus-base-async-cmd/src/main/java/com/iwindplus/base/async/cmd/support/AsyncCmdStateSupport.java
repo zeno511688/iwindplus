@@ -122,11 +122,11 @@ public record AsyncCmdStateSupport(
     /**
      * 任务执行失败
      *
-     * @param entity                 对象
-     * @param handler                任务助手
-     * @param costTime               耗时
-     * @param ex                     异常
-     * @param subTaskSuccessAdvanced 本轮是否有子任务成功推进
+     * @param entity   对象
+     * @param handler  任务助手
+     * @param costTime 耗时
+     * @param ex       异常
+     * @param advanced 本轮是否有子任务成功推进
      * @return boolean
      */
     public boolean taskFail(
@@ -134,9 +134,9 @@ public record AsyncCmdStateSupport(
         AsyncCmdTaskHandler handler,
         Long costTime,
         Exception ex,
-        boolean subTaskSuccessAdvanced) {
+        boolean advanced) {
 
-        int retryCount = subTaskSuccessAdvanced ? 0 : Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
+        int retryCount = advanced ? 0 : Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
         final String stack = this.getStack(ex);
         final LocalDateTime nextRetryTime = this.getNextRetryTime(LocalDateTime.now(), retryCount);
 
@@ -168,6 +168,39 @@ public record AsyncCmdStateSupport(
             return true;
         }
         this.safeCallback(() -> handler.onTaskFail(entity), "onTaskFail", entity.getId());
+        return true;
+    }
+
+    /**
+     * 任务异步等待
+     *
+     * @param entity   对象
+     * @param costTime 耗时
+     * @return
+     */
+    public boolean taskAsyncWait(AsyncCmdVO entity, Long costTime) {
+        final LocalDateTime nextRetryTime = LocalDateTime.now()
+            .plusSeconds(Optional.ofNullable(this.property.getAsyncWaitPoolSeconds()).orElse(60L));
+
+        final boolean result = Boolean.TRUE.equals(
+            this.transactionTemplate.execute(status ->
+                asyncCmdService.editStatusById(
+                    entity.getId(),
+                    AsyncCmdStatusEnum.EXECUTE,
+                    AsyncCmdStatusEnum.TO_BE_EXECUTE,
+                    costTime,
+                    nextRetryTime
+                )
+            )
+        );
+
+        if (!result) {
+            return false;
+        }
+
+        entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
+        entity.setNextRetryTime(nextRetryTime);
+        entity.setCostTime(costTime);
         return true;
     }
 
@@ -223,7 +256,7 @@ public record AsyncCmdStateSupport(
         Long costTime,
         Exception ex) {
 
-        int retryCount = Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
+        final int retryCount = Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
         final String stack = this.getStack(ex);
 
         final boolean result = Boolean.TRUE.equals(
@@ -250,6 +283,129 @@ public record AsyncCmdStateSupport(
         if (Objects.isNull(handler)) {
             return true;
         }
+        this.safeCallback(() -> handler.onSubTaskFail(entity), "onSubTaskFail", entity.getId());
+        return true;
+    }
+
+    /**
+     * 子任务异步等待
+     *
+     * @param entity   对象
+     * @param handler  任务助手
+     * @param costTime 耗时
+     * @return boolean
+     */
+    public boolean subTaskAsyncWait(
+        AsyncCmdSubVO entity,
+        AsyncCmdSubTaskHandler handler,
+        Long costTime) {
+        final LocalDateTime callbackExpireTime = LocalDateTime.now()
+            .plusSeconds(Optional.ofNullable(this.property.getAsyncWaitTimeoutSeconds()).orElse(1800L));
+
+        final boolean result = Boolean.TRUE.equals(
+            this.transactionTemplate.execute(status ->
+                asyncCmdSubService.editStatusById(
+                    entity.getId(),
+                    AsyncCmdStatusEnum.EXECUTE,
+                    AsyncCmdStatusEnum.ASYNC_WAIT,
+                    costTime,
+                    entity.getResult(),
+                    callbackExpireTime
+                )
+            )
+        );
+
+        if (!result) {
+            return false;
+        }
+
+        entity.setStatus(AsyncCmdStatusEnum.ASYNC_WAIT);
+        entity.setCostTime(costTime);
+        entity.setCallbackExpireTime(callbackExpireTime);
+        if (Objects.isNull(handler)) {
+            return true;
+        }
+
+        this.safeCallback(() -> handler.onSubTaskAsyncWait(entity), "onSubTaskAsyncWait", entity.getId());
+        return true;
+    }
+
+    /**
+     * 子任务异步等待执行成功
+     *
+     * @param entity  对象
+     * @param handler 任务助手
+     * @return boolean
+     */
+    public boolean subTaskAsyncWaitSuccess(
+        AsyncCmdSubVO entity,
+        AsyncCmdSubTaskHandler handler) {
+
+        final boolean result = Boolean.TRUE.equals(
+            this.transactionTemplate.execute(status ->
+                asyncCmdSubService.editStatusById(
+                    entity.getId(),
+                    AsyncCmdStatusEnum.ASYNC_WAIT,
+                    AsyncCmdStatusEnum.SUCCESS,
+                    null,
+                    entity.getResult()
+                )
+            )
+        );
+
+        if (!result) {
+            return false;
+        }
+
+        entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
+        if (Objects.isNull(handler)) {
+            return true;
+        }
+
+        this.safeCallback(() -> handler.onSubTaskSuccess(entity), "onSubTaskSuccess", entity.getId());
+        return true;
+    }
+
+    /**
+     * 子任务异步等待执行失败
+     *
+     * @param entity  对象
+     * @param handler 任务助手
+     * @param ex      异常
+     * @return boolean
+     */
+    public boolean subTaskAsyncWaitFail(
+        AsyncCmdSubVO entity,
+        AsyncCmdSubTaskHandler handler,
+        Exception ex) {
+
+        final int retryCount = Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
+        final String stack = this.getStack(ex);
+
+        final boolean result = Boolean.TRUE.equals(
+            this.transactionTemplate.execute(status ->
+                asyncCmdSubService.editStatusById(
+                    entity.getId(),
+                    AsyncCmdStatusEnum.ASYNC_WAIT,
+                    AsyncCmdStatusEnum.FAILED,
+                    null,
+                    stack,
+                    retryCount
+                )
+            )
+        );
+
+        if (!result) {
+            return false;
+        }
+
+        entity.setStatus(AsyncCmdStatusEnum.FAILED);
+        entity.setRetryCount(retryCount);
+        entity.setErrorMsg(stack);
+        if (Objects.isNull(handler)) {
+            return true;
+        }
+
         this.safeCallback(() -> handler.onSubTaskFail(entity), "onSubTaskFail", entity.getId());
         return true;
     }

@@ -30,22 +30,28 @@ public enum AsyncCmdStatusEnum implements BaseEnum<Integer> {
     /**
      * 执行中.
      */
-    EXECUTE(1, "执行中"),
+    EXECUTE(10, "执行中"),
+
+    /**
+     * 异步等待.
+     */
+    ASYNC_WAIT(20, "异步等待"),
 
     /**
      * 成功.
      */
-    SUCCESS(2, "成功"),
+    SUCCESS(30, "成功"),
 
     /**
      * 失败.
      */
-    FAILED(3, "失败"),
+    FAILED(40, "失败"),
 
     /**
      * 丢弃.
      */
-    DISCARD(4, "丢弃"),
+    DISCARD(50, "丢弃"),
+
     ;
 
     /**

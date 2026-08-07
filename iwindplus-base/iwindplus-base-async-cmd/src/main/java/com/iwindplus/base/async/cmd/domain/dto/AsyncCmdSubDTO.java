@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,9 +39,9 @@ import org.hibernate.validator.constraints.Length;
 public class AsyncCmdSubDTO extends DbVersionBaseDTO {
 
     /**
-     * 状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，SUCCESS：成功，FAILED：失败）.
+     * 状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，ASYNC_WAIT：异步等待，SUCCESS：成功，FAILED：失败）.
      */
-    @Schema(description = "状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，SUCCESS：成功，FAILED：失败）")
+    @Schema(description = "状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，ASYNC_WAIT：异步等待，SUCCESS：成功，FAILED：失败）")
     private AsyncCmdStatusEnum status;
 
     /**
@@ -102,6 +103,18 @@ public class AsyncCmdSubDTO extends DbVersionBaseDTO {
      */
     @Schema(description = "耗时")
     private Long costTime;
+
+    /**
+     * 是否需要回调.
+     */
+    @Schema(description = "是否需要回调")
+    private Boolean needCallback;
+
+    /**
+     * 等待异步结果的截止时间.
+     */
+    @Schema(description = "等待异步结果的截止时间")
+    private LocalDateTime callbackExpireTime;
 
     /**
      * 重试次数.

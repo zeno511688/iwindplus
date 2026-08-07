@@ -5,6 +5,7 @@ package com.iwindplus.base.async.cmd.service;
 
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +38,20 @@ public interface AsyncCmdSubService {
      */
     boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
         Long costTime, Map<String, Object> result);
+
+    /**
+     * 通过主键修改状态.
+     *
+     * @param id                 主键
+     * @param from               从状态
+     * @param to                 到状态
+     * @param costTime           耗时
+     * @param result             结果
+     * @param callbackExpireTime 等待异步结果的截止时间
+     * @return boolean
+     */
+    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
+        Long costTime, Map<String, Object> result, LocalDateTime callbackExpireTime);
 
     /**
      * 通过主键修改状态.

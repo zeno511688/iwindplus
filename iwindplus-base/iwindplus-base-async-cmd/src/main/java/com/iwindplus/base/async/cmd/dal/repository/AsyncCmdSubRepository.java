@@ -66,24 +66,42 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, Long costTime, Map<String, Object> result) {
-        return updateStatusById(id, from, to, costTime, null, null, result);
+        return updateStatusById(id, from, to, costTime, null, null, result, null);
     }
 
     /**
      * 通过主键修改状态.
      *
-     * @param id         主键
-     * @param from       从状态
-     * @param to         到状态
-     * @param costTime   耗时
-     * @param errorMsg   错误信息
-     * @param retryCount 重试次数
-     * @param result     结果
+     * @param id                 主键
+     * @param from               从状态
+     * @param to                 到状态
+     * @param costTime           耗时
+     * @param result             结果
+     * @param callbackExpireTime 等待异步结果的截止时间
+     * @return boolean
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, Long costTime, Map<String, Object> result,
+        LocalDateTime callbackExpireTime) {
+        return updateStatusById(id, from, to, costTime, null, null, result, callbackExpireTime);
+    }
+
+    /**
+     * 通过主键修改状态.
+     *
+     * @param id                 主键
+     * @param from               从状态
+     * @param to                 到状态
+     * @param costTime           耗时
+     * @param errorMsg           错误信息
+     * @param retryCount         重试次数
+     * @param result             结果
+     * @param callbackExpireTime 等待异步结果的截止时间
      * @return boolean
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result) {
+        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result, LocalDateTime callbackExpireTime) {
         final AsyncCmdSubDOBuilder<?, ?> builder = AsyncCmdSubDO.builder()
             .status(to)
             .modifiedTime(LocalDateTime.now())
@@ -99,6 +117,9 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
         }
         if (MapUtil.isNotEmpty(result)) {
             builder.result(result);
+        }
+        if (Objects.nonNull(callbackExpireTime)) {
+            builder.callbackExpireTime(callbackExpireTime);
         }
 
         final LambdaUpdateWrapper<AsyncCmdSubDO> updateWrapper = Wrappers.<AsyncCmdSubDO>lambdaUpdate()

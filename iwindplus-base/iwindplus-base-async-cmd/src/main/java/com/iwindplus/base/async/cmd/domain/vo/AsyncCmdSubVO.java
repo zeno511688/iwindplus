@@ -13,6 +13,7 @@ import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.domain.dto.DbVersionBaseDTO;
 import com.iwindplus.base.util.JacksonUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,9 +38,9 @@ import lombok.experimental.SuperBuilder;
 public class AsyncCmdSubVO extends DbVersionBaseDTO {
 
     /**
-     * 状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，SUCCESS：成功，FAILED：失败）.
+     * 状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，ASYNC_WAIT：异步等待，SUCCESS：成功，FAILED：失败）.
      */
-    @Schema(description = "状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，SUCCESS：成功，FAILED：失败）")
+    @Schema(description = "状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，ASYNC_WAIT：异步等待，SUCCESS：成功，FAILED：失败）")
     private AsyncCmdStatusEnum status;
 
     /**
@@ -95,6 +96,18 @@ public class AsyncCmdSubVO extends DbVersionBaseDTO {
      */
     @Schema(description = "耗时")
     private Long costTime;
+
+    /**
+     * 是否需要回调.
+     */
+    @Schema(description = "是否需要回调")
+    private Boolean needCallback;
+
+    /**
+     * 等待异步结果的截止时间.
+     */
+    @Schema(description = "等待异步结果的截止时间")
+    private LocalDateTime callbackExpireTime;
 
     /**
      * 重试次数.

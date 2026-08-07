@@ -67,6 +67,12 @@ public class AsyncCmdSubSubmitDTO implements Serializable {
     private String remark;
 
     /**
+     * 是否需要回调.
+     */
+    @Schema(description = "是否需要回调")
+    private Boolean needCallback;
+
+    /**
      * 设置数据.
      *
      * @param data 数据

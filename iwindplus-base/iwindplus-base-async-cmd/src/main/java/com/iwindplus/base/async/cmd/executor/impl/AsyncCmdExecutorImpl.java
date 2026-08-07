@@ -16,6 +16,7 @@ import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitBaseDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubmitVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.executor.AsyncCmdExecutor;
@@ -30,9 +31,12 @@ import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -73,7 +77,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         this.checkGroupSubmitParam(entity);
         // 保存数据
         final AsyncCmdGrouSaveDTO param = BeanUtil.copyProperties(entity, AsyncCmdGrouSaveDTO.class);
-        param.setExecuteName(this.resolveTaskExecuteName(entity.getExecutorClass()));
+        param.setExecuteName(this.resolveTaskHandler(entity.getExecutorClass()).getExecuteName());
 
         List<AsyncCmdSubSaveDTO> subTasks = this.buildSubTasks(entity.getSubTasks());
         param.setSubTasks(subTasks);
@@ -150,46 +154,67 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
     }
 
     private List<AsyncCmdSubSaveDTO> buildSubTasks(List<AsyncCmdSubSubmitDTO> subTasks) {
-        List<AsyncCmdSubSaveDTO> entities = new ArrayList<>(10);
-        final Set<Object> seqSet = new HashSet<>(subTasks.size());
+        final List<AsyncCmdSubSaveDTO> entities = new ArrayList<>(10);
+        // 全局seq唯一
+        final Set<Integer> seqSet = new HashSet<>(subTasks.size());
+        // stage -> seq集合
+        final Map<Integer, Set<Integer>> stageSeqMap = new HashMap<>(10);
 
         for (int index = 0; index < subTasks.size(); index++) {
             final AsyncCmdSubSubmitDTO subTask = subTasks.get(index);
             this.checkSubSubmitParam(subTask, index);
 
-            boolean unique = seqSet.add(subTask.getSeq());
+            Integer seq = subTask.getSeq();
+            boolean unique = seqSet.add(seq);
             Assert.isTrue(unique, "sub[" + index + "].seq must not be unique");
 
-            final String executeName = this.resolveSubTaskExecuteName(subTask.getExecutorClass());
+            Integer stage = Optional.ofNullable(subTask.getStage()).orElse(0);
+            if (stage > 0) {
+                stageSeqMap.computeIfAbsent(
+                        stage,
+                        k -> new HashSet<>(16)
+                    )
+                    .add(seq);
+            }
+
+            final AsyncCmdSubTaskHandler handler = this.resolveSubTaskHandler(subTask.getExecutorClass());
+            if (Boolean.TRUE.equals(subTask.getNeedCallback())) {
+                Assert.isTrue(this.overrideSubCallback(handler),
+                    "The subtask declared the need for a callback, but the executor did not override executeSubCallback method."
+                        + "sub[" + index + "].executorClass=" + subTask.getExecutorClass());
+            }
+
             final AsyncCmdSubSaveDTO entity = BeanUtil.copyProperties(subTask, AsyncCmdSubSaveDTO.class);
-            entity.setExecuteName(executeName);
+            entity.setExecuteName(handler.getExecuteName());
             entities.add(entity);
         }
+
+        // 校验stage内seq连续
+        checkStageSeqContinuous(stageSeqMap);
+
         return entities;
     }
 
     /**
-     * 解析任务执行器名称，用于判断是否已注册.
+     * 解析任务执行器，用于判断是否已注册.
      *
      * @param executorClass 任务执行器类
      * @return String
      */
-    private String resolveTaskExecuteName(Class<? extends AsyncCmdTaskHandler> executorClass) {
+    private AsyncCmdTaskHandler resolveTaskHandler(Class<? extends AsyncCmdTaskHandler> executorClass) {
         return this.asyncCmdTaskHandlerStrategyFactory
-            .getTaskHandler(executorClass.getSimpleName())
-            .getExecuteName();
+            .getTaskHandler(executorClass.getSimpleName());
     }
 
     /**
-     * 解析子任务执行器名称，用于判断是否已注册.
+     * 解析子任务执行器，用于判断是否已注册.
      *
      * @param executorClass 子任务执行器类
      * @return String
      */
-    private String resolveSubTaskExecuteName(Class<? extends AsyncCmdSubTaskHandler> executorClass) {
+    private AsyncCmdSubTaskHandler resolveSubTaskHandler(Class<? extends AsyncCmdSubTaskHandler> executorClass) {
         return this.asyncCmdSubTaskHandlerStrategyFactory
-            .getTaskHandler(executorClass.getSimpleName())
-            .getExecuteName();
+            .getTaskHandler(executorClass.getSimpleName());
     }
 
     private AsyncCmdSubmitVO buildSubmitResult(AsyncCmdVO param) {
@@ -223,5 +248,33 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
         entity.setRetryCount(0);
         this.dispatch(entity);
+    }
+
+    private boolean overrideSubCallback(AsyncCmdSubTaskHandler handler) {
+        try {
+            final Class<?> executeSubCallback = handler.getClass()
+                .getMethod("executeSubCallback", AsyncCmdSubVO.class).getDeclaringClass();
+            return !AsyncCmdSubTaskHandler.class.equals(executeSubCallback);
+        } catch (NoSuchMethodException ex) {
+            log.error("Override executeSubCallback method is not exist, handler={}", handler.getClass().getName());
+            return false;
+        }
+    }
+
+    private void checkStageSeqContinuous(Map<Integer, Set<Integer>> stageSeqMap) {
+        stageSeqMap.forEach((stage, seqSet) -> {
+            List<Integer> seqList = seqSet.stream().sorted().toList();
+            for (int i = 0; i < seqList.size(); i++) {
+                Assert.isTrue(
+                    seqList.get(i) == i + 1,
+                    "stage="
+                        + stage
+                        + " seq must continuous, expect="
+                        + (i + 1)
+                        + ", actual="
+                        + seqList.get(i)
+                );
+            }
+        });
     }
 }

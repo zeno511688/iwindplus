@@ -71,6 +71,18 @@ public class AsyncCmdProperty {
     private Long timeoutSeconds = 120L;
 
     /**
+     * 等待异步结果的时间间隔，隔多久获取一次结果
+     */
+    @Builder.Default
+    private Long asyncWaitPoolSeconds = 60L;
+
+    /**
+     * 等待异步结果的超时时间，从首次挂起算起，超过了整组转失败进重试链
+     */
+    @Builder.Default
+    private Long asyncWaitTimeoutSeconds = 1800L;
+
+    /**
      * 重试策略配置.
      */
     @Builder.Default
