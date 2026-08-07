@@ -34,7 +34,10 @@ public record AsyncCmdBizProcessor(
     DtpExecutor asyncCmdTaskExecutor) {
 
     /**
-     * 异步执行任务
+     * 执行任务.
+     *
+     * @param entity 对象
+     * @return boolean
      */
     public boolean execute(AsyncCmdVO entity) {
         if (entity == null || entity.getId() == null) {
