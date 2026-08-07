@@ -39,8 +39,9 @@ public abstract class AbstractAsyncCmdJobHandler implements AsyncCmdJobHandler {
      * 执行.
      *
      * @param entityList 集合
+     * @return boolean
      */
-    protected abstract void doExecute(List<AsyncCmdVO> entityList);
+    protected abstract boolean doExecute(List<AsyncCmdVO> entityList);
 
     /**
      * 获取查询参数.
@@ -79,16 +80,20 @@ public abstract class AbstractAsyncCmdJobHandler implements AsyncCmdJobHandler {
                 break;
             }
 
-            proxy.doExecute(list);
-
             // 更新游标
             lastId = list.get(list.size() - 1).getId();
             loop++;
             total += list.size();
+
+            if (!proxy.doExecute(list)) {
+                log.warn("【{}】下游已经包含，提前结束本躺捞取，已处理={}", this.support(), total);
+
+                break;
+            }
         }
 
         log.info("【{}】执行完成，分片={}/{} 轮次={}, 共处理【{}】条数据",
-            this.getClass().getSimpleName(), shardIndex, shardTotal,
+            this.support(), shardIndex, shardTotal,
             loop, total);
     }
 

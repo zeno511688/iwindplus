@@ -13,6 +13,7 @@ import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.service.AsyncCmdSubService;
 import com.iwindplus.base.util.TransactionUtil;
 import java.util.Optional;
+import java.util.concurrent.RejectedExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.dromara.dynamictp.core.executor.DtpExecutor;
 
@@ -35,20 +36,34 @@ public record AsyncCmdBizProcessor(
     /**
      * 异步执行任务
      */
-    public void execute(AsyncCmdVO entity) {
+    public boolean execute(AsyncCmdVO entity) {
         if (entity == null || entity.getId() == null) {
-            return;
+            return false;
         }
 
         final Long id = entity.getId();
 
-        TransactionUtil.registerAfterCommit(() -> {
-            try {
-                this.asyncCmdTaskExecutor.execute(() -> doExecute(id));
-            } catch (Exception ex) {
-                log.error("asyncCmd submit failed. id={}", id, ex);
-            }
-        });
+        TransactionUtil.registerAfterCommit(
+            () -> submitExecutor(id)
+        );
+
+        return true;
+    }
+
+    private boolean submitExecutor(Long id) {
+        try {
+            asyncCmdTaskExecutor.execute(() -> doExecute(id));
+
+            return true;
+        } catch (RejectedExecutionException ex) {
+            log.warn("asyncCmd executor rejected. id={}", id, ex);
+
+            return false;
+        } catch (Exception ex) {
+            log.error("asyncCmd executor failed. id={}", id, ex);
+
+            return false;
+        }
     }
 
     private void doExecute(Long id) {

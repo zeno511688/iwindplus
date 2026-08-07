@@ -43,14 +43,18 @@ public class AsyncCmdJobRetryHandler extends AbstractAsyncCmdJobHandler {
     }
 
     @Override
-    protected void doExecute(List<AsyncCmdVO> entityList) {
-        entityList.forEach(entity -> {
-            try {
-                asyncCmdBizProcessor.execute(entity);
-            } catch (Exception e) {
-                log.error("重试任务执行失败，id={}", entity.getId(), e);
+    protected boolean doExecute(List<AsyncCmdVO> entityList) {
+        int dispatched = 0;
+        for (AsyncCmdVO entity : entityList) {
+            if (!this.asyncCmdBizProcessor.execute(entity)) {
+                log.warn("重试任务投递被拒，共享池已满，已投递={}/{} id={}",
+                    dispatched, entityList.size(), entity.getId());
+
+                return false;
             }
-        });
+            dispatched++;
+        }
+        return true;
     }
 
     @Override

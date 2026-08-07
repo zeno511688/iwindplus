@@ -39,13 +39,13 @@ public class AsyncCmdJobResetHandler extends AbstractAsyncCmdJobHandler {
     }
 
     @Override
-    protected void doExecute(List<AsyncCmdVO> entityList) {
+    protected boolean doExecute(List<AsyncCmdVO> entityList) {
         final RetryConfig retryConfig = super.getProperty().getRetry();
         final boolean unlimited = Boolean.TRUE.equals(retryConfig.getEnabledUnlimitedRetry());
         final int maxAttempts = retryConfig.getMaxAttempts();
 
         if (entityList.isEmpty()) {
-            return;
+            return true;
         }
 
         int reset = 0;
@@ -75,11 +75,15 @@ public class AsyncCmdJobResetHandler extends AbstractAsyncCmdJobHandler {
                 }
             } catch (Exception e) {
                 failed++;
+
+                log.error("重置任务失败，id={}", entity.getId(), e);
             }
         }
 
         log.info("重置任务，size={} reset={}, discard={}, skipped={}, failed={}",
             entityList.size(), reset, discard, skipped, failed);
+
+        return true;
     }
 
     @Override

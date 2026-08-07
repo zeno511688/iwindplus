@@ -90,12 +90,14 @@ public record AsyncCmdStateSupport(
             })
         );
 
-        if (!result || Objects.isNull(handler)) {
-            return result;
+        if (!result) {
+            return false;
         }
-
         entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
         entity.setCostTime(costTime);
+        if (Objects.isNull(handler)) {
+            return true;
+        }
         this.safeCallback(() -> handler.onTaskSuccess(entity), "onTaskSuccess", entity.getId());
         return true;
     }
@@ -154,15 +156,17 @@ public record AsyncCmdStateSupport(
             )
         );
 
-        if (!result || Objects.isNull(handler)) {
-            return result;
+        if (!result) {
+            return false;
         }
-
         entity.setStatus(AsyncCmdStatusEnum.FAILED);
         entity.setRetryCount(retryCount);
         entity.setNextRetryTime(nextRetryTime);
         entity.setErrorMsg(stack);
         entity.setCostTime(costTime);
+        if (Objects.isNull(handler)) {
+            return true;
+        }
         this.safeCallback(() -> handler.onTaskFail(entity), "onTaskFail", entity.getId());
         return true;
     }
@@ -191,12 +195,15 @@ public record AsyncCmdStateSupport(
             )
         );
 
-        if (!result || Objects.isNull(handler)) {
-            return result;
+        if (!result) {
+            return false;
         }
 
         entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
         entity.setCostTime(costTime);
+        if (Objects.isNull(handler)) {
+            return true;
+        }
         this.safeCallback(() -> handler.onSubTaskSuccess(entity), "onSubTaskSuccess", entity.getId());
         return true;
     }
@@ -232,14 +239,17 @@ public record AsyncCmdStateSupport(
             )
         );
 
-        if (!result || Objects.isNull(handler)) {
-            return result;
+        if (!result) {
+            return false;
         }
 
         entity.setStatus(AsyncCmdStatusEnum.FAILED);
         entity.setRetryCount(retryCount);
         entity.setErrorMsg(stack);
         entity.setCostTime(costTime);
+        if (Objects.isNull(handler)) {
+            return true;
+        }
         this.safeCallback(() -> handler.onSubTaskFail(entity), "onSubTaskFail", entity.getId());
         return true;
     }
