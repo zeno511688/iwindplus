@@ -31,7 +31,9 @@ public class TransactionUtil {
      * @param runnable 任务
      */
     public static void registerAfterCommit(Runnable runnable) {
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()
+            && TransactionSynchronizationManager.isActualTransactionActive()) {
+
             TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {
                     @Override

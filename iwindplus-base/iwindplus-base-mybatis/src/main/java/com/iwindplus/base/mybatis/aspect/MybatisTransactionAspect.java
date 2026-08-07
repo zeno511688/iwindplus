@@ -69,7 +69,9 @@ public class MybatisTransactionAspect {
     @Around("pointCutMethod()")
     public Object around(ProceedingJoinPoint pjp) throws Throwable {
         // 根据配置决定是否强制新事务
-        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()
+            && TransactionSynchronizationManager.isActualTransactionActive()) {
+
             log.debug("Transaction already active, proceeding without new transaction for method={}.{}",
                 pjp.getTarget().getClass().getSimpleName(),
                 pjp.getSignature().getName());
