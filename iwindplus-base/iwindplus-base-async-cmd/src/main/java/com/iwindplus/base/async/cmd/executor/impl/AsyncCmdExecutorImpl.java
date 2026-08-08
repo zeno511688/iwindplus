@@ -65,7 +65,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         if (Boolean.TRUE.equals(entity.getNeedCallback())) {
             Assert.isTrue(this.overrideCallback(handler),
                 "The task declared the need for a callback, but the executor did not override executeCallback method."
-                    + "executorClass=" + entity.getExecutorClass());
+                    + " executorClass=" + entity.getExecutorClass());
         }
         // 保存数据
         final AsyncCmdSaveDTO param = BeanUtil.copyProperties(entity, AsyncCmdSaveDTO.class);
@@ -85,7 +85,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         if (Boolean.TRUE.equals(entity.getNeedCallback())) {
             Assert.isTrue(this.overrideCallback(handler),
                 "The task declared the need for a callback, but the executor did not override executeCallback method."
-                    + "executorClass=" + entity.getExecutorClass());
+                    + " executorClass=" + entity.getExecutorClass());
         }
         // 保存数据
         final AsyncCmdGrouSaveDTO param = BeanUtil.copyProperties(entity, AsyncCmdGrouSaveDTO.class);
