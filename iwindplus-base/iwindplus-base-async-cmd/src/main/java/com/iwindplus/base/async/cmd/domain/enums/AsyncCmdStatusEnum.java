@@ -80,6 +80,6 @@ public enum AsyncCmdStatusEnum implements BaseEnum<Integer> {
      * @return List<AsyncCmdStatusEnum>
      */
     public static List<AsyncCmdStatusEnum> getUnfinishedStatus() {
-        return List.of(AsyncCmdStatusEnum.TO_BE_EXECUTE, AsyncCmdStatusEnum.EXECUTE, AsyncCmdStatusEnum.FAILED);
+        return List.of(AsyncCmdStatusEnum.TO_BE_EXECUTE, AsyncCmdStatusEnum.EXECUTE, AsyncCmdStatusEnum.ASYNC_WAIT, AsyncCmdStatusEnum.FAILED);
     }
 }

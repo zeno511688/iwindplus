@@ -73,6 +73,12 @@ public class AsyncCmdSubSubmitDTO implements Serializable {
     private Boolean needCallback;
 
     /**
+     * 是否需要显示（查进度时用）.
+     */
+    @Schema(description = "是否需要显示")
+    private Boolean needDisplay;
+
+    /**
      * 设置数据.
      *
      * @param data 数据

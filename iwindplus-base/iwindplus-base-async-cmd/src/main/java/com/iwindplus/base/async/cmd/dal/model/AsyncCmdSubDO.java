@@ -114,6 +114,12 @@ public class AsyncCmdSubDO extends DbBaseDO {
     private LocalDateTime callbackExpireTime;
 
     /**
+     * 是否需要显示（查进度时用）.
+     */
+    @Schema(description = "是否需要显示")
+    private Boolean needDisplay;
+
+    /**
      * 异步命令主键.
      */
     @Schema(description = "异步命令主键")

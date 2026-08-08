@@ -65,6 +65,7 @@ CREATE TABLE `async_cmd_sub`
     `cost_time`            bigint unsigned  NOT NULL DEFAULT 0 COMMENT '耗时',
     `need_callback`        tinyint unsigned NOT NULL DEFAULT 0 COMMENT '是否需要异步回调结果（0：否，1：是）',
     `callback_expire_time` datetime         NOT NULL DEFAULT current_timestamp() COMMENT '等待异步结果的截止时间',
+    `need_display`         tinyint unsigned NOT NULL DEFAULT 1 COMMENT '是否需要显示（0：否，1：是）',
     `async_cmd_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '异步命令主键',
     PRIMARY KEY (`id`),
     KEY `idx_async_cmd_id_seq_status` (`async_cmd_id`, `seq`, `status`) COMMENT '复合索引（异步命令主键, 排序号, 状态）'

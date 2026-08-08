@@ -110,6 +110,12 @@ public class AsyncCmdSubVO extends DbVersionBaseDTO {
     private LocalDateTime callbackExpireTime;
 
     /**
+     * 是否需要显示（查进度时用）.
+     */
+    @Schema(description = "是否需要显示")
+    private Boolean needDisplay;
+
+    /**
      * 重试次数.
      */
     @Schema(description = "异步命令主键")
