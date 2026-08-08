@@ -103,32 +103,20 @@ public interface AsyncCmdService {
     /**
      * 通过主键修改状态.
      *
-     * @param id         主键
-     * @param from       从状态
-     * @param to         到状态
-     * @param costTime   耗时
-     * @param expireTime 续约时间
-     * @return boolean
-     */
-    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, LocalDateTime expireTime);
-
-    /**
-     * 通过主键修改状态.
-     *
-     * @param id            主键
-     * @param from          从状态
-     * @param to            到状态
-     * @param costTime      耗时
-     * @param errorMsg      错误信息
-     * @param retryCount    重试次数
-     * @param nextRetryTime 下一次重试时间
-     * @param expireTime    续约时间
+     * @param id                 主键
+     * @param from               从状态
+     * @param to                 到状态
+     * @param costTime           耗时
+     * @param errorMsg           错误信息
+     * @param retryCount         重试次数
+     * @param nextRetryTime      下一次重试时间
+     * @param expireTime         续约时间
+     * @param callbackExpireTime 等待异步结果的截止时间
      * @return boolean
      */
     boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
         Long costTime, String errorMsg, Integer retryCount,
-        LocalDateTime nextRetryTime, LocalDateTime expireTime);
+        LocalDateTime nextRetryTime, LocalDateTime expireTime, LocalDateTime callbackExpireTime);
 
     /**
      * 续订租期时间.

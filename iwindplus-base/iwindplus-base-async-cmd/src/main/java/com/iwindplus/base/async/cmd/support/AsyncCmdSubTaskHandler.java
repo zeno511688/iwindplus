@@ -43,7 +43,7 @@ public interface AsyncCmdSubTaskHandler {
      * @param entity 命令对象
      * @return AsyncCmdCallbackResultEnum
      */
-    default AsyncCmdCallbackResultEnum executeSubTaskCallback(AsyncCmdSubVO entity) {
+    default AsyncCmdCallbackResultEnum executeSubCallback(AsyncCmdSubVO entity) {
         return AsyncCmdCallbackResultEnum.WAITING;
     }
 

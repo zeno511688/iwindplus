@@ -58,64 +58,78 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
         final AsyncCmdTaskHandler handler = this.getTaskHandler(entity.getExecuteName());
         final long start = System.currentTimeMillis();
 
+        // 判断是否是异步等待状态
+        if (entity.getStatus() == AsyncCmdStatusEnum.ASYNC_WAIT) {
+            this.executeCallback(entity, handler, start);
+
+            return;
+        }
+
         final List<AsyncCmdSubVO> subEntities = this.asyncCmdSubService.listByAsyncCmdIdAndStatus(
             entity.getId(), AsyncCmdStatusEnum.getUnfinishedStatus());
-        AtomicInteger advanced = new AtomicInteger(0);
+        final AtomicInteger advanced = new AtomicInteger(0);
+
         try {
-            // 执行子任务，返回成功的个数
-            List<AsyncCmdSubVO> subResults = this.executeSubTask(entity, subEntities, advanced);
-
-            // 判断子任务是否在等异步调用的结果
-            if (this.hasAsyncWait(subEntities)) {
-                final boolean subTaskAsyncWait = this.getAsyncCmdStateSupport().taskAsyncWait(entity, System.currentTimeMillis() - start);
-                if (!subTaskAsyncWait) {
-                    log.warn("asyncCmd group has asyncWait, id={}", entity.getId());
-                }
-
+            if (this.executeSubTask(entity, handler, start, subEntities, advanced)) {
                 return;
             }
 
-            // 子任务未全部成功，主任务判定为失败，主任务表只记"子任务有未完成的任务"
-            final long unfinished = asyncCmdSubService.countUnfinished(entity.getId());
-            if (unfinished > 0) {
-                String msg = "asyncCmd group has unfinished subTask";
-                log.warn(msg + ", id={} unfinished={} success={}",
-                    entity.getId(), unfinished, advanced.get());
-
-                this.getAsyncCmdStateSupport().taskFail(entity, handler,
-                    System.currentTimeMillis() - start,
-                    new RuntimeException(msg),
-                    advanced.get() > 0);
-                return;
-            }
-
-            // 成功的数要对的上提交时的任务数
-            if (subResults.size() < entity.getSubTaskCount()) {
-                String msg = "asyncCmd group execute success, but subTaskCount not match";
-
-                log.warn(msg + ", id={} subTaskCount={} success={}",
-                    entity.getId(), entity.getSubTaskCount(), subResults.size());
-
-                this.getAsyncCmdStateSupport().taskFail(entity, handler,
-                    System.currentTimeMillis() - start,
-                    new RuntimeException(msg),
-                    advanced.get() > 0);
-                return;
-            }
-
-            // 子任务全部成功 -> 主任务收尾业务 -> 主任务置成功
-            entity.setSubTasks(subResults);
             handler.execute(entity);
-            final boolean taskSuccess = this.getAsyncCmdStateSupport().taskSuccess(entity, handler, System.currentTimeMillis() - start);
-            if (!taskSuccess) {
-                log.warn("asyncCmd group execute success, but taskSuccess failed, id={}", entity.getId());
-            }
-        } catch (
-            Exception ex) {
-            log.error("asyncCmd group execute failed, id={}", entity.getId(), ex);
+
+            this.taskSuccess(entity, handler, start);
+        } catch (Exception ex) {
+            log.error("asyncCmd task execute failed. id={}", entity.getId(), ex);
 
             this.getAsyncCmdStateSupport().taskFail(entity, handler, System.currentTimeMillis() - start, ex, advanced.get() > 0);
         }
+    }
+
+    private boolean executeSubTask(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start,
+        List<AsyncCmdSubVO> subEntities, AtomicInteger advanced) {
+        // 执行子任务，返回成功的个数
+        final List<AsyncCmdSubVO> subResults = this.executeSubTask(entity, subEntities, advanced);
+
+        // 判断子任务是否在等异步调用的结果
+        if (this.hasSubAsyncWait(subEntities)) {
+            final boolean subTaskAsyncWait = this.getAsyncCmdStateSupport().taskToBeExecute(entity, System.currentTimeMillis() - start);
+            if (!subTaskAsyncWait) {
+                log.warn("asyncCmd group has asyncWait, id={}", entity.getId());
+            }
+
+            return true;
+        }
+
+        // 子任务未全部成功，主任务判定为失败，主任务表只记"子任务有未完成的任务"
+        final long unfinished = asyncCmdSubService.countUnfinished(entity.getId());
+        if (unfinished > 0) {
+            String msg = "asyncCmd group has unfinished subTask";
+            log.warn(msg + ", id={} unfinished={} success={}",
+                entity.getId(), unfinished, advanced.get());
+
+            this.getAsyncCmdStateSupport().taskFail(entity, handler,
+                System.currentTimeMillis() - start,
+                new RuntimeException(msg),
+                advanced.get() > 0);
+            return true;
+        }
+
+        // 成功的数要对的上提交时的任务数
+        if (subResults.size() < entity.getSubTaskCount()) {
+            String msg = "asyncCmd group execute success, but subTaskCount not match";
+
+            log.warn(msg + ", id={} subTaskCount={} success={}",
+                entity.getId(), entity.getSubTaskCount(), subResults.size());
+
+            this.getAsyncCmdStateSupport().taskFail(entity, handler,
+                System.currentTimeMillis() - start,
+                new RuntimeException(msg),
+                advanced.get() > 0);
+            return true;
+        }
+
+        // 子任务全部成功 -> 主任务收尾业务 -> 主任务置成功
+        entity.setSubTasks(subResults);
+        return false;
     }
 
     private List<AsyncCmdSubVO> executeSubTask(AsyncCmdVO entity, List<AsyncCmdSubVO> subEntities, AtomicInteger advanced) {
@@ -190,17 +204,18 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
     }
 
     private AsyncCmdSubVO executeOneSubTask(AsyncCmdVO entity, AsyncCmdSubVO subEntity, AtomicInteger advanced) {
-        AsyncCmdSubTaskHandler handler = getSubTaskHandler(subEntity.getExecuteName());
+        AsyncCmdSubTaskHandler handler = this.getSubTaskHandler(subEntity.getExecuteName());
 
         // 判断是否是异步等待状态
         if (subEntity.getStatus() == AsyncCmdStatusEnum.ASYNC_WAIT) {
-            return this.executeSubTaskCallback(entity, handler, subEntity, advanced);
+            return this.executeSubCallback(entity, handler, subEntity, advanced);
         }
 
         // 续期
         this.getAsyncCmdService().editExpireTime(entity.getId());
 
-        final boolean status = asyncCmdSubService.editStatusById(subEntity.getId(), AsyncCmdStatusEnum.EXECUTE);
+        final boolean status = asyncCmdSubService.editStatusById(subEntity.getId(), null, AsyncCmdStatusEnum.EXECUTE,
+            null, null, null, null, null);
         if (!status) {
             log.warn("asyncCmd subTask execute failed, id={} asyncCmdId={} seq={}",
                 subEntity.getId(), entity.getId(), subEntity.getSeq());
@@ -262,7 +277,7 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
             .toList();
     }
 
-    private AsyncCmdSubVO executeSubTaskCallback(AsyncCmdVO entity, AsyncCmdSubTaskHandler handler, AsyncCmdSubVO subEntity, AtomicInteger advanced) {
+    private AsyncCmdSubVO executeSubCallback(AsyncCmdVO entity, AsyncCmdSubTaskHandler handler, AsyncCmdSubVO subEntity, AtomicInteger advanced) {
         final LocalDateTime callbackExpireTime = subEntity.getCallbackExpireTime();
         if (LocalDateTime.now().isAfter(callbackExpireTime)) {
             String msg = "asyncCmd subTask callback timeout";
@@ -298,7 +313,7 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
 
     private AsyncCmdCallbackResultEnum getSubTaskCallback(AsyncCmdVO entity, AsyncCmdSubVO subEntity, AsyncCmdSubTaskHandler handler) {
         try {
-            final AsyncCmdCallbackResultEnum result = handler.executeSubTaskCallback(subEntity);
+            final AsyncCmdCallbackResultEnum result = handler.executeSubCallback(subEntity);
             return Objects.isNull(result) ? AsyncCmdCallbackResultEnum.WAITING : result;
         } catch (Exception ex) {
             log.error("asyncCmd subTask callback failed, id={} asyncCmdId={} seq={}",
@@ -312,7 +327,7 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
         return AsyncCmdStatusEnum.SUCCESS == entity.getStatus();
     }
 
-    private boolean hasAsyncWait(List<AsyncCmdSubVO> subEntities) {
+    private boolean hasSubAsyncWait(List<AsyncCmdSubVO> subEntities) {
         return subEntities.stream().anyMatch(item -> AsyncCmdStatusEnum.ASYNC_WAIT.equals(item.getStatus()));
     }
 

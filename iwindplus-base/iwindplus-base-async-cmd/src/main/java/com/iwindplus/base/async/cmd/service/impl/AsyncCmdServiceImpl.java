@@ -120,14 +120,9 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
 
     @Override
     public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, LocalDateTime expireTime) {
-        return this.asyncCmdRepository.updateStatusById(id, from, to, costTime, expireTime);
-    }
-
-    @Override
-    public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, LocalDateTime nextRetryTime, LocalDateTime expireTime) {
-        return this.asyncCmdRepository.updateStatusById(id, from, to, costTime, errorMsg, retryCount, nextRetryTime, expireTime);
+        Long costTime, String errorMsg, Integer retryCount, LocalDateTime nextRetryTime,
+        LocalDateTime expireTime, LocalDateTime callbackExpireTime) {
+        return this.asyncCmdRepository.updateStatusById(id, from, to, costTime, errorMsg, retryCount, nextRetryTime, expireTime, callbackExpireTime);
     }
 
     @Override

@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
+import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdTaskHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
@@ -35,16 +36,20 @@ public class AsyncCmdExecuteMainHandler extends AbstractAsyncCmdExecuteHandler {
         final AsyncCmdTaskHandler handler = this.getTaskHandler(entity.getExecuteName());
         final long start = System.currentTimeMillis();
 
+        // 判断是否是异步等待状态
+        if (entity.getStatus() == AsyncCmdStatusEnum.ASYNC_WAIT) {
+            this.executeCallback(entity, handler, start);
+
+            return;
+        }
+
         try {
             // 执行业务逻辑（无事务）
             handler.execute(entity);
-            // 成功
-            final boolean taskSuccess = this.getAsyncCmdStateSupport().taskSuccess(entity, handler, System.currentTimeMillis() - start);
-            if (!taskSuccess) {
-                log.warn("asyncCmd execute success, but taskSuccess failed, id={}", entity.getId());
-            }
+
+            this.taskSuccess(entity, handler, start);
         } catch (Exception ex) {
-            log.error("asyncCmd execute failed. id={}", entity.getId(), ex);
+            log.error("asyncCmd task execute failed. id={}", entity.getId(), ex);
 
             // 失败
             this.getAsyncCmdStateSupport().taskFail(entity, handler, System.currentTimeMillis() - start, ex);

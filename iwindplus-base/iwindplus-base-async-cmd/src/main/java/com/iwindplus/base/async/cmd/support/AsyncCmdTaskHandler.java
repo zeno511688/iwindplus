@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.async.cmd.support;
 
+import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 
 /**
@@ -38,6 +39,16 @@ public interface AsyncCmdTaskHandler {
     void execute(AsyncCmdVO entity);
 
     /**
+     * 任务获取异步等待结果.
+     *
+     * @param entity 命令对象
+     * @return AsyncCmdCallbackResultEnum
+     */
+    default AsyncCmdCallbackResultEnum executeCallback(AsyncCmdVO entity) {
+        return AsyncCmdCallbackResultEnum.WAITING;
+    }
+
+    /**
      * 任务成功.
      *
      * @param entity 命令对象
@@ -51,5 +62,14 @@ public interface AsyncCmdTaskHandler {
      * @param entity 命令对象
      */
     default void onTaskFail(AsyncCmdVO entity) {
+    }
+
+    /**
+     * 任务异步等待，首次挂起时触发.
+     *
+     * @param entity 命令对象
+     */
+    default void onTaskAsyncWait(AsyncCmdVO entity) {
+
     }
 }

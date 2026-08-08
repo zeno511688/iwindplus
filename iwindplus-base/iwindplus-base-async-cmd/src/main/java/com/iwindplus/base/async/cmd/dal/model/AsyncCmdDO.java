@@ -121,4 +121,22 @@ public class AsyncCmdDO extends DbBaseDO {
      */
     @Schema(description = "耗时")
     private Long costTime;
+
+    /**
+     * 是否需要回调.
+     */
+    @Schema(description = "是否需要回调")
+    private Boolean needCallback;
+
+    /**
+     * 等待异步结果的截止时间.
+     */
+    @Schema(description = "等待异步结果的截止时间")
+    private LocalDateTime callbackExpireTime;
+
+    /**
+     * 是否需要显示（查进度时用）.
+     */
+    @Schema(description = "是否需要显示")
+    private Boolean needDisplay;
 }

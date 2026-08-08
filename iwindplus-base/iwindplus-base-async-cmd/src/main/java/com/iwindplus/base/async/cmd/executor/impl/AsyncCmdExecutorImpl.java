@@ -61,6 +61,12 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
     public AsyncCmdSubmitVO submit(AsyncCmdSubmitDTO entity) {
         // 校验参数
         this.checkSubmitParam(entity);
+        final AsyncCmdTaskHandler handler = this.resolveTaskHandler(entity.getExecutorClass());
+        if (Boolean.TRUE.equals(entity.getNeedCallback())) {
+            Assert.isTrue(this.overrideCallback(handler),
+                "The task declared the need for a callback, but the executor did not override executeCallback method."
+                    + "executorClass=" + entity.getExecutorClass());
+        }
         // 保存数据
         final AsyncCmdSaveDTO param = BeanUtil.copyProperties(entity, AsyncCmdSaveDTO.class);
         param.setExecuteName(entity.getExecutorClass().getSimpleName());
@@ -75,6 +81,12 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
     public AsyncCmdSubmitVO submitGroup(AsyncCmdGroupSubmitDTO entity) {
         // 校验参数
         this.checkGroupSubmitParam(entity);
+        final AsyncCmdTaskHandler handler = this.resolveTaskHandler(entity.getExecutorClass());
+        if (Boolean.TRUE.equals(entity.getNeedCallback())) {
+            Assert.isTrue(this.overrideCallback(handler),
+                "The task declared the need for a callback, but the executor did not override executeCallback method."
+                    + "executorClass=" + entity.getExecutorClass());
+        }
         // 保存数据
         final AsyncCmdGrouSaveDTO param = BeanUtil.copyProperties(entity, AsyncCmdGrouSaveDTO.class);
         param.setExecuteName(this.resolveTaskHandler(entity.getExecutorClass()).getExecuteName());
@@ -238,7 +250,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         }
 
         final boolean status = this.asyncCmdService.editStatusById(entity.getId(), from, AsyncCmdStatusEnum.TO_BE_EXECUTE,
-            null, null, 0, LocalDateTime.now(), null);
+            null, null, 0, LocalDateTime.now(), null, null);
         if (!status) {
             log.warn("Failed to retry trigger, task status has been changed, id={}", entity.getId());
 
@@ -248,6 +260,17 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
         entity.setRetryCount(0);
         this.dispatch(entity);
+    }
+
+    private boolean overrideCallback(AsyncCmdTaskHandler handler) {
+        try {
+            final Class<?> executeCallback = handler.getClass()
+                .getMethod("executeCallback", AsyncCmdVO.class).getDeclaringClass();
+            return !AsyncCmdTaskHandler.class.equals(executeCallback);
+        } catch (NoSuchMethodException ex) {
+            log.error("Override executeCallback method is not exist, handler={}", handler.getClass().getName());
+            return false;
+        }
     }
 
     private boolean overrideSubCallback(AsyncCmdSubTaskHandler handler) {

@@ -20,52 +20,18 @@ public interface AsyncCmdSubService {
     /**
      * 通过主键修改状态.
      *
-     * @param id 主键
-     * @param to 到状态
-     * @return boolean
-     */
-    boolean editStatusById(Long id, AsyncCmdStatusEnum to);
-
-    /**
-     * 通过主键修改状态.
-     *
-     * @param id       主键
-     * @param from     从状态
-     * @param to       到状态
-     * @param costTime 耗时
-     * @param result   结果
-     * @return boolean
-     */
-    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, Map<String, Object> result);
-
-    /**
-     * 通过主键修改状态.
-     *
      * @param id                 主键
      * @param from               从状态
      * @param to                 到状态
      * @param costTime           耗时
+     * @param errorMsg           错误信息
+     * @param retryCount         重试次数
      * @param result             结果
      * @param callbackExpireTime 等待异步结果的截止时间
      * @return boolean
      */
     boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, Map<String, Object> result, LocalDateTime callbackExpireTime);
-
-    /**
-     * 通过主键修改状态.
-     *
-     * @param id         主键
-     * @param from       从状态
-     * @param to         到状态
-     * @param costTime   耗时
-     * @param errorMsg   错误信息
-     * @param retryCount 重试次数
-     * @return boolean
-     */
-    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount);
+        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result, LocalDateTime callbackExpireTime);
 
     /**
      * 通过异步命令主键获取子任务数量.

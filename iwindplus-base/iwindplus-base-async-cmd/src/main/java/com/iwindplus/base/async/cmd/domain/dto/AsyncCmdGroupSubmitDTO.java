@@ -43,6 +43,18 @@ public class AsyncCmdGroupSubmitDTO extends AsyncCmdSubmitBaseDTO {
     private String remark;
 
     /**
+     * 是否需要回调（可选）.
+     */
+    @Schema(description = "是否需要回调")
+    private Boolean needCallback;
+
+    /**
+     * 是否需要显示（可选，查进度时用）.
+     */
+    @Schema(description = "是否需要显示")
+    private Boolean needDisplay;
+
+    /**
      * 子任务列表（必填）.
      */
     @Schema(description = "子任务列表")
