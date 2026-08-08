@@ -9,9 +9,7 @@ package com.iwindplus.base.async.cmd.domain.vo;
 
 import cn.hutool.core.collection.CollUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.enums.DispatchModeEnum;
-import com.iwindplus.base.domain.vo.DbVersionBaseVO;
 import com.iwindplus.base.util.JacksonUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
@@ -36,37 +34,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AsyncCmdVO extends DbVersionBaseVO {
-
-    /**
-     * 状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，ASYNC_WAIT：异步等待，SUCCESS：成功，FAILED：失败，DISCARD：丢弃）.
-     */
-    @Schema(description = "状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，ASYNC_WAIT：异步等待，SUCCESS：成功，FAILED：失败，DISCARD：丢弃）")
-    private AsyncCmdStatusEnum status;
-
-    /**
-     * 环境.
-     */
-    @Schema(description = "环境")
-    private String env;
-
-    /**
-     * 业务key，例如 ORDER.
-     */
-    @Schema(description = "业务key，例如 ORDER")
-    private String bizKey;
-
-    /**
-     * 业务类型，例如 ORDER_CREATE.
-     */
-    @Schema(description = "业务类型，例如 ORDER_CREATE")
-    private String bizType;
-
-    /**
-     * 业务流水号.
-     */
-    @Schema(description = "业务流水号")
-    private String bizNumber;
+public class AsyncCmdVO extends AsyncCmdBaseVO {
 
     /**
      * 调度模式（ASYNC：异步，CENTER：调度中心，UNKNOWN：未知）.
@@ -109,18 +77,6 @@ public class AsyncCmdVO extends DbVersionBaseVO {
      */
     @Schema(description = "错误信息")
     private String errorMsg;
-
-    /**
-     * 子任务总数.
-     */
-    @Schema(description = "子任务总数")
-    private Integer subTaskCount;
-
-    /**
-     * 累计耗时.
-     */
-    @Schema(description = "耗时")
-    private Long costTime;
 
     /**
      * 子任务列表.

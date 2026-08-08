@@ -27,11 +27,11 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AsyncCmdGroupVO extends AsyncCmdVO {
+public class AsyncCmdGroupVO extends AsyncCmdBaseVO {
 
     /**
      * 子任务集合.
      */
     @Schema(description = "子任务集合")
-    private List<AsyncCmdSubVO> subTasks;
+    private List<AsyncCmdSubBaseVO> subTasks;
 }

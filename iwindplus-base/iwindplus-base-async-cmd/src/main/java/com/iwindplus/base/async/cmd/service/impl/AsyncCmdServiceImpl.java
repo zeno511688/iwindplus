@@ -29,7 +29,7 @@ import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdGroupVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdPageVO;
-import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubBaseVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
@@ -207,7 +207,7 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
 
             final List<AsyncCmdSubDO> subList = this.asyncCmdSubRepository.listByAsyncCmdId(data.getId(), null, null);
             if (CollUtil.isNotEmpty(subList)) {
-                final List<AsyncCmdSubVO> subTasks = BeanUtil.copyToList(subList, AsyncCmdSubVO.class);
+                final List<AsyncCmdSubBaseVO> subTasks = BeanUtil.copyToList(subList, AsyncCmdSubBaseVO.class);
                 result.setSubTasks(subTasks);
             }
 

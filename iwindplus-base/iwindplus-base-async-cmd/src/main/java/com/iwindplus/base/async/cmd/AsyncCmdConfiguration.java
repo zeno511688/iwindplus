@@ -108,7 +108,6 @@ public class AsyncCmdConfiguration {
         AsyncCmdProperty property,
         AsyncCmdSubMapper asyncCmdSubMapper) {
         AsyncCmdRepository asyncCmdRepository = new AsyncCmdRepository(property, asyncCmdSubMapper);
-        log.info("AsyncCmdRepository={}", asyncCmdRepository);
         return asyncCmdRepository;
     }
 
@@ -142,7 +141,6 @@ public class AsyncCmdConfiguration {
         AsyncCmdService asyncCmdService = new AsyncCmdServiceImpl(
             property, asyncCmdRepository, asyncCmdSubRepository,
             asyncCmdTaskExecutor, transactionTemplate);
-        log.info("AsyncCmdService={}", asyncCmdService);
         return asyncCmdService;
     }
 
@@ -238,7 +236,6 @@ public class AsyncCmdConfiguration {
         TransactionTemplate transactionTemplate) {
         AsyncCmdStateSupport asyncCmdStateSupport = new AsyncCmdStateSupport(
             property, asyncCmdRepository, asyncCmdService, asyncCmdSubService, transactionTemplate);
-        log.info("AsyncCmdStateSupport={}", asyncCmdStateSupport);
         return asyncCmdStateSupport;
     }
 
@@ -306,7 +303,6 @@ public class AsyncCmdConfiguration {
         AsyncCmdBizProcessor asyncCmdBizProcessor = new AsyncCmdBizProcessor(
             property, asyncCmdService, asyncCmdSubService, asyncCmdStateSupport,
             asyncCmdExecuteMainHandler, asyncCmdExecuteGroupHandler, asyncCmdTaskExecutor);
-        log.info("AsyncCmdBizProcessor={}", asyncCmdBizProcessor);
         return asyncCmdBizProcessor;
     }
 
@@ -325,7 +321,6 @@ public class AsyncCmdConfiguration {
         AsyncCmdBizProcessor asyncCmdBizProcessor) {
         AsyncCmdDispatchHandlerAsync asyncCmdDispatchHandlerAsync = new AsyncCmdDispatchHandlerAsync(
             property, asyncCmdService, asyncCmdBizProcessor);
-        log.info("AsyncCmdDispatchHandlerAsync={}", asyncCmdDispatchHandlerAsync);
         return asyncCmdDispatchHandlerAsync;
     }
 
@@ -342,7 +337,6 @@ public class AsyncCmdConfiguration {
         AsyncCmdService asyncCmdService) {
         AsyncCmdDispatchHandlerCenter asyncCmdDispatchHandlerCenter = new AsyncCmdDispatchHandlerCenter(
             property, asyncCmdService);
-        log.info("AsyncCmdDispatchHandlerCenter={}", asyncCmdDispatchHandlerCenter);
         return asyncCmdDispatchHandlerCenter;
     }
 
@@ -361,7 +355,6 @@ public class AsyncCmdConfiguration {
         AsyncCmdBizProcessor asyncCmdBizProcessor) {
         AsyncCmdJobRetryHandler asyncCmdJobRetryHandler = new AsyncCmdJobRetryHandler(
             property, asyncCmdService, asyncCmdBizProcessor);
-        log.info("AsyncCmdJobRetryHandler={}", asyncCmdJobRetryHandler);
         return asyncCmdJobRetryHandler;
     }
 
@@ -378,7 +371,6 @@ public class AsyncCmdConfiguration {
         AsyncCmdService asyncCmdService) {
         AsyncCmdJobResetHandler asyncCmdJobResetHandler = new AsyncCmdJobResetHandler(
             property, asyncCmdService);
-        log.info("AsyncCmdJobResetHandler={}", asyncCmdJobResetHandler);
         return asyncCmdJobResetHandler;
     }
 
@@ -396,5 +388,4 @@ public class AsyncCmdConfiguration {
         log.info("AsyncCmdJob={}", asyncCmdJob);
         return asyncCmdJob;
     }
-
 }
