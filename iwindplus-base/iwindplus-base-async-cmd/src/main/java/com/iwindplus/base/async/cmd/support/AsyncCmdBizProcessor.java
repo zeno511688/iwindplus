@@ -88,9 +88,11 @@ public record AsyncCmdBizProcessor(
             final long subTaskCount = Optional.of(entity.getSubTaskCount()).orElse(0);
             this.getExecuteHandler(subTaskCount).execute(entity);
         } catch (Exception ex) {
+            log.error("asyncCmd execute failed. id={}", entity.getId(), ex);
+
             // 兜底主任务卡在执行中只能等重置状态
             this.asyncCmdStateSupport.taskFail(entity, null,
-                System.currentTimeMillis() - start, ex);
+                System.currentTimeMillis() - start, ex, false);
         }
     }
 

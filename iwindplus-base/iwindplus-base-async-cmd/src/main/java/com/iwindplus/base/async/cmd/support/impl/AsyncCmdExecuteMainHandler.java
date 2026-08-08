@@ -52,7 +52,8 @@ public class AsyncCmdExecuteMainHandler extends AbstractAsyncCmdExecuteHandler {
             log.error("asyncCmd task execute failed. id={}", entity.getId(), ex);
 
             // 失败
-            this.getAsyncCmdStateSupport().taskFail(entity, handler, System.currentTimeMillis() - start, ex);
+            this.getAsyncCmdStateSupport().taskFail(entity, handler,
+                System.currentTimeMillis() - start, ex, false);
         }
     }
 }

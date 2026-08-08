@@ -117,23 +117,6 @@ public record AsyncCmdStateSupport(
      * @param handler  任务助手
      * @param costTime 耗时
      * @param ex       异常
-     * @return boolean
-     */
-    public boolean taskFail(
-        AsyncCmdVO entity,
-        AsyncCmdTaskHandler handler,
-        Long costTime,
-        Exception ex) {
-        return this.taskFail(entity, handler, costTime, ex, false);
-    }
-
-    /**
-     * 任务执行失败
-     *
-     * @param entity   对象
-     * @param handler  任务助手
-     * @param costTime 耗时
-     * @param ex       异常
      * @param advanced 本轮是否有子任务成功推进
      * @return boolean
      */
@@ -203,7 +186,7 @@ public record AsyncCmdStateSupport(
                 asyncCmdService.editStatusById(
                     entity.getId(),
                     AsyncCmdStatusEnum.EXECUTE,
-                    AsyncCmdStatusEnum.TO_BE_EXECUTE,
+                    AsyncCmdStatusEnum.ASYNC_WAIT,
                     costTime,
                     null,
                     null,
