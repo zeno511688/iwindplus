@@ -38,7 +38,7 @@ public class AsyncCmdExecuteMainHandler extends AbstractAsyncCmdExecuteHandler {
 
         // 判断是否是异步等待状态
         if (entity.getStatus() == AsyncCmdStatusEnum.ASYNC_WAIT) {
-            this.executeCallback(entity, handler, start);
+            this.executeCallbackAsyncWait(entity, handler, start);
 
             return;
         }

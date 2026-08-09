@@ -60,7 +60,7 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
 
         // 判断是否是异步等待状态
         if (entity.getStatus() == AsyncCmdStatusEnum.ASYNC_WAIT) {
-            this.executeCallback(entity, handler, start);
+            this.executeCallbackAsyncWait(entity, handler, start);
 
             return;
         }
@@ -70,7 +70,8 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
         final AtomicInteger advanced = new AtomicInteger(0);
 
         try {
-            if (this.executeSubTask(entity, handler, start, subEntities, advanced)) {
+            // 执行子任务，判断是否失败，失败则返回
+            if (!this.executeSubTaskResult(entity, handler, start, subEntities, advanced)) {
                 return;
             }
 
@@ -84,19 +85,20 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
         }
     }
 
-    private boolean executeSubTask(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start,
+    private boolean executeSubTaskResult(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start,
         List<AsyncCmdSubVO> subEntities, AtomicInteger advanced) {
         // 执行子任务，返回成功的个数
         final List<AsyncCmdSubVO> subResults = this.executeSubTask(entity, subEntities, advanced);
 
-        // 判断子任务是否在等异步调用的结果
+        // 判断子任务是否在等异步调用的结果，也可以不管，等待任务重置也行
         if (this.hasSubAsyncWait(subEntities)) {
-            final boolean subTaskAsyncWait = this.getAsyncCmdStateSupport().taskToBeExecute(entity, System.currentTimeMillis() - start);
-            if (!subTaskAsyncWait) {
+            // 将主任务设置为待执行，等待下一次执行
+            final boolean asyncWait = this.getAsyncCmdStateSupport().taskToBeExecute(entity, System.currentTimeMillis() - start);
+            if (!asyncWait) {
                 log.warn("asyncCmd group has asyncWait, id={}", entity.getId());
             }
 
-            return true;
+            return false;
         }
 
         // 子任务未全部成功，主任务判定为失败，主任务表只记"子任务有未完成的任务"
@@ -110,7 +112,8 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
                 System.currentTimeMillis() - start,
                 new RuntimeException(msg),
                 advanced.get() > 0);
-            return true;
+
+            return false;
         }
 
         // 成功的数要对的上提交时的任务数
@@ -124,12 +127,12 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
                 System.currentTimeMillis() - start,
                 new RuntimeException(msg),
                 advanced.get() > 0);
-            return true;
+            return false;
         }
 
         // 子任务全部成功 -> 主任务收尾业务 -> 主任务置成功
         entity.setSubTasks(subResults);
-        return false;
+        return true;
     }
 
     private List<AsyncCmdSubVO> executeSubTask(AsyncCmdVO entity, List<AsyncCmdSubVO> subEntities, AtomicInteger advanced) {
@@ -208,7 +211,7 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
 
         // 判断是否是异步等待状态
         if (subEntity.getStatus() == AsyncCmdStatusEnum.ASYNC_WAIT) {
-            return this.executeSubCallback(entity, handler, subEntity, advanced);
+            return this.executeSubCallbackAsyncWait(entity, handler, subEntity, advanced);
         }
 
         // 续期
@@ -277,7 +280,10 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
             .toList();
     }
 
-    private AsyncCmdSubVO executeSubCallback(AsyncCmdVO entity, AsyncCmdSubTaskHandler handler, AsyncCmdSubVO subEntity, AtomicInteger advanced) {
+    private AsyncCmdSubVO executeSubCallbackAsyncWait(
+        AsyncCmdVO entity, AsyncCmdSubTaskHandler handler,
+        AsyncCmdSubVO subEntity, AtomicInteger advanced) {
+
         final LocalDateTime callbackExpireTime = subEntity.getCallbackExpireTime();
         if (LocalDateTime.now().isAfter(callbackExpireTime)) {
             String msg = "asyncCmd subTask callback timeout";

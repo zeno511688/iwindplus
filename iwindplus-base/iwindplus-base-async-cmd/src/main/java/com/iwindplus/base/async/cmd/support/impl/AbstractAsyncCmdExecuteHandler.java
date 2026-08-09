@@ -46,21 +46,25 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
     }
 
     /**
-     * 执行回调.
+     * 异步等待执行回调.
      *
      * @param entity  异步命令视图对象
      * @param handler 异步命令执行助手
      * @param start   开始时间
      * @return AsyncCmdVO
      */
-    protected AsyncCmdVO executeCallback(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start) {
+    protected AsyncCmdVO executeCallbackAsyncWait(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start) {
         final LocalDateTime callbackExpireTime = entity.getCallbackExpireTime();
-        if (LocalDateTime.now().isAfter(callbackExpireTime)) {
+        if (Objects.nonNull(callbackExpireTime) && LocalDateTime.now().isAfter(callbackExpireTime)) {
             final String msg = "asyncCmd task callback timeout";
 
             log.warn(msg + ", id={}", entity.getId());
 
-            this.getAsyncCmdStateSupport().taskAsyncWaitFail(entity, handler, new RuntimeException(msg));
+            this.getAsyncCmdStateSupport()
+                .taskAsyncWaitFail(entity, handler,
+                    entity.getCostTime() + System.currentTimeMillis() - start,
+                    new RuntimeException(msg));
+
             return entity;
         }
 
@@ -78,6 +82,7 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
 
         if (AsyncCmdCallbackResultEnum.FAILED.equals(callbackResult)) {
             this.getAsyncCmdStateSupport().taskAsyncWaitFail(entity, handler,
+                entity.getCostTime() + System.currentTimeMillis() - start,
                 new RuntimeException("asyncCmd task callback failed"));
 
             return entity;

@@ -61,7 +61,7 @@ public class AsyncCmdJobRetryHandler extends AbstractAsyncCmdJobHandler {
     protected AsyncCmdShardSearchDTO buildJobSearchDTO() {
         // 查询状态为待执行
         return AsyncCmdShardSearchDTO.builder()
-            .status(AsyncCmdStatusEnum.TO_BE_EXECUTE)
+            .statusList(AsyncCmdStatusEnum.getRetryStatus())
             .retryTime(LocalDateTime.now())
             .build();
     }

@@ -258,7 +258,10 @@ public record AsyncCmdStateSupport(
      * @param costTime 耗时
      * @return boolean
      */
-    public boolean taskAsyncWaitSuccess(AsyncCmdVO entity, AsyncCmdTaskHandler handler, Long costTime) {
+    public boolean taskAsyncWaitSuccess(
+        AsyncCmdVO entity,
+        AsyncCmdTaskHandler handler,
+        Long costTime) {
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
                 asyncCmdService.editStatusById(
@@ -296,7 +299,11 @@ public record AsyncCmdStateSupport(
      * @param ex      异常
      * @return boolean
      */
-    public boolean taskAsyncWaitFail(AsyncCmdVO entity, AsyncCmdTaskHandler handler, RuntimeException ex) {
+    public boolean taskAsyncWaitFail(
+        AsyncCmdVO entity,
+        AsyncCmdTaskHandler handler,
+        Long costTime,
+        Exception ex) {
         final int retryCount = Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
         final String stack = this.getStack(ex);
 
@@ -306,7 +313,7 @@ public record AsyncCmdStateSupport(
                     entity.getId(),
                     AsyncCmdStatusEnum.ASYNC_WAIT,
                     AsyncCmdStatusEnum.FAILED,
-                    null,
+                    costTime,
                     stack,
                     retryCount,
                     null,

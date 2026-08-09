@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.async.cmd.support;
 
+import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
@@ -76,14 +77,23 @@ public record AsyncCmdBizProcessor(
             return;
         }
 
-        // 1 抢占执行权
-        boolean locked = this.asyncCmdStateSupport.lockById(entity);
-        if (!locked) {
-            log.info("asyncCmd already handled. id={}", entity.getId());
+        // 只有待执行/异步等待状态才处理
+        if (!needProcessStatus(entity)) {
             return;
         }
 
+        // 待执行状态
+        if (AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(entity.getStatus())) {
+            boolean locked = asyncCmdStateSupport.lockById(entity);
+
+            if (!locked) {
+                log.info("asyncCmd already handled. id={}", entity.getId());
+                return;
+            }
+        }
+
         final long start = System.currentTimeMillis();
+
         try {
             final long subTaskCount = Optional.of(entity.getSubTaskCount()).orElse(0);
             this.getExecuteHandler(subTaskCount).execute(entity);
@@ -91,9 +101,25 @@ public record AsyncCmdBizProcessor(
             log.error("asyncCmd execute failed. id={}", entity.getId(), ex);
 
             // 兜底主任务卡在执行中只能等重置状态
-            this.asyncCmdStateSupport.taskFail(entity, null,
-                System.currentTimeMillis() - start, ex, false);
+            if (AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(entity.getStatus())) {
+                this.asyncCmdStateSupport.taskFail(entity, null,
+                    System.currentTimeMillis() - start, ex, false);
+                return;
+            }
+
+            // 兜底主任务卡在异步等待中只能等重置状态
+            if (AsyncCmdStatusEnum.ASYNC_WAIT.equals(entity.getStatus())) {
+                this.asyncCmdStateSupport.taskAsyncWaitFail(entity, null,
+                    System.currentTimeMillis() - start, ex);
+                return;
+            }
         }
+    }
+
+    private boolean needProcessStatus(AsyncCmdVO entity) {
+        AsyncCmdStatusEnum status = entity.getStatus();
+        return AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(status)
+            || AsyncCmdStatusEnum.ASYNC_WAIT.equals(status);
     }
 
     /**

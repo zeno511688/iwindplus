@@ -90,7 +90,7 @@ public class AsyncCmdJobResetHandler extends AbstractAsyncCmdJobHandler {
     @Override
     protected AsyncCmdShardSearchDTO buildJobSearchDTO() {
         return AsyncCmdShardSearchDTO.builder()
-            .statusList(AsyncCmdStatusEnum.getPendingStatus())
+            .statusList(AsyncCmdStatusEnum.getRestStatus())
             .expireTime(LocalDateTime.now())
             .build();
     }
