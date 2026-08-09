@@ -8,6 +8,7 @@
 package com.iwindplus.base.async.cmd.support.impl;
 
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
+import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdTaskHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
@@ -16,6 +17,7 @@ import com.iwindplus.base.async.cmd.support.AsyncCmdStateSupport;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -87,6 +89,15 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
 
             return entity;
         }
+
+        // 仍在等待中，刷新下次轮询时间，避免每次 RETRY_JOB 都被拾起
+        final long poolSeconds = Optional.ofNullable(
+            this.getAsyncCmdStateSupport().property().getAsyncWaitPoolSeconds()).orElse(60L);
+        final LocalDateTime nextRetryTime = LocalDateTime.now().plusSeconds(poolSeconds);
+        this.getAsyncCmdService().editStatusById(
+            entity.getId(), AsyncCmdStatusEnum.ASYNC_WAIT, AsyncCmdStatusEnum.ASYNC_WAIT,
+            null, null, null, nextRetryTime, null, null);
+        entity.setNextRetryTime(nextRetryTime);
 
         return entity;
     }

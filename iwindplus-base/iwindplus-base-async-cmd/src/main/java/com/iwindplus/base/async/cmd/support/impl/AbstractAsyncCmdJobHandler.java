@@ -54,7 +54,7 @@ public abstract class AbstractAsyncCmdJobHandler implements AsyncCmdJobHandler {
     public void execute(Integer shardIndex, Integer shardTotal) {
         final Integer size = this.asyncCmdService.getSize();
         if (Objects.isNull(size) || size <= 0) {
-            log.error("【{}】每条捞取条数={}, 请检查配置", this.support(), size);
+            log.error("【{}】每轮捞取条数={}, 本轮不捞取，请检查每页条数配置", this.support(), size);
             return;
         }
 

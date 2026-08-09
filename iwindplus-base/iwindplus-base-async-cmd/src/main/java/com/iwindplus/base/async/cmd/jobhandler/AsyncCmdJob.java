@@ -40,7 +40,7 @@ public class AsyncCmdJob {
         final int shardTotal = Math.max(XxlJobHelper.getShardTotal(), 1);
         final String jobParam = XxlJobHelper.getJobParam();
 
-        XxlJobHelper.log("异步命令，参数={}，开始时间={}，分片索引={}, 分片总数={}", jobParam, start, shardIndex, shardTotal);
+        XxlJobHelper.log("异步命令任务，参数={}，开始时间={}，分片索引={}, 分片总数={}", jobParam, start, shardIndex, shardTotal);
 
         int failedJobs = 0;
         final AsyncCmdJobEnum[] jobEnums = AsyncCmdJobEnum.values();
@@ -56,12 +56,12 @@ public class AsyncCmdJob {
         }
 
         if (failedJobs > 0) {
-            XxlJobHelper.handleFail("异步命令部分失败，失败个数=" + failedJobs);
+            XxlJobHelper.handleFail("异步命令任务部分失败，失败个数=" + failedJobs);
             return;
         }
 
         final long endTimeMillis = System.currentTimeMillis();
-        XxlJobHelper.log("异步命令，总任务个数={}, 结束时间={}，总执行毫秒数={}", jobEnums.length,
+        XxlJobHelper.log("异步命令任务，总任务个数={}, 结束时间={}，总执行毫秒数={}", jobEnums.length,
             DatesUtil.parseDate(endTimeMillis, DatePattern.NORM_DATETIME_MS_PATTERN), endTimeMillis - beginMillis);
 
         XxlJobHelper.handleSuccess();

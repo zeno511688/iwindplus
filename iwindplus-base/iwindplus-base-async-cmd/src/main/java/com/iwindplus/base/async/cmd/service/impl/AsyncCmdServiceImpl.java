@@ -242,11 +242,9 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
         if (Objects.nonNull(entity.getExpireTime())) {
             queryWrapper.lt(AsyncCmdDO::getExpireTime, entity.getExpireTime());
         }
-        if (Objects.nonNull(entity.getRetryTime())) {
-            queryWrapper.le(AsyncCmdDO::getNextRetryTime, entity.getRetryTime());
+        if (Objects.nonNull(entity.getNextRetryTime())) {
+            queryWrapper.le(AsyncCmdDO::getNextRetryTime, entity.getNextRetryTime());
         }
-
-        showField(queryWrapper);
 
         final List<AsyncCmdDO> list = this.asyncCmdRepository.list(queryWrapper);
         if (CollUtil.isEmpty(list)) {

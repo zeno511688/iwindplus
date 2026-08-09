@@ -55,7 +55,7 @@ public record AsyncCmdStateSupport(
                     null,
                     null,
                     null,
-                    this.asyncCmdRepository.getNextExpireTime(),
+                    null,
                     null,
                     null
                 )
@@ -306,6 +306,8 @@ public record AsyncCmdStateSupport(
         Exception ex) {
         final int retryCount = Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
         final String stack = this.getStack(ex);
+        final LocalDateTime nextRetryTime = LocalDateTime.now()
+            .plusSeconds(Optional.ofNullable(this.property.getAsyncWaitPoolSeconds()).orElse(60L));
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
@@ -316,7 +318,7 @@ public record AsyncCmdStateSupport(
                     costTime,
                     stack,
                     retryCount,
-                    null,
+                    nextRetryTime,
                     null,
                     null
                 )

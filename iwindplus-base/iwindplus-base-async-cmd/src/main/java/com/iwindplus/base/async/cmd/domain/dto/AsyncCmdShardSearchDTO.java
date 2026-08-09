@@ -73,8 +73,8 @@ public class AsyncCmdShardSearchDTO implements Serializable {
     private LocalDateTime expireTime;
 
     /**
-     * 重试时间.
+     * 下一次重试时间.
      */
-    @Schema(description = "重试时间")
-    private LocalDateTime retryTime;
+    @Schema(description = "下一次重试时间")
+    private LocalDateTime nextRetryTime;
 }
