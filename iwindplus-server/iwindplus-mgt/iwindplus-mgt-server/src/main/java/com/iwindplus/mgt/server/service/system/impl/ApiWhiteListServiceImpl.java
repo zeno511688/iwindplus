@@ -191,7 +191,7 @@ public class ApiWhiteListServiceImpl implements ApiWhiteListService {
         page.setOptimizeCountSql(Boolean.FALSE);
         page.setOptimizeJoinOfCountSql(Boolean.FALSE);
         LambdaQueryWrapper<ApiWhiteListDO> queryWrapper = Wrappers.lambdaQuery(ApiWhiteListDO.class)
-            .orderByDesc(ApiWhiteListDO::getModifiedTime);
+            .orderByDesc(ApiWhiteListDO::getModifiedTimestamp);
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(ApiWhiteListDO::getStatus, entity.getStatus());
         }

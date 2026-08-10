@@ -8,12 +8,11 @@
 package com.iwindplus.log.server.handler.job;
 
 import cn.hutool.core.date.DatePattern;
-import com.aizuda.snailjob.client.job.core.annotation.JobExecutor;
-import com.aizuda.snailjob.client.job.core.dto.JobArgs;
-import com.aizuda.snailjob.model.dto.ExecuteResult;
 import com.iwindplus.base.util.DatesUtil;
 import com.iwindplus.log.server.service.MailCaptchaLogService;
 import com.iwindplus.log.server.service.SmsCaptchaLogService;
+import com.xxl.job.core.context.XxlJobHelper;
+import com.xxl.job.core.handler.annotation.XxlJob;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -26,7 +25,6 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-@JobExecutor(name = "captchaLogExpireJob")
 public class CaptchaLogExpireJob {
 
     @Resource
@@ -37,23 +35,25 @@ public class CaptchaLogExpireJob {
 
     /**
      * 验证码日志过期清理.
-     *
-     * @param jobArgs    任务参数
-     * @return ExecuteResult
      */
-    public ExecuteResult jobExecute(JobArgs jobArgs) {
-        long beginMillis = System.currentTimeMillis();
+    @XxlJob("captchaLogExpireJob")
+    public void jobExecute() {
+        final long beginMillis = System.currentTimeMillis();
+        final String start = DatesUtil.parseDate(beginMillis, DatePattern.NORM_DATETIME_MS_PATTERN);
 
-        log.info("验证码日志过期清理任务，参数={}，开始时间={}", jobArgs.getJobParams()
-            , DatesUtil.parseDate(beginMillis, DatePattern.NORM_DATETIME_MS_PATTERN));
+        final int shardIndex = Math.max(XxlJobHelper.getShardIndex(), 0);
+        final int shardTotal = Math.max(XxlJobHelper.getShardTotal(), 1);
+        final String jobParam = XxlJobHelper.getJobParam();
+
+        XxlJobHelper.log("验证码日志过期清理任务，参数={}，开始时间={}，分片索引={}, 分片总数={}", jobParam, start, shardIndex, shardTotal);
 
         final boolean smsCaptchaLogResult = this.smsCaptchaLogService.removeExpireData();
-
         final boolean mailCaptchaLogResult = this.mailCaptchaLogService.removeExpireData();
 
         final long endTimeMillis = System.currentTimeMillis();
-        log.info("验证码日志过期清理任务，短信执行结果={}，邮箱执行结果={}，结束时间={}，总执行毫秒数={}", smsCaptchaLogResult,
+        XxlJobHelper.log("验证码日志过期清理任务，短信执行结果={}，邮箱执行结果={}，结束时间={}，总执行毫秒数={}", smsCaptchaLogResult,
             mailCaptchaLogResult, DatesUtil.parseDate(endTimeMillis, DatePattern.NORM_DATETIME_MS_PATTERN), endTimeMillis - beginMillis);
-        return ExecuteResult.success(smsCaptchaLogResult && mailCaptchaLogResult);
+
+        XxlJobHelper.handleSuccess();
     }
 }

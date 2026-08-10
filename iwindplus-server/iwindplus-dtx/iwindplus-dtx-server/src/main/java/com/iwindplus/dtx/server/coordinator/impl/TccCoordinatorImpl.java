@@ -60,7 +60,7 @@ public class TccCoordinatorImpl implements TccCoordinator {
     @Resource
     private TccBranchTxService branchTxService;
 
-    @Resource
+    @Resource(name = "tccTaskExecutor")
     private DtpExecutor tccTaskExecutor;
 
     @Resource

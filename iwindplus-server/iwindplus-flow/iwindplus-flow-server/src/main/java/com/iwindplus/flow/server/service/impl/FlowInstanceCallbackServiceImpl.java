@@ -10,6 +10,8 @@ package com.iwindplus.flow.server.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
@@ -19,6 +21,7 @@ import com.iwindplus.base.http.client.factory.HttpClientExecutorStrategyFactory;
 import com.iwindplus.flow.domain.dto.FlowInstanceCallbackEditDTO;
 import com.iwindplus.flow.domain.dto.FlowInstanceCallbackExtDTO;
 import com.iwindplus.flow.domain.dto.FlowInstanceCallbackSaveDTO;
+import com.iwindplus.flow.domain.dto.FlowInstanceCallbackShardSearchDTO;
 import com.iwindplus.flow.domain.enums.FlowCodeEnum;
 import com.iwindplus.flow.domain.enums.FlowInstanceCallbackStatusEnum;
 import com.iwindplus.flow.server.config.property.FlowProperty;
@@ -249,5 +252,32 @@ public class FlowInstanceCallbackServiceImpl implements FlowInstanceCallbackServ
             .version(callback.getVersion())
             .build();
         this.flowInstanceCallbackRepository.updateById(model);
+    }
+
+    @Override
+    public Integer getSize() {
+        return this.flowProperty.getMaxPageSize();
+    }
+
+    @Override
+    public List<FlowInstanceCallbackDO> listByShard(FlowInstanceCallbackShardSearchDTO entity) {
+        LambdaQueryWrapper<FlowInstanceCallbackDO> queryWrapper = Wrappers.lambdaQuery(FlowInstanceCallbackDO.class)
+            .gt(FlowInstanceCallbackDO::getId, Objects.isNull(entity.getLastId()) ? 0L : entity.getLastId())
+            .orderByAsc(FlowInstanceCallbackDO::getId)
+            .last("LIMIT " + entity.getSize());
+
+        final Integer shardTotal = entity.getShardTotal();
+        if (Objects.nonNull(shardTotal) && shardTotal > 1) {
+            final int shardIndex = Objects.isNull(entity.getShardIndex()) ? 0 : entity.getShardIndex();
+            queryWrapper.apply("MOD(id, {0}) = {1}", shardTotal, shardIndex);
+        }
+        if (Objects.nonNull(entity.getStatus())) {
+            queryWrapper.eq(FlowInstanceCallbackDO::getStatus, entity.getStatus());
+        }
+        if (CollUtil.isNotEmpty(entity.getStatusList())) {
+            queryWrapper.in(FlowInstanceCallbackDO::getStatus, entity.getStatusList());
+        }
+
+        return this.flowInstanceCallbackRepository.list(queryWrapper);
     }
 }

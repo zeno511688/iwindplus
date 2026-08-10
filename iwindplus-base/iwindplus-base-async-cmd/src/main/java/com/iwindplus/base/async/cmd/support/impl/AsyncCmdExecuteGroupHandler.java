@@ -285,7 +285,7 @@ public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler 
         AsyncCmdSubVO subEntity, AtomicInteger advanced) {
 
         final LocalDateTime callbackExpireTime = subEntity.getCallbackExpireTime();
-        if (LocalDateTime.now().isAfter(callbackExpireTime)) {
+        if (Objects.nonNull(callbackExpireTime) && LocalDateTime.now().isAfter(callbackExpireTime)) {
             String msg = "asyncCmd subTask callback timeout";
 
             log.warn(msg + ", id={} asyncCmdId={} seq={}",

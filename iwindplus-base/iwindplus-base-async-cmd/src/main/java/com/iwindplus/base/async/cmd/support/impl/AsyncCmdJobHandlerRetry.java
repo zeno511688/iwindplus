@@ -25,11 +25,11 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2025/11/29 23:12
  */
 @Slf4j
-public class AsyncCmdJobRetryHandler extends AbstractAsyncCmdJobHandler {
+public class AsyncCmdJobHandlerRetry extends AbstractAsyncCmdJobHandler {
 
     private final AsyncCmdBizProcessor asyncCmdBizProcessor;
 
-    public AsyncCmdJobRetryHandler(
+    public AsyncCmdJobHandlerRetry(
         AsyncCmdProperty property,
         AsyncCmdService asyncCmdService,
         AsyncCmdBizProcessor asyncCmdBizProcessor) {

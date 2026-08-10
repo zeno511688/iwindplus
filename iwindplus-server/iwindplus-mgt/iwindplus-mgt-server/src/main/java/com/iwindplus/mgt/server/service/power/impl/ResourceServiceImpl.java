@@ -205,7 +205,7 @@ public class ResourceServiceImpl implements ResourceService {
         page.setOptimizeJoinOfCountSql(Boolean.FALSE);
         LambdaQueryWrapper<ResourceDO> queryWrapper = Wrappers.lambdaQuery(ResourceDO.class)
             .eq(ResourceDO::getMenuId, entity.getMenuId())
-            .orderByDesc(ResourceDO::getModifiedTime);
+            .orderByDesc(ResourceDO::getModifiedTimestamp);
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(ResourceDO::getStatus, entity.getStatus());
         }

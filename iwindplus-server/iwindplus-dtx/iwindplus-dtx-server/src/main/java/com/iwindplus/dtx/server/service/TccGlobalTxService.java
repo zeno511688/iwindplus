@@ -10,6 +10,7 @@ package com.iwindplus.dtx.server.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.iwindplus.dtx.domain.dto.TccGlobalTxDTO;
 import com.iwindplus.dtx.domain.dto.TccGlobalTxSearchDTO;
+import com.iwindplus.dtx.domain.dto.TccGlobalTxShardSearchDTO;
 import com.iwindplus.dtx.domain.enums.GlobalTxStatusEnum;
 import com.iwindplus.dtx.domain.vo.TccGlobalTxPageVO;
 import com.iwindplus.dtx.domain.vo.TccGlobalTxVO;
@@ -141,4 +142,12 @@ public interface TccGlobalTxService {
      * @return TccGlobalTxVO
      */
     TccGlobalTxVO getDetail(Long id);
+
+    /**
+     * 分片查询.
+     *
+     * @param entity 搜索条件
+     * @return List<TccGlobalTxVO>
+     */
+    List<TccGlobalTxVO> listByShard(TccGlobalTxShardSearchDTO entity);
 }

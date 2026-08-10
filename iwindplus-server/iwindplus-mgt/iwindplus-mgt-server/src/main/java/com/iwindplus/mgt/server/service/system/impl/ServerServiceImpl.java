@@ -252,7 +252,7 @@ public class ServerServiceImpl implements ServerService {
         page.setOptimizeCountSql(Boolean.FALSE);
         page.setOptimizeJoinOfCountSql(Boolean.FALSE);
         LambdaQueryWrapper<ServerDO> queryWrapper = Wrappers.lambdaQuery(ServerDO.class)
-            .orderByDesc(ServerDO::getModifiedTime);
+            .orderByDesc(ServerDO::getModifiedTimestamp);
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(ServerDO::getStatus, entity.getStatus());
         }

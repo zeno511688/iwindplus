@@ -193,7 +193,7 @@ public class ServerApiServiceImpl implements ServerApiService {
         page.setOptimizeCountSql(Boolean.FALSE);
         page.setOptimizeJoinOfCountSql(Boolean.FALSE);
         LambdaQueryWrapper<ServerApiDO> queryWrapper = Wrappers.lambdaQuery(ServerApiDO.class)
-            .orderByDesc(ServerApiDO::getModifiedTime);
+            .orderByDesc(ServerApiDO::getModifiedTimestamp);
         if (CharSequenceUtil.isNotBlank(entity.getAppName())) {
             queryWrapper.eq(ServerApiDO::getAppName, entity.getAppName().trim());
         }

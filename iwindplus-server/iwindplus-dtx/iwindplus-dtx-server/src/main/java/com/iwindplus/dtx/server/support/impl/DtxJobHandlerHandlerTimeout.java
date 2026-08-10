@@ -8,7 +8,7 @@
 package com.iwindplus.dtx.server.support.impl;
 
 import cn.hutool.core.collection.CollUtil;
-import com.iwindplus.dtx.domain.dto.TccGlobalTxSearchDTO;
+import com.iwindplus.dtx.domain.dto.TccGlobalTxShardSearchDTO;
 import com.iwindplus.dtx.domain.enums.BranchTxStatusEnum;
 import com.iwindplus.dtx.domain.enums.DtxJobEnum;
 import com.iwindplus.dtx.domain.enums.GlobalTxStatusEnum;
@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class DtxJobHandlerTimeoutImpl extends AbstractDtxJobHandlerImpl {
+public class DtxJobHandlerHandlerTimeout extends AbstractDtxJobHandler {
 
     @Override
     public DtxJobEnum support() {
@@ -35,10 +35,10 @@ public class DtxJobHandlerTimeoutImpl extends AbstractDtxJobHandlerImpl {
     }
 
     @Override
-    protected void doExecute(List<TccGlobalTxVO> entityList) {
+    protected boolean doExecute(List<TccGlobalTxVO> entityList) {
         log.info("超时任务开始处理，size={}", entityList.size());
         if (CollUtil.isEmpty(entityList)) {
-            return;
+            return true;
         }
 
         int successCount = 0;
@@ -59,6 +59,7 @@ public class DtxJobHandlerTimeoutImpl extends AbstractDtxJobHandlerImpl {
         }
 
         log.info("超时任务处理完成，总数={}, 成功={}, 失败={}", entityList.size(), successCount, failCount);
+        return true;
     }
 
     /**
@@ -177,8 +178,8 @@ public class DtxJobHandlerTimeoutImpl extends AbstractDtxJobHandlerImpl {
     }
 
     @Override
-    protected TccGlobalTxSearchDTO buildDtxJobSearchDTO() {
-        return TccGlobalTxSearchDTO.builder()
+    protected TccGlobalTxShardSearchDTO buildJobSearchDTO() {
+        return TccGlobalTxShardSearchDTO.builder()
             .status(GlobalTxStatusEnum.TRYING)
             .expireTime(LocalDateTime.now())
             .build();

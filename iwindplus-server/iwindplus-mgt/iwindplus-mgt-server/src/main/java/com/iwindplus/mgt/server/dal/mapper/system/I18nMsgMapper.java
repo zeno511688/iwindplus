@@ -50,7 +50,7 @@ public interface I18nMsgMapper extends MPJBaseMapper<I18nMsgDO> {
             .selectAs(I18nProjectDO::getCode, I18nMsgPageVO::getProjectCode)
             .selectAs(I18nProjectDO::getName, I18nMsgPageVO::getProjectName)
             .selectAs(I18nProjectDO::getFileName, I18nMsgPageVO::getProjectFileName)
-            .orderByDesc(I18nMsgDO::getModifiedTime)
+            .orderByDesc(I18nMsgDO::getModifiedTimestamp)
             .eq(I18nProjectDO::getStatus, EnableStatusEnum.ENABLE);
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(I18nMsgDO::getStatus, entity.getStatus());

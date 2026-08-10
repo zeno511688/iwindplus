@@ -396,19 +396,6 @@ seata:
     grouplist:
       default: 127.0.0.1:8091
     disable-global-transaction: false
-snail-job:
-  # 是否开启定时任务
-  enabled: true
-  port: 10012
-  logback:
-    enabled: true
-    level: INFO
-  server:
-    host: 0.0.0.0
-    port: 17888
-  namespace: 764d604ec6fc45f68cd92514c40e9e1a
-  group: iwindplus-dtx
-  token: SJ_Wyz3dmsdbDOkDujOTSSoBjGQP1BMsVnj
 xxl-job:
   enabled: true
   admin:
@@ -418,6 +405,7 @@ xxl-job:
     log-path: logs/job
     log-retention-days: 30
     app-name: ${spring.application.name}
+    ip: host.docker.internal
 logging:
   level:
     root: INFO

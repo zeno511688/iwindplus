@@ -8,8 +8,8 @@
 package com.iwindplus.dtx.server.support.impl;
 
 import cn.hutool.core.collection.CollUtil;
-import com.iwindplus.dtx.domain.dto.TccGlobalTxSearchDTO;
-import com.iwindplus.dtx.domain.dto.TccGlobalTxSearchDTO.TccGlobalTxSearchDTOBuilder;
+import com.iwindplus.dtx.domain.dto.TccGlobalTxShardSearchDTO;
+import com.iwindplus.dtx.domain.dto.TccGlobalTxShardSearchDTO.TccGlobalTxShardSearchDTOBuilder;
 import com.iwindplus.dtx.domain.enums.DtxJobEnum;
 import com.iwindplus.dtx.domain.enums.GlobalTxStatusEnum;
 import com.iwindplus.dtx.domain.vo.TccGlobalTxVO;
@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class DtxJobHandlerRetryImpl extends AbstractDtxJobHandlerImpl {
+public class DtxJobHandlerHandlerRetry extends AbstractDtxJobHandler {
 
     @Override
     public DtxJobEnum support() {
@@ -34,10 +34,10 @@ public class DtxJobHandlerRetryImpl extends AbstractDtxJobHandlerImpl {
     }
 
     @Override
-    protected void doExecute(List<TccGlobalTxVO> entityList) {
+    protected boolean doExecute(List<TccGlobalTxVO> entityList) {
         log.info("重试任务，size={}", entityList.size());
         if (CollUtil.isEmpty(entityList)) {
-            return;
+            return true;
         }
         for (TccGlobalTxVO tx : entityList) {
             if (tx.getStatus() == GlobalTxStatusEnum.CONFIRMING
@@ -50,11 +50,12 @@ public class DtxJobHandlerRetryImpl extends AbstractDtxJobHandlerImpl {
                 this.tccCoordinator.cancel(tx.getXid());
             }
         }
+        return true;
     }
 
     @Override
-    protected TccGlobalTxSearchDTO buildDtxJobSearchDTO() {
-        final TccGlobalTxSearchDTOBuilder<?, ?> builder = TccGlobalTxSearchDTO.builder()
+    protected TccGlobalTxShardSearchDTO buildJobSearchDTO() {
+        final TccGlobalTxShardSearchDTOBuilder<?, ?> builder = TccGlobalTxShardSearchDTO.builder()
             .statusList(GlobalTxStatusEnum.getRetryStatus())
             .retryTime(LocalDateTime.now());
         if (Boolean.TRUE.equals(this.property.getRetry().getEnabledUnlimitedRetry())) {

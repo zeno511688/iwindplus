@@ -139,7 +139,7 @@ public class FlowFormServiceImpl implements FlowFormService {
         page.setOptimizeCountSql(Boolean.FALSE);
         page.setOptimizeJoinOfCountSql(Boolean.FALSE);
         LambdaQueryWrapper<FlowFormDO> queryWrapper = Wrappers.lambdaQuery(FlowFormDO.class)
-            .orderByDesc(FlowFormDO::getModifiedTime);
+            .orderByDesc(FlowFormDO::getModifiedTimestamp);
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(FlowFormDO::getStatus, entity.getStatus());
         }

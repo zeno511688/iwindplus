@@ -171,7 +171,7 @@ public class IpBlackListServiceImpl implements IpBlackListService {
         page.setOptimizeCountSql(Boolean.FALSE);
         page.setOptimizeJoinOfCountSql(Boolean.FALSE);
         LambdaQueryWrapper<IpBlackListDO> queryWrapper = Wrappers.lambdaQuery(IpBlackListDO.class)
-            .orderByDesc(IpBlackListDO::getModifiedTime);
+            .orderByDesc(IpBlackListDO::getModifiedTimestamp);
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(IpBlackListDO::getStatus, entity.getStatus());
         }

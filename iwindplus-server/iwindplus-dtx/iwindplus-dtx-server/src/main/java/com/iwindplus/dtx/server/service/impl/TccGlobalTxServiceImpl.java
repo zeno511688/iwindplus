@@ -19,6 +19,7 @@ import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.dtx.domain.dto.TccGlobalTxDTO;
 import com.iwindplus.dtx.domain.dto.TccGlobalTxSearchDTO;
+import com.iwindplus.dtx.domain.dto.TccGlobalTxShardSearchDTO;
 import com.iwindplus.dtx.domain.enums.GlobalTxStatusEnum;
 import com.iwindplus.dtx.domain.vo.TccGlobalTxPageVO;
 import com.iwindplus.dtx.domain.vo.TccGlobalTxVO;
@@ -159,15 +160,6 @@ public class TccGlobalTxServiceImpl implements TccGlobalTxService {
         if (CollUtil.isNotEmpty(entity.getStatusList())) {
             queryWrapper.in(TccGlobalTxDO::getStatus, entity.getStatusList());
         }
-        if (Objects.nonNull(entity.getRetryTime())) {
-            queryWrapper.le(TccGlobalTxDO::getNextRetryTime, entity.getRetryTime());
-        }
-        if (Objects.nonNull(entity.getRetryCount())) {
-            queryWrapper.le(TccGlobalTxDO::getRetryCount, entity.getRetryCount());
-        }
-        if (Objects.nonNull(entity.getExpireTime())) {
-            queryWrapper.lt(TccGlobalTxDO::getExpireTime, entity.getExpireTime());
-        }
         final PageDTO<TccGlobalTxDO> modelPage = this.tccGlobalTxRepository.page(page, queryWrapper);
         return modelPage.convert(model -> BeanUtil.copyProperties(model, TccGlobalTxPageVO.class));
     }
@@ -189,5 +181,42 @@ public class TccGlobalTxServiceImpl implements TccGlobalTxService {
             throw new BizException(BizCodeEnum.DATA_NOT_EXIST);
         }
         return BeanUtil.copyProperties(data, TccGlobalTxVO.class);
+    }
+
+    @Override
+    public List<TccGlobalTxVO> listByShard(TccGlobalTxShardSearchDTO entity) {
+        LambdaQueryWrapper<TccGlobalTxDO> queryWrapper = Wrappers.lambdaQuery(TccGlobalTxDO.class)
+            .eq(TccGlobalTxDO::getEnv, SpringUtil.getActiveProfile())
+            .gt(TccGlobalTxDO::getId, Objects.isNull(entity.getLastId()) ? 0L : entity.getLastId())
+            .orderByAsc(TccGlobalTxDO::getId)
+            .last("LIMIT " + entity.getSize());
+
+        final Integer shardTotal = entity.getShardTotal();
+        if (Objects.nonNull(shardTotal) && shardTotal > 1) {
+            final int shardIndex = Objects.isNull(entity.getShardIndex()) ? 0 : entity.getShardIndex();
+            queryWrapper.apply("MOD(id, {0}) = {1}", shardTotal, shardIndex);
+        }
+        if (Objects.nonNull(entity.getStatus())) {
+            queryWrapper.eq(TccGlobalTxDO::getStatus, entity.getStatus());
+        }
+        if (CollUtil.isNotEmpty(entity.getStatusList())) {
+            queryWrapper.in(TccGlobalTxDO::getStatus, entity.getStatusList());
+        }
+        if (Objects.nonNull(entity.getExpireTime())) {
+            queryWrapper.lt(TccGlobalTxDO::getExpireTime, entity.getExpireTime());
+        }
+        if (Objects.nonNull(entity.getRetryTime())) {
+            queryWrapper.le(TccGlobalTxDO::getNextRetryTime, entity.getRetryTime());
+        }
+        if (Objects.nonNull(entity.getRetryCount())) {
+            queryWrapper.le(TccGlobalTxDO::getRetryCount, entity.getRetryCount());
+        }
+
+        final List<TccGlobalTxDO> list = this.tccGlobalTxRepository.list(queryWrapper);
+        if (CollUtil.isEmpty(list)) {
+            return null;
+        }
+
+        return BeanUtil.copyToList(list, TccGlobalTxVO.class);
     }
 }

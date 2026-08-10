@@ -9,6 +9,7 @@ package com.iwindplus.flow.server.service;
 
 import com.iwindplus.flow.domain.dto.FlowInstanceCallbackEditDTO;
 import com.iwindplus.flow.domain.dto.FlowInstanceCallbackSaveDTO;
+import com.iwindplus.flow.domain.dto.FlowInstanceCallbackShardSearchDTO;
 import com.iwindplus.flow.server.dal.model.FlowInstanceCallbackDO;
 import java.util.List;
 
@@ -51,4 +52,19 @@ public interface FlowInstanceCallbackService {
      * @return 是否成功
      */
     boolean executeCallback(FlowInstanceCallbackDO callback);
+
+    /**
+     * 获取每页条数.
+     *
+     * @return Integer
+     */
+    Integer getSize();
+
+    /**
+     * 分片查询.
+     *
+     * @param entity 搜索条件
+     * @return List<FlowInstanceCallbackDO>
+     */
+    List<FlowInstanceCallbackDO> listByShard(FlowInstanceCallbackShardSearchDTO entity);
 }

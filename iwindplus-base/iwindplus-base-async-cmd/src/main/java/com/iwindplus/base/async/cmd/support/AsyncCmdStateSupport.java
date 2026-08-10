@@ -56,7 +56,7 @@ public record AsyncCmdStateSupport(
                     null,
                     null,
                     null,
-                    null,
+                    this.asyncCmdRepository.getNextExpireTime(),
                     null
                 )
             )

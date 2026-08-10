@@ -196,7 +196,7 @@ public class ClientServiceImpl implements ClientService {
         page.setOptimizeCountSql(Boolean.FALSE);
         page.setOptimizeJoinOfCountSql(Boolean.FALSE);
         LambdaQueryWrapper<ClientDO> queryWrapper = Wrappers.lambdaQuery(ClientDO.class)
-            .orderByDesc(ClientDO::getModifiedTime);
+            .orderByDesc(ClientDO::getModifiedTimestamp);
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(ClientDO::getStatus, entity.getStatus());
         }

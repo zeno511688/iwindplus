@@ -104,7 +104,7 @@ public class TccBranchTxServiceImpl implements TccBranchTxService {
         page.setOptimizeCountSql(Boolean.FALSE);
         page.setOptimizeJoinOfCountSql(Boolean.FALSE);
         LambdaQueryWrapper<TccBranchTxDO> queryWrapper = Wrappers.lambdaQuery(TccBranchTxDO.class)
-            .orderByDesc(TccBranchTxDO::getModifiedTime);
+            .orderByDesc(TccBranchTxDO::getModifiedTimestamp);
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(TccBranchTxDO::getStatus, entity.getStatus());
         }

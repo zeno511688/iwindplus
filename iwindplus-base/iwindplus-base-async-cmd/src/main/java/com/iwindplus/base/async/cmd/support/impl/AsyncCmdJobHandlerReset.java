@@ -25,9 +25,9 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2025/11/29 23:12
  */
 @Slf4j
-public class AsyncCmdJobResetHandler extends AbstractAsyncCmdJobHandler {
+public class AsyncCmdJobHandlerReset extends AbstractAsyncCmdJobHandler {
 
-    public AsyncCmdJobResetHandler(
+    public AsyncCmdJobHandlerReset(
         AsyncCmdProperty property,
         AsyncCmdService asyncCmdService) {
         super(property, asyncCmdService);

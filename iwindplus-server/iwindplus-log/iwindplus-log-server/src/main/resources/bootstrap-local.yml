@@ -492,18 +492,6 @@ disruptor:
         resume-threshold: 0.5
         # 暂停比例
         pause-threshold: 0.1
-snail-job:
-  enabled: true
-  port: 10003
-  logback:
-    enabled: true
-    level: INFO
-  server:
-    host: 0.0.0.0
-    port: 17888
-  namespace: 764d604ec6fc45f68cd92514c40e9e1a
-  group: iwindplus-log
-  token: SJ_Wyz3dmsdbDOkDujOTSSoBjGQP1BMsVnj
 xxl-job:
   enabled: true
   admin:
@@ -513,6 +501,7 @@ xxl-job:
     log-path: logs/job
     log-retention-days: 30
     app-name: ${spring.application.name}
+    ip: host.docker.internal
 logging:
   level:
     root: INFO

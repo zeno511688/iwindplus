@@ -27,7 +27,8 @@ public interface DtxJobHandler {
     /**
      * 执行job.
      *
-     * @param shardingIndex 分片
+     * @param shardIndex 分片索引
+     * @param shardTotal 分片总数
      */
-    void execute(int shardingIndex);
+    void execute(Integer shardIndex, Integer shardTotal);
 }

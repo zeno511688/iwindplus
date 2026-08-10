@@ -117,7 +117,7 @@
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
-            <artifactId>iwindplus-base-snail-job</artifactId>
+            <artifactId>iwindplus-base-xxl-job</artifactId>
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>

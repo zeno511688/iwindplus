@@ -246,7 +246,7 @@ public class AppCertServiceImpl implements AppCertService {
         page.setOptimizeCountSql(Boolean.FALSE);
         page.setOptimizeJoinOfCountSql(Boolean.FALSE);
         LambdaQueryWrapper<AppCertDO> queryWrapper = Wrappers.lambdaQuery(AppCertDO.class)
-            .orderByDesc(AppCertDO::getModifiedTime);
+            .orderByDesc(AppCertDO::getModifiedTimestamp);
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(AppCertDO::getStatus, entity.getStatus());
         }

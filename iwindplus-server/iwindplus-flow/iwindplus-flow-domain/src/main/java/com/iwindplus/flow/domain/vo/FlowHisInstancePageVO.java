@@ -17,12 +17,12 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
- * 我的发起分页视图对象.
+ * 历史流程实例分页视图对象.
  *
  * @author zengdegui
  * @since 2026/05/20 23:41
  */
-@Schema(description = "我的发起分页视图对象")
+@Schema(description = "历史流程实例分页视图对象")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder

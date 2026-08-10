@@ -125,6 +125,10 @@ async-cmd:
   # 是否开启job
   job:
     enabled: true
+  web:
+    # 接口路径
+    path: admin/mgt/asyncCmd
+
 mgt:
   ws:
     # 是否开启ws推送
@@ -297,6 +301,15 @@ dynamictp:
       maximumPoolSize: 32
       queueCapacity: 100
       threadNamePrefix: asyncCmdTask
+      runTimeout: 5000
+      platformIds: [ 1 ]
+    - threadPoolName: asyncCmdSubTaskExecutor
+      threadPoolAliasName: 异步命令子任务线程池
+      executorType: eager
+      corePoolSize: 16
+      maximumPoolSize: 32
+      queueCapacity: 100
+      threadNamePrefix: asyncCmdSubTask
       runTimeout: 5000
       platformIds: [ 1 ]
     - threadPoolName: kafkaListerTaskExecutor
@@ -600,20 +613,6 @@ seata:
     grouplist:
       default: 127.0.0.1:8091
     disable-global-transaction: false
-
-snail-job:
-  # 是否开启定时任务
-  enabled: true
-  port: 10001
-  logback:
-    enabled: true
-    level: INFO
-  server:
-    host: 0.0.0.0
-    port: 17888
-  namespace: 764d604ec6fc45f68cd92514c40e9e1a
-  group: iwindplus-mgt
-  token: SJ_Wyz3dmsdbDOkDujOTSSoBjGQP1BMsVnj
 xxl-job:
   enabled: true
   admin:
@@ -623,6 +622,7 @@ xxl-job:
     log-path: logs/job
     log-retention-days: 30
     app-name: ${spring.application.name}
+    ip: host.docker.internal
 logging:
   level:
     root: INFO

@@ -29,4 +29,10 @@ public class FlowProperty {
      */
     @Builder.Default
     private Integer maxRetry = 50;
+
+    /**
+     * 定时任务分页每页条数.
+     */
+    @Builder.Default
+    private Integer maxPageSize = 10;
 }

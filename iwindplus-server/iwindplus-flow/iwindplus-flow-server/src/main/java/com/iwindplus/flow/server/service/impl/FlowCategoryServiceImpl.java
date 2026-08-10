@@ -139,7 +139,7 @@ public class FlowCategoryServiceImpl implements FlowCategoryService {
         page.setOptimizeCountSql(Boolean.FALSE);
         page.setOptimizeJoinOfCountSql(Boolean.FALSE);
         LambdaQueryWrapper<FlowCategoryDO> queryWrapper = Wrappers.lambdaQuery(FlowCategoryDO.class)
-            .orderByDesc(FlowCategoryDO::getModifiedTime);
+            .orderByDesc(FlowCategoryDO::getModifiedTimestamp);
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(FlowCategoryDO::getStatus, entity.getStatus());
         }

@@ -34,8 +34,8 @@ import com.iwindplus.base.async.cmd.support.impl.AsyncCmdDispatchHandlerAsync;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdDispatchHandlerCenter;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdExecuteGroupHandler;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdExecuteMainHandler;
-import com.iwindplus.base.async.cmd.support.impl.AsyncCmdJobResetHandler;
-import com.iwindplus.base.async.cmd.support.impl.AsyncCmdJobRetryHandler;
+import com.iwindplus.base.async.cmd.support.impl.AsyncCmdJobHandlerReset;
+import com.iwindplus.base.async.cmd.support.impl.AsyncCmdJobHandlerRetry;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -341,37 +341,37 @@ public class AsyncCmdConfiguration {
     }
 
     /**
-     * 创建 AsyncCmdJobRetryHandler.
+     * 创建 AsyncCmdJobHandlerRetry.
      *
      * @param property             property
      * @param asyncCmdService      asyncCmdService
      * @param asyncCmdBizProcessor asyncCmdBizProcessor
-     * @return AsyncCmdJobRetryHandler
+     * @return AsyncCmdJobHandlerRetry
      */
     @Bean
-    public AsyncCmdJobRetryHandler asyncCmdJobRetryHandler(
+    public AsyncCmdJobHandlerRetry asyncCmdJobHandlerRetry(
         AsyncCmdProperty property,
         AsyncCmdService asyncCmdService,
         AsyncCmdBizProcessor asyncCmdBizProcessor) {
-        AsyncCmdJobRetryHandler asyncCmdJobRetryHandler = new AsyncCmdJobRetryHandler(
+        AsyncCmdJobHandlerRetry asyncCmdJobHandlerRetry = new AsyncCmdJobHandlerRetry(
             property, asyncCmdService, asyncCmdBizProcessor);
-        return asyncCmdJobRetryHandler;
+        return asyncCmdJobHandlerRetry;
     }
 
     /**
-     * 创建 AsyncCmdJobResetHandler.
+     * 创建 AsyncCmdJobHandlerReset.
      *
      * @param property        property
      * @param asyncCmdService asyncCmdService
-     * @return AsyncCmdJobResetHandler
+     * @return AsyncCmdJobHandlerReset
      */
     @Bean
-    public AsyncCmdJobResetHandler asyncCmdJobResetHandler(
+    public AsyncCmdJobHandlerReset asyncCmdJobHandlerReset(
         AsyncCmdProperty property,
         AsyncCmdService asyncCmdService) {
-        AsyncCmdJobResetHandler asyncCmdJobResetHandler = new AsyncCmdJobResetHandler(
+        AsyncCmdJobHandlerReset asyncCmdJobHandlerReset = new AsyncCmdJobHandlerReset(
             property, asyncCmdService);
-        return asyncCmdJobResetHandler;
+        return asyncCmdJobHandlerReset;
     }
 
     /**
