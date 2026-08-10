@@ -45,7 +45,7 @@ public record AsyncCmdStateSupport(
      * @param entity 命令对象
      * @return boolean
      */
-    public boolean lockById(AsyncCmdVO entity) {
+    public boolean editLockById(AsyncCmdVO entity) {
         return Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
                 asyncCmdService.editStatusById(
