@@ -22,9 +22,9 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2025/11/29 23:12
  */
 @Slf4j
-public class AsyncCmdExecuteMainHandler extends AbstractAsyncCmdExecuteHandler {
+public class AsyncCmdExecuteHandlerMain extends AbstractAsyncCmdExecuteHandler {
 
-    public AsyncCmdExecuteMainHandler(
+    public AsyncCmdExecuteHandlerMain(
         AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory,
         AsyncCmdStateSupport asyncCmdStateSupport,
         AsyncCmdService asyncCmdService) {

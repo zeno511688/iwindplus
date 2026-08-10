@@ -34,13 +34,13 @@ import org.dromara.dynamictp.core.executor.DtpExecutor;
  * @since 2025/11/29 23:12
  */
 @Slf4j
-public class AsyncCmdExecuteGroupHandler extends AbstractAsyncCmdExecuteHandler {
+public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler {
 
     private final AsyncCmdSubService asyncCmdSubService;
     private final AsyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory;
     private final DtpExecutor asyncCmdSubTaskExecutor;
 
-    public AsyncCmdExecuteGroupHandler(
+    public AsyncCmdExecuteHandlerGroup(
         AsyncCmdTaskHandlerStrategyFactory asyncTaskHandlerStrategyFactory,
         AsyncCmdStateSupport asyncCmdStateSupport,
         AsyncCmdService asyncCmdService,

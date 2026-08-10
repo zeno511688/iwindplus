@@ -32,8 +32,8 @@ import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdDispatchHandlerAsync;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdDispatchHandlerCenter;
-import com.iwindplus.base.async.cmd.support.impl.AsyncCmdExecuteGroupHandler;
-import com.iwindplus.base.async.cmd.support.impl.AsyncCmdExecuteMainHandler;
+import com.iwindplus.base.async.cmd.support.impl.AsyncCmdExecuteHandlerGroup;
+import com.iwindplus.base.async.cmd.support.impl.AsyncCmdExecuteHandlerMain;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdJobHandlerReset;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdJobHandlerRetry;
 import jakarta.annotation.PostConstruct;
@@ -240,46 +240,46 @@ public class AsyncCmdConfiguration {
     }
 
     /**
-     * 创建 AsyncCmdExecuteMainHandler.
+     * 创建 AsyncCmdExecuteHandlerMain.
      *
      * @param asyncCmdTaskHandlerStrategyFactor asyncCmdTaskHandlerStrategyFactor
      * @param asyncCmdStateSupport              asyncCmdStateSupport
      * @param asyncCmdService                   asyncCmdService
-     * @return AsyncCmdExecuteMainHandler
+     * @return AsyncCmdExecuteHandlerMain
      */
     @Bean
-    public AsyncCmdExecuteMainHandler asyncCmdExecuteMainHandler(
+    public AsyncCmdExecuteHandlerMain asyncCmdExecuteHandlerMain(
         AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactor,
         AsyncCmdStateSupport asyncCmdStateSupport,
         AsyncCmdService asyncCmdService) {
-        AsyncCmdExecuteMainHandler asyncCmdExecuteMainHandler = new AsyncCmdExecuteMainHandler(
+        AsyncCmdExecuteHandlerMain asyncCmdExecuteHandlerMain = new AsyncCmdExecuteHandlerMain(
             asyncCmdTaskHandlerStrategyFactor, asyncCmdStateSupport, asyncCmdService);
-        log.info("AsyncCmdExecuteMainHandler={}", asyncCmdExecuteMainHandler);
-        return asyncCmdExecuteMainHandler;
+        log.info("AsyncCmdExecuteHandlerMain={}", asyncCmdExecuteHandlerMain);
+        return asyncCmdExecuteHandlerMain;
     }
 
     /**
-     * 创建 AsyncCmdExecuteGroupHandler.
+     * 创建 AsyncCmdExecuteHandlerGroup.
      *
      * @param asyncCmdTaskHandlerStrategyFactory    asyncCmdTaskHandlerStrategyFactory
      * @param asyncCmdStateSupport                  asyncCmdStateSupport
      * @param asyncCmdService                       asyncCmdService
      * @param asyncCmdSubService                    asyncCmdSubService
      * @param asyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory
-     * @return AsyncCmdExecuteGroupHandler
+     * @return AsyncCmdExecuteHandlerGroup
      */
     @Bean
-    public AsyncCmdExecuteGroupHandler asyncCmdExecuteGroupHandler(
+    public AsyncCmdExecuteHandlerGroup asyncCmdExecuteHandlerGroup(
         AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory,
         AsyncCmdStateSupport asyncCmdStateSupport,
         AsyncCmdService asyncCmdService,
         AsyncCmdSubService asyncCmdSubService,
         AsyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory) {
-        AsyncCmdExecuteGroupHandler asyncCmdExecuteGroupHandler = new AsyncCmdExecuteGroupHandler(
+        AsyncCmdExecuteHandlerGroup asyncCmdExecuteHandlerGroup = new AsyncCmdExecuteHandlerGroup(
             asyncCmdTaskHandlerStrategyFactory, asyncCmdStateSupport, asyncCmdService,
             asyncCmdSubService, asyncCmdSubTaskHandlerStrategyFactory, asyncCmdSubTaskExecutor);
-        log.info("AsyncCmdExecuteGroupHandler={}", asyncCmdExecuteGroupHandler);
-        return asyncCmdExecuteGroupHandler;
+        log.info("AsyncCmdExecuteHandlerGroup={}", asyncCmdExecuteHandlerGroup);
+        return asyncCmdExecuteHandlerGroup;
     }
 
     /**
@@ -288,8 +288,8 @@ public class AsyncCmdConfiguration {
      * @param property                    property
      * @param asyncCmdService             asyncCmdService
      * @param asyncCmdSubService          asyncCmdSubService
-     * @param asyncCmdExecuteMainHandler  asyncCmdExecuteMainHandler
-     * @param asyncCmdExecuteGroupHandler asyncCmdExecuteGroupHandler
+     * @param asyncCmdExecuteHandlerMain  asyncCmdExecuteHandlerMain
+     * @param asyncCmdExecuteHandlerGroup asyncCmdExecuteHandlerGroup
      * @return AsyncCmdBizProcessor
      */
     @Bean
@@ -298,11 +298,11 @@ public class AsyncCmdConfiguration {
         AsyncCmdService asyncCmdService,
         AsyncCmdSubService asyncCmdSubService,
         AsyncCmdStateSupport asyncCmdStateSupport,
-        AsyncCmdExecuteHandler asyncCmdExecuteMainHandler,
-        AsyncCmdExecuteHandler asyncCmdExecuteGroupHandler) {
+        AsyncCmdExecuteHandler asyncCmdExecuteHandlerMain,
+        AsyncCmdExecuteHandler asyncCmdExecuteHandlerGroup) {
         AsyncCmdBizProcessor asyncCmdBizProcessor = new AsyncCmdBizProcessor(
             property, asyncCmdService, asyncCmdSubService, asyncCmdStateSupport,
-            asyncCmdExecuteMainHandler, asyncCmdExecuteGroupHandler, asyncCmdTaskExecutor);
+            asyncCmdExecuteHandlerMain, asyncCmdExecuteHandlerGroup, asyncCmdTaskExecutor);
         return asyncCmdBizProcessor;
     }
 

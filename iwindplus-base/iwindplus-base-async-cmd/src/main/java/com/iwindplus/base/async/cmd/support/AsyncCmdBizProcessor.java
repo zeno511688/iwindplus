@@ -30,8 +30,8 @@ public record AsyncCmdBizProcessor(
     AsyncCmdService asyncCmdService,
     AsyncCmdSubService asyncCmdSubService,
     AsyncCmdStateSupport asyncCmdStateSupport,
-    AsyncCmdExecuteHandler asyncCmdExecuteMainHandler,
-    AsyncCmdExecuteHandler asyncCmdExecuteGroupHandler,
+    AsyncCmdExecuteHandler asyncCmdExecuteHandlerMain,
+    AsyncCmdExecuteHandler asyncCmdExecuteHandlerGroup,
     DtpExecutor asyncCmdTaskExecutor) {
 
     /**
@@ -129,6 +129,6 @@ public record AsyncCmdBizProcessor(
      * @return AsyncCmdExecuteHandler
      */
     private AsyncCmdExecuteHandler getExecuteHandler(long subTaskCount) {
-        return subTaskCount <= 0 ? asyncCmdExecuteMainHandler : asyncCmdExecuteGroupHandler;
+        return subTaskCount <= 0 ? asyncCmdExecuteHandlerMain : asyncCmdExecuteHandlerGroup;
     }
 }
