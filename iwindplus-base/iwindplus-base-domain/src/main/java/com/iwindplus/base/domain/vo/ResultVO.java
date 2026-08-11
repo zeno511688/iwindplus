@@ -21,7 +21,6 @@ import com.iwindplus.base.domain.exception.CommonException;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.text.MessageFormat;
-import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
@@ -78,13 +77,6 @@ public class ResultVO<T> implements Serializable {
     private T bizData;
 
     /**
-     * 业务时间.
-     */
-    @Schema(description = "业务时间")
-    @JsonProperty(ResponseConstant.BIZ_TIME)
-    private LocalDateTime bizTime;
-
-    /**
      * 业务时间戳.
      */
     @Schema(description = "业务时间戳")
@@ -104,7 +96,6 @@ public class ResultVO<T> implements Serializable {
     public ResultVO() {
         this.bizCode = HttpStatus.OK.name().toLowerCase();
         this.bizMessage = HttpStatus.OK.getReasonPhrase();
-        this.bizTime = LocalDateTime.now();
         this.bizTimestamp = System.currentTimeMillis();
         this.bizTraceId = MDC.get(HeaderConstant.TRACE_ID);
     }

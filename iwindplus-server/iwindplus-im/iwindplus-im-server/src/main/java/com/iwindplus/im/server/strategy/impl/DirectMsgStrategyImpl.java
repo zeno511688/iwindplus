@@ -17,7 +17,6 @@ import com.iwindplus.im.server.service.DirectMsgService;
 import com.iwindplus.im.server.strategy.WsMsgStrategy;
 import com.iwindplus.mgt.client.power.OrgClient;
 import jakarta.annotation.Resource;
-import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -70,7 +69,7 @@ public class DirectMsgStrategyImpl extends AbstractWsMsgStrategyImpl implements 
         if (Objects.nonNull(channelContextSetWithLock) && 0 < channelContextSetWithLock.size()) {
             DirectMsgDO entity = DirectMsgDO.builder()
                 .id(param.getId())
-                .sendTime(LocalDateTime.now())
+                .sendTime(System.currentTimeMillis())
                 .build();
 
             msg.setMsgId(param.getId());

@@ -8,7 +8,6 @@ import com.iwindplus.base.domain.vo.DbVersionBaseTwoVO;
 import com.iwindplus.im.domain.enums.MsgStatusEnum;
 import com.iwindplus.im.domain.enums.SendStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -39,7 +38,7 @@ public class AddFriendMsgVO extends DbVersionBaseTwoVO {
      * 审核时间.
      */
     @Schema(description = "审核时间")
-    private LocalDateTime auditTime;
+    private Long auditTime;
 
     /**
      * 接收人主键.
@@ -69,7 +68,7 @@ public class AddFriendMsgVO extends DbVersionBaseTwoVO {
      * 读取时间.
      */
     @Schema(description = "读取时间")
-    private LocalDateTime readTime;
+    private Long readTime;
 
     /**
      * 发送人主键.
@@ -93,7 +92,7 @@ public class AddFriendMsgVO extends DbVersionBaseTwoVO {
      * 发送时间.
      */
     @Schema(description = "发送时间")
-    private LocalDateTime sendTime;
+    private Long sendTime;
 
     /**
      * 发送状态

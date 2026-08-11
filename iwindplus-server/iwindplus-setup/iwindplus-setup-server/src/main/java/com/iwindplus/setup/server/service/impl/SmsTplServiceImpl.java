@@ -13,7 +13,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
-import com.iwindplus.base.domain.constant.CommonConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.DbConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
@@ -172,7 +172,7 @@ public class SmsTplServiceImpl implements SmsTplService {
         List<OrderItem> orders = page.getOrders();
         if (CollUtil.isEmpty(orders)) {
             orders = new ArrayList<>(10);
-            OrderItem item = OrderItem.desc(CommonConstant.DbConstant.MODIFIED_TIME);
+            OrderItem item = OrderItem.desc(DbConstant.MODIFIED_TIMESTAMP);
             orders.add(item);
         }
         orders.forEach(order -> {
@@ -181,8 +181,8 @@ public class SmsTplServiceImpl implements SmsTplService {
             order.setColumn(underline);
         });
         page.setOrders(orders);
-        queryWrapper.select(SmsTplDO::getId, SmsTplDO::getCreatedTime, SmsTplDO::getCreatedTimestamp, SmsTplDO::getCreatedBy,
-            SmsTplDO::getModifiedTime, SmsTplDO::getModifiedTimestamp, SmsTplDO::getModifiedBy, SmsTplDO::getBuildInFlag, SmsTplDO::getVersion,
+        queryWrapper.select(SmsTplDO::getId, SmsTplDO::getCreatedTimestamp, SmsTplDO::getCreatedBy,
+            SmsTplDO::getModifiedTimestamp, SmsTplDO::getModifiedBy, SmsTplDO::getBuildInFlag, SmsTplDO::getVersion,
             SmsTplDO::getRemark, SmsTplDO::getStatus, SmsTplDO::getCode, SmsTplDO::getName, SmsTplDO::getSignName
         );
         final PageDTO<SmsTplDO> modelPage = this.smsTplRepository.page(page, queryWrapper);

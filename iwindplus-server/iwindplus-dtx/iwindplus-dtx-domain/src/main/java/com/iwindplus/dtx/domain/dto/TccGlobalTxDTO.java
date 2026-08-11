@@ -13,7 +13,6 @@ import com.iwindplus.base.domain.validation.SaveGroup;
 import com.iwindplus.dtx.domain.enums.GlobalTxStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -73,13 +72,13 @@ public class TccGlobalTxDTO extends DbVersionBaseDTO {
      * 过期时间.
      */
     @Schema(description = "过期时间")
-    private LocalDateTime expireTime;
+    private Long expireTime;
 
     /**
      * 下一次重试时间.
      */
     @Schema(description = "下一次重试时间")
-    private LocalDateTime nextRetryTime;
+    private Long nextRetryTime;
 
     /**
      * 重试次数.

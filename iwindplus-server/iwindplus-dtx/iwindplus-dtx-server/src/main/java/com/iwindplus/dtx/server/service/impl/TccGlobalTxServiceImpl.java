@@ -26,7 +26,6 @@ import com.iwindplus.dtx.domain.vo.TccGlobalTxVO;
 import com.iwindplus.dtx.server.dal.model.TccGlobalTxDO;
 import com.iwindplus.dtx.server.dal.repository.TccGlobalTxRepository;
 import com.iwindplus.dtx.server.service.TccGlobalTxService;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -137,7 +136,7 @@ public class TccGlobalTxServiceImpl implements TccGlobalTxService {
 
     @Override
     public boolean editStatusById(String xid, GlobalTxStatusEnum from, GlobalTxStatusEnum to, Integer retryCount,
-        LocalDateTime nextRetryTime) {
+        Long nextRetryTime) {
         return this.tccGlobalTxRepository.updateStatusById(xid, from, to, retryCount, nextRetryTime);
     }
 

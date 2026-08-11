@@ -15,7 +15,6 @@ import com.iwindplus.base.domain.context.UserContextHolder;
 import com.iwindplus.base.domain.vo.UserBaseVO;
 import com.iwindplus.base.mybatis.domain.property.MybatisProperty;
 import jakarta.annotation.Resource;
-import java.time.LocalDateTime;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.reflection.MetaObject;
@@ -74,13 +73,10 @@ public class MyBatisAutoFillHandler implements MetaObjectHandler {
             return;
         }
 
-        final LocalDateTime currentTime = LocalDateTime.now();
         final long currentTimeMillis = System.currentTimeMillis();
         final UserBaseVO userInfo = this.getCurrentUserInfo();
         final Long userId = userInfo.getUserId();
         final String realName = userInfo.getRealName();
-        // 设置更新时间.
-        this.setFieldValByName(DbConstant.MODIFIED_TIME, currentTime, metaObject);
         // 设置更新时间戳.
         this.setFieldValByName(DbConstant.MODIFIED_TIMESTAMP, currentTimeMillis, metaObject);
         // 设置更新人.
@@ -94,18 +90,13 @@ public class MyBatisAutoFillHandler implements MetaObjectHandler {
     }
 
     private void buildFinalAttrByInsert(MetaObject metaObject, Long userId, String realName) {
-        final LocalDateTime now = LocalDateTime.now();
         final long currentTimeMillis = System.currentTimeMillis();
-        // 设置创建时间.
-        this.setFieldValByName(DbConstant.CREATED_TIME, now, metaObject);
         // 设置创建时间戳.
         this.setFieldValByName(DbConstant.CREATED_TIMESTAMP, currentTimeMillis, metaObject);
         // 设置创建人.
         this.setFieldValByName(DbConstant.CREATED_BY, realName, metaObject);
         // 设置创建人主键.
         this.setFieldValByName(DbConstant.CREATED_ID, userId, metaObject);
-        // 设置更新时间.
-        this.setFieldValByName(DbConstant.MODIFIED_TIME, now, metaObject);
         // 设置更新时间戳.
         this.setFieldValByName(DbConstant.MODIFIED_TIMESTAMP, currentTimeMillis, metaObject);
         // 设置更新人.
@@ -115,18 +106,13 @@ public class MyBatisAutoFillHandler implements MetaObjectHandler {
     }
 
     private void buildOptionalByInsert(MetaObject metaObject, Long userId, String realName) {
-        final LocalDateTime now = LocalDateTime.now();
         final long currentTimeMillis = System.currentTimeMillis();
-        // 设置创建时间.
-        this.strictInsertFill(metaObject, DbConstant.CREATED_TIME, () -> now, LocalDateTime.class);
         // 设置创建时间戳.
         this.strictInsertFill(metaObject, DbConstant.CREATED_TIMESTAMP, () -> currentTimeMillis, Long.class);
         // 设置创建人.
         this.strictInsertFill(metaObject, DbConstant.CREATED_BY, () -> realName, String.class);
         // 设置创建人主键.
         this.strictInsertFill(metaObject, DbConstant.CREATED_ID, () -> userId, Long.class);
-        // 设置更新时间.
-        this.strictInsertFill(metaObject, DbConstant.MODIFIED_TIME, () -> now, LocalDateTime.class);
         // 设置更新时间戳.
         this.strictInsertFill(metaObject, DbConstant.MODIFIED_TIMESTAMP, () -> currentTimeMillis, Long.class);
         // 设置更新人.

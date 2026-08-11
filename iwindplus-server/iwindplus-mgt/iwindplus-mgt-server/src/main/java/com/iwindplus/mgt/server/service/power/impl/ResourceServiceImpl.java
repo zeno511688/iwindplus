@@ -218,8 +218,8 @@ public class ResourceServiceImpl implements ResourceService {
         if (CharSequenceUtil.isNotBlank(entity.getName())) {
             queryWrapper.like(ResourceDO::getName, entity.getName().trim());
         }
-        queryWrapper.select(ResourceDO::getId, ResourceDO::getCreatedTime, ResourceDO::getCreatedTimestamp, ResourceDO::getCreatedBy,
-            ResourceDO::getModifiedTime, ResourceDO::getModifiedTimestamp, ResourceDO::getModifiedBy, ResourceDO::getVersion, ResourceDO::getStatus,
+        queryWrapper.select(ResourceDO::getId, ResourceDO::getCreatedTimestamp, ResourceDO::getCreatedBy,
+            ResourceDO::getModifiedTimestamp, ResourceDO::getModifiedBy, ResourceDO::getVersion, ResourceDO::getStatus,
             ResourceDO::getCode, ResourceDO::getName, ResourceDO::getBuildInFlag, ResourceDO::getResourceType, ResourceDO::getRequestMethod,
             ResourceDO::getApiUrl, ResourceDO::getSeq, ResourceDO::getMenuId
         );

@@ -149,8 +149,8 @@ public class FlowFormServiceImpl implements FlowFormService {
         if (CharSequenceUtil.isNotBlank(entity.getName())) {
             queryWrapper.like(FlowFormDO::getName, entity.getName().trim());
         }
-        queryWrapper.select(FlowFormDO::getId, FlowFormDO::getCreatedTime, FlowFormDO::getCreatedTimestamp, FlowFormDO::getCreatedBy,
-            FlowFormDO::getModifiedTime, FlowFormDO::getModifiedTimestamp,
+        queryWrapper.select(FlowFormDO::getId, FlowFormDO::getCreatedTimestamp, FlowFormDO::getCreatedBy,
+            FlowFormDO::getModifiedTimestamp,
             FlowFormDO::getModifiedBy, FlowFormDO::getVersion, FlowFormDO::getStatus, FlowFormDO::getName, FlowFormDO::getCode,
             FlowFormDO::getSeq, FlowFormDO::getBuildInFlag);
         final PageDTO<FlowFormDO> modelPage = this.flowFormRepository.page(page, queryWrapper);

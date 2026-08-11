@@ -19,7 +19,6 @@ import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdGroupVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdPageVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -116,7 +115,7 @@ public interface AsyncCmdService {
      */
     boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
         Long costTime, String errorMsg, Integer retryCount,
-        LocalDateTime nextRetryTime, LocalDateTime expireTime, LocalDateTime callbackExpireTime);
+        Long nextRetryTime, Long expireTime, Long callbackExpireTime);
 
     /**
      * 续订租期时间.

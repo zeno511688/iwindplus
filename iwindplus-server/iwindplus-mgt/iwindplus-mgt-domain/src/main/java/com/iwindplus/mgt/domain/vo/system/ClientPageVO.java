@@ -10,7 +10,6 @@ package com.iwindplus.mgt.domain.vo.system;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.vo.DbVersionBaseVO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -53,11 +52,11 @@ public class ClientPageVO extends DbVersionBaseVO {
      * 客户端签发时间.
      */
     @Schema(description = "客户端签发时间")
-    private LocalDateTime clientIdIssuedAt;
+    private Long clientIdIssuedAt;
 
     /**
      * 客户端密钥过期时间.
      */
     @Schema(description = "客户端密钥过期时间")
-    private LocalDateTime clientSecretExpiresAt;
+    private Long clientSecretExpiresAt;
 }

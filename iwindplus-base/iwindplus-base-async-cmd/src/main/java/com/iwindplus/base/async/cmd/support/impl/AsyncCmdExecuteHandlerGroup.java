@@ -18,7 +18,6 @@ import com.iwindplus.base.async.cmd.service.AsyncCmdSubService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdStateSupport;
 import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -57,32 +56,97 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
     public void execute(AsyncCmdVO entity) {
         final AsyncCmdTaskHandler handler = this.getTaskHandler(entity.getExecuteName());
         final long start = System.currentTimeMillis();
+        final boolean callbackFirst = Boolean.TRUE.equals(entity.getCallbackFirst());
 
         // 判断是否是异步等待状态
         if (entity.getStatus() == AsyncCmdStatusEnum.ASYNC_WAIT) {
-            this.executeCallbackAsyncWait(entity, handler, start);
+            if (callbackFirst) {
+                // callbackFirst模式: 主任务回调成功 → 转为待执行 → 下一轮分发子任务
+                this.executeCallbackAsyncWait(entity, handler, start,
+                    (e, cost) -> this.getAsyncCmdStateSupport().taskAsyncWaitToBeExecute(e, cost));
+            } else {
+                this.executeCallbackAsyncWait(entity, handler, start);
+            }
 
             return;
         }
 
+        final AtomicInteger advanced = new AtomicInteger(0);
+
+        try {
+            if (callbackFirst) {
+                // callbackFirst模式: 判断是首次执行还是回调后分发子任务
+                if (Objects.nonNull(entity.getCallbackExpireTime()) && entity.getCallbackExpireTime() == 0L) {
+                    // 回调已完成（callbackExpireTime被清零），分发子任务
+                    this.executeCallbackFirstSubTasks(entity, handler, start);
+                } else {
+                    // 首次执行: 主任务业务 → 进入异步等待
+                    handler.execute(entity);
+                    this.taskSuccess(entity, handler, start);
+                }
+            } else {
+                // 默认模式: 先子任务 → 主收尾 → 成功
+                final List<AsyncCmdSubVO> subEntities = this.asyncCmdSubService.listByAsyncCmdIdAndStatus(
+                    entity.getId(), AsyncCmdStatusEnum.getUnfinishedStatus());
+
+                if (!this.executeSubTaskResult(entity, handler, start, subEntities, advanced)) {
+                    return;
+                }
+
+                handler.execute(entity);
+                this.taskSuccess(entity, handler, start);
+            }
+        } catch (Exception ex) {
+            log.error("asyncCmd task execute failed. id={}", entity.getId(), ex);
+
+            this.getAsyncCmdStateSupport().taskFail(entity, handler,
+                System.currentTimeMillis() - start, ex, advanced.get() > 0);
+        }
+    }
+
+    /**
+     * callbackFirst模式: 回调成功后分发子任务（executeSub为空实现，仅做状态流转）.
+     *
+     * @param entity  异步命令视图对象
+     * @param handler 异步命令任务助手
+     * @param start   开始时间
+     */
+    private void executeCallbackFirstSubTasks(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start) {
         final List<AsyncCmdSubVO> subEntities = this.asyncCmdSubService.listByAsyncCmdIdAndStatus(
             entity.getId(), AsyncCmdStatusEnum.getUnfinishedStatus());
         final AtomicInteger advanced = new AtomicInteger(0);
 
-        try {
-            // 执行子任务，判断是否失败，失败则返回
-            if (!this.executeSubTaskResult(entity, handler, start, subEntities, advanced)) {
-                return;
+        // 执行子任务（executeSub为空实现，仅做状态流转）
+        this.executeSubTask(entity, subEntities, advanced);
+
+        // 有子任务仍在异步等待中
+        if (this.hasSubAsyncWait(subEntities)) {
+            final boolean toBeExecute = this.getAsyncCmdStateSupport().taskExecuteToBeExecute(
+                entity, System.currentTimeMillis() - start);
+            if (!toBeExecute) {
+                log.warn("asyncCmd callbackFirst group has asyncWait, id={}", entity.getId());
             }
 
-            handler.execute(entity);
-
-            this.taskSuccess(entity, handler, start);
-        } catch (Exception ex) {
-            log.error("asyncCmd task execute failed. id={}", entity.getId(), ex);
-
-            this.getAsyncCmdStateSupport().taskFail(entity, handler, System.currentTimeMillis() - start, ex, advanced.get() > 0);
+            return;
         }
+
+        // 子任务未全部成功
+        final long unfinished = asyncCmdSubService.countUnfinished(entity.getId());
+        if (unfinished > 0) {
+            String msg = "asyncCmd callbackFirst group has unfinished subTask";
+            log.warn(msg + ", id={} unfinished={}", entity.getId(), unfinished);
+
+            this.getAsyncCmdStateSupport().taskFail(entity, handler,
+                System.currentTimeMillis() - start,
+                new RuntimeException(msg),
+                advanced.get() > 0);
+
+            return;
+        }
+
+        // 子任务全部成功 → 主任务收尾 → 主任务置成功（跳过needCallback，直接置SUCCESS）
+        handler.execute(entity);
+        this.taskFinalSuccess(entity, handler, start);
     }
 
     private boolean executeSubTaskResult(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start,
@@ -93,7 +157,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         // 判断子任务是否在等异步调用的结果，也可以不管，等待任务重置也行
         if (this.hasSubAsyncWait(subEntities)) {
             // 将主任务设置为待执行，等待下一次执行
-            final boolean asyncWait = this.getAsyncCmdStateSupport().taskToBeExecute(entity, System.currentTimeMillis() - start);
+            final boolean asyncWait = this.getAsyncCmdStateSupport().taskExecuteToBeExecute(entity, System.currentTimeMillis() - start);
             if (!asyncWait) {
                 log.warn("asyncCmd group has asyncWait, id={}", entity.getId());
             }
@@ -284,8 +348,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         AsyncCmdVO entity, AsyncCmdSubTaskHandler handler,
         AsyncCmdSubVO subEntity, AtomicInteger advanced) {
 
-        final LocalDateTime callbackExpireTime = subEntity.getCallbackExpireTime();
-        if (Objects.nonNull(callbackExpireTime) && LocalDateTime.now().isAfter(callbackExpireTime)) {
+        final Long callbackExpireTime = subEntity.getCallbackExpireTime();
+        if (Objects.nonNull(callbackExpireTime) && System.currentTimeMillis() > callbackExpireTime) {
             String msg = "asyncCmd subTask callback timeout";
 
             log.warn(msg + ", id={} asyncCmdId={} seq={}",

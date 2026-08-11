@@ -2,8 +2,6 @@ package com.iwindplus.dtx.domain.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -40,13 +38,13 @@ public class TccBatchBranchResultVO implements Serializable {
      * 开始时间.
      */
     @Schema(description = "开始时间")
-    private LocalDateTime startTime;
+    private Long startTime;
 
     /**
      * 结束时间.
      */
     @Schema(description = "结束时间")
-    private LocalDateTime endTime;
+    private Long endTime;
 
     /**
      * 获取成功数量.
@@ -72,7 +70,7 @@ public class TccBatchBranchResultVO implements Serializable {
      * @return long
      */
     public long getTotalElapsedMs() {
-        return Duration.between(startTime, endTime).toMillis();
+        return endTime - startTime;
     }
 
     /**

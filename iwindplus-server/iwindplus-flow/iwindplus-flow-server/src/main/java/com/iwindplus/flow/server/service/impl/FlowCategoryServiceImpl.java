@@ -149,8 +149,8 @@ public class FlowCategoryServiceImpl implements FlowCategoryService {
         if (CharSequenceUtil.isNotBlank(entity.getName())) {
             queryWrapper.eq(FlowCategoryDO::getName, entity.getName().trim());
         }
-        queryWrapper.select(FlowCategoryDO::getId, FlowCategoryDO::getCreatedTime, FlowCategoryDO::getCreatedTimestamp, FlowCategoryDO::getCreatedBy,
-            FlowCategoryDO::getModifiedTime, FlowCategoryDO::getModifiedTimestamp,
+        queryWrapper.select(FlowCategoryDO::getId, FlowCategoryDO::getCreatedTimestamp, FlowCategoryDO::getCreatedBy,
+            FlowCategoryDO::getModifiedTimestamp,
             FlowCategoryDO::getModifiedBy, FlowCategoryDO::getVersion, FlowCategoryDO::getStatus, FlowCategoryDO::getName, FlowCategoryDO::getCode,
             FlowCategoryDO::getSeq, FlowCategoryDO::getBuildInFlag);
         final PageDTO<FlowCategoryDO> modelPage = this.flowCategoryRepository.page(page, queryWrapper);

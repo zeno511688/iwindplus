@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import java.time.LocalDateTime;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -114,7 +113,7 @@ public class AsyncCmdSubDTO extends DbVersionBaseDTO {
      * 等待异步结果的截止时间.
      */
     @Schema(description = "等待异步结果的截止时间")
-    private LocalDateTime callbackExpireTime;
+    private Long callbackExpireTime;
 
     /**
      * 是否需要显示（查进度时用）.

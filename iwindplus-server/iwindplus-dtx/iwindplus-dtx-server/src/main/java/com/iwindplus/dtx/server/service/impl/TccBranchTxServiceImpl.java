@@ -114,8 +114,8 @@ public class TccBranchTxServiceImpl implements TccBranchTxService {
         if (Objects.nonNull(entity.getBranchId())) {
             queryWrapper.eq(TccBranchTxDO::getBranchId, entity.getBranchId());
         }
-        queryWrapper.select(TccBranchTxDO::getId, TccBranchTxDO::getCreatedTime, TccBranchTxDO::getCreatedTimestamp, TccBranchTxDO::getCreatedBy,
-            TccBranchTxDO::getModifiedTime, TccBranchTxDO::getModifiedTimestamp, TccBranchTxDO::getModifiedBy, TccBranchTxDO::getVersion,
+        queryWrapper.select(TccBranchTxDO::getId, TccBranchTxDO::getCreatedTimestamp, TccBranchTxDO::getCreatedBy,
+            TccBranchTxDO::getModifiedTimestamp, TccBranchTxDO::getModifiedBy, TccBranchTxDO::getVersion,
             TccBranchTxDO::getStatus, TccBranchTxDO::getXid, TccBranchTxDO::getBranchId, TccBranchTxDO::getContextPath, TccBranchTxDO::getConfirmUrl,
             TccBranchTxDO::getCancelUrl
         );

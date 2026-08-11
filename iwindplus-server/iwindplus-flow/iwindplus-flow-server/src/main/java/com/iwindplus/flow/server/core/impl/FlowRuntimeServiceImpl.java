@@ -29,8 +29,6 @@ import com.iwindplus.flow.server.dal.repository.FlowInstanceExtendRepository;
 import com.iwindplus.flow.server.dal.repository.FlowInstanceRepository;
 import com.iwindplus.flow.server.dal.repository.FlowTaskPlayerRepository;
 import com.iwindplus.flow.server.dal.repository.FlowTaskRepository;
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -81,10 +79,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         }
 
         // 计算流程耗时
-        long takeTime = instance.getCreatedTime() != null
-            ? Duration.between(instance.getCreatedTime(), LocalDateTime.now()).toMillis()
-            : 0L;
-
+        long takeTime = System.currentTimeMillis() - instance.getCreatedTimestamp();
         // 创建历史实例记录
         FlowHisInstanceDO hisInstance = BeanUtil.copyProperties(instance, FlowHisInstanceDO.class);
         hisInstance.setStatus(status);
@@ -159,21 +154,18 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
      */
     private void archiveTasksToHistory(List<FlowTaskDO> tasks, FlowTaskStatusEnum status, String comment) {
         List<FlowHisTaskDO> hisTasks = new ArrayList<>(tasks.size());
-        LocalDateTime now = LocalDateTime.now();
 
         for (FlowTaskDO task : tasks) {
             FlowHisTaskDO hisTask = BeanUtil.copyProperties(task, FlowHisTaskDO.class);
             hisTask.setStatus(status);
-            
+
             // 计算任务耗时
-            long takeTime = task.getCreatedTime() != null
-                ? Duration.between(task.getCreatedTime(), now).toMillis()
-                : 0L;
+            long takeTime = System.currentTimeMillis() - task.getCreatedTimestamp();
             hisTask.setTakeTime(takeTime);
             hisTask.setComment(comment);
             hisTasks.add(hisTask);
         }
-        
+
         flowHisTaskRepository.saveBatch(hisTasks, 1000);
     }
 
@@ -223,10 +215,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         }
 
         // 计算耗时
-        long takeTime = task.getCreatedTime() != null
-            ? Duration.between(task.getCreatedTime(), LocalDateTime.now()).toMillis()
-            : 0L;
-
+        long takeTime = System.currentTimeMillis() - task.getCreatedTimestamp();
         // 归档任务为中间审批状态
         FlowHisTaskDO hisTask = BeanUtil.copyProperties(task, FlowHisTaskDO.class);
         hisTask.setStatus(FlowTaskStatusEnum.APPROVAL);

@@ -6,7 +6,6 @@ package com.iwindplus.log.domain.vo;
 
 import com.iwindplus.base.domain.vo.UserBaseVO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -48,5 +47,5 @@ public class LoginInfoVO extends UserBaseVO {
      * 登录时间.
      */
     @Schema(description = "登录时间")
-    private LocalDateTime loginTime;
+    private Long loginTime;
 }

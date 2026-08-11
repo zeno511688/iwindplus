@@ -10,7 +10,6 @@ package com.iwindplus.dtx.domain.dto;
 import com.iwindplus.dtx.domain.enums.GlobalTxStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -70,13 +69,13 @@ public class TccGlobalTxShardSearchDTO implements Serializable {
      * 过期时间.
      */
     @Schema(description = "过期时间")
-    private LocalDateTime expireTime;
+    private Long expireTime;
 
     /**
      * 重试时间.
      */
     @Schema(description = "重试时间")
-    private LocalDateTime retryTime;
+    private Long retryTime;
 
     /**
      * 重试次数.

@@ -184,7 +184,7 @@ public class I18nProjectServiceImpl implements I18nProjectService {
         page.setOptimizeCountSql(Boolean.FALSE);
         page.setOptimizeJoinOfCountSql(Boolean.FALSE);
         LambdaQueryWrapper<I18nProjectDO> queryWrapper = Wrappers.lambdaQuery(I18nProjectDO.class)
-            .orderByDesc(I18nProjectDO::getModifiedTime);
+            .orderByDesc(I18nProjectDO::getModifiedTimestamp);
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(I18nProjectDO::getStatus, entity.getStatus());
         }
@@ -197,8 +197,8 @@ public class I18nProjectServiceImpl implements I18nProjectService {
         if (CharSequenceUtil.isNotBlank(entity.getFileName())) {
             queryWrapper.like(I18nProjectDO::getFileName, entity.getFileName().trim());
         }
-        queryWrapper.select(I18nProjectDO::getId, I18nProjectDO::getCreatedTime, I18nProjectDO::getCreatedTimestamp, I18nProjectDO::getCreatedBy,
-            I18nProjectDO::getModifiedTime, I18nProjectDO::getModifiedTimestamp, I18nProjectDO::getModifiedBy, I18nProjectDO::getVersion,
+        queryWrapper.select(I18nProjectDO::getId, I18nProjectDO::getCreatedTimestamp, I18nProjectDO::getCreatedBy,
+            I18nProjectDO::getModifiedTimestamp, I18nProjectDO::getModifiedBy, I18nProjectDO::getVersion,
             I18nProjectDO::getStatus,
             I18nProjectDO::getPlatformType, I18nProjectDO::getName, I18nProjectDO::getFileName, I18nProjectDO::getSeq, I18nProjectDO::getBuildInFlag
         );

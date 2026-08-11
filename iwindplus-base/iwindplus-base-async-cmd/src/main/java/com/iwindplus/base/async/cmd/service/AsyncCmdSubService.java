@@ -5,7 +5,6 @@ package com.iwindplus.base.async.cmd.service;
 
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +30,7 @@ public interface AsyncCmdSubService {
      * @return boolean
      */
     boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result, LocalDateTime callbackExpireTime);
+        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result, Long callbackExpireTime);
 
     /**
      * 通过异步命令主键获取子任务数量.

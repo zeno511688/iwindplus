@@ -16,7 +16,6 @@ import com.iwindplus.base.domain.validation.SaveGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import java.time.LocalDateTime;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -57,7 +56,7 @@ public class ClientDTO extends DbVersionBaseDTO {
      * 客户端密钥过期时间.
      */
     @Schema(description = "客户端密钥过期时间")
-    private LocalDateTime clientSecretExpiresAt;
+    private Long clientSecretExpiresAt;
 
     /**
      * 客户端支持的认证方法.

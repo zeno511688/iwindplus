@@ -29,11 +29,9 @@ import com.iwindplus.mgt.domain.vo.system.ClientVO;
 import com.iwindplus.mgt.server.dal.model.system.ClientDO;
 import com.iwindplus.mgt.server.dal.repository.system.ClientRepository;
 import com.iwindplus.mgt.server.service.system.ClientService;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
-import net.dreamlu.mica.core.utils.StringUtil;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -97,9 +95,9 @@ public class ClientServiceImpl implements ClientService {
         String secret = RandomUtil.randomString(32);
         final ClientDO model = BeanUtil.copyProperties(entity, ClientDO.class);
         model.setClientId(clientId);
-        model.setClientIdIssuedAt(LocalDateTime.now());
+        model.setClientIdIssuedAt(System.currentTimeMillis());
         if (Objects.isNull(model.getClientSecretExpiresAt())) {
-            model.setClientSecretExpiresAt(LocalDateTime.now().plusYears(100));
+            model.setClientSecretExpiresAt(System.currentTimeMillis() + 100 * 365 * 24 * 60 * 60 * 1000L);
         }
         model.setClientSecret(this.passwordEncoder.encode(secret));
         this.clientRepository.save(model);
@@ -206,7 +204,7 @@ public class ClientServiceImpl implements ClientService {
         if (CharSequenceUtil.isNotBlank(entity.getClientName())) {
             queryWrapper.eq(ClientDO::getClientName, entity.getClientName().trim());
         }
-        queryWrapper.select(ClientDO::getId, ClientDO::getCreatedTime, ClientDO::getCreatedBy, ClientDO::getModifiedTime,
+        queryWrapper.select(ClientDO::getId, ClientDO::getCreatedBy, ClientDO::getCreatedTimestamp, ClientDO::getModifiedTimestamp,
             ClientDO::getModifiedBy, ClientDO::getVersion, ClientDO::getStatus, ClientDO::getClientId, ClientDO::getClientName,
             ClientDO::getClientIdIssuedAt, ClientDO::getClientSecretExpiresAt);
         final PageDTO<ClientDO> modelPage = this.clientRepository.page(page, queryWrapper);

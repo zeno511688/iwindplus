@@ -150,8 +150,8 @@ public class UserFriendServiceImpl implements UserFriendService {
             order.setColumn(underline);
         });
         page.setOrders(orders);
-        queryWrapper.select(UserFriendDO::getId, UserFriendDO::getCreatedTime, UserFriendDO::getCreatedTimestamp, UserFriendDO::getCreatedBy,
-            UserFriendDO::getModifiedTime, UserFriendDO::getModifiedTimestamp, UserFriendDO::getModifiedBy,
+        queryWrapper.select(UserFriendDO::getId, UserFriendDO::getCreatedTimestamp, UserFriendDO::getCreatedBy,
+            UserFriendDO::getModifiedTimestamp, UserFriendDO::getModifiedBy,
             UserFriendDO::getVersion, UserFriendDO::getStatus, UserFriendDO::getUserNickName, UserFriendDO::getFriendNickName);
         final IPage<UserFriendDO> modelPage = this.userFriendRepository.page(page, queryWrapper);
         final IPage<UserFriendPageVO> result = modelPage.convert(model -> BeanUtil.copyProperties(model, UserFriendPageVO.class));

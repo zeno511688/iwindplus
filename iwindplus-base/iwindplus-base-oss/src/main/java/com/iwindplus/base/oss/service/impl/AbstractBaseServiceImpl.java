@@ -29,8 +29,8 @@ import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.oss.domain.constant.OssConstant;
 import com.iwindplus.base.oss.domain.dto.StsTokenDTO;
-import com.iwindplus.base.util.DatesUtil;
 import jakarta.annotation.Resource;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
@@ -156,10 +156,10 @@ public abstract class AbstractBaseServiceImpl {
     protected DefaultAcsClient initAcsClient(String region, AkSkDTO akSk, StsTokenDTO sts) {
         DefaultProfile profile;
         if (Objects.nonNull(sts)) {
-            final LocalDateTime securityTokenExpiration = sts.getExpiration();
-            if (Objects.isNull(securityTokenExpiration) || LocalDateTime.now().isAfter(securityTokenExpiration)) {
+            final Long securityTokenExpiration = sts.getExpiration();
+            if (Objects.isNull(securityTokenExpiration) || System.currentTimeMillis() > securityTokenExpiration) {
                 AssumeRoleResponse response = this.getAssumeRoleResponse(akSk, sts);
-                final LocalDateTime expiration = DatesUtil.parseUtcDate(response.getCredentials().getExpiration());
+                final long expiration = Instant.parse(response.getCredentials().getExpiration()).toEpochMilli();
                 sts.setAccessKey(response.getCredentials().getAccessKeyId());
                 sts.setSecretKey(response.getCredentials().getAccessKeySecret());
                 sts.setSecurityToken(response.getCredentials().getSecurityToken());

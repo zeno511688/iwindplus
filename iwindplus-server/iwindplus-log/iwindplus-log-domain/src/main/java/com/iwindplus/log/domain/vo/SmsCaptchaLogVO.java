@@ -6,7 +6,6 @@ package com.iwindplus.log.domain.vo;
 
 import com.iwindplus.base.domain.vo.DbBaseTwoVO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -61,7 +60,7 @@ public class SmsCaptchaLogVO extends DbBaseTwoVO {
      * 过期时间.
      */
     @Schema(description = "过期时间")
-    private LocalDateTime expireTime;
+    private Long expireTime;
 
     /**
      * 是否使用（false：未使用，true：已使用）
@@ -73,5 +72,5 @@ public class SmsCaptchaLogVO extends DbBaseTwoVO {
      * 使用时间.
      */
     @Schema(description = "使用时间")
-    private LocalDateTime useTime;
+    private Long useTime;
 }

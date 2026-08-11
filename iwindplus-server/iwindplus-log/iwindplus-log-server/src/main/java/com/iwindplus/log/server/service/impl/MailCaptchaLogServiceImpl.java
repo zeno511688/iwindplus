@@ -17,7 +17,6 @@ import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
 import com.iwindplus.base.redis.service.RedissonService;
-import com.iwindplus.base.util.DatesUtil;
 import com.iwindplus.log.domain.dto.MailCaptchaLogDTO;
 import com.iwindplus.log.domain.dto.MailCaptchaLogSearchDTO;
 import com.iwindplus.log.domain.dto.MailSendValidDTO;
@@ -31,6 +30,8 @@ import com.iwindplus.mgt.client.power.UserClient;
 import com.iwindplus.mgt.domain.dto.power.UserBaseQueryDTO;
 import com.iwindplus.mgt.domain.vo.power.UserInfoVO;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -84,7 +85,7 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
     @Override
     public boolean removeExpireData() {
         final EsLambdaQueryWrapper<MailCaptchaLogDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper.lt(MailCaptchaLogDO::getExpireTime, LocalDateTime.now());
+        wrapper.lt(MailCaptchaLogDO::getExpireTime, System.currentTimeMillis());
         return super.remove(wrapper);
     }
 
@@ -138,7 +139,7 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
         wrapper.eq(MailCaptchaLogDO::getUserId, userId)
             .eq(MailCaptchaLogDO::getOrgId, orgId)
             .eq(MailCaptchaLogDO::getTplCode, entity.getTplCode())
-            .gt(MailCaptchaLogDO::getExpireTime, now)
+            .gt(MailCaptchaLogDO::getExpireTime, System.currentTimeMillis())
             .eq(MailCaptchaLogDO::getUsed, false);
         boolean exists = super.count(wrapper) > 0;
         if (exists) {
@@ -147,13 +148,13 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
         // 限制每天发送次数.
         final Integer limitCountDay = entity.getLimitCountDay();
         if (Objects.nonNull(limitCountDay)) {
-            LocalDateTime begin = DatesUtil.getTimesMorning();
-            LocalDateTime end = DatesUtil.getTimesNight();
+            long begin = toTimestamp(now.toLocalDate().atStartOfDay());
+            long end = toTimestamp(now.toLocalDate().atTime(LocalTime.MAX));
             final EsLambdaQueryWrapper<MailCaptchaLogDO> dayWrapper = new EsLambdaQueryWrapper<>();
             dayWrapper.eq(MailCaptchaLogDO::getUserId, userId)
                 .eq(MailCaptchaLogDO::getOrgId, orgId)
                 .eq(MailCaptchaLogDO::getTplCode, entity.getTplCode())
-                .between(MailCaptchaLogDO::getCreatedTime, begin, end);
+                .between(MailCaptchaLogDO::getCreatedTimestamp, begin, end);
             long count = super.count(dayWrapper);
             if (count >= limitCountDay) {
                 throw new BizException(LogCodeEnum.CAPTCHA_LIMIT_DAY, new Object[]{limitCountDay});
@@ -162,12 +163,12 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
         // 限制每小时发送条数.
         final Integer limitCountHour = entity.getLimitCountHour();
         if (Objects.nonNull(limitCountHour)) {
-            LocalDateTime timeAgo = now.minusHours(1);
+            long begin = toTimestamp(now.minusHours(1));
             final EsLambdaQueryWrapper<MailCaptchaLogDO> hourWrapper = new EsLambdaQueryWrapper<>();
             hourWrapper.eq(MailCaptchaLogDO::getUserId, userId)
                 .eq(MailCaptchaLogDO::getOrgId, orgId)
                 .eq(MailCaptchaLogDO::getTplCode, entity.getTplCode())
-                .ge(MailCaptchaLogDO::getCreatedTime, timeAgo);
+                .ge(MailCaptchaLogDO::getCreatedTimestamp, begin);
             long count = super.count(hourWrapper);
             if (count >= limitCountHour) {
                 throw new BizException(LogCodeEnum.CAPTCHA_LIMIT_HOUR, new Object[]{limitCountHour});
@@ -176,12 +177,12 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
         // 限制每分钟发送条数.
         final Integer limitCountMinute = entity.getLimitCountMinute();
         if (Objects.nonNull(limitCountMinute)) {
-            LocalDateTime timeAgo = now.minusMinutes(1);
+            long begin = toTimestamp(now.minusMinutes(1));
             final EsLambdaQueryWrapper<MailCaptchaLogDO> minuteWrapper = new EsLambdaQueryWrapper<>();
             minuteWrapper.eq(MailCaptchaLogDO::getUserId, userId)
                 .eq(MailCaptchaLogDO::getOrgId, orgId)
                 .eq(MailCaptchaLogDO::getTplCode, entity.getTplCode())
-                .ge(MailCaptchaLogDO::getCreatedTime, timeAgo);
+                .ge(MailCaptchaLogDO::getCreatedTimestamp, begin);
             long count = super.count(minuteWrapper);
             if (count >= limitCountMinute) {
                 throw new BizException(LogCodeEnum.CAPTCHA_LIMIT_MINUTE, new Object[]{limitCountMinute});
@@ -230,8 +231,8 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
         if (Objects.isNull(data)) {
             throw new BizException(LogCodeEnum.CAPTCHA_ERROR);
         }
-        LocalDateTime now = LocalDateTime.now();
-        if (now.isAfter(data.getExpireTime())) {
+        Long now = System.currentTimeMillis();
+        if (now > data.getExpireTime()) {
             throw new BizException(LogCodeEnum.CAPTCHA_EXPIRED);
         }
         if (Boolean.TRUE.equals(data.getUsed())) {
@@ -243,5 +244,11 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
         update.setUseTime(now);
         super.updateById(update);
         return true;
+    }
+
+    private long toTimestamp(LocalDateTime dateTime) {
+        return dateTime.atZone(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli();
     }
 }

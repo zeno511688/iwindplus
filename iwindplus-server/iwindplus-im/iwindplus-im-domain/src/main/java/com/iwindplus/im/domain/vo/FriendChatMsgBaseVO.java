@@ -9,7 +9,6 @@ import com.iwindplus.im.domain.enums.MsgTypeEnum;
 import com.iwindplus.im.domain.enums.SendStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -68,7 +67,7 @@ public class FriendChatMsgBaseVO implements Serializable {
      * 读取时间.
      */
     @Schema(description = "读取时间")
-    private LocalDateTime readTime;
+    private Long readTime;
 
     /**
      * 发送人主键.
@@ -92,7 +91,7 @@ public class FriendChatMsgBaseVO implements Serializable {
      * 发送时间.
      */
     @Schema(description = "发送时间")
-    private LocalDateTime sendTime;
+    private Long sendTime;
 
     /**
      * 发送状态

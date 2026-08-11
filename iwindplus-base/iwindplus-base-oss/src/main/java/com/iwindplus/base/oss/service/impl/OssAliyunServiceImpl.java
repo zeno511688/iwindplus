@@ -41,7 +41,6 @@ import com.iwindplus.base.oss.domain.constant.OssConstant;
 import com.iwindplus.base.oss.domain.dto.StsTokenDTO;
 import com.iwindplus.base.oss.domain.property.OssProperty;
 import com.iwindplus.base.oss.service.OssAliyunService;
-import com.iwindplus.base.util.DatesUtil;
 import com.iwindplus.base.util.FilesUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
@@ -50,7 +49,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -372,10 +371,10 @@ public class OssAliyunServiceImpl extends AbstractOssBaseServiceImpl implements 
         final OssProperty.AliyunConfig aliyun = super.getConfig().getAliyun();
         final StsTokenDTO sts = aliyun.getSts();
         if (Objects.nonNull(sts)) {
-            final LocalDateTime securityTokenExpiration = sts.getExpiration();
-            if (Objects.isNull(securityTokenExpiration) || LocalDateTime.now().isAfter(securityTokenExpiration)) {
+            final Long securityTokenExpiration = sts.getExpiration();
+            if (Objects.isNull(securityTokenExpiration) || System.currentTimeMillis() > securityTokenExpiration) {
                 AssumeRoleResponse response = this.getAssumeRoleResponse(aliyun, sts);
-                final LocalDateTime expiration = DatesUtil.parseUtcDate(response.getCredentials().getExpiration());
+                final long expiration = Instant.parse(response.getCredentials().getExpiration()).toEpochMilli();
                 sts.setAccessKey(response.getCredentials().getAccessKeyId());
                 sts.setSecretKey(response.getCredentials().getAccessKeySecret());
                 sts.setSecurityToken(response.getCredentials().getSecurityToken());

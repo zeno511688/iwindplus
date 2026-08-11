@@ -9,7 +9,6 @@ import com.iwindplus.base.domain.validation.EditGroup;
 import com.iwindplus.base.domain.validation.SaveGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -73,7 +72,7 @@ public class SmsCaptchaLogDTO extends DbBaseTwoDTO {
      * 过期时间.
      */
     @Schema(description = "过期时间")
-    private LocalDateTime expireTime;
+    private Long expireTime;
 
     /**
      * 是否使用（false：未使用，true：已使用）
@@ -85,7 +84,7 @@ public class SmsCaptchaLogDTO extends DbBaseTwoDTO {
      * 使用时间.
      */
     @Schema(description = "使用时间")
-    private LocalDateTime useTime;
+    private Long useTime;
 
     /**
      * 用户主键.

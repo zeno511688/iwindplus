@@ -10,12 +10,11 @@ package com.iwindplus.mgt.server.dal.model.system;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
-import com.iwindplus.base.mybatis.domain.DbBaseDO;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
+import com.iwindplus.base.mybatis.domain.DbBaseDO;
 import com.iwindplus.mgt.domain.dto.system.ClientSettingDTO;
 import com.iwindplus.mgt.domain.dto.system.TokenSettingDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -60,7 +59,7 @@ public class ClientDO extends DbBaseDO {
      * 客户端签发时间.
      */
     @Schema(description = "客户端签发时间")
-    private LocalDateTime clientIdIssuedAt;
+    private Long clientIdIssuedAt;
 
     /**
      * 客户端密钥.
@@ -72,7 +71,7 @@ public class ClientDO extends DbBaseDO {
      * 客户端密钥过期时间.
      */
     @Schema(description = "客户端密钥过期时间")
-    private LocalDateTime clientSecretExpiresAt;
+    private Long clientSecretExpiresAt;
 
     /**
      * 客户端支持的认证方法.

@@ -13,7 +13,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
-import com.iwindplus.base.domain.constant.CommonConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.DbConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
-import net.dreamlu.mica.core.utils.StringUtil;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -169,7 +168,7 @@ public class MailTplServiceImpl implements MailTplService {
         List<OrderItem> orders = page.getOrders();
         if (CollUtil.isEmpty(orders)) {
             orders = new ArrayList<>(10);
-            OrderItem item = OrderItem.desc(CommonConstant.DbConstant.MODIFIED_TIME);
+            OrderItem item = OrderItem.desc(DbConstant.MODIFIED_TIMESTAMP);
             orders.add(item);
         }
         orders.forEach(order -> {
@@ -178,8 +177,8 @@ public class MailTplServiceImpl implements MailTplService {
             order.setColumn(underline);
         });
         page.setOrders(orders);
-        queryWrapper.select(MailTplDO::getId, MailTplDO::getCreatedTime, MailTplDO::getCreatedTimestamp, MailTplDO::getCreatedBy,
-            MailTplDO::getModifiedTime, MailTplDO::getModifiedTimestamp, MailTplDO::getModifiedBy, MailTplDO::getVersion, MailTplDO::getRemark,
+        queryWrapper.select(MailTplDO::getId, MailTplDO::getCreatedTimestamp, MailTplDO::getCreatedBy,
+            MailTplDO::getModifiedTimestamp, MailTplDO::getModifiedBy, MailTplDO::getVersion, MailTplDO::getRemark,
             MailTplDO::getBuildInFlag, MailTplDO::getStatus, MailTplDO::getCode, MailTplDO::getName
         );
         final PageDTO<MailTplDO> modelPage = this.mailTplRepository.page(page, queryWrapper);
@@ -219,7 +218,7 @@ public class MailTplServiceImpl implements MailTplService {
     public List<MailTplBaseVO> listEnabled() {
         final List<MailTplDO> list = this.mailTplRepository.list(Wrappers.lambdaQuery(MailTplDO.class)
             .eq(MailTplDO::getStatus, EnableStatusEnum.ENABLE)
-            .orderByDesc(MailTplDO::getCreatedTime));
+            .orderByDesc(MailTplDO::getModifiedTimestamp));
         if (CollUtil.isEmpty(list)) {
             return null;
         }

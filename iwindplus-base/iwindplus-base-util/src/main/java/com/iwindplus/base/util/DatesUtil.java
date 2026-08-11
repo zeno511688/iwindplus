@@ -237,19 +237,19 @@ public class DatesUtil extends DateUtil {
     /**
      * 获取下一次重试时间.
      *
-     * @param baseTime   基准时间
-     * @param frequency  时间频率字符串，例如 "5s,10s,20s,30s,1m,30m,1h"
-     * @param retryCount 当前重试次数
-     * @return LocalDateTime
+     * @param baseTimeMillis 基准时间戳(毫秒)
+     * @param frequency      时间频率字符串，例如 "5s,10s,20s,30s,1m,30m,1h"
+     * @param retryCount     当前重试次数
+     * @return long
      */
-    public static LocalDateTime getNextRetryTime(LocalDateTime baseTime, String frequency, Integer retryCount) {
-        baseTime = Optional.ofNullable(baseTime).orElse(LocalDateTime.now());
+    public static long getNextRetryTime(long baseTimeMillis, String frequency, Integer retryCount) {
         retryCount = Optional.ofNullable(retryCount).orElse(0);
 
-        final List<LocalDateTime> times = DatesUtil
-            .convertFrequencyToLocalDateTime(baseTime, frequency);
+        final List<Long> times = DatesUtil
+            .convertFrequencyToTimestamp(baseTimeMillis, frequency);
+
         if (CollUtil.isEmpty(times)) {
-            return baseTime.plusSeconds(5);
+            return baseTimeMillis + ChronoUnit.SECONDS.getDuration().toMillis() * 5;
         }
 
         // 超过最大次数，取最后一个
@@ -258,31 +258,36 @@ public class DatesUtil extends DateUtil {
     }
 
     /**
-     * 将时间频率字符串转换为LocalDateTime。
+     * 将时间频率字符串转换为时间戳.
      *
-     * @param baseTime  基准时间
-     * @param frequency 时间频率字符串，例如 "5s,10s,20s,30s,1m,30m,1h"
-     * @return List<LocalDateTime>
+     * @param baseTimeMillis 基准时间戳(毫秒)
+     * @param frequency      时间频率字符串，例如 "5s,10s,20s,30s,1m,30m,1h"
+     * @return List<Long>
      */
-    private static List<LocalDateTime> convertFrequencyToLocalDateTime(LocalDateTime baseTime, String frequency) {
+    private static List<Long> convertFrequencyToTimestamp(long baseTimeMillis, String frequency) {
         if (CharSequenceUtil.isEmpty(frequency)) {
             return Collections.emptyList();
         }
 
         List<String> frequencies = CharSequenceUtil.splitTrim(frequency, ',');
-        List<LocalDateTime> result = new ArrayList<>(10);
+        List<Long> result = new ArrayList<>(10);
+
         for (String freq : frequencies) {
             final String digitStr = freq.replaceAll("[^\\d]", "");
             if (CharSequenceUtil.isBlank(digitStr)) {
                 throw new IllegalArgumentException("Unsupported frequency format: " + freq);
             }
+
             long amount = Long.parseLong(digitStr);
+
             String unit = freq.replaceAll("[\\d]", "");
             ChronoUnit chronoUnit = TIME_UNIT_MAP.get(unit);
+
             if (chronoUnit == null) {
                 throw new IllegalArgumentException("Unsupported time unit: " + unit);
             }
-            result.add(baseTime.plus(amount, chronoUnit));
+
+            result.add(baseTimeMillis + chronoUnit.getDuration().toMillis() * amount);
         }
 
         return result;

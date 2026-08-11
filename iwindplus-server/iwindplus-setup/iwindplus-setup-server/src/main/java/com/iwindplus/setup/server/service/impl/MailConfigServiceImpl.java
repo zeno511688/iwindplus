@@ -17,6 +17,7 @@ import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.constant.CommonConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.DbConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
 import com.iwindplus.base.domain.enums.BaseEnum;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
@@ -235,7 +236,7 @@ public class MailConfigServiceImpl implements MailConfigService {
         List<OrderItem> orders = page.getOrders();
         if (CollUtil.isEmpty(orders)) {
             orders = new ArrayList<>(10);
-            OrderItem item = OrderItem.desc(CommonConstant.DbConstant.MODIFIED_TIME);
+            OrderItem item = OrderItem.desc(DbConstant.MODIFIED_TIMESTAMP);
             orders.add(item);
         }
         orders.forEach(order -> {
@@ -244,8 +245,8 @@ public class MailConfigServiceImpl implements MailConfigService {
             order.setColumn(underline);
         });
         page.setOrders(orders);
-        queryWrapper.select(MailConfigDO::getId, MailConfigDO::getCreatedTime, MailConfigDO::getCreatedTimestamp, MailConfigDO::getCreatedBy,
-            MailConfigDO::getModifiedTime, MailConfigDO::getModifiedTimestamp, MailConfigDO::getModifiedBy, MailConfigDO::getVersion,
+        queryWrapper.select(MailConfigDO::getId, MailConfigDO::getCreatedTimestamp, MailConfigDO::getCreatedBy,
+            MailConfigDO::getModifiedTimestamp, MailConfigDO::getModifiedBy, MailConfigDO::getVersion,
             MailConfigDO::getRemark, MailConfigDO::getStatus, MailConfigDO::getCode, MailConfigDO::getName,
             MailConfigDO::getNickName, MailConfigDO::getHost, MailConfigDO::getUsername, MailConfigDO::getSslEnable, MailConfigDO::getRetryEnable);
         final PageDTO<MailConfigDO> modelPage = this.mailConfigRepository.page(page, queryWrapper);
@@ -275,7 +276,7 @@ public class MailConfigServiceImpl implements MailConfigService {
         final List<MailConfigDO> list = this.mailConfigRepository.list(Wrappers.lambdaQuery(MailConfigDO.class)
             .eq(MailConfigDO::getStatus, EnableStatusEnum.ENABLE)
             .select(MailConfigDO::getId, MailConfigDO::getCode, MailConfigDO::getName)
-            .orderByDesc(MailConfigDO::getCreatedTime));
+            .orderByDesc(MailConfigDO::getModifiedTimestamp));
         if (CollUtil.isEmpty(list)) {
             return null;
         }

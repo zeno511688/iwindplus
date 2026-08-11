@@ -9,7 +9,6 @@ package com.iwindplus.log.server.dal.model;
 
 import com.iwindplus.base.es.domain.EsDbBaseDO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -73,13 +72,8 @@ public class SmsCaptchaLogDO extends EsDbBaseDO {
      * 过期时间.
      */
     @Schema(description = "过期时间")
-    @Field(
-        type = FieldType.Date,
-        format = {},
-        pattern = "yyyy-MM-dd HH:mm:ss",
-        index = false
-    )
-    private LocalDateTime expireTime;
+    @Field(type = FieldType.Long)
+    private Long expireTime;
 
     /**
      * 是否使用（false：未使用，true：已使用）
@@ -92,13 +86,8 @@ public class SmsCaptchaLogDO extends EsDbBaseDO {
      * 使用时间.
      */
     @Schema(description = "使用时间")
-    @Field(
-        type = FieldType.Date,
-        format = {},
-        pattern = "yyyy-MM-dd HH:mm:ss",
-        index = false
-    )
-    private LocalDateTime useTime;
+    @Field(type = FieldType.Long)
+    private Long useTime;
 
     /**
      * 用户主键.

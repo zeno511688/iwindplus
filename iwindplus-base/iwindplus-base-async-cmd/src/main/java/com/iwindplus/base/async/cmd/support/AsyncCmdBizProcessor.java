@@ -90,6 +90,8 @@ public record AsyncCmdBizProcessor(
                 log.info("asyncCmd already handled. id={}", entity.getId());
                 return;
             }
+            // 同步内存状态，editLockById已将DB置为EXECUTE
+            entity.setStatus(AsyncCmdStatusEnum.EXECUTE);
         }
 
         final long start = System.currentTimeMillis();
@@ -101,7 +103,7 @@ public record AsyncCmdBizProcessor(
             log.error("asyncCmd execute failed. id={}", entity.getId(), ex);
 
             // 兜底主任务卡在执行中只能等重置状态
-            if (AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(entity.getStatus())) {
+            if (AsyncCmdStatusEnum.EXECUTE.equals(entity.getStatus())) {
                 this.asyncCmdStateSupport.taskFail(entity, null,
                     System.currentTimeMillis() - start, ex, false);
                 return;

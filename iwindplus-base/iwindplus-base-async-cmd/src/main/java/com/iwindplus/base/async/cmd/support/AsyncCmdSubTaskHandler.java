@@ -31,11 +31,12 @@ public interface AsyncCmdSubTaskHandler {
     }
 
     /**
-     * 执行子业务.
+     * 执行子业务（默认空实现，callbackFirst模式下子任务仅作为状态流转载体）.
      *
      * @param entity 对象
      */
-    void executeSub(AsyncCmdSubVO entity);
+    default void executeSub(AsyncCmdSubVO entity) {
+    }
 
     /**
      * 子任务获取异步等待结果.

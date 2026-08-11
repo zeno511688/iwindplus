@@ -17,6 +17,7 @@ import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.constant.CommonConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.DbConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
 import com.iwindplus.base.domain.enums.BaseEnum;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
@@ -236,7 +237,7 @@ public class VodConfigServiceImpl implements VodConfigService {
         List<OrderItem> orders = page.getOrders();
         if (CollUtil.isEmpty(orders)) {
             orders = new ArrayList<>(10);
-            OrderItem item = OrderItem.desc(CommonConstant.DbConstant.MODIFIED_TIME);
+            OrderItem item = OrderItem.desc(DbConstant.MODIFIED_TIMESTAMP);
             orders.add(item);
         }
         orders.forEach(order -> {
@@ -245,8 +246,8 @@ public class VodConfigServiceImpl implements VodConfigService {
             order.setColumn(underline);
         });
         page.setOrders(orders);
-        queryWrapper.select(VodConfigDO::getId, VodConfigDO::getCreatedTime, VodConfigDO::getCreatedTimestamp, VodConfigDO::getCreatedBy,
-            VodConfigDO::getModifiedTime, VodConfigDO::getModifiedTimestamp, VodConfigDO::getModifiedBy, VodConfigDO::getBuildInFlag,
+        queryWrapper.select(VodConfigDO::getId, VodConfigDO::getCreatedTimestamp, VodConfigDO::getCreatedBy,
+            VodConfigDO::getModifiedTimestamp, VodConfigDO::getModifiedBy, VodConfigDO::getBuildInFlag,
             VodConfigDO::getVersion, VodConfigDO::getRemark, VodConfigDO::getStatus, VodConfigDO::getCode, VodConfigDO::getName, VodConfigDO::getType,
             VodConfigDO::getRegion, VodConfigDO::getAccessKey
         );

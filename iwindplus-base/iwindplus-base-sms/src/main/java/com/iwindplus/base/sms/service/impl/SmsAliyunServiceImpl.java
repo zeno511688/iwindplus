@@ -33,10 +33,9 @@ import com.iwindplus.base.sms.domain.property.SmsProperty.AliyunConfig.StsConfig
 import com.iwindplus.base.sms.domain.vo.SmsBatchVO;
 import com.iwindplus.base.sms.domain.vo.SmsLogVO;
 import com.iwindplus.base.sms.service.SmsAliyunService;
-import com.iwindplus.base.util.DatesUtil;
 import com.iwindplus.base.util.JacksonUtil;
 import com.iwindplus.base.util.TemplateUtil;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -162,10 +161,10 @@ public class SmsAliyunServiceImpl extends AbstractSmsBaseServiceImpl implements 
         final AliyunConfig aliyun = super.getConfig().getAliyun();
         final StsConfig sts = aliyun.getSts();
         if (Objects.nonNull(sts)) {
-            final LocalDateTime securityTokenExpiration = sts.getExpiration();
-            if (Objects.isNull(securityTokenExpiration) || LocalDateTime.now().isAfter(securityTokenExpiration)) {
+            final Long securityTokenExpiration = sts.getExpiration();
+            if (Objects.isNull(securityTokenExpiration) || System.currentTimeMillis() > securityTokenExpiration) {
                 AssumeRoleResponse response = this.getAssumeRoleResponse(aliyun, sts);
-                final LocalDateTime expiration = DatesUtil.parseUtcDate(response.getCredentials().getExpiration());
+                final long expiration = Instant.parse(response.getCredentials().getExpiration()).toEpochMilli();
                 sts.setAccessKey(response.getCredentials().getAccessKeyId());
                 sts.setSecretKey(response.getCredentials().getAccessKeySecret());
                 sts.setSecurityToken(response.getCredentials().getSecurityToken());

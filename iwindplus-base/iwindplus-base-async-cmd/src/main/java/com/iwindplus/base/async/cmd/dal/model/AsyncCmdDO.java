@@ -14,7 +14,6 @@ import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.enums.DispatchModeEnum;
 import com.iwindplus.base.mybatis.domain.DbBaseDO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -90,13 +89,13 @@ public class AsyncCmdDO extends DbBaseDO {
      * 过期时间.
      */
     @Schema(description = "过期时间")
-    private LocalDateTime expireTime;
+    private Long expireTime;
 
     /**
      * 下一次重试时间.
      */
     @Schema(description = "下一次重试时间")
-    private LocalDateTime nextRetryTime;
+    private Long nextRetryTime;
 
     /**
      * 重试次数.
@@ -129,10 +128,16 @@ public class AsyncCmdDO extends DbBaseDO {
     private Boolean needCallback;
 
     /**
+     * 是否先回调（组任务模式：先主执行回调成功再分发子任务）.
+     */
+    @Schema(description = "是否先回调（组任务模式：先主执行回调成功再分发子任务）")
+    private Boolean callbackFirst;
+
+    /**
      * 等待异步结果的截止时间.
      */
     @Schema(description = "等待异步结果的截止时间")
-    private LocalDateTime callbackExpireTime;
+    private Long callbackExpireTime;
 
     /**
      * 是否需要显示（查进度时用）.

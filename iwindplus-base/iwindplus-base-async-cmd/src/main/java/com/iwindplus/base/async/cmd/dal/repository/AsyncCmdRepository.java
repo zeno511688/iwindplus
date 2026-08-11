@@ -28,7 +28,6 @@ import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.enums.DispatchModeEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -171,11 +170,10 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, LocalDateTime nextRetryTime,
-        LocalDateTime expireTime, LocalDateTime callbackExpireTime) {
+        Long costTime, String errorMsg, Integer retryCount, Long nextRetryTime,
+        Long expireTime, Long callbackExpireTime) {
         final AsyncCmdDOBuilder<?, ?> builder = AsyncCmdDO.builder()
             .status(to)
-            .modifiedTime(LocalDateTime.now())
             .modifiedTimestamp(System.currentTimeMillis());
         if (Objects.nonNull(costTime)) {
             builder.costTime(costTime);
@@ -216,7 +214,6 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
         final AsyncCmdDO entity = AsyncCmdDO.builder()
             .id(id)
             .expireTime(this.getNextExpireTime())
-            .modifiedTime(LocalDateTime.now())
             .modifiedTimestamp(System.currentTimeMillis())
             .build();
         return super.updateById(entity);
@@ -227,7 +224,7 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
         entity.setDispatchMode(DispatchModeEnum.ASYNC);
         entity.setEnv(SpringUtil.getActiveProfile());
         entity.setExpireTime(this.getNextExpireTime());
-        entity.setNextRetryTime(LocalDateTime.now());
+        entity.setNextRetryTime(System.currentTimeMillis());
         if (CharSequenceUtil.isBlank(entity.getBizNumber())) {
             entity.setBizNumber(IdWorker.getIdStr());
         }
@@ -240,12 +237,9 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
     /**
      * 计算执行租约到期时间.
      *
-     * @return LocalDateTime
+     * @return long
      */
-    public LocalDateTime getNextExpireTime() {
-        return LocalDateTime.now()
-            .plusSeconds(
-                Optional.ofNullable(this.property.getTimeoutSeconds()).orElse(60L)
-            );
+    public long getNextExpireTime() {
+        return System.currentTimeMillis() + Optional.ofNullable(this.property.getTimeoutSeconds()).orElse(60L) * 1000;
     }
 }

@@ -10,7 +10,6 @@ package com.iwindplus.base.async.cmd.domain.dto;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -70,11 +69,11 @@ public class AsyncCmdShardSearchDTO implements Serializable {
      * 过期时间.
      */
     @Schema(description = "过期时间")
-    private LocalDateTime expireTime;
+    private Long expireTime;
 
     /**
      * 下一次重试时间.
      */
     @Schema(description = "下一次重试时间")
-    private LocalDateTime nextRetryTime;
+    private Long nextRetryTime;
 }

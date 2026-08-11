@@ -12,7 +12,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
-import com.iwindplus.base.domain.constant.CommonConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.DbConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.exception.BizException;
@@ -204,7 +204,7 @@ public class PositionServiceImpl implements PositionService {
         List<OrderItem> orders = page.getOrders();
         if (CollUtil.isEmpty(orders)) {
             orders = new ArrayList<>(10);
-            OrderItem item = OrderItem.desc(CommonConstant.DbConstant.MODIFIED_TIME);
+            OrderItem item = OrderItem.desc(DbConstant.MODIFIED_TIMESTAMP);
             orders.add(item);
         }
         orders.forEach(order -> {
@@ -213,8 +213,8 @@ public class PositionServiceImpl implements PositionService {
             order.setColumn(underline);
         });
         page.setOrders(orders);
-        queryWrapper.select(PositionDO::getId, PositionDO::getCreatedTime, PositionDO::getCreatedTimestamp, PositionDO::getCreatedBy,
-            PositionDO::getModifiedTime, PositionDO::getModifiedTimestamp, PositionDO::getModifiedBy, PositionDO::getVersion, PositionDO::getStatus,
+        queryWrapper.select(PositionDO::getId, PositionDO::getCreatedTimestamp, PositionDO::getCreatedBy,
+            PositionDO::getModifiedTimestamp, PositionDO::getModifiedBy, PositionDO::getVersion, PositionDO::getStatus,
             PositionDO::getCode, PositionDO::getName, PositionDO::getBuildInFlag, PositionDO::getDepartmentId
         );
         final PageDTO<PositionDO> modelPage = this.positionRepository.page(page, queryWrapper);

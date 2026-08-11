@@ -262,8 +262,8 @@ public class ServerServiceImpl implements ServerService {
         if (CharSequenceUtil.isNotBlank(entity.getRouteId())) {
             queryWrapper.eq(ServerDO::getRouteId, entity.getRouteId().trim());
         }
-        queryWrapper.select(ServerDO::getId, ServerDO::getCreatedTime, ServerDO::getCreatedTimestamp, ServerDO::getCreatedBy,
-            ServerDO::getModifiedTime, ServerDO::getModifiedTimestamp, ServerDO::getModifiedBy,
+        queryWrapper.select(ServerDO::getId, ServerDO::getCreatedTimestamp, ServerDO::getCreatedBy,
+            ServerDO::getModifiedTimestamp, ServerDO::getModifiedBy,
             ServerDO::getVersion, ServerDO::getStatus, ServerDO::getName, ServerDO::getRouteId, ServerDO::getUri, ServerDO::getHideFlag,
             ServerDO::getBuildInFlag
         );

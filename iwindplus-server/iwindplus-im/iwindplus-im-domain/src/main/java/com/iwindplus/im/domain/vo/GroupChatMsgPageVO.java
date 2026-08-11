@@ -8,7 +8,6 @@ import com.iwindplus.base.domain.vo.DbVersionBaseTwoVO;
 import com.iwindplus.im.domain.enums.MsgTypeEnum;
 import com.iwindplus.im.domain.enums.SendStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -57,7 +56,7 @@ public class GroupChatMsgPageVO extends DbVersionBaseTwoVO {
      * 发送时间.
      */
     @Schema(description = "发送时间")
-    private LocalDateTime sendTime;
+    private Long sendTime;
 
     /**
      * 发送状态

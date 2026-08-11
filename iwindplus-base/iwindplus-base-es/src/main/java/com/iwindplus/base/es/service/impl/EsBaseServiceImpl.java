@@ -22,7 +22,6 @@ import com.iwindplus.base.es.service.EsBaseService;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -335,26 +334,19 @@ public class EsBaseServiceImpl<T extends EsDbBaseDO> implements EsBaseService<T>
     }
 
     private void fillStrictInsert(T entity, Long userId, String realName) {
-        final LocalDateTime now = LocalDateTime.now();
         final long currentTimeMillis = System.currentTimeMillis();
 
-        entity.setCreatedTime(now);
         entity.setCreatedTimestamp(currentTimeMillis);
         entity.setCreatedBy(realName);
         entity.setCreatedId(userId);
-        entity.setModifiedTime(now);
         entity.setModifiedTimestamp(currentTimeMillis);
         entity.setModifiedBy(realName);
         entity.setModifiedId(userId);
     }
 
     private void fillOptionalInsert(T entity, Long userId, String realName) {
-        final LocalDateTime now = LocalDateTime.now();
         final long currentTimeMillis = System.currentTimeMillis();
 
-        if (entity.getCreatedTime() == null) {
-            entity.setCreatedTime(now);
-        }
         if (entity.getCreatedTimestamp() == null) {
             entity.setCreatedTimestamp(currentTimeMillis);
         }
@@ -365,9 +357,6 @@ public class EsBaseServiceImpl<T extends EsDbBaseDO> implements EsBaseService<T>
             entity.setCreatedId(userId);
         }
 
-        if (entity.getModifiedTime() == null) {
-            entity.setModifiedTime(now);
-        }
         if (entity.getModifiedTimestamp() == null) {
             entity.setModifiedTimestamp(currentTimeMillis);
         }
@@ -380,10 +369,8 @@ public class EsBaseServiceImpl<T extends EsDbBaseDO> implements EsBaseService<T>
     }
 
     private void fillUpdate(T entity, Long userId, String realName) {
-        final LocalDateTime now = LocalDateTime.now();
         final long currentTimeMillis = System.currentTimeMillis();
 
-        entity.setModifiedTime(now);
         entity.setModifiedTimestamp(currentTimeMillis);
         entity.setModifiedBy(realName);
         entity.setModifiedId(userId);

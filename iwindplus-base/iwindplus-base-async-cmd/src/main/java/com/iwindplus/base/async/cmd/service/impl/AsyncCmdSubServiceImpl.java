@@ -14,7 +14,6 @@ import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdSubRepository;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdSubService;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +33,7 @@ public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
 
     @Override
     public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result, LocalDateTime callbackExpireTime) {
+        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result, Long callbackExpireTime) {
         return this.asyncCmdSubRepository.updateStatusById(id, from, to, costTime, errorMsg, retryCount, result, callbackExpireTime);
     }
 

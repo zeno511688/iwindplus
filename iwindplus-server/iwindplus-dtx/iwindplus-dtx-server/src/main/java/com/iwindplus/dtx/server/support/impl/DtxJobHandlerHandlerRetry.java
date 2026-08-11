@@ -13,7 +13,6 @@ import com.iwindplus.dtx.domain.dto.TccGlobalTxShardSearchDTO.TccGlobalTxShardSe
 import com.iwindplus.dtx.domain.enums.DtxJobEnum;
 import com.iwindplus.dtx.domain.enums.GlobalTxStatusEnum;
 import com.iwindplus.dtx.domain.vo.TccGlobalTxVO;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -57,7 +56,7 @@ public class DtxJobHandlerHandlerRetry extends AbstractDtxJobHandler {
     protected TccGlobalTxShardSearchDTO buildJobSearchDTO() {
         final TccGlobalTxShardSearchDTOBuilder<?, ?> builder = TccGlobalTxShardSearchDTO.builder()
             .statusList(GlobalTxStatusEnum.getRetryStatus())
-            .retryTime(LocalDateTime.now());
+            .retryTime(System.currentTimeMillis());
         if (Boolean.TRUE.equals(this.property.getRetry().getEnabledUnlimitedRetry())) {
             builder.retryCount(this.property.getRetry().getMaxAttempts());
         }

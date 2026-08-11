@@ -14,7 +14,6 @@ import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty.RetryConfig;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,7 +60,7 @@ public class AsyncCmdJobHandlerReset extends AbstractAsyncCmdJobHandler {
                     : AsyncCmdStatusEnum.TO_BE_EXECUTE;
                 final boolean result = super.getAsyncCmdService()
                     .editStatusById(entity.getId(), entity.getStatus(), status,
-                        null, null, null, LocalDateTime.now(), null, null);
+                        null, null, null, System.currentTimeMillis(), null, null);
                 if (!result) {
                     skipped++;
                     log.warn("重置任务调过，id={} from={}", entity.getId(), entity.getStatus());
@@ -91,7 +90,7 @@ public class AsyncCmdJobHandlerReset extends AbstractAsyncCmdJobHandler {
     protected AsyncCmdShardSearchDTO buildJobSearchDTO() {
         return AsyncCmdShardSearchDTO.builder()
             .statusList(AsyncCmdStatusEnum.getRestStatus())
-            .expireTime(LocalDateTime.now())
+            .expireTime(System.currentTimeMillis())
             .build();
     }
 }

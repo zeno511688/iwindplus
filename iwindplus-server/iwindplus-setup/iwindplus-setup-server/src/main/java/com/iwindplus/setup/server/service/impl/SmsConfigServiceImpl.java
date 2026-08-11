@@ -17,6 +17,7 @@ import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.constant.CommonConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.DbConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
 import com.iwindplus.base.domain.enums.BaseEnum;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
@@ -230,7 +231,7 @@ public class SmsConfigServiceImpl implements SmsConfigService {
         List<OrderItem> orders = page.getOrders();
         if (CollUtil.isEmpty(orders)) {
             orders = new ArrayList<>(10);
-            OrderItem item = OrderItem.desc(CommonConstant.DbConstant.MODIFIED_TIME);
+            OrderItem item = OrderItem.desc(DbConstant.MODIFIED_TIMESTAMP);
             orders.add(item);
         }
         orders.forEach(order -> {
@@ -239,8 +240,8 @@ public class SmsConfigServiceImpl implements SmsConfigService {
             order.setColumn(underline);
         });
         page.setOrders(orders);
-        queryWrapper.select(SmsConfigDO::getId, SmsConfigDO::getCreatedTime, SmsConfigDO::getCreatedTimestamp, SmsConfigDO::getCreatedBy,
-            SmsConfigDO::getModifiedTime, SmsConfigDO::getModifiedTimestamp, SmsConfigDO::getModifiedBy, SmsConfigDO::getBuildInFlag, SmsConfigDO::getVersion,
+        queryWrapper.select(SmsConfigDO::getId, SmsConfigDO::getCreatedTimestamp, SmsConfigDO::getCreatedBy,
+            SmsConfigDO::getModifiedTimestamp, SmsConfigDO::getModifiedBy, SmsConfigDO::getBuildInFlag, SmsConfigDO::getVersion,
             SmsConfigDO::getRemark, SmsConfigDO::getStatus, SmsConfigDO::getCode, SmsConfigDO::getName, SmsConfigDO::getType, SmsConfigDO::getAccessKey
         );
         final PageDTO<SmsConfigDO> modelPage = this.smsConfigRepository.page(page, queryWrapper);
@@ -270,7 +271,7 @@ public class SmsConfigServiceImpl implements SmsConfigService {
         final List<SmsConfigDO> list = this.smsConfigRepository.list(Wrappers.lambdaQuery(SmsConfigDO.class)
             .eq(SmsConfigDO::getStatus, EnableStatusEnum.ENABLE)
             .select(SmsConfigDO::getId, SmsConfigDO::getCode, SmsConfigDO::getName)
-            .orderByDesc(SmsConfigDO::getCreatedTime));
+            .orderByDesc(SmsConfigDO::getModifiedTimestamp));
         if (CollUtil.isEmpty(list)) {
             return null;
         }

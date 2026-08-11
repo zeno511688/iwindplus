@@ -43,9 +43,6 @@ import com.iwindplus.base.util.JacksonUtil;
 import jakarta.annotation.Resource;
 import java.io.File;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -235,9 +232,7 @@ public class VodAliyunServiceImpl extends AbstractVodBaseServiceImpl implements 
             JsonNode uploadAuth = JacksonUtil.parseTree(uploadAuthStr);
             JsonNode uploadAddress = JacksonUtil.parseTree(uploadAddressStr);
             String objectName = uploadAddress.path("FileName").asText();
-            final LocalDateTime expiration = LocalDateTime.ofInstant(Instant.parse(uploadAuth.path("ExpireUTCTime").asText()),
-                    ZoneOffset.UTC.normalized())
-                .atZone(ZoneOffset.UTC.normalized()).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();
+            final long expiration = Instant.parse(uploadAuth.path("ExpireUTCTime").asText()).toEpochMilli();
 
             // 1. 先用通用 STS 模型接参
             StsTokenDTO stsToken = StsTokenDTO.builder()

@@ -14,8 +14,8 @@ import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.service.AsyncCmdSubService;
+import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.util.DatesUtil;
-import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -127,9 +127,10 @@ public record AsyncCmdStateSupport(
         Exception ex,
         boolean advanced) {
 
+        final long currentTimeMillis = System.currentTimeMillis();
         int retryCount = advanced ? 0 : Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
         final String stack = this.getStack(ex);
-        final LocalDateTime nextRetryTime = this.getNextRetryTime(LocalDateTime.now(), retryCount);
+        final long nextRetryTime = DatesUtil.getNextRetryTime(currentTimeMillis, this.property.getRetry().getFrequency(), retryCount);
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
@@ -142,7 +143,7 @@ public record AsyncCmdStateSupport(
                     stack,
                     retryCount,
                     nextRetryTime,
-                    LocalDateTime.now(),
+                    currentTimeMillis,
                     null
                 )
             )
@@ -176,10 +177,8 @@ public record AsyncCmdStateSupport(
         AsyncCmdTaskHandler handler,
         Long costTime) {
 
-        final LocalDateTime callbackExpireTime = LocalDateTime.now()
-            .plusSeconds(Optional.ofNullable(this.property.getAsyncWaitTimeoutSeconds()).orElse(1800L));
-        final LocalDateTime nextRetryTime = LocalDateTime.now()
-            .plusSeconds(Optional.ofNullable(this.property.getAsyncWaitPoolSeconds()).orElse(60L));
+        final Long callbackExpireTime = this.getCallbackExpireTime();
+        final Long nextRetryTime = this.getNextRetryTime();
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
@@ -220,9 +219,8 @@ public record AsyncCmdStateSupport(
      * @param costTime 耗时
      * @return
      */
-    public boolean taskToBeExecute(AsyncCmdVO entity, Long costTime) {
-        final LocalDateTime nextRetryTime = LocalDateTime.now()
-            .plusSeconds(Optional.ofNullable(this.property.getAsyncWaitPoolSeconds()).orElse(60L));
+    public boolean taskExecuteToBeExecute(AsyncCmdVO entity, Long costTime) {
+        final Long nextRetryTime = this.getNextRetryTime();
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
@@ -251,6 +249,43 @@ public record AsyncCmdStateSupport(
     }
 
     /**
+     * 任务异步等待回调成功后转为待执行（callbackFirst模式，回调成功后分发子任务）.
+     *
+     * @param entity   对象
+     * @param costTime 耗时
+     * @return boolean
+     */
+    public boolean taskAsyncWaitToBeExecute(AsyncCmdVO entity, Long costTime) {
+        final Long nextRetryTime = this.getNextRetryTime();
+
+        final boolean result = Boolean.TRUE.equals(
+            this.transactionTemplate.execute(status ->
+                asyncCmdService.editStatusById(
+                    entity.getId(),
+                    AsyncCmdStatusEnum.ASYNC_WAIT,
+                    AsyncCmdStatusEnum.TO_BE_EXECUTE,
+                    costTime,
+                    null,
+                    null,
+                    nextRetryTime,
+                    null,
+                    0L
+                )
+            )
+        );
+
+        if (!result) {
+            return false;
+        }
+
+        entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
+        entity.setCallbackExpireTime(0L);
+        entity.setNextRetryTime(nextRetryTime);
+        entity.setCostTime(costTime);
+        return true;
+    }
+
+    /**
      * 任务异步等待执行成功
      *
      * @param entity   对象
@@ -273,7 +308,7 @@ public record AsyncCmdStateSupport(
                     null,
                     null,
                     null,
-                    null
+                    0L
                 )
             )
         );
@@ -283,6 +318,7 @@ public record AsyncCmdStateSupport(
         }
 
         entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
+        entity.setCallbackExpireTime(0L);
         if (Objects.isNull(handler)) {
             return true;
         }
@@ -306,8 +342,7 @@ public record AsyncCmdStateSupport(
         Exception ex) {
         final int retryCount = Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
         final String stack = this.getStack(ex);
-        final LocalDateTime nextRetryTime = LocalDateTime.now()
-            .plusSeconds(Optional.ofNullable(this.property.getAsyncWaitPoolSeconds()).orElse(60L));
+        final Long nextRetryTime = this.getNextRetryTime();
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
@@ -441,8 +476,7 @@ public record AsyncCmdStateSupport(
         AsyncCmdSubVO entity,
         AsyncCmdSubTaskHandler handler,
         Long costTime) {
-        final LocalDateTime callbackExpireTime = LocalDateTime.now()
-            .plusSeconds(Optional.ofNullable(this.property.getAsyncWaitTimeoutSeconds()).orElse(1800L));
+        final Long callbackExpireTime = this.getCallbackExpireTime();
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
@@ -560,6 +594,26 @@ public record AsyncCmdStateSupport(
     }
 
     /**
+     * 获取回调过期时间
+     *
+     * @return long
+     */
+    public Long getCallbackExpireTime() {
+        return System.currentTimeMillis()
+            + Optional.ofNullable(this.property.getAsyncWaitTimeoutSeconds()).orElse(1800L) * NumberConstant.NUMBER_ONE_THOUSAND;
+    }
+
+    /**
+     * 获取下一次重试时间
+     *
+     * @return long
+     */
+    public Long getNextRetryTime() {
+        return System.currentTimeMillis()
+            + Optional.ofNullable(this.property.getAsyncWaitPoolSeconds()).orElse(60L) * NumberConstant.NUMBER_ONE_THOUSAND;
+    }
+
+    /**
      * 安全回调
      *
      * @param callback 回调
@@ -576,19 +630,6 @@ public record AsyncCmdStateSupport(
         } catch (Exception ex) {
             log.error("asyncCmd callback failed. callback={} id={}", name, id, ex);
         }
-    }
-
-    /**
-     * 获取下次重试时间
-     *
-     * @param base       基准时间
-     * @param retryCount 重试次数
-     * @return LocalDateTime
-     */
-    private LocalDateTime getNextRetryTime(LocalDateTime base, int retryCount) {
-        return DatesUtil.getNextRetryTime(base,
-            this.property.getRetry().getFrequency(),
-            retryCount);
     }
 
     /**

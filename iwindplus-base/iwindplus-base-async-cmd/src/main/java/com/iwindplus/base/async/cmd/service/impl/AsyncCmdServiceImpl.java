@@ -34,7 +34,6 @@ import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import lombok.Getter;
@@ -120,8 +119,8 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
 
     @Override
     public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, LocalDateTime nextRetryTime,
-        LocalDateTime expireTime, LocalDateTime callbackExpireTime) {
+        Long costTime, String errorMsg, Integer retryCount, Long nextRetryTime,
+        Long expireTime, Long callbackExpireTime) {
         return this.asyncCmdRepository.updateStatusById(id, from, to, costTime, errorMsg, retryCount, nextRetryTime, expireTime, callbackExpireTime);
     }
 
@@ -269,8 +268,8 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
     }
 
     private void showField(LambdaQueryWrapper<AsyncCmdDO> queryWrapper) {
-        queryWrapper.select(AsyncCmdDO::getId, AsyncCmdDO::getCreatedTime, AsyncCmdDO::getCreatedTimestamp, AsyncCmdDO::getCreatedBy,
-            AsyncCmdDO::getModifiedTime, AsyncCmdDO::getModifiedTimestamp, AsyncCmdDO::getModifiedBy, AsyncCmdDO::getVersion,
+        queryWrapper.select(AsyncCmdDO::getId, AsyncCmdDO::getCreatedTimestamp, AsyncCmdDO::getCreatedBy,
+            AsyncCmdDO::getModifiedTimestamp, AsyncCmdDO::getModifiedBy, AsyncCmdDO::getVersion,
             AsyncCmdDO::getStatus, AsyncCmdDO::getEnv, AsyncCmdDO::getBizKey, AsyncCmdDO::getBizType, AsyncCmdDO::getExecuteName,
             AsyncCmdDO::getDispatchMode, AsyncCmdDO::getBizNumber, AsyncCmdDO::getExpireTime, AsyncCmdDO::getRetryCount,
             AsyncCmdDO::getNextRetryTime, AsyncCmdDO::getSubTaskCount, AsyncCmdDO::getCostTime, AsyncCmdDO::getRemark

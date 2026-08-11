@@ -28,7 +28,6 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import jakarta.annotation.Resource;
 import java.lang.reflect.Field;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -191,7 +190,7 @@ public class MongoBaseServiceImpl<T extends MongoDbBaseDO> implements MongoBaseS
         List<OrderItem> orderList = page.orders();
 
         if (CollUtil.isEmpty(orderList)) {
-            orders.add(Sort.Order.desc(DbConstant.MODIFIED_TIME));
+            orders.add(Sort.Order.desc(DbConstant.MODIFIED_TIMESTAMP));
         } else {
             orderList.forEach(order ->
                 orders.add(order.isAsc()
@@ -335,26 +334,19 @@ public class MongoBaseServiceImpl<T extends MongoDbBaseDO> implements MongoBaseS
     }
 
     private void fillStrictInsert(T entity, Long userId, String realName) {
-        final LocalDateTime now = LocalDateTime.now();
         final long currentTimeMillis = System.currentTimeMillis();
 
-        entity.setCreatedTime(now);
         entity.setCreatedTimestamp(currentTimeMillis);
         entity.setCreatedBy(realName);
         entity.setCreatedId(userId);
-        entity.setModifiedTime(now);
         entity.setModifiedTimestamp(currentTimeMillis);
         entity.setModifiedBy(realName);
         entity.setModifiedId(userId);
     }
 
     private void fillOptionalInsert(T entity, Long userId, String realName) {
-        final LocalDateTime now = LocalDateTime.now();
         final long currentTimeMillis = System.currentTimeMillis();
 
-        if (entity.getCreatedTime() == null) {
-            entity.setCreatedTime(now);
-        }
         if (entity.getCreatedTimestamp() == null) {
             entity.setCreatedTimestamp(currentTimeMillis);
         }
@@ -365,9 +357,6 @@ public class MongoBaseServiceImpl<T extends MongoDbBaseDO> implements MongoBaseS
             entity.setCreatedId(userId);
         }
 
-        if (entity.getModifiedTime() == null) {
-            entity.setModifiedTime(now);
-        }
         if (entity.getModifiedTimestamp() == null) {
             entity.setModifiedTimestamp(currentTimeMillis);
         }
@@ -380,10 +369,8 @@ public class MongoBaseServiceImpl<T extends MongoDbBaseDO> implements MongoBaseS
     }
 
     private void fillUpdate(T entity, Long userId, String realName) {
-        final LocalDateTime now = LocalDateTime.now();
         final long currentTimeMillis = System.currentTimeMillis();
 
-        entity.setModifiedTime(now);
         entity.setModifiedTimestamp(currentTimeMillis);
         entity.setModifiedBy(realName);
         entity.setModifiedId(userId);
@@ -404,7 +391,6 @@ public class MongoBaseServiceImpl<T extends MongoDbBaseDO> implements MongoBaseS
         UserBaseVO user = getCurrentUserInfo();
 
         return Update.update(DbConstant.DELETED, NumberConstant.NUMBER_ONE)
-            .set(DbConstant.MODIFIED_TIME, LocalDateTime.now())
             .set(DbConstant.MODIFIED_TIMESTAMP, System.currentTimeMillis())
             .set(DbConstant.MODIFIED_BY, user.getRealName())
             .set(DbConstant.MODIFIED_ID, user.getUserId());
@@ -425,10 +411,8 @@ public class MongoBaseServiceImpl<T extends MongoDbBaseDO> implements MongoBaseS
 
         Map<String, Object> fields = this.getTableField(entity);
 
-        LocalDateTime now = LocalDateTime.now();
         long ts = System.currentTimeMillis();
 
-        fields.put(DbConstant.MODIFIED_TIME, now);
         fields.put(DbConstant.MODIFIED_TIMESTAMP, ts);
         fields.put(DbConstant.MODIFIED_BY, user.getRealName());
         fields.put(DbConstant.MODIFIED_ID, user.getUserId());

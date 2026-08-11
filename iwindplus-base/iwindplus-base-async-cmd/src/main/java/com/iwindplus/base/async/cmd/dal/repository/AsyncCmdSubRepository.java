@@ -22,7 +22,6 @@ import com.iwindplus.base.async.cmd.dal.model.AsyncCmdSubDO.AsyncCmdSubDOBuilder
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -82,7 +81,7 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, Long costTime, Map<String, Object> result,
-        LocalDateTime callbackExpireTime) {
+        Long callbackExpireTime) {
         return updateStatusById(id, from, to, costTime, null, null, result, callbackExpireTime);
     }
 
@@ -101,10 +100,9 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result, LocalDateTime callbackExpireTime) {
+        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result, Long callbackExpireTime) {
         final AsyncCmdSubDOBuilder<?, ?> builder = AsyncCmdSubDO.builder()
             .status(to)
-            .modifiedTime(LocalDateTime.now())
             .modifiedTimestamp(System.currentTimeMillis());
         if (Objects.nonNull(costTime)) {
             builder.costTime(costTime);
@@ -165,8 +163,8 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
         }
 
         if (Boolean.FALSE.equals(showTextField)) {
-            queryWrapper.select(AsyncCmdSubDO::getId, AsyncCmdSubDO::getCreatedTime, AsyncCmdSubDO::getCreatedTimestamp, AsyncCmdSubDO::getCreatedBy,
-                AsyncCmdSubDO::getModifiedTime, AsyncCmdSubDO::getModifiedTimestamp, AsyncCmdSubDO::getModifiedBy, AsyncCmdSubDO::getVersion,
+            queryWrapper.select(AsyncCmdSubDO::getId, AsyncCmdSubDO::getCreatedTimestamp, AsyncCmdSubDO::getCreatedBy,
+                AsyncCmdSubDO::getModifiedTimestamp, AsyncCmdSubDO::getModifiedBy, AsyncCmdSubDO::getVersion,
                 AsyncCmdSubDO::getStatus, AsyncCmdSubDO::getBizType, AsyncCmdSubDO::getStage, AsyncCmdSubDO::getSeq,
                 AsyncCmdSubDO::getRetryCount, AsyncCmdSubDO::getCostTime, AsyncCmdSubDO::getAsyncCmdId, AsyncCmdSubDO::getRemark
             );

@@ -12,11 +12,9 @@ import com.iwindplus.base.sms.domain.constant.SmsConstant;
 import com.iwindplus.base.sms.domain.vo.SmsBatchVO;
 import com.iwindplus.base.sms.domain.vo.SmsLogVO;
 import com.iwindplus.base.sms.service.SmsBaseService;
-import lombok.extern.slf4j.Slf4j;
-
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 短信业务基础抽象类.
@@ -38,7 +36,9 @@ public abstract class AbstractSmsBaseServiceImpl extends AbstractSmsBaseConfigSe
         SmsLogVO data = null;
         if (CollUtil.isNotEmpty(result)) {
             SmsBatchVO batchVO = result.get(0);
-            LocalDateTime expireTime = LocalDateTime.now().plusMinutes(Optional.ofNullable(captchaTimeout).orElse(SmsConstant.CAPTCHA_TIMEOUT));
+            long expireTime = System.currentTimeMillis()
+                + Optional.ofNullable(captchaTimeout)
+                .orElse(SmsConstant.CAPTCHA_TIMEOUT) * 60 * 1000;
             data = SmsLogVO.builder()
                 .bizNumber(batchVO.getBizNumber())
                 .phoneNumber(CollUtil.isNotEmpty(batchVO.getPhoneNumbers()) ? batchVO.getPhoneNumbers().get(0) : null)

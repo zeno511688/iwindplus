@@ -14,7 +14,6 @@ import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdBizProcessor;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,7 +61,7 @@ public class AsyncCmdJobHandlerRetry extends AbstractAsyncCmdJobHandler {
         // 查询状态为待执行
         return AsyncCmdShardSearchDTO.builder()
             .statusList(AsyncCmdStatusEnum.getRetryStatus())
-            .nextRetryTime(LocalDateTime.now())
+            .nextRetryTime(System.currentTimeMillis())
             .build();
     }
 

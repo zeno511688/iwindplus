@@ -33,12 +33,12 @@ import com.iwindplus.setup.server.service.MailConfigService;
 import com.iwindplus.setup.server.service.MailTplService;
 import com.iwindplus.setup.server.service.MailboxService;
 import java.nio.charset.Charset;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -201,7 +201,8 @@ public class MailboxServiceImpl implements MailboxService {
             .doOnNext(data -> {
                 log.info("发送邮件结果={}", data);
                 if (ObjectUtil.isNotEmpty(data) && data.getResult()) {
-                    LocalDateTime expireTime = LocalDateTime.now().plusMinutes(timeout);
+                    long expireTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(timeout);
+
                     MailCaptchaLogDTO param = MailCaptchaLogDTO.builder()
                         .requestId(requestId)
                         .bizNumber(data.getBizNumber())
@@ -214,8 +215,6 @@ public class MailboxServiceImpl implements MailboxService {
                         .build();
                     this.mailCaptchaLogClient.save(param);
                 }
-            })
-            .subscribeOn(Schedulers.boundedElastic())
-            .subscribe();
+            });
     }
 }

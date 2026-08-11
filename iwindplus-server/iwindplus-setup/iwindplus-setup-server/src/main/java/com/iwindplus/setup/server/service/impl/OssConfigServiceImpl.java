@@ -11,13 +11,13 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.IdUtil;
-import cn.hutool.crypto.SecureUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.constant.CommonConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.DbConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
 import com.iwindplus.base.domain.enums.BaseEnum;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
@@ -56,7 +56,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.dreamlu.mica.core.utils.StringUtil;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.cache.annotation.CacheConfig;
@@ -231,7 +230,7 @@ public class OssConfigServiceImpl implements OssConfigService {
         List<OrderItem> orders = page.getOrders();
         if (CollUtil.isEmpty(orders)) {
             orders = new ArrayList<>(10);
-            OrderItem item = OrderItem.desc(CommonConstant.DbConstant.MODIFIED_TIME);
+            OrderItem item = OrderItem.desc(DbConstant.MODIFIED_TIMESTAMP);
             orders.add(item);
         }
         orders.forEach(order -> {
@@ -240,8 +239,8 @@ public class OssConfigServiceImpl implements OssConfigService {
             order.setColumn(underline);
         });
         page.setOrders(orders);
-        queryWrapper.select(OssConfigDO::getId, OssConfigDO::getCreatedTime, OssConfigDO::getCreatedTimestamp, OssConfigDO::getCreatedBy,
-            OssConfigDO::getModifiedTime, OssConfigDO::getModifiedTimestamp, OssConfigDO::getModifiedBy, OssConfigDO::getVersion,
+        queryWrapper.select(OssConfigDO::getId, OssConfigDO::getCreatedTimestamp, OssConfigDO::getCreatedBy,
+            OssConfigDO::getModifiedTimestamp, OssConfigDO::getModifiedBy, OssConfigDO::getVersion,
             OssConfigDO::getRemark, OssConfigDO::getBuildInFlag, OssConfigDO::getStatus, OssConfigDO::getCode, OssConfigDO::getName,
             OssConfigDO::getType, OssConfigDO::getOssEndpoint, OssConfigDO::getAccessKey
         );
@@ -272,7 +271,7 @@ public class OssConfigServiceImpl implements OssConfigService {
         final List<OssConfigDO> list = this.ossConfigRepository.list(Wrappers.lambdaQuery(OssConfigDO.class)
             .eq(OssConfigDO::getStatus, EnableStatusEnum.ENABLE)
             .select(OssConfigDO::getId, OssConfigDO::getCode, OssConfigDO::getName)
-            .orderByDesc(OssConfigDO::getCreatedTime));
+            .orderByDesc(OssConfigDO::getModifiedTimestamp));
         if (CollUtil.isEmpty(list)) {
             return null;
         }

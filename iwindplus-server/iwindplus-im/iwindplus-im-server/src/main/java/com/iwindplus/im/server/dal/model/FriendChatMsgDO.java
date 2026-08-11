@@ -12,7 +12,6 @@ import com.iwindplus.im.domain.enums.MsgStatusEnum;
 import com.iwindplus.im.domain.enums.MsgTypeEnum;
 import com.iwindplus.im.domain.enums.SendStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -83,13 +82,8 @@ public class FriendChatMsgDO extends EsDbBaseDO {
      * 读取时间.
      */
     @Schema(description = "读取时间")
-    @Field(
-        type = FieldType.Date,
-        format = {},
-        pattern = "yyyy-MM-dd HH:mm:ss",
-        index = false
-    )
-    private LocalDateTime readTime;
+    @Field(type = FieldType.Long)
+    private Long readTime;
 
     /**
      * 发送人主键.
@@ -116,13 +110,8 @@ public class FriendChatMsgDO extends EsDbBaseDO {
      * 发送时间.
      */
     @Schema(description = "发送时间")
-    @Field(
-        type = FieldType.Date,
-        format = {},
-        pattern = "yyyy-MM-dd HH:mm:ss",
-        index = false
-    )
-    private LocalDateTime sendTime;
+    @Field(type = FieldType.Long)
+    private Long sendTime;
 
     /**
      * 发送状态

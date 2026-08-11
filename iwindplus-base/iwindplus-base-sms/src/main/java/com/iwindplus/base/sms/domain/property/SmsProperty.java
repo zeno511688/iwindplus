@@ -17,8 +17,6 @@ import lombok.experimental.SuperBuilder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
-import java.time.LocalDateTime;
-
 /**
  * 阿里云短信相关属性.
  *
@@ -140,7 +138,7 @@ public class SmsProperty {
             /**
              * 安全令牌过期时间（可选，会自动生成）
              */
-            private LocalDateTime expiration;
+            private Long expiration;
         }
     }
 

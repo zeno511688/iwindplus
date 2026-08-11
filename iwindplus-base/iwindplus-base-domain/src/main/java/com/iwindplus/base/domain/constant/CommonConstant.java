@@ -573,11 +573,6 @@ public final class CommonConstant {
         public static final String ID = "id";
 
         /**
-         * 创建时间.
-         */
-        public static final String CREATED_TIME = "createdTime";
-
-        /**
          * 创建时间戳.
          */
         public static final String CREATED_TIMESTAMP = "createdTimestamp";
@@ -591,11 +586,6 @@ public final class CommonConstant {
          * 创建人主键.
          */
         public static final String CREATED_ID = "createdId";
-
-        /**
-         * 更新时间.
-         */
-        public static final String MODIFIED_TIME = "modifiedTime";
 
         /**
          * 更新时间戳.

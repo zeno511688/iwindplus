@@ -14,7 +14,6 @@ import com.iwindplus.dtx.domain.enums.DtxJobEnum;
 import com.iwindplus.dtx.domain.enums.GlobalTxStatusEnum;
 import com.iwindplus.dtx.domain.vo.TccGlobalTxVO;
 import com.iwindplus.dtx.server.dal.model.TccBranchTxDO;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -181,7 +180,7 @@ public class DtxJobHandlerHandlerTimeout extends AbstractDtxJobHandler {
     protected TccGlobalTxShardSearchDTO buildJobSearchDTO() {
         return TccGlobalTxShardSearchDTO.builder()
             .status(GlobalTxStatusEnum.TRYING)
-            .expireTime(LocalDateTime.now())
+            .expireTime(System.currentTimeMillis())
             .build();
     }
 }

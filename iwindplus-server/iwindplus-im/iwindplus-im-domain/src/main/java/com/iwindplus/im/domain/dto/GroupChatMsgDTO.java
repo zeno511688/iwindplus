@@ -12,7 +12,6 @@ import com.iwindplus.im.domain.enums.SendStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -77,7 +76,7 @@ public class GroupChatMsgDTO extends DbVersionBaseTwoDTO {
      * 发送时间.
      */
     @Schema(description = "发送时间")
-    private LocalDateTime sendTime;
+    private Long sendTime;
 
     /**
      * 发送状态

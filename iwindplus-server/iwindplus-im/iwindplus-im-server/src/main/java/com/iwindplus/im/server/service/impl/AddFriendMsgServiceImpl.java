@@ -29,7 +29,6 @@ import com.iwindplus.im.server.service.AddFriendMsgService;
 import com.iwindplus.mgt.client.power.UserClient;
 import com.iwindplus.mgt.domain.vo.power.UserExtendVO;
 import com.iwindplus.setup.client.OssClient;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -112,7 +111,7 @@ public class AddFriendMsgServiceImpl extends EsBaseServiceImpl<AddFriendMsgDO> i
             .msgStatus(msgStatus)
             .build();
         if (MsgStatusEnum.READ.equals(msgStatus)) {
-            entity.setReadTime(LocalDateTime.now());
+            entity.setReadTime(System.currentTimeMillis());
         }
         super.updateById(entity);
         return Boolean.TRUE;

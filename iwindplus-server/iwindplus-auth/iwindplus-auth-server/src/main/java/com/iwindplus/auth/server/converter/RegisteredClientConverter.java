@@ -6,8 +6,6 @@ import com.iwindplus.mgt.domain.dto.system.TokenSettingDTO;
 import com.iwindplus.mgt.domain.vo.system.ClientVO;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -46,9 +44,9 @@ public class RegisteredClientConverter {
         return ClientVO.builder()
             .id(Long.valueOf(source.getId()))
             .clientId(source.getClientId())
-            .clientIdIssuedAt(RegisteredClientConverter.instantToTime(source.getClientIdIssuedAt()))
+            .clientIdIssuedAt(Objects.nonNull(source.getClientIdIssuedAt()) ? source.getClientIdIssuedAt().toEpochMilli() : null)
             .clientSecret(source.getClientSecret())
-            .clientSecretExpiresAt(RegisteredClientConverter.instantToTime(source.getClientSecretExpiresAt()))
+            .clientSecretExpiresAt(Objects.nonNull(source.getClientSecretExpiresAt()) ? source.getClientSecretExpiresAt().toEpochMilli() : null)
             .clientName(source.getClientName())
             .redirectUri(source.getRedirectUris())
             .logoutRedirectUri(source.getPostLogoutRedirectUris())
@@ -76,9 +74,17 @@ public class RegisteredClientConverter {
         }
         final RegisteredClient.Builder builder = RegisteredClient.withId(source.getId().toString());
         builder.clientId(source.getClientId())
-            .clientIdIssuedAt(RegisteredClientConverter.timeToInstant(source.getClientIdIssuedAt()))
+            .clientIdIssuedAt(
+                source.getClientIdIssuedAt() != null && source.getClientIdIssuedAt() > 0
+                    ? Instant.ofEpochMilli(source.getClientIdIssuedAt())
+                    : null
+            )
             .clientSecret(source.getClientSecret())
-            .clientSecretExpiresAt(RegisteredClientConverter.timeToInstant(source.getClientSecretExpiresAt()))
+            .clientSecretExpiresAt(
+                source.getClientSecretExpiresAt() != null && source.getClientSecretExpiresAt() > 0
+                    ? Instant.ofEpochMilli(source.getClientSecretExpiresAt())
+                    : null
+            )
             .clientName(source.getClientName())
             .redirectUris(uris -> uris.addAll(source.getRedirectUri()))
             .postLogoutRedirectUris(uris -> uris.addAll(source.getLogoutRedirectUri()))
@@ -98,20 +104,6 @@ public class RegisteredClientConverter {
                 )
             ).scopes(scopes -> scopes.addAll(source.getScope()));
         return builder.build();
-    }
-
-    static LocalDateTime instantToTime(Instant instant) {
-        if (null == instant) {
-            return null;
-        }
-        return instant.atZone(ZoneId.systemDefault()).toLocalDateTime();
-    }
-
-    static Instant timeToInstant(LocalDateTime time) {
-        if (null == time) {
-            return null;
-        }
-        return time.atZone(ZoneId.systemDefault()).toInstant();
     }
 
     static ClientSettingDTO resolveClientSettings(ClientSettings clientSettings) {

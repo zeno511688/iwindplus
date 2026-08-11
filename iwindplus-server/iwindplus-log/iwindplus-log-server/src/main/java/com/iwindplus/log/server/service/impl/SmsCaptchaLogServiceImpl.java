@@ -18,7 +18,6 @@ import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
 import com.iwindplus.base.redis.service.RedissonService;
-import com.iwindplus.base.util.DatesUtil;
 import com.iwindplus.log.domain.dto.SmsCaptchaLogDTO;
 import com.iwindplus.log.domain.dto.SmsCaptchaLogSearchDTO;
 import com.iwindplus.log.domain.dto.SmsSendValidDTO;
@@ -32,6 +31,8 @@ import com.iwindplus.mgt.client.power.UserClient;
 import com.iwindplus.mgt.domain.dto.power.UserBaseQueryDTO;
 import com.iwindplus.mgt.domain.vo.power.UserInfoVO;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -88,7 +89,7 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
     @Override
     public boolean removeExpireData() {
         final EsLambdaQueryWrapper<SmsCaptchaLogDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper.lt(SmsCaptchaLogDO::getExpireTime, LocalDateTime.now());
+        wrapper.lt(SmsCaptchaLogDO::getExpireTime, System.currentTimeMillis());
         return super.remove(wrapper);
     }
 
@@ -141,7 +142,7 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
         wrapper.eq(SmsCaptchaLogDO::getUserId, userId)
             .eq(SmsCaptchaLogDO::getOrgId, orgId)
             .eq(SmsCaptchaLogDO::getTplCode, entity.getTplCode())
-            .gt(SmsCaptchaLogDO::getExpireTime, now)
+            .gt(SmsCaptchaLogDO::getExpireTime, System.currentTimeMillis())
             .eq(SmsCaptchaLogDO::getUsed, false);
         boolean exists = super.count(wrapper) > 0;
         if (exists) {
@@ -151,13 +152,13 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
         // 限制每天发送次数.
         final Integer limitCountDay = entity.getLimitCountDay();
         if (Objects.nonNull(limitCountDay)) {
-            LocalDateTime begin = DatesUtil.getTimesMorning();
-            LocalDateTime end = DatesUtil.getTimesNight();
+            long begin = toTimestamp(now.toLocalDate().atStartOfDay());
+            long end = toTimestamp(now.toLocalDate().atTime(LocalTime.MAX));
             final EsLambdaQueryWrapper<SmsCaptchaLogDO> dayWrapper = new EsLambdaQueryWrapper<>();
             dayWrapper.eq(SmsCaptchaLogDO::getUserId, userId)
                 .eq(SmsCaptchaLogDO::getOrgId, orgId)
                 .eq(SmsCaptchaLogDO::getTplCode, entity.getTplCode())
-                .between(SmsCaptchaLogDO::getCreatedTime, begin, end);
+                .between(SmsCaptchaLogDO::getCreatedTimestamp, begin, end);
             long count = super.count(dayWrapper);
             if (count >= limitCountDay) {
                 throw new BizException(LogCodeEnum.CAPTCHA_LIMIT_DAY, new Object[]{limitCountDay});
@@ -166,12 +167,12 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
         // 限制每小时发送条数.
         final Integer limitCountHour = entity.getLimitCountHour();
         if (Objects.nonNull(limitCountHour)) {
-            LocalDateTime timeAgo = now.minusHours(1);
+            long begin = toTimestamp(now.minusHours(1));
             final EsLambdaQueryWrapper<SmsCaptchaLogDO> hourWrapper = new EsLambdaQueryWrapper<>();
             hourWrapper.eq(SmsCaptchaLogDO::getUserId, userId)
                 .eq(SmsCaptchaLogDO::getOrgId, orgId)
                 .eq(SmsCaptchaLogDO::getTplCode, entity.getTplCode())
-                .ge(SmsCaptchaLogDO::getCreatedTime, timeAgo);
+                .ge(SmsCaptchaLogDO::getCreatedTimestamp, begin);
             long count = super.count(hourWrapper);
             if (count >= limitCountHour) {
                 throw new BizException(LogCodeEnum.CAPTCHA_LIMIT_HOUR, new Object[]{limitCountHour});
@@ -180,12 +181,12 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
         // 限制每分钟发送条数.
         final Integer limitCountMinute = entity.getLimitCountMinute();
         if (Objects.nonNull(limitCountMinute)) {
-            LocalDateTime timeAgo = now.minusMinutes(1);
+            long begin = toTimestamp(now.minusMinutes(1));
             final EsLambdaQueryWrapper<SmsCaptchaLogDO> minuteWrapper = new EsLambdaQueryWrapper<>();
             minuteWrapper.eq(SmsCaptchaLogDO::getUserId, userId)
                 .eq(SmsCaptchaLogDO::getOrgId, orgId)
                 .eq(SmsCaptchaLogDO::getTplCode, entity.getTplCode())
-                .ge(SmsCaptchaLogDO::getCreatedTime, timeAgo);
+                .ge(SmsCaptchaLogDO::getCreatedTimestamp, begin);
             long count = super.count(minuteWrapper);
             if (count >= limitCountMinute) {
                 throw new BizException(LogCodeEnum.CAPTCHA_LIMIT_MINUTE, new Object[]{limitCountMinute});
@@ -234,8 +235,8 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
         if (Objects.isNull(data)) {
             throw new BizException(LogCodeEnum.CAPTCHA_ERROR);
         }
-        LocalDateTime now = LocalDateTime.now();
-        if (now.isAfter(data.getExpireTime())) {
+        Long now = System.currentTimeMillis();
+        if (now > data.getExpireTime()) {
             throw new BizException(LogCodeEnum.CAPTCHA_EXPIRED);
         }
         if (Boolean.TRUE.equals(data.getUsed())) {
@@ -244,8 +245,14 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
         SmsCaptchaLogDO build = new SmsCaptchaLogDO();
         build.setId(data.getId());
         build.setUsed(true);
-        build.setUseTime(LocalDateTime.now());
+        build.setUseTime(now);
         super.updateById(build);
         return Boolean.TRUE;
+    }
+
+    private long toTimestamp(LocalDateTime dateTime) {
+        return dateTime.atZone(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli();
     }
 }

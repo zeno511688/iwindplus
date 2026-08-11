@@ -17,7 +17,6 @@ import com.iwindplus.im.server.service.FriendChatMsgService;
 import com.iwindplus.im.server.strategy.WsMsgStrategy;
 import com.iwindplus.mgt.client.power.OrgClient;
 import jakarta.annotation.Resource;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -73,7 +72,7 @@ public class OfficeFriendChatMsgStrategyImpl extends AbstractWsMsgStrategyImpl i
 
         FriendChatMsgDO param = FriendChatMsgDO.builder()
             .id(entity.getId())
-            .sendTime(LocalDateTime.now())
+            .sendTime(System.currentTimeMillis())
             .build();
 
         final Boolean flag = this.sendToUserMsg(msg, tioConfig);

@@ -4,7 +4,6 @@ import cn.hutool.core.util.StrUtil;
 import com.iwindplus.dtx.domain.enums.BranchTxStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -57,7 +56,7 @@ public class TccBranchResultVO implements Serializable {
      * 执行时间戳.
      */
     @Schema(description = "执行时间戳")
-    private LocalDateTime executeTime;
+    private Long executeTime;
 
     /**
      * 构造成功结果.
@@ -73,7 +72,7 @@ public class TccBranchResultVO implements Serializable {
             .success(Boolean.TRUE)
             .finalStatus(finalStatus)
             .elapsedMs(elapsedMs)
-            .executeTime(LocalDateTime.now())
+            .executeTime(System.currentTimeMillis())
             .build();
     }
 
@@ -102,7 +101,7 @@ public class TccBranchResultVO implements Serializable {
             .success(Boolean.FALSE)
             .finalStatus(finalStatus)
             .errorMsg(errorMsg)
-            .executeTime(LocalDateTime.now())
+            .executeTime(System.currentTimeMillis())
             .build();
     }
 

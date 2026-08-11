@@ -29,7 +29,6 @@ import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -86,6 +85,13 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             Assert.isTrue(this.overrideCallback(handler),
                 "The task declared the need for a callback, but the executor did not override executeCallback method."
                     + " executorClass=" + entity.getExecutorClass());
+        }
+        // callbackFirst模式必须开启needCallback
+        if (Boolean.TRUE.equals(entity.getCallbackFirst())) {
+            Assert.isTrue(Boolean.TRUE.equals(entity.getNeedCallback()),
+                "callbackFirst mode requires needCallback to be true. executorClass=" + entity.getExecutorClass());
+            Assert.isTrue(this.overrideCallback(handler),
+                "callbackFirst mode requires overriding executeCallback method. executorClass=" + entity.getExecutorClass());
         }
         // 保存数据
         final AsyncCmdGrouSaveDTO param = BeanUtil.copyProperties(entity, AsyncCmdGrouSaveDTO.class);
@@ -250,7 +256,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         }
 
         final boolean status = this.asyncCmdService.editStatusById(entity.getId(), from, AsyncCmdStatusEnum.TO_BE_EXECUTE,
-            null, null, 0, LocalDateTime.now(), null, null);
+            null, null, 0, System.currentTimeMillis(), null, null);
         if (!status) {
             log.warn("Failed to retry trigger, task status has been changed, id={}", entity.getId());
 

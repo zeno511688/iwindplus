@@ -7,11 +7,10 @@
 
 package com.iwindplus.mgt.domain.vo.system;
 
-import com.iwindplus.mgt.domain.dto.system.TokenSettingDTO;
 import com.iwindplus.mgt.domain.dto.system.ClientSettingDTO;
+import com.iwindplus.mgt.domain.dto.system.TokenSettingDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -53,7 +52,7 @@ public class RegisteredClientVO implements Serializable {
      * 客户端签发时间.
      */
     @Schema(description = "客户端签发时间")
-    private LocalDateTime clientIdIssuedAt;
+    private Long clientIdIssuedAt;
 
     /**
      * 客户端密钥.
@@ -65,7 +64,7 @@ public class RegisteredClientVO implements Serializable {
      * 客户端密钥过期时间.
      */
     @Schema(description = "客户端密钥过期时间")
-    private LocalDateTime clientSecretExpiresAt;
+    private Long clientSecretExpiresAt;
 
     /**
      * 客户端支持的认证方法.

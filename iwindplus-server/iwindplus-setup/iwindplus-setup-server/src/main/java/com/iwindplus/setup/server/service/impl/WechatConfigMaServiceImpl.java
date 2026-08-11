@@ -11,13 +11,13 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.IdUtil;
-import cn.hutool.crypto.SecureUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.constant.CommonConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.DbConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
@@ -54,7 +54,6 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.dreamlu.mica.core.utils.StringUtil;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.cache.annotation.CacheConfig;
@@ -230,7 +229,7 @@ public class WechatConfigMaServiceImpl implements WechatConfigMaService {
         List<OrderItem> orders = page.getOrders();
         if (CollUtil.isEmpty(orders)) {
             orders = new ArrayList<>(10);
-            OrderItem item = OrderItem.desc(CommonConstant.DbConstant.MODIFIED_TIME);
+            OrderItem item = OrderItem.desc(DbConstant.MODIFIED_TIMESTAMP);
             orders.add(item);
         }
         orders.forEach(order -> {
@@ -239,8 +238,8 @@ public class WechatConfigMaServiceImpl implements WechatConfigMaService {
             order.setColumn(underline);
         });
         page.setOrders(orders);
-        queryWrapper.select(WechatConfigMaDO::getId, WechatConfigMaDO::getCreatedTime, WechatConfigMaDO::getCreatedTimestamp,
-            WechatConfigMaDO::getCreatedBy, WechatConfigMaDO::getModifiedTime, WechatConfigMaDO::getModifiedTimestamp,
+        queryWrapper.select(WechatConfigMaDO::getId, WechatConfigMaDO::getCreatedTimestamp,
+            WechatConfigMaDO::getCreatedBy, WechatConfigMaDO::getModifiedTimestamp,
             WechatConfigMaDO::getModifiedBy, WechatConfigMaDO::getBuildInFlag, WechatConfigMaDO::getVersion, WechatConfigMaDO::getRemark,
             WechatConfigMaDO::getStatus, WechatConfigMaDO::getCode, WechatConfigMaDO::getName, WechatConfigMaDO::getAccessKey
         );

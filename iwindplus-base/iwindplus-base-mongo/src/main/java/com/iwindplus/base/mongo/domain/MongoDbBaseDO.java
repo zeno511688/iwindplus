@@ -11,18 +11,14 @@ import com.iwindplus.base.domain.validation.EditGroup;
 import com.iwindplus.base.domain.validation.OtherEditGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import java.io.Serializable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-
-import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
  * 文档数据库基础通用字段实体类.
@@ -46,13 +42,6 @@ public class MongoDbBaseDO implements Serializable {
     private String id;
 
     /**
-     * 创建时间.
-     */
-    @Schema(description = "创建时间")
-    @CreatedDate
-    private LocalDateTime createdTime;
-
-    /**
      * 创建时间戳.
      */
     @Schema(description = "创建时间戳")
@@ -70,13 +59,6 @@ public class MongoDbBaseDO implements Serializable {
      */
     @Schema(description = "创建人主键")
     private Long createdId;
-
-    /**
-     * 更新时间.
-     */
-    @Schema(description = "更新时间")
-    @LastModifiedDate
-    private LocalDateTime modifiedTime;
 
     /**
      * 更新时间戳.

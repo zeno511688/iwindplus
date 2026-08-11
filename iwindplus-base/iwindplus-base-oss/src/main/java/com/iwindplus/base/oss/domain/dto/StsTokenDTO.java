@@ -8,7 +8,6 @@
 package com.iwindplus.base.oss.domain.dto;
 
 import com.iwindplus.base.domain.dto.AkSkDTO;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -51,5 +50,5 @@ public class StsTokenDTO extends AkSkDTO {
     /**
      * 安全令牌过期时间（可选，会自动生成）
      */
-    private LocalDateTime expiration;
+    private Long expiration;
 }

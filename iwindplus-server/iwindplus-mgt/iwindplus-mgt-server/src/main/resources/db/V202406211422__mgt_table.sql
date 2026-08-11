@@ -7,11 +7,9 @@ DROP TABLE IF EXISTS `app_cert`;
 CREATE TABLE `app_cert`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -37,11 +35,9 @@ DROP TABLE IF EXISTS `client`;
 CREATE TABLE `client`
 (
     `id`                       bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`             datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`        bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`               varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`               bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`            datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp`       bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`              varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`              bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -51,9 +47,9 @@ CREATE TABLE `client`
     `status`                   int unsigned     NOT NULL DEFAULT 1 COMMENT '状态（0：禁用，1：启用，2：锁定）',
     `client_id`                varchar(50)      NOT NULL DEFAULT '' COMMENT '客户端id',
     `client_name`              varchar(50)      NOT NULL DEFAULT '' COMMENT '客户端名称',
-    `client_id_issued_at`      datetime         NOT NULL DEFAULT current_timestamp() COMMENT '客户端签发时间',
+    `client_id_issued_at`      bigint unsigned  NOT NULL DEFAULT 0 COMMENT '客户端签发时间',
     `client_secret`            varchar(255)     NOT NULL DEFAULT '' COMMENT '客户端密钥',
-    `client_secret_expires_at` datetime         NOT NULL COMMENT '客户端密钥过期时间',
+    `client_secret_expires_at` bigint unsigned  NOT NULL DEFAULT 0 COMMENT '客户端密钥过期时间',
     `authentication_method`    varchar(1000)    NOT NULL DEFAULT '' COMMENT '认证方法',
     `authorized_grant_type`    varchar(1000)    NOT NULL DEFAULT '' COMMENT '客户端支持的grant_type',
     `redirect_uri`             varchar(1000)    NOT NULL DEFAULT '' COMMENT '重定向URI',
@@ -73,11 +69,9 @@ DROP TABLE IF EXISTS `department`;
 CREATE TABLE `department`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -105,11 +99,9 @@ DROP TABLE IF EXISTS `i18n_project`;
 CREATE TABLE `i18n_project`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -136,11 +128,9 @@ DROP TABLE IF EXISTS `i18n_msg`;
 CREATE TABLE `i18n_msg`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -165,11 +155,9 @@ DROP TABLE IF EXISTS `system`;
 CREATE TABLE `system`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -195,11 +183,9 @@ DROP TABLE IF EXISTS `org`;
 CREATE TABLE `org`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -240,11 +226,9 @@ DROP TABLE IF EXISTS `org_audit`;
 CREATE TABLE `org_audit`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -265,11 +249,9 @@ DROP TABLE IF EXISTS `org_extend`;
 CREATE TABLE `org_extend`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -289,11 +271,9 @@ DROP TABLE IF EXISTS `position`;
 CREATE TABLE `position`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -320,11 +300,9 @@ DROP TABLE IF EXISTS `menu`;
 CREATE TABLE `menu`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -356,11 +334,9 @@ DROP TABLE IF EXISTS `role`;
 CREATE TABLE `role`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -387,11 +363,9 @@ DROP TABLE IF EXISTS `resource`;
 CREATE TABLE `resource`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -418,11 +392,9 @@ DROP TABLE IF EXISTS `role_menu`;
 CREATE TABLE `role_menu`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -443,11 +415,9 @@ DROP TABLE IF EXISTS `role_resource`;
 CREATE TABLE `role_resource`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -470,11 +440,9 @@ DROP TABLE IF EXISTS `server`;
 CREATE TABLE `server`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -503,11 +471,9 @@ DROP TABLE IF EXISTS `server_api`;
 CREATE TABLE `server_api`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -535,11 +501,9 @@ DROP TABLE IF EXISTS `api_white_list`;
 CREATE TABLE `api_white_list`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -565,11 +529,9 @@ DROP TABLE IF EXISTS `ip_black_list`;
 CREATE TABLE `ip_black_list`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -592,11 +554,9 @@ DROP TABLE IF EXISTS `third_bind_grant`;
 CREATE TABLE `third_bind_grant`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -621,11 +581,9 @@ DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user`
 (
     `id`                  bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`        datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`   bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`          varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`          bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`       datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -676,11 +634,9 @@ DROP TABLE IF EXISTS `user_group`;
 CREATE TABLE `user_group`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -706,11 +662,9 @@ DROP TABLE IF EXISTS `user_group_role`;
 CREATE TABLE `user_group_role`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -731,11 +685,9 @@ DROP TABLE IF EXISTS `user_group_user`;
 CREATE TABLE `user_group_user`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -756,11 +708,9 @@ DROP TABLE IF EXISTS `user_org`;
 CREATE TABLE `user_org`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -775,18 +725,23 @@ CREATE TABLE `user_org`
     KEY `idx_org_id` (`org_id`) COMMENT '普通索引（组织主键）'
 ) COMMENT ='用户组织关系表';
 
+/*
+ *
+ *  * Copyright (c) iwindplus Technologies Co., Ltd.2024-2030, All rights reserved.
+ *
+ *
+ */
+
 -- ----------------------------
 -- Table structure for user_department
 -- ----------------------------
 DROP TABLE IF EXISTS `user_department`;
 CREATE TABLE `user_department`
 (
-    `id`                 bigint unsigned NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
+    `id`                 bigint unsigned  NOT NULL COMMENT '主键',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -808,11 +763,9 @@ DROP TABLE IF EXISTS `user_position`;
 CREATE TABLE `user_position`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -833,11 +786,9 @@ DROP TABLE IF EXISTS `user_role`;
 CREATE TABLE `user_role`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',
@@ -858,11 +809,9 @@ DROP TABLE IF EXISTS `user_extend_yubikey`;
 CREATE TABLE `user_extend_yubikey`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
-    `created_time`       datetime         NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
     `created_by`         varchar(50)      NOT NULL DEFAULT '' COMMENT '创建人',
     `created_id`         bigint unsigned  NOT NULL DEFAULT 0 COMMENT '创建人主键',
-    `modified_time`      datetime         NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '更新时间',
     `modified_timestamp` bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '更新时间戳',
     `modified_by`        varchar(50)      NOT NULL DEFAULT '' COMMENT '更新人',
     `modified_id`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '更新人主键',

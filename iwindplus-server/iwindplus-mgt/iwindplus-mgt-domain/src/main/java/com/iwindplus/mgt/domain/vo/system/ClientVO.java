@@ -12,7 +12,6 @@ import com.iwindplus.base.domain.vo.DbVersionBaseVO;
 import com.iwindplus.mgt.domain.dto.system.ClientSettingDTO;
 import com.iwindplus.mgt.domain.dto.system.TokenSettingDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -56,7 +55,7 @@ public class ClientVO extends DbVersionBaseVO {
      * 客户端签发时间.
      */
     @Schema(description = "客户端签发时间")
-    private LocalDateTime clientIdIssuedAt;
+    private Long clientIdIssuedAt;
 
     /**
      * 客户端密钥.
@@ -68,7 +67,7 @@ public class ClientVO extends DbVersionBaseVO {
      * 客户端密钥过期时间.
      */
     @Schema(description = "客户端密钥过期时间")
-    private LocalDateTime clientSecretExpiresAt;
+    private Long clientSecretExpiresAt;
 
     /**
      * 客户端支持的认证方法.

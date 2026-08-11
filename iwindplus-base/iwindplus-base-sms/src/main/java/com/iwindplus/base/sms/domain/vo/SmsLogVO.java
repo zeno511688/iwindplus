@@ -8,13 +8,11 @@
 package com.iwindplus.base.sms.domain.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.Serializable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
-import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
  * 短信日志视图对象.
@@ -51,6 +49,6 @@ public class SmsLogVO implements Serializable {
      * 过期时间.
      */
     @Schema(description = "过期时间")
-    private LocalDateTime expireTime;
+    private Long expireTime;
 
 }

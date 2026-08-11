@@ -11,7 +11,6 @@ import cn.hutool.core.collection.CollUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.iwindplus.base.util.JacksonUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -75,7 +74,7 @@ public class AsyncCmdSubVO extends AsyncCmdSubBaseVO {
      * 等待异步结果的截止时间.
      */
     @Schema(description = "等待异步结果的截止时间")
-    private LocalDateTime callbackExpireTime;
+    private Long callbackExpireTime;
 
     /**
      * 是否需要显示（查进度时用）.

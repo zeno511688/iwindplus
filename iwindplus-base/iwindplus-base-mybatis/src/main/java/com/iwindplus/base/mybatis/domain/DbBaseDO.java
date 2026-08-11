@@ -18,7 +18,6 @@ import com.iwindplus.base.domain.validation.SaveGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -47,13 +46,6 @@ public class DbBaseDO implements Serializable {
     private Long id;
 
     /**
-     * 创建时间.
-     */
-    @Schema(description = "创建时间")
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createdTime;
-
-    /**
      * 创建时间戳.
      */
     @Schema(description = "创建时间戳")
@@ -73,13 +65,6 @@ public class DbBaseDO implements Serializable {
     @Schema(description = "创建人主键")
     @TableField(fill = FieldFill.INSERT)
     private Long createdId;
-
-    /**
-     * 更新时间.
-     */
-    @Schema(description = "更新时间")
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime modifiedTime;
 
     /**
      * 更新时间戳.

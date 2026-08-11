@@ -256,8 +256,8 @@ public class AppCertServiceImpl implements AppCertService {
         if (CharSequenceUtil.isNotBlank(entity.getAccessKey())) {
             queryWrapper.like(AppCertDO::getAccessKey, entity.getAccessKey().trim());
         }
-        queryWrapper.select(AppCertDO::getId, AppCertDO::getCreatedTime, AppCertDO::getCreatedTimestamp, AppCertDO::getCreatedBy,
-            AppCertDO::getModifiedTime, AppCertDO::getModifiedTimestamp, AppCertDO::getModifiedBy, AppCertDO::getVersion, AppCertDO::getStatus,
+        queryWrapper.select(AppCertDO::getId, AppCertDO::getCreatedTimestamp, AppCertDO::getCreatedBy,
+            AppCertDO::getModifiedTimestamp, AppCertDO::getModifiedBy, AppCertDO::getVersion, AppCertDO::getStatus,
             AppCertDO::getName, AppCertDO::getAccessKey, AppCertDO::getTimeout, AppCertDO::getCertType, AppCertDO::getBuildInFlag
         );
         final PageDTO<AppCertDO> modelPage = this.appCertRepository.page(page, queryWrapper);

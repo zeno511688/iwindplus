@@ -13,7 +13,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
-import com.iwindplus.base.domain.constant.CommonConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.DbConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.exception.BizException;
@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
-import net.dreamlu.mica.core.utils.StringUtil;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -171,7 +170,7 @@ public class OssTplServiceImpl implements OssTplService {
         List<OrderItem> orders = page.getOrders();
         if (CollUtil.isEmpty(orders)) {
             orders = new ArrayList<>(10);
-            OrderItem item = OrderItem.desc(CommonConstant.DbConstant.MODIFIED_TIME);
+            OrderItem item = OrderItem.desc(DbConstant.MODIFIED_TIMESTAMP);
             orders.add(item);
         }
         orders.forEach(order -> {
@@ -180,8 +179,8 @@ public class OssTplServiceImpl implements OssTplService {
             order.setColumn(underline);
         });
         page.setOrders(orders);
-        queryWrapper.select(OssTplDO::getId, OssTplDO::getCreatedTime, OssTplDO::getCreatedTimestamp, OssTplDO::getCreatedBy,
-            OssTplDO::getModifiedTime, OssTplDO::getModifiedTimestamp, OssTplDO::getModifiedBy, OssTplDO::getBuildInFlag, OssTplDO::getVersion,
+        queryWrapper.select(OssTplDO::getId, OssTplDO::getCreatedTimestamp, OssTplDO::getCreatedBy,
+            OssTplDO::getModifiedTimestamp, OssTplDO::getModifiedBy, OssTplDO::getBuildInFlag, OssTplDO::getVersion,
             OssTplDO::getRemark, OssTplDO::getStatus, OssTplDO::getCode, OssTplDO::getName, OssTplDO::getBucketName
         );
         final PageDTO<OssTplDO> modelPage = this.ossTplRepository.page(page, queryWrapper);

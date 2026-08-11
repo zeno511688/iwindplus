@@ -7,17 +7,12 @@
 
 package com.iwindplus.dtx.server.dal.repository;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.repository.CrudRepository;
-import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
-import com.iwindplus.base.domain.enums.BizCodeEnum;
-import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.dtx.domain.enums.BranchTxStatusEnum;
 import com.iwindplus.dtx.server.dal.mapper.TccBranchTxMapper;
 import com.iwindplus.dtx.server.dal.model.TccBranchTxDO;
-import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,7 +63,6 @@ public class TccBranchTxRepository extends CrudRepository<TccBranchTxMapper, Tcc
         TccBranchTxDO update = TccBranchTxDO
             .builder()
             .status(to)
-            .modifiedTime(LocalDateTime.now())
             .modifiedTimestamp(System.currentTimeMillis())
             .build();
 
@@ -94,7 +88,6 @@ public class TccBranchTxRepository extends CrudRepository<TccBranchTxMapper, Tcc
             .builder()
             .status(to)
             .errorMsg(errorMsg)
-            .modifiedTime(LocalDateTime.now())
             .modifiedTimestamp(System.currentTimeMillis())
             .build();
 
@@ -118,7 +111,6 @@ public class TccBranchTxRepository extends CrudRepository<TccBranchTxMapper, Tcc
         TccBranchTxDO update = TccBranchTxDO
             .builder()
             .status(to)
-            .modifiedTime(LocalDateTime.now())
             .modifiedTimestamp(System.currentTimeMillis())
             .build();
 

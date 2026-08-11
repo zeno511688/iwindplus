@@ -20,7 +20,6 @@ import com.iwindplus.dtx.server.dal.mapper.TccGlobalTxMapper;
 import com.iwindplus.dtx.server.dal.model.TccBranchTxDO;
 import com.iwindplus.dtx.server.dal.model.TccGlobalTxDO;
 import jakarta.annotation.Resource;
-import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -96,7 +95,6 @@ public class TccGlobalTxRepository extends CrudRepository<TccGlobalTxMapper, Tcc
         TccGlobalTxDO update = TccGlobalTxDO
             .builder()
             .status(to)
-            .modifiedTime(LocalDateTime.now())
             .modifiedTimestamp(System.currentTimeMillis())
             .build();
 
@@ -120,7 +118,6 @@ public class TccGlobalTxRepository extends CrudRepository<TccGlobalTxMapper, Tcc
         TccGlobalTxDO update = TccGlobalTxDO
             .builder()
             .status(to)
-            .modifiedTime(LocalDateTime.now())
             .modifiedTimestamp(System.currentTimeMillis())
             .build();
 
@@ -143,13 +140,12 @@ public class TccGlobalTxRepository extends CrudRepository<TccGlobalTxMapper, Tcc
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateStatusById(String xid, GlobalTxStatusEnum from, GlobalTxStatusEnum to,
-        Integer retryCount, LocalDateTime nextRetryTime) {
+        Integer retryCount, Long nextRetryTime) {
         TccGlobalTxDO update = TccGlobalTxDO
             .builder()
             .status(to)
             .retryCount(retryCount)
             .nextRetryTime(nextRetryTime)
-            .modifiedTime(LocalDateTime.now())
             .modifiedTimestamp(System.currentTimeMillis())
             .build();
 
@@ -173,7 +169,6 @@ public class TccGlobalTxRepository extends CrudRepository<TccGlobalTxMapper, Tcc
         TccGlobalTxDO update = TccGlobalTxDO
             .builder()
             .status(to)
-            .modifiedTime(LocalDateTime.now())
             .modifiedTimestamp(System.currentTimeMillis())
             .build();
 

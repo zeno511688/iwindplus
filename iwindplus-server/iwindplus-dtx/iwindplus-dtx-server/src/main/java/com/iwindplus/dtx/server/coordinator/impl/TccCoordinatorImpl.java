@@ -28,7 +28,6 @@ import com.iwindplus.dtx.server.dal.model.TccBranchTxDO;
 import com.iwindplus.dtx.server.service.TccBranchTxService;
 import com.iwindplus.dtx.server.service.TccGlobalTxService;
 import jakarta.annotation.Resource;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -76,8 +75,8 @@ public class TccCoordinatorImpl implements TccCoordinator {
             .timeoutSeconds(timeoutSeconds)
             .status(GlobalTxStatusEnum.TRYING)
             .retryCount(0)
-            .expireTime(LocalDateTime.now().plusSeconds(timeoutSeconds))
-            .nextRetryTime(LocalDateTime.now())
+            .expireTime(System.currentTimeMillis() + 60 * timeoutSeconds)
+            .nextRetryTime(System.currentTimeMillis())
             .build();
 
         globalTxService.save(entity);
@@ -461,7 +460,7 @@ public class TccCoordinatorImpl implements TccCoordinator {
 
         int count = Optional.ofNullable(data.getRetryCount()).orElse(0) + 1;
 
-        LocalDateTime next = getNextRetryTime(data.getNextRetryTime(), count);
+        Long next = getNextRetryTime(data.getNextRetryTime(), count);
 
         globalTxService.editStatusById(
             data.getXid(),
@@ -506,9 +505,7 @@ public class TccCoordinatorImpl implements TccCoordinator {
         return String.format("%s%s", branch.getContextPath(), path);
     }
 
-    private LocalDateTime getNextRetryTime(LocalDateTime base, Integer retryCount) {
-        return DatesUtil.getNextRetryTime(base,
-            this.property.getRetry().getFrequency(),
-            retryCount);
+    private long getNextRetryTime(long baseTimeMillis, Integer retryCount) {
+        return DatesUtil.getNextRetryTime(baseTimeMillis, this.property.getRetry().getFrequency(), retryCount);
     }
 }

@@ -14,7 +14,6 @@ import com.iwindplus.dtx.domain.dto.TccGlobalTxShardSearchDTO;
 import com.iwindplus.dtx.domain.enums.GlobalTxStatusEnum;
 import com.iwindplus.dtx.domain.vo.TccGlobalTxPageVO;
 import com.iwindplus.dtx.domain.vo.TccGlobalTxVO;
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -117,7 +116,7 @@ public interface TccGlobalTxService {
      * @param nextRetryTime 下一次重试时间
      * @return boolean
      */
-    boolean editStatusById(String xid, GlobalTxStatusEnum from, GlobalTxStatusEnum to, Integer retryCount, LocalDateTime nextRetryTime);
+    boolean editStatusById(String xid, GlobalTxStatusEnum from, GlobalTxStatusEnum to, Integer retryCount, Long nextRetryTime);
 
     /**
      * 列表.

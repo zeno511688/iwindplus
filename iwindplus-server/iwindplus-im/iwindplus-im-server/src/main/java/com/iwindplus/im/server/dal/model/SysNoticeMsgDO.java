@@ -11,7 +11,6 @@ import com.iwindplus.base.es.domain.EsDbBaseDO;
 import com.iwindplus.im.domain.enums.MsgTypeEnum;
 import com.iwindplus.im.domain.enums.SendStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -82,13 +81,8 @@ public class SysNoticeMsgDO extends EsDbBaseDO {
      * 发送时间.
      */
     @Schema(description = "发送时间")
-    @Field(
-        type = FieldType.Date,
-        format = {},
-        pattern = "yyyy-MM-dd HH:mm:ss",
-        index = false
-    )
-    private LocalDateTime sendTime;
+    @Field(type = FieldType.Long)
+    private Long sendTime;
 
     /**
      * 发送状态

@@ -9,7 +9,6 @@ package com.iwindplus.base.domain.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,12 +28,6 @@ import lombok.experimental.SuperBuilder;
 public class DbCommonVO implements Serializable {
 
     /**
-     * 创建时间.
-     */
-    @Schema(description = "创建时间")
-    private LocalDateTime createdTime;
-
-    /**
      * 创建时间戳.
      */
     @Schema(description = "创建时间戳")
@@ -51,12 +44,6 @@ public class DbCommonVO implements Serializable {
      */
     @Schema(description = "创建人主键")
     private Long createdId;
-
-    /**
-     * 更新时间.
-     */
-    @Schema(description = "更新时间")
-    private LocalDateTime modifiedTime;
 
     /**
      * 更新时间戳.
