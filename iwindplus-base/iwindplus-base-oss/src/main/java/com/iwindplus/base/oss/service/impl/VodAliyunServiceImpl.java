@@ -10,6 +10,10 @@ package com.iwindplus.base.oss.service.impl;
 import cn.hutool.core.codec.Base64;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.json.JSONObject;
+import com.aliyun.oss.ClientBuilderConfiguration;
+import com.aliyun.oss.OSS;
+import com.aliyun.oss.OSSClientBuilder;
+import com.aliyun.oss.common.comm.Protocol;
 import com.aliyuncs.DefaultAcsClient;
 import com.aliyuncs.exceptions.ClientException;
 import com.aliyuncs.vod.model.v20170321.CreateAuditRequest;
@@ -32,17 +36,14 @@ import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.domain.vo.UploadVO;
 import com.iwindplus.base.domain.vo.UploadVideoVO;
 import com.iwindplus.base.oss.domain.constant.OssConstant;
-import com.iwindplus.base.oss.domain.dto.StsTokenDTO;
-import com.iwindplus.base.oss.domain.property.OssProperty;
-import com.iwindplus.base.oss.domain.property.OssProperty.AliyunConfig;
 import com.iwindplus.base.oss.domain.property.VodProperty;
 import com.iwindplus.base.oss.service.OssAliyunService;
 import com.iwindplus.base.oss.service.VodAliyunService;
 import com.iwindplus.base.util.FilesUtil;
 import com.iwindplus.base.util.JacksonUtil;
 import jakarta.annotation.Resource;
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -220,51 +221,63 @@ public class VodAliyunServiceImpl extends AbstractVodBaseServiceImpl implements 
     private UploadVideoVO getUploadVideoVO(byte[] data, String sourceFileName) throws ClientException {
         DefaultAcsClient acsClient = this.initVodClient();
         long fileSize = data.length;
-        CreateUploadVideoRequest request = new CreateUploadVideoRequest();
-        request.setTitle(FileUtil.getPrefix(sourceFileName));
-        request.setFileName(sourceFileName);
-        request.setFileSize(fileSize);
-        CreateUploadVideoResponse acsResponse = acsClient.getAcsResponse(request);
-        if (Objects.nonNull(acsResponse)) {
-            String videoId = acsResponse.getVideoId();
-            String uploadAuthStr = Base64.decodeStr(acsResponse.getUploadAuth());
-            String uploadAddressStr = Base64.decodeStr(acsResponse.getUploadAddress());
-            JsonNode uploadAuth = JacksonUtil.parseTree(uploadAuthStr);
-            JsonNode uploadAddress = JacksonUtil.parseTree(uploadAddressStr);
-            String objectName = uploadAddress.path("FileName").asText();
-            final long expiration = Instant.parse(uploadAuth.path("ExpireUTCTime").asText()).toEpochMilli();
+        try {
+            CreateUploadVideoRequest request = new CreateUploadVideoRequest();
+            request.setTitle(FileUtil.getPrefix(sourceFileName));
+            request.setFileName(sourceFileName);
+            request.setFileSize(fileSize);
+            CreateUploadVideoResponse acsResponse = acsClient.getAcsResponse(request);
+            if (Objects.nonNull(acsResponse)) {
+                String videoId = acsResponse.getVideoId();
+                String uploadAuthStr = Base64.decodeStr(acsResponse.getUploadAuth());
+                String uploadAddressStr = Base64.decodeStr(acsResponse.getUploadAddress());
+                JsonNode uploadAuth = JacksonUtil.parseTree(uploadAuthStr);
+                JsonNode uploadAddress = JacksonUtil.parseTree(uploadAddressStr);
+                String objectName = uploadAddress.path("FileName").asText();
 
-            // 1. 先用通用 STS 模型接参
-            StsTokenDTO stsToken = StsTokenDTO.builder()
-                .accessKey(uploadAuth.path("AccessKeyId").asText())
-                .secretKey(uploadAuth.path("AccessKeySecret").asText())
-                .securityToken(uploadAuth.path("SecurityToken").asText())
-                .expiration(expiration)
-                .build();
+                String endpoint = uploadAddress.path("Endpoint").asText();
+                String bucketName = uploadAddress.path("Bucket").asText();
+                String accessKeyId = uploadAuth.path("AccessKeyId").asText();
+                String accessKeySecret = uploadAuth.path("AccessKeySecret").asText();
+                String securityToken = uploadAuth.path("SecurityToken").asText();
 
-            // 2. 构造阿里云配置
-            AliyunConfig aliyun = AliyunConfig.builder()
-                .endpoint(uploadAddress.path("Endpoint").asText())
-                .bucketName(uploadAddress.path("Bucket").asText())
-                .sts(stsToken)
-                .build();
-
-            // 3. 组装总配置
-            final OssProperty ossProperty = OssProperty.builder()
-                .aliyun(aliyun)
-                .build();
-            this.ossAliyunService.setConfig(ossProperty);
-
-            UploadVO result = this.ossAliyunService.uploadFile(data, objectName, sourceFileName, Boolean.FALSE);
-            if (Objects.nonNull(result)) {
-                return UploadVideoVO.builder().sourceFileName(result.getSourceFileName())
-                    .fileName(result.getFileName())
-                    .fileSize(result.getFileSize())
-                    .relativePath(result.getRelativePath())
-                    .videoId(videoId).build();
+                // 使用本地 OSS 客户端上传，不修改共享 Bean 配置
+                UploadVO result = uploadWithVodCredentials(data, sourceFileName, objectName,
+                    endpoint, bucketName, accessKeyId, accessKeySecret, securityToken);
+                if (Objects.nonNull(result)) {
+                    return UploadVideoVO.builder().sourceFileName(result.getSourceFileName())
+                        .fileName(result.getFileName())
+                        .fileSize(result.getFileSize())
+                        .relativePath(result.getRelativePath())
+                        .videoId(videoId).build();
+                }
             }
+        } finally {
+            this.closeAcsClient(acsClient);
         }
         return null;
+    }
+
+    private UploadVO uploadWithVodCredentials(byte[] data, String sourceFileName, String objectName,
+        String endpoint, String bucketName, String accessKeyId, String accessKeySecret, String securityToken) {
+        ClientBuilderConfiguration conf = new ClientBuilderConfiguration();
+        conf.setSupportCname(true);
+        conf.setProtocol(Protocol.HTTPS);
+        OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret, securityToken, conf);
+        try {
+            ossClient.putObject(bucketName, objectName, new ByteArrayInputStream(data));
+            return UploadVO.builder()
+                .sourceFileName(sourceFileName)
+                .fileName(FileUtil.getName(objectName))
+                .fileSize((long) data.length)
+                .relativePath(objectName)
+                .build();
+        } catch (Exception ex) {
+            log.error(ExceptionConstant.EXCEPTION, ex);
+            throw new BizException(BizCodeEnum.FILE_UPLOAD_ERROR);
+        } finally {
+            ossClient.shutdown();
+        }
     }
 
     private DefaultAcsClient initVodClient() {
