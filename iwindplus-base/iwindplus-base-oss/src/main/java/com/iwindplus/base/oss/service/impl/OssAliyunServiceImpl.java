@@ -371,18 +371,22 @@ public class OssAliyunServiceImpl extends AbstractOssBaseServiceImpl implements 
         final OssProperty.AliyunConfig aliyun = super.getConfig().getAliyun();
         final StsTokenDTO sts = aliyun.getSts();
         if (Objects.nonNull(sts)) {
-            final Long securityTokenExpiration = sts.getExpiration();
-            if (Objects.isNull(securityTokenExpiration) || System.currentTimeMillis() > securityTokenExpiration) {
-                AssumeRoleResponse response = this.getAssumeRoleResponse(aliyun, sts);
-                final long expiration = Instant.parse(response.getCredentials().getExpiration()).toEpochMilli();
-                sts.setAccessKey(response.getCredentials().getAccessKeyId());
-                sts.setSecretKey(response.getCredentials().getAccessKeySecret());
-                sts.setSecurityToken(response.getCredentials().getSecurityToken());
-                sts.setExpiration(expiration);
-            }
+            refreshStsTokenIfNeeded(aliyun, sts);
             return new OSSClientBuilder().build(aliyun.getEndpoint(), sts.getAccessKey(), sts.getSecretKey(), sts.getSecurityToken(), conf);
         }
         return new OSSClientBuilder().build(aliyun.getEndpoint(), aliyun.getAccessKey(), aliyun.getSecretKey(), conf);
+    }
+
+    private synchronized void refreshStsTokenIfNeeded(OssProperty.AliyunConfig aliyun, StsTokenDTO sts) {
+        final Long securityTokenExpiration = sts.getExpiration();
+        if (Objects.isNull(securityTokenExpiration) || System.currentTimeMillis() > securityTokenExpiration) {
+            AssumeRoleResponse response = this.getAssumeRoleResponse(aliyun, sts);
+            final long expiration = Instant.parse(response.getCredentials().getExpiration()).toEpochMilli();
+            sts.setAccessKey(response.getCredentials().getAccessKeyId());
+            sts.setSecretKey(response.getCredentials().getAccessKeySecret());
+            sts.setSecurityToken(response.getCredentials().getSecurityToken());
+            sts.setExpiration(expiration);
+        }
     }
 
     private void closeOssClient(OSS ossClient) {

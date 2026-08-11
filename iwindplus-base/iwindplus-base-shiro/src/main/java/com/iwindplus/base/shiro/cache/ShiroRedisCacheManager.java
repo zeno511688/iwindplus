@@ -8,6 +8,8 @@
 package com.iwindplus.base.shiro.cache;
 
 import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,10 +18,6 @@ import org.apache.shiro.cache.Cache;
 import org.apache.shiro.cache.CacheException;
 import org.apache.shiro.cache.CacheManager;
 import org.springframework.data.redis.core.RedisTemplate;
-
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * redis实现shiro缓存管理器.
@@ -50,11 +48,7 @@ public class ShiroRedisCacheManager implements CacheManager {
     @SuppressWarnings("unchecked")
     @Override
     public <K, V> Cache<K, V> getCache(String name) throws CacheException {
-        Cache<K, V> cache = this.caches.get(name);
-        if (Objects.isNull(cache)) {
-            cache = new ShiroCache<>(name, (RedisTemplate<K, V>) this.redisTemplate, this.keyPrefix, this.timeout);
-            this.caches.put(name, cache);
-        }
-        return cache;
+        return this.caches.computeIfAbsent(name,
+            k -> new ShiroCache<>(k, (RedisTemplate<K, V>) this.redisTemplate, this.keyPrefix, this.timeout));
     }
 }

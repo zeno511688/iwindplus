@@ -20,7 +20,6 @@ import com.aliyuncs.auth.sts.AssumeRoleResponse;
 import com.aliyuncs.http.MethodType;
 import com.aliyuncs.profile.DefaultProfile;
 import com.aliyuncs.profile.IClientProfile;
-import com.iwindplus.base.domain.constant.CommonConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.FileConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
@@ -156,20 +155,24 @@ public abstract class AbstractBaseServiceImpl {
     protected DefaultAcsClient initAcsClient(String region, AkSkDTO akSk, StsTokenDTO sts) {
         DefaultProfile profile;
         if (Objects.nonNull(sts)) {
-            final Long securityTokenExpiration = sts.getExpiration();
-            if (Objects.isNull(securityTokenExpiration) || System.currentTimeMillis() > securityTokenExpiration) {
-                AssumeRoleResponse response = this.getAssumeRoleResponse(akSk, sts);
-                final long expiration = Instant.parse(response.getCredentials().getExpiration()).toEpochMilli();
-                sts.setAccessKey(response.getCredentials().getAccessKeyId());
-                sts.setSecretKey(response.getCredentials().getAccessKeySecret());
-                sts.setSecurityToken(response.getCredentials().getSecurityToken());
-                sts.setExpiration(expiration);
-            }
+            refreshStsTokenIfNeeded(akSk, sts);
             profile = DefaultProfile.getProfile(region, sts.getAccessKey(), sts.getSecretKey(), sts.getSecurityToken());
         } else {
             profile = DefaultProfile.getProfile(region, akSk.getAccessKey(), akSk.getSecretKey());
         }
         return new DefaultAcsClient(profile);
+    }
+
+    private synchronized void refreshStsTokenIfNeeded(AkSkDTO akSk, StsTokenDTO sts) {
+        final Long securityTokenExpiration = sts.getExpiration();
+        if (Objects.isNull(securityTokenExpiration) || System.currentTimeMillis() > securityTokenExpiration) {
+            AssumeRoleResponse response = this.getAssumeRoleResponse(akSk, sts);
+            final long expiration = Instant.parse(response.getCredentials().getExpiration()).toEpochMilli();
+            sts.setAccessKey(response.getCredentials().getAccessKeyId());
+            sts.setSecretKey(response.getCredentials().getAccessKeySecret());
+            sts.setSecurityToken(response.getCredentials().getSecurityToken());
+            sts.setExpiration(expiration);
+        }
     }
 
     /**

@@ -161,17 +161,7 @@ public class SmsAliyunServiceImpl extends AbstractSmsBaseServiceImpl implements 
         final AliyunConfig aliyun = super.getConfig().getAliyun();
         final StsConfig sts = aliyun.getSts();
         if (Objects.nonNull(sts)) {
-            final Long securityTokenExpiration = sts.getExpiration();
-            if (Objects.isNull(securityTokenExpiration) || System.currentTimeMillis() > securityTokenExpiration) {
-                AssumeRoleResponse response = this.getAssumeRoleResponse(aliyun, sts);
-                final long expiration = Instant.parse(response.getCredentials().getExpiration()).toEpochMilli();
-                sts.setAccessKey(response.getCredentials().getAccessKeyId());
-                sts.setSecretKey(response.getCredentials().getAccessKeySecret());
-                sts.setSecurityToken(response.getCredentials().getSecurityToken());
-                sts.setExpiration(expiration);
-                aliyun.setSts(sts);
-                super.getConfig().setAliyun(aliyun);
-            }
+            refreshStsTokenIfNeeded(aliyun, sts);
             profile = DefaultProfile.getProfile(regionId, sts.getAccessKey(), sts.getSecretKey(), sts.getSecurityToken());
         } else {
             profile = DefaultProfile.getProfile(regionId, aliyun.getAccessKey(), aliyun.getSecretKey());
@@ -184,6 +174,20 @@ public class SmsAliyunServiceImpl extends AbstractSmsBaseServiceImpl implements 
             return client.getCommonResponse(commonRequest);
         } finally {
             this.closeAcsClient(client);
+        }
+    }
+
+    private synchronized void refreshStsTokenIfNeeded(AliyunConfig aliyun, StsConfig sts) {
+        final Long securityTokenExpiration = sts.getExpiration();
+        if (Objects.isNull(securityTokenExpiration) || System.currentTimeMillis() > securityTokenExpiration) {
+            AssumeRoleResponse response = this.getAssumeRoleResponse(aliyun, sts);
+            final long expiration = Instant.parse(response.getCredentials().getExpiration()).toEpochMilli();
+            sts.setAccessKey(response.getCredentials().getAccessKeyId());
+            sts.setSecretKey(response.getCredentials().getAccessKeySecret());
+            sts.setSecurityToken(response.getCredentials().getSecurityToken());
+            sts.setExpiration(expiration);
+            aliyun.setSts(sts);
+            super.getConfig().setAliyun(aliyun);
         }
     }
 
