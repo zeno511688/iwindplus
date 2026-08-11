@@ -4,7 +4,7 @@
 <mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.ResourceMapper">
 
     <sql id="resourcePageAliasField">
-        bres.id, bres.created_time, bres.created_timestamp, bres.created_by, bres.modified_time, bres.modified_timestamp, bres.modified_by, bres.version,
+        bres.id, bres.created_timestamp, bres.created_by, bres.modified_timestamp, bres.modified_by, bres.version,
         bres.status, bres.code, bres.name, bres.resource_type, bres.build_in_flag, bres.request_method, bres.api_url, bres.seq
     </sql>
 
@@ -17,7 +17,7 @@
     </sql>
 
     <sql id="resourceAliasField">
-        bres.id, bres.created_time, bres.created_timestamp, bres.created_by, bres.created_id, bres.modified_time, bres.modified_timestamp, bres.modified_by, bres.modified_id, bres.deleted, bres.version, bres.remark,
+        bres.id, bres.created_timestamp, bres.created_by, bres.created_id, bres.modified_timestamp, bres.modified_by, bres.modified_id, bres.deleted, bres.version, bres.remark,
         bres.status, bres.code, bres.name, bres.resource_type, bres.request_method, bres.api_url, bres.seq, bres.build_in_flag, bres.menu_id
     </sql>
 

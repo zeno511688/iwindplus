@@ -7,7 +7,7 @@
     </sql>
 
     <sql id="positionAliasField">
-        bp.id, bp.created_time, bp.created_timestamp, bp.created_by, bp.created_id, bp.modified_time, bp.modified_timestamp, bp.modified_by, bp.modified_id, bp.deleted, bp.version, bp.remark,
+        bp.id, bp.created_timestamp, bp.created_by, bp.created_id, bp.modified_timestamp, bp.modified_by, bp.modified_id, bp.deleted, bp.version, bp.remark,
         bp.status, bp.code, bp.name, bp.seq, bp.build_in_flag, bp.org_id, bp.department_id
     </sql>
 

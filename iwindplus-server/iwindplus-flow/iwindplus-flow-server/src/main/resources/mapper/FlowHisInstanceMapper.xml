@@ -7,13 +7,13 @@
             inst.*
         from (
             select
-                id, created_id, created_time, created_timestamp, created_by, modified_time, modified_timestamp, modified_by, version,
+                id, created_id, created_timestamp, created_by, modified_timestamp, modified_by, version,
                 code, name, biz_number, 0 as status, null as take_time, model_id
             from flow_instance
             where deleted = 0
             union all
             select
-                id, created_id, created_time, created_timestamp, created_by, modified_time, modified_timestamp, modified_by, version,
+                id, created_id, created_timestamp, created_by, modified_timestamp, modified_by, version,
                 code, name, biz_number, status, take_time, model_id
             from flow_his_instance where deleted = 0
         ) inst
@@ -58,6 +58,6 @@
         <if test="ew.status != null">
             and inst.status = #{ew.status}
         </if>
-        order by inst.modified_time desc
+        order by inst.modified_timestamp desc
     </select>
 </mapper>

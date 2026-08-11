@@ -10,11 +10,9 @@
 
     <resultMap id="ServerVO" type="com.iwindplus.mgt.domain.vo.system.ServerVO">
         <result property="id" column="id"/>
-        <result property="createdTime" column="created_time"/>
         <result property="createdTimestamp" column="created_timestamp"/>
         <result property="createdBy" column="created_by"/>
         <result property="createdId" column="created_id"/>
-        <result property="modifiedTime" column="modified_time"/>
         <result property="modifiedTimestamp" column="modified_timestamp"/>
         <result property="modifiedBy" column="modified_by"/>
         <result property="modifiedId" column="modified_id"/>

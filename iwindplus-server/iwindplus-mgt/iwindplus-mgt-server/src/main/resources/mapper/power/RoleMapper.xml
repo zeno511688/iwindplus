@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.RoleMapper">
     <sql id="rolePageAliasField">
-        br.id, br.created_time, br.created_timestamp, br.created_by, br.modified_time, br.modified_timestamp, br.modified_by, br.version,
+        br.id, br.created_timestamp, br.created_by, br.modified_timestamp, br.modified_by, br.version,
         br.status, br.code, br.name, br.default_flag, br.build_in_flag
     </sql>
 
@@ -12,7 +12,7 @@
     </sql>
 
     <sql id="roleAliasField">
-        br.id, br.created_time, br.created_timestamp, br.created_by, br.created_id, br.modified_time, br.modified_timestamp, br.modified_by, br.modified_id, br.deleted, br.version, br.remark,
+        br.id, br.created_timestamp, br.created_by, br.created_id, br.modified_timestamp, br.modified_by, br.modified_id, br.deleted, br.version, br.remark,
         br.status, br.code, br.name, br.seq, br.default_flag, br.build_in_flag, br.org_id
     </sql>
 
@@ -62,7 +62,7 @@
             and br.name = #{ew.name}
         </if>
         and bo.id = #{ew.orgId}
-        order by br.modified_time desc
+        order by br.modified_timestamp desc
     </select>
 
     <select id="selectListByOrgId" resultType="com.iwindplus.mgt.domain.vo.power.RoleBaseCheckedVO">

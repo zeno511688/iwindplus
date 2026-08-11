@@ -3,7 +3,7 @@
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.iwindplus.flow.server.dal.mapper.FlowHisTaskMapper">
     <sql id="hisTaskBaseField">
-        fht.id, fht.created_time, fht.created_timestamp, fht.created_by, fht.modified_time, fht.modified_timestamp, fht.modified_by, fht.version,
+        fht.id, fht.created_timestamp, fht.created_by, fht.modified_timestamp, fht.modified_by, fht.version,
         fht.code, fht.name, fht.type, fht.status, fht.take_time, fht.instance_id, fhi.name as instance_name, fhi.biz_number, fht.model_id,
         fm.name as model_name, fm.code as model_code
     </sql>
@@ -36,6 +36,6 @@
                 where fhtp.task_id = fht.id and fhtp.deleted = 0 and fhtp.player_id = #{ew.userId}
             )
         </if>
-        order by fht.modified_time desc
+        order by fht.modified_timestamp desc
     </select>
 </mapper>

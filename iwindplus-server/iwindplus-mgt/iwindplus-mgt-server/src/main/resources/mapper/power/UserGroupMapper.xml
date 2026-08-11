@@ -3,7 +3,7 @@
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.UserGroupMapper">
     <sql id="userGroupPageAliasField">
-        bug.id, bug.created_time, bug.created_timestamp, bug.created_by, bug.modified_time, bug.modified_timestamp, bug.modified_by, bug.version,
+        bug.id, bug.created_timestamp, bug.created_by, bug.modified_timestamp, bug.modified_by, bug.version,
         bug.status, bug.code, bug.name, bug.build_in_flag
     </sql>
 
@@ -12,7 +12,7 @@
     </sql>
 
     <sql id="userGroupAliasField">
-        bug.id, bug.created_time, bug.created_timestamp, bug.created_by, bug.created_id, bug.modified_time, bug.modified_timestamp, bug.modified_by, bug.modified_id, bug.deleted, bug.version, bug.remark,
+        bug.id, bug.created_timestamp, bug.created_by, bug.created_id, bug.modified_timestamp, bug.modified_by, bug.modified_id, bug.deleted, bug.version, bug.remark,
         bug.status, bug.code, bug.name, bug.seq, bug.build_in_flag, bug.org_id
     </sql>
 
@@ -32,7 +32,7 @@
             and bug.name like concat('%', #{ew.name}, '%')
         </if>
         and bo.id = #{ew.orgId}
-        order by bug.modified_time desc
+        order by bug.modified_timestamp desc
     </select>
 
     <select id="selectListByOrgId" resultType="com.iwindplus.mgt.domain.vo.power.UserGroupBaseCheckedVO">
@@ -43,7 +43,7 @@
         inner join `org` bo on bug.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
         where bug.deleted = 0 and bug.status = 1
         and bo.id = #{orgId}
-        order by bug.name asc, bug.seq asc, bug.created_time asc
+        order by bug.name asc, bug.seq asc, bug.created_timestamp asc
     </select>
 
     <select id="selectListByUserId" resultType="com.iwindplus.mgt.domain.vo.power.UserGroupBaseCheckedVO">

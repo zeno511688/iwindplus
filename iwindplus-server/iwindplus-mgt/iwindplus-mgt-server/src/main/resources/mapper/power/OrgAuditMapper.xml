@@ -3,12 +3,12 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.OrgAuditMapper">
     <sql id="orgAuditField">
-        id, created_time, created_timestamp, created_by, modified_time, modified_timestamp, modified_by,
+        id, created_timestamp, created_by, modified_timestamp, modified_by,
         audit_status, seq, org_id
     </sql>
 
     <sql id="orgAuditAliasField">
-        boa.id, boa.created_time, boa.created_timestamp, boa.created_by, boa.modified_time, boa.modified_timestamp, boa.modified_by,
+        boa.id, boa.created_timestamp, boa.created_by, boa.modified_timestamp, boa.modified_by,
         boa.audit_status, boa.seq, boa.org_id
     </sql>
 
@@ -30,7 +30,7 @@
         from org_audit
         where deleted = 0
         and org_id =  #{orgId}
-        order by created_time desc
+        order by created_timestamp desc
         limit 1
     </select>
 

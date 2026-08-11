@@ -15,7 +15,7 @@
     </sql>
 
     <sql id="departmentAliasField">
-        bd.id, bd.created_time, bd.created_by, bd.created_id, bd.modified_time, bd.modified_by, bd.modified_id, bd.deleted, bd.version, bd.remark,
+        bd.id, bd.created_by, bd.created_id, bd.modified_by, bd.modified_id, bd.deleted, bd.version, bd.remark,
         bd.status, bd.code, bd.name, bd.level, bd.seq, bd.build_in_flag, bd.parent_id, bd.org_id
     </sql>
 

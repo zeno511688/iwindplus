@@ -11,7 +11,7 @@
     </sql>
 
     <sql id="orgAliasField">
-        bo.id, bo.created_time, bo.created_timestamp, bo.created_by, bo.created_id, bo.modified_time, bo.modified_timestamp, bo.modified_by, bo.modified_id, bo.deleted, bo.version, bo.remark,
+        bo.id, bo.created_timestamp, bo.created_by, bo.created_id, bo.modified_timestamp, bo.modified_by, bo.modified_id, bo.deleted, bo.version, bo.remark,
         bo.status, bo.audit_status, bo.code, bo.name, bo.abbr, bo.uscc, bo.legal_person, bo.leader, bo.manager, bo.logo, bo.business_license,
         bo.mail, bo.mobile, bo.telephone, bo.country, bo.province, bo.city, bo.district, bo.detail_address, bo.website, bo.seq, bo.build_in_flag
     </sql>

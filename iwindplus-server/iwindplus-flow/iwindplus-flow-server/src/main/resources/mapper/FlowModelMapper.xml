@@ -3,12 +3,12 @@
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.iwindplus.flow.server.dal.mapper.FlowModelMapper">
     <sql id="modelPageAliasField">
-        fm.id, fm.created_time, fm.created_timestamp, fm.created_by, fm.modified_time, fm.modified_timestamp, fm.modified_by, fm.version,
+        fm.id, fm.created_timestamp, fm.created_by, fm.modified_timestamp, fm.modified_by, fm.version,
         fm.status, fm.code, fm.name, fm.model_version, fm.form_type, fm.seq, fm.build_in_flag
     </sql>
 
     <sql id="modelAliasField">
-        fm.id, fm.created_time, fm.created_timestamp, fm.created_by, fm.created_id, fm.modified_time, fm.modified_timestamp, fm.modified_by, fm.modified_id, fm.deleted, fm.version, fm.remark, fm.build_in_flag,
+        fm.id, fm.created_timestamp, fm.created_by, fm.created_id, fm.modified_timestamp, fm.modified_by, fm.modified_id, fm.deleted, fm.version, fm.remark, fm.build_in_flag,
         fm.status, fm.code, fm.name, fm.model_version, fm.form_type, fm.form_path, fm.seq, fm.category_id, fm.form_id
     </sql>
 
@@ -42,7 +42,7 @@
         <if test="ew.categoryName != null and ew.categoryName != ''">
             and fc.name like concat('%', #{ew.categoryName}, '%')
         </if>
-        order by fm.modified_time desc
+        order by fm.modified_timestamp desc
     </select>
 
     <select id="selectDetailById" resultMap="flowModelAllMap">

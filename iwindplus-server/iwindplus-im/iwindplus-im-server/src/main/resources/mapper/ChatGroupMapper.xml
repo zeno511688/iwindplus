@@ -3,12 +3,12 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.iwindplus.im.server.dal.mapper.ChatGroupMapper">
     <sql id="chatGroupPageAliasField">
-        cg.id, cg.created_time, cg.created_timestamp, cg.created_by, cg.modified_time, cg.modified_timestamp, cg.modified_by, cg.version,
+        cg.id, cg.created_timestamp, cg.created_by, cg.modified_timestamp, cg.modified_by, cg.version,
         cg.status, cg.group_name
     </sql>
 
     <sql id="chatGroupAliasField">
-        cg.id, cg.created_time, cg.created_timestamp, cg.created_by, cg.created_id, cg.modified_time, cg.modified_timestamp, cg.modified_by, cg.modified_id, cg.deleted, cg.version, cg.remark,
+        cg.id, cg.created_timestamp, cg.created_by, cg.created_id, cg.modified_timestamp, cg.modified_by, cg.modified_id, cg.deleted, cg.version, cg.remark,
         cg.status, cg.group_name, cg.group_avatar, cg.group_qrcode, cg.announcement, cg.limit_num, cg.show_nick_name_flag, cg.edit_avatar_flag, cg.org_id
     </sql>
 
@@ -17,7 +17,7 @@
             #{item}
         </foreach>
     </sql>
-    
+
     <delete id="deleteByIds">
         delete from chat_group
         where id in

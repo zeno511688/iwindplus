@@ -3,12 +3,12 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.iwindplus.im.server.dal.mapper.ChatGroupUserMapper">
     <sql id="chatGroupUserPageAliasField">
-        cgu.id, cgu.created_time, cgu.created_timestamp, cgu.created_by, cgu.modified_time, cgu.modified_timestamp, cgu.modified_by, cgu.version,
+        cgu.id, cgu.created_timestamp, cgu.created_by, cgu.modified_timestamp, cgu.modified_by, cgu.version,
         cgu.status, cgu.nick_name, cgu.leader_flag, cgu.join_type, cgu.agree_flag, cgu.user_nick_name
     </sql>
 
     <sql id="chatGroupUserAliasField">
-        cgu.id, cgu.created_time, cgu.created_timestamp, cgu.created_by, cgu.created_id, cgu.modified_time, cgu.modified_timestamp, cgu.modified_by, cgu.modified_id, cgu.deleted, cgu.version, cgu.remark,
+        cgu.id, cgu.created_timestamp, cgu.created_by, cgu.created_id, cgu.modified_timestamp, cgu.modified_by, cgu.modified_id, cgu.deleted, cgu.version, cgu.remark,
         cgu.nick_name, cgu.leader_flag, cgu.join_type, cgu.agree_flag, cgu.seq, cgu.chat_group_id, cgu.user_id, cgu.user_avatar, cgu.user_nick_name, cgu.org_id
     </sql>
 

@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.iwindplus.mgt.server.dal.mapper.system.ThirdBindGrantMapper">
     <sql id="thirdBindGrantAliasField">
-        tbg.id, tbg.created_time, tbg.created_timestamp, tbg.created_by, tbg.created_id, tbg.modified_time, tbg.modified_timestamp, tbg.modified_by, tbg.modified_id, tbg.deleted, tbg.version, tbg.remark,
+        tbg.id, tbg.created_timestamp, tbg.created_by, tbg.created_id, tbg.modified_timestamp, tbg.modified_by, tbg.modified_id, tbg.deleted, tbg.version, tbg.remark,
         tbg.code, tbg.openid, tbg.union_id, tbg.type, tbg.user_id
     </sql>
 
@@ -57,7 +57,7 @@
         <if test="ew.mobile != null and ew.mobile != ''">
             and bu.mobile like concat('%', #{ew.mobile}, '%')
         </if>
-        order by tbg.modified_time desc
+        order by tbg.modified_timestamp desc
     </select>
 
     <select id="selectByOpenId" resultType="com.iwindplus.mgt.domain.vo.system.ThirdBindGrantVO">

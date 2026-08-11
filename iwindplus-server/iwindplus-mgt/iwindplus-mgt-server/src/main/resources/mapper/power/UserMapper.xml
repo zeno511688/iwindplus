@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.iwindplus.mgt.server.dal.mapper.power.UserMapper">
     <sql id="userPageAliasField">
-        bu.id, bu.created_time, bu.created_timestamp, bu.created_by, bu.created_id, bu.modified_time, bu.modified_timestamp, bu.modified_by, bu.modified_id, bu.deleted, bu.version, bu.remark,
+        bu.id, bu.created_timestamp, bu.created_by, bu.created_id, bu.modified_timestamp, bu.modified_by, bu.modified_id, bu.deleted, bu.version, bu.remark,
         bu.enabled, bu.locked, bu.job_number, bu.username, bu.mobile, bu.real_name, bu.mail, bu.admin_flag, bu.ga_bind_flag
     </sql>
 
@@ -55,7 +55,7 @@
             and bu.mail = #{ew.mail}
         </if>
         and bo.id = #{ew.orgId}
-        order by bu.modified_time desc
+        order by bu.modified_timestamp desc
     </select>
 
     <sql id="selectListByRoleIdOne">
