@@ -64,6 +64,7 @@ public record DisruptorDispatcherHandler<T>(
                 event.getData(),
                 sequence,
                 endOfBatch);
+            return;
         }
 
         DisruptorObservationContext context =
