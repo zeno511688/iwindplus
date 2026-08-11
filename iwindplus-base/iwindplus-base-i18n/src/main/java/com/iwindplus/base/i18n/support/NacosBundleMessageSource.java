@@ -190,18 +190,17 @@ public class NacosBundleMessageSource extends AbstractResourceBasedMessageSource
     }
 
     private void registerListenerIfNeeded(String dataId) {
-        if (listenerMap.containsKey(dataId)) {
-            return;
-        }
-
-        try {
-            Listener listener = new NacosI18nListener(dataId, this);
-            configService.addListener(dataId, group, listener);
-            listenerMap.put(dataId, listener);
-            log.info("Registered Nacos listener: dataId={}, group={}", dataId, group);
-        } catch (NacosException e) {
-            log.error("Failed to register listener: dataId={}, {}", dataId, e.getMessage());
-        }
+        listenerMap.computeIfAbsent(dataId, key -> {
+            try {
+                Listener listener = new NacosI18nListener(key, this);
+                configService.addListener(key, group, listener);
+                log.info("Registered Nacos listener: dataId={}, group={}", key, group);
+                return listener;
+            } catch (NacosException e) {
+                log.error("Failed to register listener: dataId={}, {}", key, e.getMessage());
+                return null;
+            }
+        });
     }
 
     private String extractPureBaseName(String originalBaseName) {
