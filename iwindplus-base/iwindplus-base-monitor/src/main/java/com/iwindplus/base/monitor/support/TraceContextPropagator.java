@@ -70,6 +70,10 @@ public record TraceContextPropagator(Tracer tracer, Propagator propagator, TextM
         C carrier,
         TextMapSetter<C> setter) {
 
+        Objects.requireNonNull(context);
+        Objects.requireNonNull(carrier);
+        Objects.requireNonNull(setter);
+
         textMapPropagator.inject(
             context,
             carrier,
@@ -78,7 +82,7 @@ public record TraceContextPropagator(Tracer tracer, Propagator propagator, TextM
     }
 
     /**
-     * 提取并打开Scope
+     * 提取并打开Scope，返回的 SpanInScope 使用 try-with-resource关闭
      *
      * @param carrier carrier
      * @param getter  getter
@@ -92,19 +96,24 @@ public record TraceContextPropagator(Tracer tracer, Propagator propagator, TextM
         Objects.requireNonNull(carrier);
         Objects.requireNonNull(getter);
 
-        Span span =
+        Span.Builder builder =
             propagator.extract(
                 carrier,
                 getter
-            ).start();
-        if (span == null) {
-            log.warn(
-                "[Trace Extract] span create failed"
             );
+
+        Span span = builder.start();
+        if (span == null) {
+            log.warn("[Trace Extract] span create failed");
             return null;
         }
 
-        return tracer.withSpan(span);
+        try {
+            return tracer.withSpan(span);
+        } catch (Throwable e) {
+            span.end();
+            throw e;
+        }
     }
 
     /**
@@ -122,10 +131,11 @@ public record TraceContextPropagator(Tracer tracer, Propagator propagator, TextM
         Objects.requireNonNull(carrier);
         Objects.requireNonNull(getter);
 
-        return textMapPropagator.extract(
+        Context extracted = textMapPropagator.extract(
             Context.current(),
             carrier,
             getter
         );
+        return extracted != null ? extracted : Context.current();
     }
 }

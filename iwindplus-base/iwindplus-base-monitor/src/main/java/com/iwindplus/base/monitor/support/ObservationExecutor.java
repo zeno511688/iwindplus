@@ -10,6 +10,7 @@ package com.iwindplus.base.monitor.support;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationConvention;
 import io.micrometer.observation.ObservationRegistry;
+import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
@@ -36,18 +37,21 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
         String name,
         Supplier<T> supplier) {
 
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(supplier);
+
         Observation observation =
             Observation.createNotStarted(
                 name,
                 observationRegistry
             );
 
-        try (
-            Observation.Scope ignored =
-                observation.start()
-                    .openScope()) {
+        observation.start();
 
-            return supplier.get();
+        try {
+            try (Observation.Scope ignored = observation.openScope()) {
+                return supplier.get();
+            }
         } catch (Throwable e) {
             observation.error(e);
 
@@ -72,6 +76,10 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
         Supplier<C> contextSupplier,
         Supplier<T> supplier) {
 
+        Objects.requireNonNull(convention);
+        Objects.requireNonNull(contextSupplier);
+        Objects.requireNonNull(supplier);
+
         Observation observation =
             Observation.createNotStarted(
                 convention,
@@ -79,11 +87,12 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
                 observationRegistry
             );
 
-        try (Observation.Scope ignored =
-            observation.start()
-                .openScope()) {
+        observation.start();
 
-            return supplier.get();
+        try {
+            try (Observation.Scope ignored = observation.openScope()) {
+                return supplier.get();
+            }
         } catch (Throwable e) {
             observation.error(e);
 
@@ -108,6 +117,10 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
         Supplier<C> contextSupplier,
         Supplier<CompletionStage<T>> supplier) {
 
+        Objects.requireNonNull(convention);
+        Objects.requireNonNull(contextSupplier);
+        Objects.requireNonNull(supplier);
+
         Observation observation =
             Observation.createNotStarted(
                 convention,
@@ -118,20 +131,19 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
         observation.start();
 
         try {
-            return supplier.get()
-                .whenComplete(
-                    (result, throwable) -> {
-                        try (
-                            Observation.Scope ignored =
-                                observation.openScope()) {
+            CompletionStage<T> stage = supplier.get();
+            Objects.requireNonNull(stage, "supplier must not return null");
 
-                            if (throwable != null) {
-                                observation.error(throwable);
-                            }
-                        } finally {
-                            observation.stop();
+            return stage.whenComplete(
+                (result, throwable) -> {
+                    try (Observation.Scope ignored = observation.openScope()) {
+                        if (throwable != null) {
+                            observation.error(throwable);
                         }
-                    });
+                    } finally {
+                        observation.stop();
+                    }
+                });
         } catch (Throwable e) {
             observation.error(e);
             observation.stop();
@@ -154,6 +166,10 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
         ObservationConvention<C> convention,
         Supplier<C> contextSupplier,
         Supplier<Mono<T>> supplier) {
+
+        Objects.requireNonNull(convention);
+        Objects.requireNonNull(contextSupplier);
+        Objects.requireNonNull(supplier);
 
         return Mono.defer(() -> {
             Observation observation =
