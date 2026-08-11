@@ -55,6 +55,7 @@ public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
     private final RabbitMultiProperty property;
     private final ObservationRegistry observationRegistry;
 
+    private final Map<String, CachingConnectionFactory> connectionFactoryMap = new ConcurrentHashMap<>(16);
     private final Map<String, AmqpAdmin> adminClientMap = new ConcurrentHashMap<>(16);
     private final Map<String, RabbitTemplate> templateMap = new ConcurrentHashMap<>(16);
     private final Map<String, SimpleRabbitListenerContainerFactory> factoryMap = new ConcurrentHashMap<>(16);
@@ -79,6 +80,15 @@ public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
             }
         });
 
+        connectionFactoryMap.values().forEach(cf -> {
+            try {
+                cf.destroy();
+            } catch (Exception e) {
+                log.error("Close CachingConnectionFactory error", e);
+            }
+        });
+
+        connectionFactoryMap.clear();
         adminClientMap.clear();
         templateMap.clear();
         factoryMap.clear();
@@ -118,6 +128,7 @@ public class RabbitClusterManager implements SmartLifecycle, DisposableBean {
 
         clusters.forEach((clusterName, clusterConfig) -> {
             CachingConnectionFactory connectionFactory = buildConnectionFactory(clusterName, clusterConfig);
+            connectionFactoryMap.put(clusterName, connectionFactory);
             validateConnection(clusterName, connectionFactory);
 
             if (Boolean.TRUE.equals(property.getEnabledDynamicRegister())) {

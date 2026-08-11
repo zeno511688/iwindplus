@@ -80,6 +80,16 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
 
         running = false;
 
+        templateMap.values().forEach(template -> {
+            try {
+                if (template instanceof AutoCloseable closeable) {
+                    closeable.close();
+                }
+            } catch (Exception e) {
+                log.error("Close DisruptorTemplate error", e);
+            }
+        });
+
         templateMap.clear();
 
         log.info("DisruptorManager stopped");
