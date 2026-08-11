@@ -13,7 +13,6 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
@@ -26,9 +25,6 @@ import java.util.function.ToDoubleFunction;
 public class MonitorTemplateImpl implements MonitorTemplate {
 
     private final MeterRegistry meterRegistry;
-
-    private final ConcurrentHashMap<String, Timer> timers =
-        new ConcurrentHashMap<>(16);
 
     public MonitorTemplateImpl(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;

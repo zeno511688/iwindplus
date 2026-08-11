@@ -32,11 +32,7 @@ public final class UserContextHolder {
      */
     public static UserBaseVO getContext() {
         UserBaseVO user = THREAD_LOCAL.get();
-        if (user == null) {
-            user = getDefaultUser();
-            THREAD_LOCAL.set(user);
-        }
-        return user;
+        return user != null ? user : getDefaultUser();
     }
 
     /**
