@@ -161,7 +161,7 @@ public class OperateLogAspect {
             .orgId(orgId)
             .createdBy(realName)
             .createdId(userId)
-            .modifiedBy(userInfo.getRealName())
+            .modifiedBy(realName)
             .modifiedId(userId)
             .build();
         final HttpServletRequest httpServletRequest = HttpsUtil.getHttpServletRequest();
