@@ -38,5 +38,9 @@
             <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-web</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-monitor</artifactId>
+        </dependency>
     </dependencies>
 </project>
