@@ -36,8 +36,8 @@ public class AppCertTaskHandler implements AsyncCmdTaskHandler {
     @Override
     public void execute(AsyncCmdVO entity) {
         log.info("AppCertTaskHandler回调");
-        final Map<String, Object> contentMap = entity.getContent();
-        final String content = contentMap.get("content").toString();
+        final Map<String, Object> paramMap = entity.getParam();
+        final String content = paramMap.get("content").toString();
 
         this.sendMessage(content);
     }

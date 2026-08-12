@@ -75,10 +75,10 @@ public class AsyncCmdPageVO extends DbVersionBaseVO {
     private String executeName;
 
     /**
-     * 内容.
+     * 参数.
      */
-    @Schema(description = "内容")
-    private Map<String, Object> content;
+    @Schema(description = "参数")
+    private Map<String, Object> param;
 
     /**
      * 过期时间.

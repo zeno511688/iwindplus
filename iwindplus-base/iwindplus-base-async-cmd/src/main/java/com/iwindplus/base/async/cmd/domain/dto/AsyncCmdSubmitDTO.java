@@ -67,7 +67,7 @@ public class AsyncCmdSubmitDTO extends AsyncCmdSubmitBaseDTO {
      * @param data 数据
      * @param <T>  泛型
      */
-    public <T> void setData(T data) {
+    public <T> void setParam(T data) {
         this.param = JacksonUtil.parseMap(JacksonUtil.toJsonStr(data));
     }
 
@@ -78,7 +78,7 @@ public class AsyncCmdSubmitDTO extends AsyncCmdSubmitBaseDTO {
      * @param <T>   泛型
      * @return T
      */
-    public <T> T getData(Class<T> clazz) {
+    public <T> T getParam(Class<T> clazz) {
         if (param == null) {
             return null;
         }

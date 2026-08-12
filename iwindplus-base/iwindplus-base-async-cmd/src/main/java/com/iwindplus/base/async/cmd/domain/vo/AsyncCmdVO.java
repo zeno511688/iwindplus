@@ -48,10 +48,10 @@ public class AsyncCmdVO extends AsyncCmdBaseVO {
     private String executeName;
 
     /**
-     * 内容.
+     * 参数.
      */
-    @Schema(description = "内容")
-    private Map<String, Object> content;
+    @Schema(description = "参数")
+    private Map<String, Object> param;
 
     /**
      * 过期时间.
@@ -103,18 +103,18 @@ public class AsyncCmdVO extends AsyncCmdBaseVO {
     private transient List<AsyncCmdSubVO> subTasks;
 
     /**
-     * 获取数据并转换为指定类型.
+     * 获取参数并转换为指定类型.
      *
      * @param clazz 目标类型
      * @param <T>   泛型
      * @return T
      */
-    public <T> T getData(Class<T> clazz) {
-        if (content == null) {
+    public <T> T getParam(Class<T> clazz) {
+        if (param == null) {
             return null;
         }
         // 使用 JSON 序列化/反序列化转换
-        String json = JacksonUtil.toJsonStr(content);
+        String json = JacksonUtil.toJsonStr(param);
         return JacksonUtil.parseObject(json, clazz);
     }
 

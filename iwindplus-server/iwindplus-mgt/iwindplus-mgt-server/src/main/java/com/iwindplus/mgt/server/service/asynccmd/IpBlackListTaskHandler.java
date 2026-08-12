@@ -35,8 +35,8 @@ public class IpBlackListTaskHandler implements AsyncCmdTaskHandler {
 
     @Override
     public void execute(AsyncCmdVO entity) {
-        final Map<String, Object> contentMap = entity.getContent();
-        final String content = contentMap.get("content").toString();
+        final Map<String, Object> paramMap = entity.getParam();
+        final String content = paramMap.get("content").toString();
 
         this.sendMessage(content);
     }

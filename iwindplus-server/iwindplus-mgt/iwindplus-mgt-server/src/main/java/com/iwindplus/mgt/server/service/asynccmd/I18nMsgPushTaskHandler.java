@@ -33,9 +33,9 @@ public class I18nMsgPushTaskHandler implements AsyncCmdTaskHandler {
 
     @Override
     public void execute(AsyncCmdVO entity) {
-        final Map<String, Object> contentMap = entity.getContent();
-        final String fileName = contentMap.get("fileName").toString();
-        final String content = contentMap.get("content").toString();
+        final Map<String, Object> paramMap = entity.getParam();
+        final String fileName = paramMap.get("fileName").toString();
+        final String content = paramMap.get("content").toString();
 
         if (nacosConfigManagerOpt.isEmpty()) {
             log.warn("NacosConfigManager not present, skip route push");

@@ -32,8 +32,8 @@ public class I18nMsgRemoveTaskHandler implements AsyncCmdTaskHandler {
 
     @Override
     public void execute(AsyncCmdVO entity) {
-        final Map<String, Object> contentMap = entity.getContent();
-        final String fileName = contentMap.get("fileName").toString();
+        final Map<String, Object> paramMap = entity.getParam();
+        final String fileName = paramMap.get("fileName").toString();
 
         if (nacosConfigManagerOpt.isEmpty()) {
             log.warn("NacosConfigManager not present, skip route push");
