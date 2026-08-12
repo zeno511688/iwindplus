@@ -10,10 +10,12 @@ package com.iwindplus.log.server.web.admin;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.iwindplus.base.domain.validation.SaveGroup;
 import com.iwindplus.base.domain.vo.ResultVO;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.operate.domain.annotation.OperateValid;
 import com.iwindplus.base.redis.domain.annotation.RedisIdempotent;
 import com.iwindplus.base.web.controller.BaseController;
 import com.iwindplus.log.domain.dto.GatewayLogDTO;
+import com.iwindplus.log.domain.dto.GatewayLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.GatewayLogSearchDTO;
 import com.iwindplus.log.domain.vo.GatewayLogExtendVO;
 import com.iwindplus.log.domain.vo.GatewayLogPageVO;
@@ -92,6 +94,19 @@ public class GatewayLogController extends BaseController {
     }
 
     /**
+     * 列表(深分页).
+     *
+     * @param entity 对象
+     * @return ResultVO<EsPageDTO < GatewayLogPageVO>>
+     */
+    @Operation(summary = "列表(深分页)")
+    @GetMapping("pageByAfter")
+    public ResultVO<EsPageDTO<GatewayLogPageVO>> pageByAfter(@Validated GatewayLogSearchAfterDTO entity) {
+        EsPageDTO<GatewayLogPageVO> data = this.gatewayLogService.pageByAfter(entity);
+        return ResultVO.success(data);
+    }
+
+    /**
      * 详情.
      *
      * @param id 主键
@@ -104,4 +119,3 @@ public class GatewayLogController extends BaseController {
         return ResultVO.success(data);
     }
 }
-

@@ -10,10 +10,12 @@ package com.iwindplus.log.server.web.admin;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.iwindplus.base.domain.validation.SaveGroup;
 import com.iwindplus.base.domain.vo.ResultVO;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.operate.domain.annotation.OperateValid;
 import com.iwindplus.base.redis.domain.annotation.RedisIdempotent;
 import com.iwindplus.base.web.controller.BaseController;
 import com.iwindplus.log.domain.dto.MailCaptchaLogDTO;
+import com.iwindplus.log.domain.dto.MailCaptchaLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.MailCaptchaLogSearchDTO;
 import com.iwindplus.log.domain.vo.MailCaptchaLogPageVO;
 import com.iwindplus.log.domain.vo.MailCaptchaLogVO;
@@ -100,6 +102,19 @@ public class MailCaptchaLogController extends BaseController {
     @GetMapping("page")
     public ResultVO<IPage<MailCaptchaLogPageVO>> page(@Validated MailCaptchaLogSearchDTO entity) {
         IPage<MailCaptchaLogPageVO> data = this.mailCaptchaLogService.page(entity);
+        return ResultVO.success(data);
+    }
+
+    /**
+     * 列表(深分页).
+     *
+     * @param entity 对象
+     * @return ResultVO<EsPageDTO < MailCaptchaLogPageVO>>
+     */
+    @Operation(summary = "列表(深分页)")
+    @GetMapping("pageByAfter")
+    public ResultVO<EsPageDTO<MailCaptchaLogPageVO>> pageByAfter(@Validated MailCaptchaLogSearchAfterDTO entity) {
+        EsPageDTO<MailCaptchaLogPageVO> data = this.mailCaptchaLogService.pageByAfter(entity);
         return ResultVO.success(data);
     }
 

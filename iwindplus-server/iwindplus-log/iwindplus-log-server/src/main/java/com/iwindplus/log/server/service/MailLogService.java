@@ -5,8 +5,10 @@
 package com.iwindplus.log.server.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.EsBaseService;
 import com.iwindplus.log.domain.dto.MailLogDTO;
+import com.iwindplus.log.domain.dto.MailLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.MailLogSearchDTO;
 import com.iwindplus.log.domain.vo.MailLogPageVO;
 import com.iwindplus.log.domain.vo.MailLogVO;
@@ -52,6 +54,14 @@ public interface MailLogService extends EsBaseService<MailLogDO> {
      * @return IPage<MailLogPageVO>
      */
     IPage<MailLogPageVO> page(MailLogSearchDTO entity);
+
+    /**
+     * 深分页列表.
+     *
+     * @param entity 对象
+     * @return EsPageDTO<MailLogPageVO>
+     */
+    EsPageDTO<MailLogPageVO> pageByAfter(MailLogSearchAfterDTO entity);
 
     /**
      * 查找详情.

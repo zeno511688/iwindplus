@@ -10,10 +10,12 @@ package com.iwindplus.log.server.web.admin;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.iwindplus.base.domain.validation.SaveGroup;
 import com.iwindplus.base.domain.vo.ResultVO;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.operate.domain.annotation.OperateValid;
 import com.iwindplus.base.redis.domain.annotation.RedisIdempotent;
 import com.iwindplus.base.web.controller.BaseController;
 import com.iwindplus.log.domain.dto.SmsCaptchaLogDTO;
+import com.iwindplus.log.domain.dto.SmsCaptchaLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.SmsCaptchaLogSearchDTO;
 import com.iwindplus.log.domain.vo.SmsCaptchaLogPageVO;
 import com.iwindplus.log.domain.vo.SmsCaptchaLogVO;
@@ -100,6 +102,19 @@ public class SmsCaptchaLogController extends BaseController {
     @GetMapping("page")
     public ResultVO<IPage<SmsCaptchaLogPageVO>> page(@Validated SmsCaptchaLogSearchDTO entity) {
         IPage<SmsCaptchaLogPageVO> data = this.smsCaptchaLogService.page(entity);
+        return ResultVO.success(data);
+    }
+
+    /**
+     * 列表(深分页).
+     *
+     * @param entity 对象
+     * @return ResultVO<EsPageDTO < SmsCaptchaLogPageVO>>
+     */
+    @Operation(summary = "列表(深分页)")
+    @GetMapping("pageByAfter")
+    public ResultVO<EsPageDTO<SmsCaptchaLogPageVO>> pageByAfter(@Validated SmsCaptchaLogSearchAfterDTO entity) {
+        EsPageDTO<SmsCaptchaLogPageVO> data = this.smsCaptchaLogService.pageByAfter(entity);
         return ResultVO.success(data);
     }
 

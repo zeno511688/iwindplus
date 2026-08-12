@@ -101,6 +101,7 @@ public record AsyncCmdStateSupport(
         if (!result) {
             return false;
         }
+        entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
         entity.setCostTime(costTime);
         if (Objects.isNull(handler)) {
@@ -152,6 +153,7 @@ public record AsyncCmdStateSupport(
         if (!result) {
             return false;
         }
+        entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.FAILED);
         entity.setRetryCount(retryCount);
         entity.setNextRetryTime(nextRetryTime);
@@ -199,7 +201,7 @@ public record AsyncCmdStateSupport(
         if (!result) {
             return false;
         }
-
+        entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.ASYNC_WAIT);
         entity.setCostTime(costTime);
         entity.setCallbackExpireTime(callbackExpireTime);
@@ -241,7 +243,7 @@ public record AsyncCmdStateSupport(
         if (!result) {
             return false;
         }
-
+        entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
         entity.setNextRetryTime(nextRetryTime);
         entity.setCostTime(costTime);
@@ -277,7 +279,7 @@ public record AsyncCmdStateSupport(
         if (!result) {
             return false;
         }
-
+        entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
         entity.setCallbackExpireTime(0L);
         entity.setNextRetryTime(nextRetryTime);
@@ -316,7 +318,7 @@ public record AsyncCmdStateSupport(
         if (!result) {
             return false;
         }
-
+        entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
         entity.setCallbackExpireTime(0L);
         if (Objects.isNull(handler)) {
@@ -363,7 +365,7 @@ public record AsyncCmdStateSupport(
         if (!result) {
             return false;
         }
-
+        entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.FAILED);
         entity.setRetryCount(retryCount);
         entity.setErrorMsg(stack);
@@ -406,7 +408,7 @@ public record AsyncCmdStateSupport(
         if (!result) {
             return false;
         }
-
+        entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
         entity.setCostTime(costTime);
         if (Objects.isNull(handler)) {
@@ -452,7 +454,7 @@ public record AsyncCmdStateSupport(
         if (!result) {
             return false;
         }
-
+        entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.FAILED);
         entity.setRetryCount(retryCount);
         entity.setErrorMsg(stack);
@@ -496,7 +498,7 @@ public record AsyncCmdStateSupport(
         if (!result) {
             return false;
         }
-
+        entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.ASYNC_WAIT);
         entity.setCostTime(costTime);
         entity.setCallbackExpireTime(callbackExpireTime);
@@ -537,7 +539,7 @@ public record AsyncCmdStateSupport(
         if (!result) {
             return false;
         }
-
+        entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
         if (Objects.isNull(handler)) {
             return true;
@@ -581,7 +583,7 @@ public record AsyncCmdStateSupport(
         if (!result) {
             return false;
         }
-
+        entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.FAILED);
         entity.setRetryCount(retryCount);
         entity.setErrorMsg(stack);

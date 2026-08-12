@@ -13,9 +13,11 @@ import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
 import com.iwindplus.log.domain.dto.BinlogAlertDTO;
+import com.iwindplus.log.domain.dto.BinlogAlertSearchAfterDTO;
 import com.iwindplus.log.domain.dto.BinlogAlertSearchDTO;
 import com.iwindplus.log.domain.vo.BinlogAlertPageVO;
 import com.iwindplus.log.domain.vo.BinlogAlertVO;
@@ -75,17 +77,8 @@ public class BinlogAlertServiceImpl extends EsBaseServiceImpl<BinlogAlertDO>
 
     @Override
     public IPage<BinlogAlertPageVO> page(BinlogAlertSearchDTO entity) {
-        final EsLambdaQueryWrapper<BinlogAlertDO> wrapper = new EsLambdaQueryWrapper<>();
         final PageDTO<BinlogAlertDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
-        if (Objects.nonNull(entity.getDataId())) {
-            wrapper.eq(BinlogAlertDO::getDataId, entity.getDataId());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getDb())) {
-            wrapper.eq(BinlogAlertDO::getDb, entity.getDb());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getTable())) {
-            wrapper.eq(BinlogAlertDO::getTable, entity.getTable());
-        }
+        final EsLambdaQueryWrapper<BinlogAlertDO> wrapper = buildPageWrapper(entity);
         List<OrderItem> orders = page.getOrders();
         if (CollUtil.isEmpty(orders)) {
             orders = new ArrayList<>(10);
@@ -95,6 +88,32 @@ public class BinlogAlertServiceImpl extends EsBaseServiceImpl<BinlogAlertDO>
         }
         final IPage<BinlogAlertDO> modelPage = super.page(page, wrapper);
         return modelPage.convert(model -> BeanUtil.copyProperties(model, BinlogAlertPageVO.class));
+    }
+
+    @Override
+    public EsPageDTO<BinlogAlertPageVO> pageByAfter(BinlogAlertSearchAfterDTO entity) {
+        final EsLambdaQueryWrapper<BinlogAlertDO> wrapper = buildPageWrapper(entity);
+
+        EsPageDTO<BinlogAlertDO> page = EsPageDTO.<BinlogAlertDO>builder()
+            .size(entity.getSize() == null ? 10 : entity.getSize())
+            .searchAfter(entity.getSearchAfter())
+            .build();
+
+        EsPageDTO<BinlogAlertDO> resultPage = super.pageByAfter(page, wrapper);
+
+        List<BinlogAlertPageVO> voList = null;
+        if (CollUtil.isNotEmpty(resultPage.getRecords())) {
+            voList = resultPage.getRecords().stream()
+                .map(model -> BeanUtil.copyProperties(model, BinlogAlertPageVO.class))
+                .toList();
+        }
+
+        return EsPageDTO.<BinlogAlertPageVO>builder()
+            .size(resultPage.getSize())
+            .total(resultPage.getTotal())
+            .records(voList)
+            .searchAfter(resultPage.getSearchAfter())
+            .build();
     }
 
     @Cacheable(key = "#root.methodName + '_' + #p0", condition = "#p0 != null", unless = "#result == null")
@@ -107,4 +126,31 @@ public class BinlogAlertServiceImpl extends EsBaseServiceImpl<BinlogAlertDO>
         return BeanUtil.copyProperties(data, BinlogAlertVO.class);
     }
 
+    private EsLambdaQueryWrapper<BinlogAlertDO> buildPageWrapper(BinlogAlertSearchDTO entity) {
+        final EsLambdaQueryWrapper<BinlogAlertDO> wrapper = new EsLambdaQueryWrapper<>();
+        if (Objects.nonNull(entity.getDataId())) {
+            wrapper.eq(BinlogAlertDO::getDataId, entity.getDataId());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getDb())) {
+            wrapper.eq(BinlogAlertDO::getDb, entity.getDb());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getTable())) {
+            wrapper.eq(BinlogAlertDO::getTable, entity.getTable());
+        }
+        return wrapper;
+    }
+
+    private EsLambdaQueryWrapper<BinlogAlertDO> buildPageWrapper(BinlogAlertSearchAfterDTO entity) {
+        final EsLambdaQueryWrapper<BinlogAlertDO> wrapper = new EsLambdaQueryWrapper<>();
+        if (Objects.nonNull(entity.getDataId())) {
+            wrapper.eq(BinlogAlertDO::getDataId, entity.getDataId());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getDb())) {
+            wrapper.eq(BinlogAlertDO::getDb, entity.getDb());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getTable())) {
+            wrapper.eq(BinlogAlertDO::getTable, entity.getTable());
+        }
+        return wrapper;
+    }
 }

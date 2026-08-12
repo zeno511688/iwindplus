@@ -12,6 +12,7 @@ import java.io.Serializable;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -23,6 +24,7 @@ import lombok.experimental.SuperBuilder;
 @Schema(description = "es分页数据传输对象")
 @Data
 @SuperBuilder
+@NoArgsConstructor
 @AllArgsConstructor
 public class EsPageDTO<T> implements Serializable {
 

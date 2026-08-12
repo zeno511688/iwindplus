@@ -5,8 +5,10 @@
 package com.iwindplus.log.server.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.EsBaseService;
 import com.iwindplus.log.domain.dto.BinlogAlertDTO;
+import com.iwindplus.log.domain.dto.BinlogAlertSearchAfterDTO;
 import com.iwindplus.log.domain.dto.BinlogAlertSearchDTO;
 import com.iwindplus.log.domain.vo.BinlogAlertPageVO;
 import com.iwindplus.log.domain.vo.BinlogAlertVO;
@@ -52,6 +54,14 @@ public interface BinlogAlertService extends EsBaseService<BinlogAlertDO> {
      * @return IPage<BinlogAlertPageVO>
      */
     IPage<BinlogAlertPageVO> page(BinlogAlertSearchDTO entity);
+
+    /**
+     * 深分页列表.
+     *
+     * @param entity 对象
+     * @return EsPageDTO<BinlogAlertPageVO>
+     */
+    EsPageDTO<BinlogAlertPageVO> pageByAfter(BinlogAlertSearchAfterDTO entity);
 
     /**
      * 查找详情.

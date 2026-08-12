@@ -10,11 +10,13 @@ package com.iwindplus.log.server.web.admin;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.iwindplus.base.domain.validation.SaveGroup;
 import com.iwindplus.base.domain.vo.ResultVO;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.operate.domain.annotation.OperateValid;
 import com.iwindplus.base.redis.domain.annotation.RedisIdempotent;
 import com.iwindplus.base.web.controller.BaseController;
 import com.iwindplus.log.domain.dto.OperationLogDTO;
 import com.iwindplus.log.domain.dto.OperationLogNewestDTO;
+import com.iwindplus.log.domain.dto.OperationLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.OperationLogSearchDTO;
 import com.iwindplus.log.domain.vo.OperationLogExtendVO;
 import com.iwindplus.log.domain.vo.OperationLogPageVO;
@@ -90,6 +92,19 @@ public class OperationLogController extends BaseController {
     @GetMapping("page")
     public ResultVO<IPage<OperationLogPageVO>> page(@Validated OperationLogSearchDTO entity) {
         IPage<OperationLogPageVO> data = this.operationLogService.page(entity);
+        return ResultVO.success(data);
+    }
+
+    /**
+     * 列表(深分页).
+     *
+     * @param entity 对象
+     * @return ResultVO<EsPageDTO < OperationLogPageVO>>
+     */
+    @Operation(summary = "列表(深分页)")
+    @GetMapping("pageByAfter")
+    public ResultVO<EsPageDTO<OperationLogPageVO>> pageByAfter(@Validated OperationLogSearchAfterDTO entity) {
+        EsPageDTO<OperationLogPageVO> data = this.operationLogService.pageByAfter(entity);
         return ResultVO.success(data);
     }
 

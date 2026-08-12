@@ -5,9 +5,11 @@
 package com.iwindplus.log.server.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.EsBaseService;
 import com.iwindplus.log.domain.dto.OperationLogDTO;
 import com.iwindplus.log.domain.dto.OperationLogNewestDTO;
+import com.iwindplus.log.domain.dto.OperationLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.OperationLogSearchDTO;
 import com.iwindplus.log.domain.vo.OperationLogExtendVO;
 import com.iwindplus.log.domain.vo.OperationLogPageVO;
@@ -45,6 +47,13 @@ public interface OperationLogService extends EsBaseService<OperationLogDO> {
      * @return IPage<OperationLogPageVO>
      */
     IPage<OperationLogPageVO> page(OperationLogSearchDTO entity);
+
+    /**
+     * 深分页列表.
+     * @param entity 对象
+     * @return EsPageDTO<OperationLogPageVO>
+     */
+    EsPageDTO<OperationLogPageVO> pageByAfter(OperationLogSearchAfterDTO entity);
 
     /**
      * 查找详情.

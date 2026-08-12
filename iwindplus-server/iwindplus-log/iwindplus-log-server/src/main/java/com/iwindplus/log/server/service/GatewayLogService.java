@@ -5,8 +5,10 @@
 package com.iwindplus.log.server.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.EsBaseService;
 import com.iwindplus.log.domain.dto.GatewayLogDTO;
+import com.iwindplus.log.domain.dto.GatewayLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.GatewayLogSearchDTO;
 import com.iwindplus.log.domain.vo.GatewayLogExtendVO;
 import com.iwindplus.log.domain.vo.GatewayLogPageVO;
@@ -24,7 +26,7 @@ public interface GatewayLogService extends EsBaseService<GatewayLogDO> {
     /**
      * 保存
      *
-     * @param entities  对象集合
+     * @param entities 对象集合
      * @return boolean
      */
     boolean saveBatch(List<GatewayLogDTO> entities);
@@ -44,6 +46,14 @@ public interface GatewayLogService extends EsBaseService<GatewayLogDO> {
      * @return IPage<GatewayLogPageVO>
      */
     IPage<GatewayLogPageVO> page(GatewayLogSearchDTO entity);
+
+    /**
+     * 深分页列表.
+     *
+     * @param entity 对象
+     * @return EsPageDTO<GatewayLogPageVO>
+     */
+    EsPageDTO<GatewayLogPageVO> pageByAfter(GatewayLogSearchAfterDTO entity);
 
     /**
      * 查找详情.

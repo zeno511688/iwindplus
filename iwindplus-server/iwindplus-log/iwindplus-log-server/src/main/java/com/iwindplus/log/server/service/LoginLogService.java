@@ -5,8 +5,10 @@
 package com.iwindplus.log.server.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.EsBaseService;
 import com.iwindplus.log.domain.dto.LoginLogDTO;
+import com.iwindplus.log.domain.dto.LoginLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.LoginLogSearchDTO;
 import com.iwindplus.log.domain.vo.LoginLogExtendVO;
 import com.iwindplus.log.domain.vo.LoginLogPageVO;
@@ -53,6 +55,14 @@ public interface LoginLogService extends EsBaseService<LoginLogDO> {
      * @return IPage<LoginLogPageVO>
      */
     IPage<LoginLogPageVO> page(LoginLogSearchDTO entity);
+
+    /**
+     * 深分页列表.
+     *
+     * @param entity 对象
+     * @return EsPageDTO<LoginLogPageVO>
+     */
+    EsPageDTO<LoginLogPageVO> pageByAfter(LoginLogSearchAfterDTO entity);
 
     /**
      * 查找详情.

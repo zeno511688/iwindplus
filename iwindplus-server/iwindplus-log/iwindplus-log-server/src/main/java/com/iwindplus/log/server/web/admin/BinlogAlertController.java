@@ -10,10 +10,12 @@ package com.iwindplus.log.server.web.admin;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.iwindplus.base.domain.validation.SaveGroup;
 import com.iwindplus.base.domain.vo.ResultVO;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.operate.domain.annotation.OperateValid;
 import com.iwindplus.base.redis.domain.annotation.RedisIdempotent;
 import com.iwindplus.base.web.controller.BaseController;
 import com.iwindplus.log.domain.dto.BinlogAlertDTO;
+import com.iwindplus.log.domain.dto.BinlogAlertSearchAfterDTO;
 import com.iwindplus.log.domain.dto.BinlogAlertSearchDTO;
 import com.iwindplus.log.domain.vo.BinlogAlertPageVO;
 import com.iwindplus.log.domain.vo.BinlogAlertVO;
@@ -87,6 +89,19 @@ public class BinlogAlertController extends BaseController {
     @GetMapping("page")
     public ResultVO<IPage<BinlogAlertPageVO>> page(@Validated BinlogAlertSearchDTO entity) {
         IPage<BinlogAlertPageVO> data = this.binlogAlertService.page(entity);
+        return ResultVO.success(data);
+    }
+
+    /**
+     * 列表(深分页).
+     *
+     * @param entity 对象
+     * @return ResultVO<EsPageDTO < BinlogAlertPageVO>>
+     */
+    @Operation(summary = "列表(深分页)")
+    @GetMapping("pageByAfter")
+    public ResultVO<EsPageDTO<BinlogAlertPageVO>> pageByAfter(@Validated BinlogAlertSearchAfterDTO entity) {
+        EsPageDTO<BinlogAlertPageVO> data = this.binlogAlertService.pageByAfter(entity);
         return ResultVO.success(data);
     }
 

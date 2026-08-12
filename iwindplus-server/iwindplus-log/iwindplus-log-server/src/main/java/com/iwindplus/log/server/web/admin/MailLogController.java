@@ -11,10 +11,12 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.iwindplus.base.domain.validation.EditGroup;
 import com.iwindplus.base.domain.validation.SaveGroup;
 import com.iwindplus.base.domain.vo.ResultVO;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.operate.domain.annotation.OperateValid;
 import com.iwindplus.base.redis.domain.annotation.RedisIdempotent;
 import com.iwindplus.base.web.controller.BaseController;
 import com.iwindplus.log.domain.dto.MailLogDTO;
+import com.iwindplus.log.domain.dto.MailLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.MailLogSearchDTO;
 import com.iwindplus.log.domain.vo.MailLogPageVO;
 import com.iwindplus.log.domain.vo.MailLogVO;
@@ -103,6 +105,19 @@ public class MailLogController extends BaseController {
     @GetMapping("page")
     public ResultVO<IPage<MailLogPageVO>> page(@Validated MailLogSearchDTO entity) {
         IPage<MailLogPageVO> data = this.mailLogService.page(entity);
+        return ResultVO.success(data);
+    }
+
+    /**
+     * 列表(深分页).
+     *
+     * @param entity 对象
+     * @return ResultVO<EsPageDTO < MailLogPageVO>>
+     */
+    @Operation(summary = "列表(深分页)")
+    @GetMapping("pageByAfter")
+    public ResultVO<EsPageDTO<MailLogPageVO>> pageByAfter(@Validated MailLogSearchAfterDTO entity) {
+        EsPageDTO<MailLogPageVO> data = this.mailLogService.pageByAfter(entity);
         return ResultVO.success(data);
     }
 

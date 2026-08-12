@@ -15,10 +15,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.domain.vo.ResultVO;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
 import com.iwindplus.base.redis.service.RedissonService;
 import com.iwindplus.log.domain.dto.SmsCaptchaLogDTO;
+import com.iwindplus.log.domain.dto.SmsCaptchaLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.SmsCaptchaLogSearchDTO;
 import com.iwindplus.log.domain.dto.SmsSendValidDTO;
 import com.iwindplus.log.domain.enums.LogCodeEnum;
@@ -95,33 +97,8 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
 
     @Override
     public IPage<SmsCaptchaLogPageVO> page(SmsCaptchaLogSearchDTO entity) {
-        final EsLambdaQueryWrapper<SmsCaptchaLogDO> wrapper = new EsLambdaQueryWrapper<>();
         final PageDTO<SmsCaptchaLogDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
-        if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
-            wrapper.eq(SmsCaptchaLogDO::getRequestId, entity.getRequestId());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getBizNumber())) {
-            wrapper.eq(SmsCaptchaLogDO::getBizNumber, entity.getBizNumber());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getTplCode())) {
-            wrapper.eq(SmsCaptchaLogDO::getTplCode, entity.getTplCode());
-        }
-        if (Objects.nonNull(entity.getOrgId())) {
-            wrapper.eq(SmsCaptchaLogDO::getOrgId, entity.getOrgId());
-        }
-        if (CharSequenceUtil.isNotBlank((entity.getMobile()))) {
-            wrapper.like(SmsCaptchaLogDO::getMobile, entity.getMobile());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getJobNumber())) {
-            Long userId = GatewayLogServiceImpl.getUserIdByJobNumber(userClient, entity.getJobNumber());
-            entity.setUserId(userId);
-        } else if (CharSequenceUtil.isNotBlank(entity.getMobile())) {
-            Long userId = GatewayLogServiceImpl.getUserIdByMobile(userClient, entity.getMobile());
-            entity.setUserId(userId);
-        }
-        if (Objects.nonNull(entity.getUserId())) {
-            wrapper.eq("userId", entity.getUserId());
-        }
+        final EsLambdaQueryWrapper<SmsCaptchaLogDO> wrapper = buildPageWrapper(entity);
         List<OrderItem> orders = page.getOrders();
         if (CollUtil.isEmpty(orders)) {
             orders = new ArrayList<>(10);
@@ -131,6 +108,32 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
         }
         final IPage<SmsCaptchaLogDO> modelPage = super.page(page, wrapper);
         return modelPage.convert(model -> BeanUtil.copyProperties(model, SmsCaptchaLogPageVO.class));
+    }
+
+    @Override
+    public EsPageDTO<SmsCaptchaLogPageVO> pageByAfter(SmsCaptchaLogSearchAfterDTO entity) {
+        final EsLambdaQueryWrapper<SmsCaptchaLogDO> wrapper = buildPageWrapper(entity);
+
+        EsPageDTO<SmsCaptchaLogDO> page = EsPageDTO.<SmsCaptchaLogDO>builder()
+            .size(entity.getSize() == null ? 10 : entity.getSize())
+            .searchAfter(entity.getSearchAfter())
+            .build();
+
+        EsPageDTO<SmsCaptchaLogDO> resultPage = super.pageByAfter(page, wrapper);
+
+        List<SmsCaptchaLogPageVO> voList = null;
+        if (CollUtil.isNotEmpty(resultPage.getRecords())) {
+            voList = resultPage.getRecords().stream()
+                .map(model -> BeanUtil.copyProperties(model, SmsCaptchaLogPageVO.class))
+                .toList();
+        }
+
+        return EsPageDTO.<SmsCaptchaLogPageVO>builder()
+            .size(resultPage.getSize())
+            .total(resultPage.getTotal())
+            .records(voList)
+            .searchAfter(resultPage.getSearchAfter())
+            .build();
     }
 
     @Override
@@ -254,5 +257,65 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
         return dateTime.atZone(ZoneId.systemDefault())
             .toInstant()
             .toEpochMilli();
+    }
+
+    private EsLambdaQueryWrapper<SmsCaptchaLogDO> buildPageWrapper(SmsCaptchaLogSearchDTO entity) {
+        final EsLambdaQueryWrapper<SmsCaptchaLogDO> wrapper = new EsLambdaQueryWrapper<>();
+        if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
+            wrapper.eq(SmsCaptchaLogDO::getRequestId, entity.getRequestId());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getBizNumber())) {
+            wrapper.eq(SmsCaptchaLogDO::getBizNumber, entity.getBizNumber());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getTplCode())) {
+            wrapper.eq(SmsCaptchaLogDO::getTplCode, entity.getTplCode());
+        }
+        if (Objects.nonNull(entity.getOrgId())) {
+            wrapper.eq(SmsCaptchaLogDO::getOrgId, entity.getOrgId());
+        }
+        if (CharSequenceUtil.isNotBlank((entity.getMobile()))) {
+            wrapper.like(SmsCaptchaLogDO::getMobile, entity.getMobile());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getJobNumber())) {
+            Long userId = GatewayLogServiceImpl.getUserIdByJobNumber(userClient, entity.getJobNumber());
+            entity.setUserId(userId);
+        } else if (CharSequenceUtil.isNotBlank(entity.getMobile())) {
+            Long userId = GatewayLogServiceImpl.getUserIdByMobile(userClient, entity.getMobile());
+            entity.setUserId(userId);
+        }
+        if (Objects.nonNull(entity.getUserId())) {
+            wrapper.eq(SmsCaptchaLogDO::getUserId, entity.getUserId());
+        }
+        return wrapper;
+    }
+
+    private EsLambdaQueryWrapper<SmsCaptchaLogDO> buildPageWrapper(SmsCaptchaLogSearchAfterDTO entity) {
+        final EsLambdaQueryWrapper<SmsCaptchaLogDO> wrapper = new EsLambdaQueryWrapper<>();
+        if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
+            wrapper.eq(SmsCaptchaLogDO::getRequestId, entity.getRequestId());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getBizNumber())) {
+            wrapper.eq(SmsCaptchaLogDO::getBizNumber, entity.getBizNumber());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getTplCode())) {
+            wrapper.eq(SmsCaptchaLogDO::getTplCode, entity.getTplCode());
+        }
+        if (Objects.nonNull(entity.getOrgId())) {
+            wrapper.eq(SmsCaptchaLogDO::getOrgId, entity.getOrgId());
+        }
+        if (CharSequenceUtil.isNotBlank((entity.getMobile()))) {
+            wrapper.like(SmsCaptchaLogDO::getMobile, entity.getMobile());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getJobNumber())) {
+            Long userId = GatewayLogServiceImpl.getUserIdByJobNumber(userClient, entity.getJobNumber());
+            entity.setUserId(userId);
+        } else if (CharSequenceUtil.isNotBlank(entity.getMobile())) {
+            Long userId = GatewayLogServiceImpl.getUserIdByMobile(userClient, entity.getMobile());
+            entity.setUserId(userId);
+        }
+        if (Objects.nonNull(entity.getUserId())) {
+            wrapper.eq(SmsCaptchaLogDO::getUserId, entity.getUserId());
+        }
+        return wrapper;
     }
 }

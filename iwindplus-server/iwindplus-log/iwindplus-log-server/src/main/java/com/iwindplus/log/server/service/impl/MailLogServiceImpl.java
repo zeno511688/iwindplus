@@ -15,9 +15,11 @@ import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
 import com.iwindplus.log.domain.dto.MailLogDTO;
+import com.iwindplus.log.domain.dto.MailLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.MailLogSearchDTO;
 import com.iwindplus.log.domain.vo.MailLogPageVO;
 import com.iwindplus.log.domain.vo.MailLogVO;
@@ -107,8 +109,58 @@ public class MailLogServiceImpl extends EsBaseServiceImpl<MailLogDO>
 
     @Override
     public IPage<MailLogPageVO> page(MailLogSearchDTO entity) {
-        final EsLambdaQueryWrapper<MailLogDO> wrapper = new EsLambdaQueryWrapper<>();
         final PageDTO<MailLogDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
+        final EsLambdaQueryWrapper<MailLogDO> wrapper = buildPageWrapper(
+            entity);
+        List<OrderItem> orders = page.getOrders();
+        if (CollUtil.isEmpty(orders)) {
+            orders = new ArrayList<>(10);
+            OrderItem orderItem = OrderItem.desc("modifiedTimestamp");
+            orders.add(orderItem);
+            page.setOrders(orders);
+        }
+        final IPage<MailLogDO> modelPage = super.page(page, wrapper);
+        return modelPage.convert(model -> BeanUtil.copyProperties(model, MailLogPageVO.class));
+    }
+
+    @Override
+    public EsPageDTO<MailLogPageVO> pageByAfter(MailLogSearchAfterDTO entity) {
+        final EsLambdaQueryWrapper<MailLogDO> wrapper = buildPageWrapper(entity);
+
+        EsPageDTO<MailLogDO> page = EsPageDTO.<MailLogDO>builder()
+            .size(entity.getSize() == null ? 10 : entity.getSize())
+            .searchAfter(entity.getSearchAfter())
+            .build();
+
+        EsPageDTO<MailLogDO> resultPage = super.pageByAfter(page, wrapper);
+
+        List<MailLogPageVO> voList = null;
+        if (CollUtil.isNotEmpty(resultPage.getRecords())) {
+            voList = resultPage.getRecords().stream()
+                .map(model -> BeanUtil.copyProperties(model, MailLogPageVO.class))
+                .toList();
+        }
+
+        return EsPageDTO.<MailLogPageVO>builder()
+            .size(resultPage.getSize())
+            .total(resultPage.getTotal())
+            .records(voList)
+            .searchAfter(resultPage.getSearchAfter())
+            .build();
+    }
+
+    @Cacheable(key = "#root.methodName + '_' + #p0", condition = "#p0 != null", unless = "#result == null")
+    @Override
+    public MailLogVO getDetail(String id) {
+        MailLogDO data = super.getById(id);
+        if (Objects.isNull(data)) {
+            throw new BizException(BizCodeEnum.DATA_NOT_EXIST);
+        }
+        return BeanUtil.copyProperties(data, MailLogVO.class);
+    }
+
+    private EsLambdaQueryWrapper<MailLogDO> buildPageWrapper(MailLogSearchDTO entity) {
+        final EsLambdaQueryWrapper<MailLogDO> wrapper = new EsLambdaQueryWrapper<>();
         if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
             wrapper.eq(MailLogDO::getRequestId, entity.getRequestId());
         }
@@ -116,7 +168,7 @@ public class MailLogServiceImpl extends EsBaseServiceImpl<MailLogDO>
             wrapper.eq(MailLogDO::getBizNumber, entity.getBizNumber());
         }
         if (CharSequenceUtil.isNotBlank((entity.getSubject()))) {
-            wrapper.eq(MailLogDO::getSubject,entity.getSubject());
+            wrapper.eq(MailLogDO::getSubject, entity.getSubject());
         }
         if (CharSequenceUtil.isNotBlank((entity.getContent()))) {
             wrapper.like(MailLogDO::getContent, entity.getContent());
@@ -143,24 +195,45 @@ public class MailLogServiceImpl extends EsBaseServiceImpl<MailLogDO>
         if (Objects.nonNull(entity.getUserId())) {
             wrapper.eq(MailLogDO::getUserId, entity.getUserId());
         }
-        List<OrderItem> orders = page.getOrders();
-        if (CollUtil.isEmpty(orders)) {
-            orders = new ArrayList<>(10);
-            OrderItem orderItem = OrderItem.desc("modifiedTimestamp");
-            orders.add(orderItem);
-            page.setOrders(orders);
-        }
-        final IPage<MailLogDO> modelPage = super.page(page, wrapper);
-        return modelPage.convert(model -> BeanUtil.copyProperties(model, MailLogPageVO.class));
+        return wrapper;
     }
 
-    @Cacheable(key = "#root.methodName + '_' + #p0", condition = "#p0 != null", unless = "#result == null")
-    @Override
-    public MailLogVO getDetail(String id) {
-        MailLogDO data = super.getById(id);
-        if (Objects.isNull(data)) {
-            throw new BizException(BizCodeEnum.DATA_NOT_EXIST);
+    private EsLambdaQueryWrapper<MailLogDO> buildPageWrapper(MailLogSearchAfterDTO entity) {
+        final EsLambdaQueryWrapper<MailLogDO> wrapper = new EsLambdaQueryWrapper<>();
+        if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
+            wrapper.eq(MailLogDO::getRequestId, entity.getRequestId());
         }
-        return BeanUtil.copyProperties(data, MailLogVO.class);
+        if (CharSequenceUtil.isNotBlank(entity.getBizNumber())) {
+            wrapper.eq(MailLogDO::getBizNumber, entity.getBizNumber());
+        }
+        if (CharSequenceUtil.isNotBlank((entity.getSubject()))) {
+            wrapper.eq(MailLogDO::getSubject, entity.getSubject());
+        }
+        if (CharSequenceUtil.isNotBlank((entity.getContent()))) {
+            wrapper.like(MailLogDO::getContent, entity.getContent());
+        }
+        if (CharSequenceUtil.isNotBlank((entity.getNickName()))) {
+            wrapper.eq(MailLogDO::getNickName, entity.getNickName());
+        }
+        if (CharSequenceUtil.isNotBlank((entity.getUsername()))) {
+            wrapper.eq(MailLogDO::getUsername, entity.getUsername());
+        }
+        if (CharSequenceUtil.isNotBlank((entity.getTos()))) {
+            wrapper.like(MailLogDO::getTos, entity.getTos());
+        }
+        if (Objects.nonNull(entity.getResult())) {
+            wrapper.eq(MailLogDO::getResult, entity.getResult());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getJobNumber())) {
+            Long userId = GatewayLogServiceImpl.getUserIdByJobNumber(userClient, entity.getJobNumber());
+            entity.setUserId(userId);
+        } else if (CharSequenceUtil.isNotBlank(entity.getMobile())) {
+            Long userId = GatewayLogServiceImpl.getUserIdByMobile(userClient, entity.getMobile());
+            entity.setUserId(userId);
+        }
+        if (Objects.nonNull(entity.getUserId())) {
+            wrapper.eq(MailLogDO::getUserId, entity.getUserId());
+        }
+        return wrapper;
     }
 }

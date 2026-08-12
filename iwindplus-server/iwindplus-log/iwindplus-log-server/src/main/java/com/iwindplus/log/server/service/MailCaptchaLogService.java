@@ -5,8 +5,10 @@
 package com.iwindplus.log.server.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.EsBaseService;
 import com.iwindplus.log.domain.dto.MailCaptchaLogDTO;
+import com.iwindplus.log.domain.dto.MailCaptchaLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.MailCaptchaLogSearchDTO;
 import com.iwindplus.log.domain.dto.MailSendValidDTO;
 import com.iwindplus.log.domain.vo.MailCaptchaLogPageVO;
@@ -52,6 +54,14 @@ public interface MailCaptchaLogService extends EsBaseService<MailCaptchaLogDO> {
      * @return IPage<MailCaptchaLogPageVO>
      */
     IPage<MailCaptchaLogPageVO> page(MailCaptchaLogSearchDTO entity);
+
+    /**
+     * 深分页列表.
+     *
+     * @param entity 对象
+     * @return EsPageDTO<MailCaptchaLogPageVO>
+     */
+    EsPageDTO<MailCaptchaLogPageVO> pageByAfter(MailCaptchaLogSearchAfterDTO entity);
 
     /**
      * 校验是否可以发送.

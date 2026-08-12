@@ -22,11 +22,13 @@ import com.iwindplus.base.domain.context.HeaderContextHolder;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.domain.vo.ResultVO;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
 import com.iwindplus.base.util.AddressUtil;
 import com.iwindplus.base.util.domain.vo.AddressVO;
 import com.iwindplus.log.domain.dto.GatewayLogDTO;
+import com.iwindplus.log.domain.dto.GatewayLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.GatewayLogSearchDTO;
 import com.iwindplus.log.domain.vo.GatewayLogExtendVO;
 import com.iwindplus.log.domain.vo.GatewayLogPageVO;
@@ -41,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -118,42 +121,8 @@ public class GatewayLogServiceImpl extends EsBaseServiceImpl<GatewayLogDO> imple
 
     @Override
     public IPage<GatewayLogPageVO> page(GatewayLogSearchDTO entity) {
-        final EsLambdaQueryWrapper<GatewayLogDO> wrapper = new EsLambdaQueryWrapper<>();
         final PageDTO<GatewayLogDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
-        if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
-            wrapper.eq(GatewayLogDO::getRequestId, entity.getRequestId());
-        }
-        if (Objects.nonNull(entity.getOrgId())) {
-            wrapper.eq(GatewayLogDO::getOrgId, entity.getOrgId());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getTargetServer())) {
-            wrapper.eq(GatewayLogDO::getTargetServer, entity.getTargetServer());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getRequestPath())) {
-            wrapper.like(GatewayLogDO::getRequestPath, entity.getRequestPath());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getJobNumber())) {
-            Long userId = GatewayLogServiceImpl.getUserIdByJobNumber(userClient, entity.getJobNumber());
-            entity.setUserId(userId);
-        } else if (CharSequenceUtil.isNotBlank(entity.getMobile())) {
-            Long userId = GatewayLogServiceImpl.getUserIdByMobile(userClient, entity.getMobile());
-            entity.setUserId(userId);
-        }
-        if (Objects.nonNull(entity.getUserId())) {
-            wrapper.eq(GatewayLogDO::getUserId, entity.getUserId());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getBizTraceId())) {
-            wrapper.eq(GatewayLogDO::getBizTraceId, entity.getBizTraceId());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getIp())) {
-            wrapper.like(GatewayLogDO::getIp, entity.getIp());
-        }
-        if (Objects.nonNull(entity.getResponseStatus())) {
-            wrapper.eq(GatewayLogDO::getResponseStatus, entity.getResponseStatus());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getResponseErrorCode())) {
-            wrapper.eq(GatewayLogDO::getResponseErrorCode, entity.getResponseErrorCode());
-        }
+        final EsLambdaQueryWrapper<GatewayLogDO> wrapper = buildPageWrapper(entity);
         List<OrderItem> orders = page.getOrders();
         if (CollUtil.isEmpty(orders)) {
             orders = new ArrayList<>(10);
@@ -168,6 +137,38 @@ public class GatewayLogServiceImpl extends EsBaseServiceImpl<GatewayLogDO> imple
             this.buildUserInfo(result, records);
         }
         return result;
+    }
+
+    @Override
+    public EsPageDTO<GatewayLogPageVO> pageByAfter(GatewayLogSearchAfterDTO entity) {
+        final EsLambdaQueryWrapper<GatewayLogDO> wrapper = buildPageWrapper(entity);
+
+        EsPageDTO<GatewayLogDO> page = EsPageDTO.<GatewayLogDO>builder()
+            .size(entity.getSize() == null ? 10 : entity.getSize())
+            .searchAfter(entity.getSearchAfter())
+            .build();
+
+        EsPageDTO<GatewayLogDO> resultPage = super.pageByAfter(page, wrapper);
+
+        List<GatewayLogPageVO> voList = null;
+        if (CollUtil.isNotEmpty(resultPage.getRecords())) {
+            voList = GatewayLogServiceImpl.enrichUserInfo(
+                userClient,
+                resultPage.getRecords().stream()
+                    .map(model -> BeanUtil.copyProperties(model, GatewayLogPageVO.class))
+                    .toList(),
+                GatewayLogPageVO::getUserId,
+                v -> v::setJobNumber,
+                v -> v::setMobile
+            );
+        }
+
+        return EsPageDTO.<GatewayLogPageVO>builder()
+            .size(resultPage.getSize())
+            .total(resultPage.getTotal())
+            .records(voList)
+            .searchAfter(resultPage.getSearchAfter())
+            .build();
     }
 
     @Cacheable(key = "#root.methodName + '_' + #p0", condition = "#p0 != null", unless = "#result == null")
@@ -212,24 +213,42 @@ public class GatewayLogServiceImpl extends EsBaseServiceImpl<GatewayLogDO> imple
     }
 
     private void buildUserInfo(IPage<GatewayLogPageVO> result, List<GatewayLogPageVO> records) {
-        final List<Long> ids = records.stream().filter(Objects::nonNull).map(GatewayLogPageVO::getUserId).toList();
-        if (CollUtil.isNotEmpty(ids)) {
-            List<UserVO> userList = GatewayLogServiceImpl.getUserList(userClient, ids);
-            if (CollUtil.isNotEmpty(userList)) {
-                Map<Long, UserVO> userMap = userList.stream()
-                    .filter(Objects::nonNull).collect(Collectors.toMap(UserVO::getId, Function.identity()));
-                final List<GatewayLogPageVO> list = records.stream()
-                    .filter(Objects::nonNull)
-                    .peek(m -> {
-                        UserVO u = userMap.get(m.getUserId());
-                        if (u != null) {
-                            m.setJobNumber(u.getJobNumber());
-                            m.setMobile(u.getMobile());
-                        }
-                    }).toList();
-                result.setRecords(list);
-            }
+        List<GatewayLogPageVO> enriched = GatewayLogServiceImpl.enrichUserInfo(userClient, records,
+            GatewayLogPageVO::getUserId, v -> v::setJobNumber, v -> v::setMobile);
+        result.setRecords(enriched);
+    }
+
+    static <T> List<T> enrichUserInfo(
+        UserClient userClient,
+        List<T> records,
+        Function<T, Long> userIdGetter,
+        Function<T, Consumer<String>> jobNumberSetter,
+        Function<T, Consumer<String>> mobileSetter) {
+        final List<Long> ids = records.stream().filter(Objects::nonNull).map(userIdGetter).filter(Objects::nonNull).toList();
+        if (CollUtil.isEmpty(ids)) {
+            return records;
         }
+        List<UserVO> userList = GatewayLogServiceImpl.getUserList(userClient, ids);
+        if (CollUtil.isEmpty(userList)) {
+            return records;
+        }
+        Map<Long, UserVO> userMap = userList.stream()
+            .filter(Objects::nonNull).collect(Collectors.toMap(UserVO::getId, Function.identity()));
+        return records.stream()
+            .filter(Objects::nonNull)
+            .peek(m -> {
+                UserVO u = userMap.get(userIdGetter.apply(m));
+                if (u != null) {
+                    Consumer<String> jobSetter = jobNumberSetter.apply(m);
+                    if (jobSetter != null) {
+                        jobSetter.accept(u.getJobNumber());
+                    }
+                    Consumer<String> mobSetter = mobileSetter.apply(m);
+                    if (mobSetter != null) {
+                        mobSetter.accept(u.getMobile());
+                    }
+                }
+            }).toList();
     }
 
     static List<UserVO> getUserList(UserClient userClient, List<Long> ids) {
@@ -265,4 +284,83 @@ public class GatewayLogServiceImpl extends EsBaseServiceImpl<GatewayLogDO> imple
         }
         return null;
     }
+
+    private EsLambdaQueryWrapper<GatewayLogDO> buildPageWrapper(GatewayLogSearchDTO entity) {
+        final EsLambdaQueryWrapper<GatewayLogDO> wrapper = new EsLambdaQueryWrapper<>();
+        if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
+            wrapper.eq(GatewayLogDO::getRequestId, entity.getRequestId());
+        }
+        if (Objects.nonNull(entity.getOrgId())) {
+            wrapper.eq(GatewayLogDO::getOrgId, entity.getOrgId());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getTargetServer())) {
+            wrapper.eq(GatewayLogDO::getTargetServer, entity.getTargetServer());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getRequestPath())) {
+            wrapper.like(GatewayLogDO::getRequestPath, entity.getRequestPath());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getJobNumber())) {
+            Long userId = GatewayLogServiceImpl.getUserIdByJobNumber(userClient, entity.getJobNumber());
+            entity.setUserId(userId);
+        } else if (CharSequenceUtil.isNotBlank(entity.getMobile())) {
+            Long userId = GatewayLogServiceImpl.getUserIdByMobile(userClient, entity.getMobile());
+            entity.setUserId(userId);
+        }
+        if (Objects.nonNull(entity.getUserId())) {
+            wrapper.eq(GatewayLogDO::getUserId, entity.getUserId());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getBizTraceId())) {
+            wrapper.eq(GatewayLogDO::getBizTraceId, entity.getBizTraceId());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getIp())) {
+            wrapper.like(GatewayLogDO::getIp, entity.getIp());
+        }
+        if (Objects.nonNull(entity.getResponseStatus())) {
+            wrapper.eq(GatewayLogDO::getResponseStatus, entity.getResponseStatus());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getResponseErrorCode())) {
+            wrapper.eq(GatewayLogDO::getResponseErrorCode, entity.getResponseErrorCode());
+        }
+        return wrapper;
+    }
+
+    private EsLambdaQueryWrapper<GatewayLogDO> buildPageWrapper(GatewayLogSearchAfterDTO entity) {
+        final EsLambdaQueryWrapper<GatewayLogDO> wrapper = new EsLambdaQueryWrapper<>();
+        if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
+            wrapper.eq(GatewayLogDO::getRequestId, entity.getRequestId());
+        }
+        if (Objects.nonNull(entity.getOrgId())) {
+            wrapper.eq(GatewayLogDO::getOrgId, entity.getOrgId());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getTargetServer())) {
+            wrapper.eq(GatewayLogDO::getTargetServer, entity.getTargetServer());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getRequestPath())) {
+            wrapper.like(GatewayLogDO::getRequestPath, entity.getRequestPath());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getJobNumber())) {
+            Long userId = GatewayLogServiceImpl.getUserIdByJobNumber(userClient, entity.getJobNumber());
+            entity.setUserId(userId);
+        } else if (CharSequenceUtil.isNotBlank(entity.getMobile())) {
+            Long userId = GatewayLogServiceImpl.getUserIdByMobile(userClient, entity.getMobile());
+            entity.setUserId(userId);
+        }
+        if (Objects.nonNull(entity.getUserId())) {
+            wrapper.eq(GatewayLogDO::getUserId, entity.getUserId());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getBizTraceId())) {
+            wrapper.eq(GatewayLogDO::getBizTraceId, entity.getBizTraceId());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getIp())) {
+            wrapper.like(GatewayLogDO::getIp, entity.getIp());
+        }
+        if (Objects.nonNull(entity.getResponseStatus())) {
+            wrapper.eq(GatewayLogDO::getResponseStatus, entity.getResponseStatus());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getResponseErrorCode())) {
+            wrapper.eq(GatewayLogDO::getResponseErrorCode, entity.getResponseErrorCode());
+        }
+        return wrapper;
+    }
+
 }
