@@ -337,7 +337,6 @@ public class I18nProjectServiceImpl implements I18nProjectService {
             .param(ImmutableMap.of("fileName", fileName, "content", content))
             .executorClass(I18nMsgPushTaskHandler.class)
             .remark("国际化消息推送数据至Nacos")
-            .needCallback(true)
             .build();
         final AsyncCmdSubmitVO submit = this.asyncCmdExecutor.submit(build);
         log.info("Push i18n data to nacos, fileName: {}, result: {}", fileName, submit);
