@@ -145,7 +145,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
     private void checkBaseParam(AsyncCmdSubmitBaseDTO entity) {
         Assert.notNull(entity, "entity must not be null");
-        Assert.notNull(entity.getBizName(), "bizName must not be null");
+        Assert.hasText(entity.getBizName(), "bizName must not be null");
         Assert.hasText(entity.getBizKey(), "bizKey must not be blank");
         Assert.hasText(entity.getBizType(), "bizType must not be blank");
     }
@@ -164,9 +164,9 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
     private void checkSubSubmitParam(AsyncCmdSubSubmitDTO entity, Integer index) {
         Assert.notNull(entity, "sub entity must not be null");
-        Assert.notNull(entity.getBizName(), "sub[" + index + "].bizName must not be null");
-        Assert.notNull(entity.getBizKey(), "sub[" + index + "].bizKey must not be null");
-        Assert.notNull(entity.getBizType(), "sub[" + index + "].bizType must not be null");
+        Assert.hasText(entity.getBizName(), "sub[" + index + "].bizName must not be null");
+        Assert.hasText(entity.getBizKey(), "sub[" + index + "].bizKey must not be null");
+        Assert.hasText(entity.getBizType(), "sub[" + index + "].bizType must not be null");
         Assert.isTrue(
             entity.getSeq() != null && entity.getSeq() > 0,
             "sub[" + index + "].seq must be greater than 0"
