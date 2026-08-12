@@ -73,4 +73,3 @@ CREATE TABLE `async_cmd_sub`
     PRIMARY KEY (`id`),
     KEY `idx_async_cmd_id_seq_status` (`async_cmd_id`, `seq`, `status`) COMMENT '复合索引（异步命令主键, 排序号, 状态）'
 ) COMMENT ='异步命令子表';
-DROP TABLE IF EXISTS `async_cmd_sub`;
