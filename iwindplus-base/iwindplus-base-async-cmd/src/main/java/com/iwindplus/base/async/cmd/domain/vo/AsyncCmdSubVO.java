@@ -71,12 +71,6 @@ public class AsyncCmdSubVO extends AsyncCmdSubBaseVO {
     private Boolean needCallback;
 
     /**
-     * 等待异步结果的截止时间.
-     */
-    @Schema(description = "等待异步结果的截止时间")
-    private Long callbackExpireTime;
-
-    /**
      * 是否需要显示（查进度时用）.
      */
     @Schema(description = "是否需要显示")

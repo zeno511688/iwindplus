@@ -250,9 +250,10 @@ public class ApiWhiteListServiceImpl implements ApiWhiteListService {
         final String content = JacksonUtil.toJsonStr(messageDTO);
 
         final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
+            .bizName("API白名单数据发送kafka")
             .bizKey("API_WHITE_LIST")
             .bizType("API_WHITE_LIST_PUSH")
-            .content(ImmutableMap.of("content", content))
+            .param(ImmutableMap.of("content", content))
             .executorClass(ApiWhiteListTaskHandler.class)
             .remark("API白名单数据发送kafka")
             .build();

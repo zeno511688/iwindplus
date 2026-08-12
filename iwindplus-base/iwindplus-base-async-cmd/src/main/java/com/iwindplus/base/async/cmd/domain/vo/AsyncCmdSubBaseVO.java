@@ -37,10 +37,28 @@ public class AsyncCmdSubBaseVO extends DbVersionBaseDTO {
     private AsyncCmdStatusEnum status;
 
     /**
+     * 业务名称.
+     */
+    @Schema(description = "业务名称")
+    private String bizName;
+
+    /**
+     * 业务key，例如 ORDER.
+     */
+    @Schema(description = "业务key，例如 ORDER")
+    private String bizKey;
+
+    /**
      * 业务类型，例如 ORDER_CREATE.
      */
     @Schema(description = "业务类型，例如 ORDER_CREATE")
     private String bizType;
+
+    /**
+     * 业务流水号.
+     */
+    @Schema(description = "业务流水号")
+    private String bizNumber;
 
     /**
      * 阶段（同阶段子任务并发）.
@@ -59,6 +77,12 @@ public class AsyncCmdSubBaseVO extends DbVersionBaseDTO {
      */
     @Schema(description = "耗时")
     private Long costTime;
+
+    /**
+     * 回调等待截止时间（异步等待超时兜底）.
+     */
+    @Schema(description = "回调等待截止时间")
+    private Long expireTime;
 
     /**
      * 重试次数.

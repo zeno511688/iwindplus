@@ -224,9 +224,10 @@ public class IpBlackListServiceImpl implements IpBlackListService {
         final String content = JacksonUtil.toJsonStr(messageDTO);
 
         final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
+            .bizName("IP黑名单数据发送kafka")
             .bizKey("IP_BLACK_LIST")
             .bizType("IP_BLACK_PUSH")
-            .content(ImmutableMap.of("content", content))
+            .param(ImmutableMap.of("content", content))
             .executorClass(ApiWhiteListTaskHandler.class)
             .remark("IP黑名单数据发送kafka")
             .build();

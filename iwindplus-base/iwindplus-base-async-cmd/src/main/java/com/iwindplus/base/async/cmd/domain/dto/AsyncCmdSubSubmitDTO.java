@@ -10,10 +10,10 @@ package com.iwindplus.base.async.cmd.domain.dto;
 import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import com.iwindplus.base.util.JacksonUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
@@ -26,15 +26,16 @@ import lombok.experimental.SuperBuilder;
 @Schema(description = "异步命令子任务提交数据传输对象")
 @Data
 @SuperBuilder
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class AsyncCmdSubSubmitDTO implements Serializable {
+public class AsyncCmdSubSubmitDTO extends AsyncCmdSubmitBaseDTO {
 
     /**
-     * 内容（必填）.
+     * 参数（必填）.
      */
-    @Schema(description = "内容")
-    private Map<String, Object> content;
+    @Schema(description = "参数")
+    private Map<String, Object> param;
 
     /**
      * 执行器类（必填）.
@@ -43,22 +44,16 @@ public class AsyncCmdSubSubmitDTO implements Serializable {
     private Class<? extends AsyncCmdSubTaskHandler> executorClass;
 
     /**
-     * 业务类型（必填），例如 ORDER、USER.
+     * 排序号（必填）
      */
-    @Schema(description = "业务类型，例如 ORDER_CREATE")
-    private String bizType;
+    @Schema(description = "排序号")
+    private Integer seq;
 
     /**
      * 阶段（同阶段子任务并发）.
      */
     @Schema(description = "阶段")
     private Integer stage;
-
-    /**
-     * 排序号（必填）
-     */
-    @Schema(description = "排序号")
-    private Integer seq;
 
     /**
      * 备注（可选）.
@@ -79,28 +74,28 @@ public class AsyncCmdSubSubmitDTO implements Serializable {
     private Boolean needDisplay;
 
     /**
-     * 设置数据.
+     * 设置参数.
      *
      * @param data 数据
      * @param <T>  泛型
      */
     public <T> void setData(T data) {
-        this.content = JacksonUtil.parseMap(JacksonUtil.toJsonStr(data));
+        this.param = JacksonUtil.parseMap(JacksonUtil.toJsonStr(data));
     }
 
     /**
-     * 获取数据并转换为指定类型.
+     * 获取参数并转换为指定类型.
      *
      * @param clazz 目标类型
      * @param <T>   泛型
      * @return T
      */
     public <T> T getData(Class<T> clazz) {
-        if (content == null) {
+        if (param == null) {
             return null;
         }
         // 使用 JSON 序列化/反序列化转换
-        String json = JacksonUtil.toJsonStr(content);
+        String json = JacksonUtil.toJsonStr(param);
         return JacksonUtil.parseObject(json, clazz);
     }
 }

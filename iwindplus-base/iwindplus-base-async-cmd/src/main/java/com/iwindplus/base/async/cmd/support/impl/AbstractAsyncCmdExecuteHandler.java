@@ -88,20 +88,6 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
      */
     protected AsyncCmdVO executeCallbackAsyncWait(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start,
         BiFunction<AsyncCmdVO, Long, Boolean> onSuccessAction) {
-        final Long callbackExpireTime = entity.getCallbackExpireTime();
-        if (Objects.nonNull(callbackExpireTime) && System.currentTimeMillis() > callbackExpireTime) {
-            final String msg = "asyncCmd task callback timeout";
-
-            log.warn(msg + ", id={}", entity.getId());
-
-            this.getAsyncCmdStateSupport()
-                .taskAsyncWaitFail(entity, handler,
-                    entity.getCostTime() + System.currentTimeMillis() - start,
-                    new RuntimeException(msg));
-
-            return entity;
-        }
-
         final AsyncCmdCallbackResultEnum callbackResult = this.getTaskCallback(entity, handler);
         if (AsyncCmdCallbackResultEnum.SUCCESS.equals(callbackResult)) {
             if (!onSuccessAction.apply(entity, entity.getCostTime() + System.currentTimeMillis() - start)) {
@@ -121,11 +107,21 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
             return entity;
         }
 
+        // 回调等待截止时间到期（expireTime复用存储），转失败走重置重试/丢弃链路，避免无限轮询
+        final Long expireTime = entity.getExpireTime();
+        if (Objects.nonNull(expireTime) && expireTime <= System.currentTimeMillis()) {
+            this.getAsyncCmdStateSupport().taskAsyncWaitFail(entity, handler,
+                entity.getCostTime() + System.currentTimeMillis() - start,
+                new RuntimeException("asyncCmd task callback timeout"));
+
+            return entity;
+        }
+
         // 仍在等待中，刷新下次轮询时间，避免每次 RETRY_JOB 都被拾起
         final Long nextRetryTime = this.getAsyncCmdStateSupport().getNextRetryTime();
         this.getAsyncCmdService().editStatusById(
             entity.getId(), AsyncCmdStatusEnum.ASYNC_WAIT, AsyncCmdStatusEnum.ASYNC_WAIT,
-            null, null, null, nextRetryTime, null, null);
+            null, null, null, nextRetryTime, null);
         entity.setNextRetryTime(nextRetryTime);
 
         return entity;

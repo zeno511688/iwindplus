@@ -45,10 +45,28 @@ public class AsyncCmdSubDO extends DbBaseDO {
     private AsyncCmdStatusEnum status;
 
     /**
+     * 业务名称.
+     */
+    @Schema(description = "业务名称")
+    private String bizName;
+
+    /**
+     * 业务key，例如 ORDER.
+     */
+    @Schema(description = "业务key，例如 ORDER")
+    private String bizKey;
+
+    /**
      * 业务类型，例如 ORDER_CREATE.
      */
     @Schema(description = "业务类型，例如 ORDER_CREATE")
     private String bizType;
+
+    /**
+     * 业务流水号.
+     */
+    @Schema(description = "业务流水号")
+    private String bizNumber;
 
     /**
      * 阶段.
@@ -69,11 +87,11 @@ public class AsyncCmdSubDO extends DbBaseDO {
     private String executeName;
 
     /**
-     * 内容.
+     * 参数.
      */
-    @Schema(description = "内容")
+    @Schema(description = "参数")
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private Map<String, Object> content;
+    private Map<String, Object> param;
 
     /**
      * 结果（供后续任务读取，同一批互相不可见，由于是并发）.
@@ -107,10 +125,10 @@ public class AsyncCmdSubDO extends DbBaseDO {
     private Boolean needCallback;
 
     /**
-     * 等待异步结果的截止时间.
+     * 回调等待截止时间（异步等待超时兜底）.
      */
-    @Schema(description = "等待异步结果的截止时间")
-    private Long callbackExpireTime;
+    @Schema(description = "回调等待截止时间")
+    private Long expireTime;
 
     /**
      * 是否需要显示（查进度时用）.

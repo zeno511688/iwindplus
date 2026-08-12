@@ -331,11 +331,13 @@ public class I18nProjectServiceImpl implements I18nProjectService {
 
     private boolean pushData(String fileName, String content) {
         final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
+            .bizName("国际化消息推送数据至Nacos")
             .bizKey("I18N_MSG")
             .bizType("I18N_MSG_PUSH")
-            .content(ImmutableMap.of("fileName", fileName, "content", content))
+            .param(ImmutableMap.of("fileName", fileName, "content", content))
             .executorClass(I18nMsgPushTaskHandler.class)
             .remark("国际化消息推送数据至Nacos")
+            .needCallback(true)
             .build();
         final AsyncCmdSubmitVO submit = this.asyncCmdExecutor.submit(build);
         log.info("Push i18n data to nacos, fileName: {}, result: {}", fileName, submit);
@@ -344,9 +346,10 @@ public class I18nProjectServiceImpl implements I18nProjectService {
 
     private boolean removeData(String fileName) {
         final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
+            .bizName("删除Nacos国际化消息数据")
             .bizKey("I18N_MSG")
             .bizType("I18N_MSG_REMOVE")
-            .content(ImmutableMap.of("fileName", fileName))
+            .param(ImmutableMap.of("fileName", fileName))
             .executorClass(I18nMsgRemoveTaskHandler.class)
             .remark("删除Nacos国际化消息数据")
             .build();

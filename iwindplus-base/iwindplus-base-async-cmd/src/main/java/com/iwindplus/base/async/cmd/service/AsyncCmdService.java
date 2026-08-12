@@ -110,12 +110,11 @@ public interface AsyncCmdService {
      * @param retryCount         重试次数
      * @param nextRetryTime      下一次重试时间
      * @param expireTime         续约时间
-     * @param callbackExpireTime 等待异步结果的截止时间
      * @return boolean
      */
     boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
         Long costTime, String errorMsg, Integer retryCount,
-        Long nextRetryTime, Long expireTime, Long callbackExpireTime);
+        Long nextRetryTime, Long expireTime);
 
     /**
      * 续订租期时间.

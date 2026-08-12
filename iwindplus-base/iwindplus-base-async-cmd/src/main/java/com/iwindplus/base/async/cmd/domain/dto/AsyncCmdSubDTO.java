@@ -44,12 +44,33 @@ public class AsyncCmdSubDTO extends DbVersionBaseDTO {
     private AsyncCmdStatusEnum status;
 
     /**
+     * 业务名称.
+     */
+    @Schema(description = "业务名称")
+    @Length(max = 100, message = "{bizName.length}", groups = {SaveGroup.class, EditGroup.class})
+    private String bizName;
+
+    /**
+     * 业务key，例如 ORDER.
+     */
+    @Schema(description = "业务key，例如 ORDER")
+    @Length(max = 100, message = "{bizKey.length}", groups = {SaveGroup.class, EditGroup.class})
+    private String bizKey;
+
+    /**
      * 业务类型，例如 ORDER_CREATE.
      */
     @Schema(description = "业务类型，例如 ORDER_CREATE")
     @NotBlank(message = "{bizType.notEmpty}", groups = {SaveGroup.class, EditGroup.class})
     @Length(max = 100, message = "{bizType.length}", groups = {SaveGroup.class, EditGroup.class})
     private String bizType;
+
+    /**
+     * 业务流水号.
+     */
+    @Schema(description = "业务流水号")
+    @Length(max = 100, message = "{bizNumber.length}", groups = {SaveGroup.class, EditGroup.class})
+    private String bizNumber;
 
     /**
      * 阶段（同阶段子任务并发）.
@@ -73,11 +94,11 @@ public class AsyncCmdSubDTO extends DbVersionBaseDTO {
     private String executeName;
 
     /**
-     * 内容.
+     * 参数.
      */
-    @Schema(description = "内容")
-    @NotEmpty(message = "{content.notEmpty}", groups = {SaveGroup.class, EditGroup.class})
-    private Map<String, Object> content;
+    @Schema(description = "参数")
+    @NotEmpty(message = "{param.notEmpty}", groups = {SaveGroup.class, EditGroup.class})
+    private Map<String, Object> param;
 
     /**
      * 结果（供后续任务读取，同一批互相不可见，由于是并发）.
@@ -108,12 +129,6 @@ public class AsyncCmdSubDTO extends DbVersionBaseDTO {
      */
     @Schema(description = "是否需要回调")
     private Boolean needCallback;
-
-    /**
-     * 等待异步结果的截止时间.
-     */
-    @Schema(description = "等待异步结果的截止时间")
-    private Long callbackExpireTime;
 
     /**
      * 是否需要显示（查进度时用）.

@@ -27,6 +27,12 @@ import lombok.experimental.SuperBuilder;
 public class AsyncCmdSubmitBaseDTO implements Serializable {
 
     /**
+     * 业务名称（必填）.
+     */
+    @Schema(description = "业务名称")
+    private String bizName;
+
+    /**
      * 业务key（必填），例如 ORDER.
      */
     @Schema(description = "业务key，例如 ORDER")

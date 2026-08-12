@@ -49,6 +49,12 @@ public class AsyncCmdDO extends DbBaseDO {
     private String env;
 
     /**
+     * 业务名称.
+     */
+    @Schema(description = "业务名称")
+    private String bizName;
+
+    /**
      * 业务key，例如 ORDER.
      */
     @Schema(description = "业务key，例如 ORDER")
@@ -79,11 +85,11 @@ public class AsyncCmdDO extends DbBaseDO {
     private String executeName;
 
     /**
-     * 内容.
+     * 参数.
      */
-    @Schema(description = "内容")
+    @Schema(description = "参数")
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private Map<String, Object> content;
+    private Map<String, Object> param;
 
     /**
      * 过期时间.
@@ -132,12 +138,6 @@ public class AsyncCmdDO extends DbBaseDO {
      */
     @Schema(description = "是否先回调（组任务模式：先主执行回调成功再分发子任务）")
     private Boolean callbackFirst;
-
-    /**
-     * 等待异步结果的截止时间.
-     */
-    @Schema(description = "等待异步结果的截止时间")
-    private Long callbackExpireTime;
 
     /**
      * 是否需要显示（查进度时用）.

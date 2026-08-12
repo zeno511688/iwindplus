@@ -34,6 +34,12 @@ public class AsyncCmdSubmitVO implements Serializable {
     private Long id;
 
     /**
+     * 业务名称.
+     */
+    @Schema(description = "业务名称")
+    private String bizName;
+
+    /**
      * 业务key（必填），例如 ORDER.
      */
     @Schema(description = "业务key，例如 ORDER")

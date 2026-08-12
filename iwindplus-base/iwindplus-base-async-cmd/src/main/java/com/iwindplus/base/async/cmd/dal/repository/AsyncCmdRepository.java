@@ -69,7 +69,12 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
     public AsyncCmdVO saveGroup(AsyncCmdGrouSaveDTO entity) {
         final AsyncCmdVO result = this.save(entity);
         final List<AsyncCmdSubSaveDTO> subTasks = entity.getSubTasks();
-        subTasks.forEach(subTask -> subTask.setAsyncCmdId(result.getId()));
+        subTasks.forEach(subTask -> {
+            subTask.setAsyncCmdId(result.getId());
+            if (CharSequenceUtil.isBlank(subTask.getBizNumber())) {
+                subTask.setBizNumber(IdWorker.getIdStr());
+            }
+        });
         final List<AsyncCmdSubDO> subEntities = BeanUtil.copyToList(subTasks, AsyncCmdSubDO.class);
         this.asyncCmdSubMapper.insert(subEntities);
         return result;
@@ -157,21 +162,20 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
     /**
      * 通过主键修改状态.
      *
-     * @param id                 主键
-     * @param from               从状态
-     * @param to                 到状态
-     * @param costTime           耗时
-     * @param errorMsg           错误信息
-     * @param retryCount         重试次数
-     * @param nextRetryTime      下次重试时间
-     * @param expireTime         续约时间
-     * @param callbackExpireTime 等待异步结果的截止时间
+     * @param id            主键
+     * @param from          从状态
+     * @param to            到状态
+     * @param costTime      耗时
+     * @param errorMsg      错误信息
+     * @param retryCount    重试次数
+     * @param nextRetryTime 下次重试时间
+     * @param expireTime    续约时间
      * @return boolean
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
         Long costTime, String errorMsg, Integer retryCount, Long nextRetryTime,
-        Long expireTime, Long callbackExpireTime) {
+        Long expireTime) {
         final AsyncCmdDOBuilder<?, ?> builder = AsyncCmdDO.builder()
             .status(to)
             .modifiedTimestamp(System.currentTimeMillis());
@@ -189,9 +193,6 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
         }
         if (expireTime != null) {
             builder.expireTime(expireTime);
-        }
-        if (callbackExpireTime != null) {
-            builder.callbackExpireTime(callbackExpireTime);
         }
 
         final LambdaUpdateWrapper<AsyncCmdDO> updateWrapper = Wrappers.<AsyncCmdDO>lambdaUpdate()
@@ -228,8 +229,8 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
         if (CharSequenceUtil.isBlank(entity.getBizNumber())) {
             entity.setBizNumber(IdWorker.getIdStr());
         }
-        if (MapUtil.isEmpty(entity.getContent())) {
-            entity.setContent(MapUtil.newHashMap());
+        if (MapUtil.isEmpty(entity.getParam())) {
+            entity.setParam(MapUtil.newHashMap());
         }
         return BeanUtil.copyProperties(entity, AsyncCmdDO.class);
     }

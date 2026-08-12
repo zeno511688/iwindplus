@@ -56,8 +56,7 @@ public record AsyncCmdStateSupport(
                     null,
                     null,
                     null,
-                    this.asyncCmdRepository.getNextExpireTime(),
-                    null
+                    this.asyncCmdRepository.getNextExpireTime()
                 )
             )
         );
@@ -83,7 +82,6 @@ public record AsyncCmdStateSupport(
                     AsyncCmdStatusEnum.EXECUTE,
                     AsyncCmdStatusEnum.SUCCESS,
                     costTime,
-                    null,
                     null,
                     null,
                     null,
@@ -144,8 +142,7 @@ public record AsyncCmdStateSupport(
                     stack,
                     retryCount,
                     nextRetryTime,
-                    currentTimeMillis,
-                    null
+                    currentTimeMillis
                 )
             )
         );
@@ -179,8 +176,8 @@ public record AsyncCmdStateSupport(
         AsyncCmdTaskHandler handler,
         Long costTime) {
 
-        final Long callbackExpireTime = this.getCallbackExpireTime();
         final Long nextRetryTime = this.getNextRetryTime();
+        final Long callbackWaitExpireTime = this.getCallbackWaitExpireTime();
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
@@ -192,8 +189,7 @@ public record AsyncCmdStateSupport(
                     null,
                     null,
                     nextRetryTime,
-                    null,
-                    callbackExpireTime
+                    callbackWaitExpireTime
                 )
             )
         );
@@ -204,8 +200,8 @@ public record AsyncCmdStateSupport(
         entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.ASYNC_WAIT);
         entity.setCostTime(costTime);
-        entity.setCallbackExpireTime(callbackExpireTime);
         entity.setNextRetryTime(nextRetryTime);
+        entity.setExpireTime(callbackWaitExpireTime);
         if (Objects.isNull(handler)) {
             return true;
         }
@@ -234,7 +230,6 @@ public record AsyncCmdStateSupport(
                     null,
                     null,
                     nextRetryTime,
-                    null,
                     null
                 )
             )
@@ -251,27 +246,25 @@ public record AsyncCmdStateSupport(
     }
 
     /**
-     * 任务异步等待回调成功后转为待执行（callbackFirst模式，回调成功后分发子任务）.
+     * 任务异步等待回调成功后转为执行中（callbackFirst模式，回调成功后立即分发子任务）.
+     * <p>续约执行租约，随后分发子任务</p>
      *
      * @param entity   对象
      * @param costTime 耗时
      * @return boolean
      */
-    public boolean taskAsyncWaitToBeExecute(AsyncCmdVO entity, Long costTime) {
-        final Long nextRetryTime = this.getNextRetryTime();
-
+    public boolean taskAsyncWaitToExecute(AsyncCmdVO entity, Long costTime) {
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
                 asyncCmdService.editStatusById(
                     entity.getId(),
                     AsyncCmdStatusEnum.ASYNC_WAIT,
-                    AsyncCmdStatusEnum.TO_BE_EXECUTE,
+                    AsyncCmdStatusEnum.EXECUTE,
                     costTime,
                     null,
                     null,
-                    nextRetryTime,
                     null,
-                    0L
+                    this.asyncCmdRepository.getNextExpireTime()
                 )
             )
         );
@@ -280,9 +273,7 @@ public record AsyncCmdStateSupport(
             return false;
         }
         entity.setModifiedTimestamp(System.currentTimeMillis());
-        entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
-        entity.setCallbackExpireTime(0L);
-        entity.setNextRetryTime(nextRetryTime);
+        entity.setStatus(AsyncCmdStatusEnum.EXECUTE);
         entity.setCostTime(costTime);
         return true;
     }
@@ -309,8 +300,7 @@ public record AsyncCmdStateSupport(
                     null,
                     null,
                     null,
-                    null,
-                    0L
+                    null
                 )
             )
         );
@@ -320,7 +310,6 @@ public record AsyncCmdStateSupport(
         }
         entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
-        entity.setCallbackExpireTime(0L);
         if (Objects.isNull(handler)) {
             return true;
         }
@@ -345,6 +334,7 @@ public record AsyncCmdStateSupport(
         final int retryCount = Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
         final String stack = this.getStack(ex);
         final Long nextRetryTime = this.getNextRetryTime();
+        final long currentTimeMillis = System.currentTimeMillis();
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
@@ -356,8 +346,8 @@ public record AsyncCmdStateSupport(
                     stack,
                     retryCount,
                     nextRetryTime,
-                    null,
-                    null
+                    // 释放回调等待截止时间，便于RESET_JOB及时重置
+                    currentTimeMillis
                 )
             )
         );
@@ -369,6 +359,7 @@ public record AsyncCmdStateSupport(
         entity.setStatus(AsyncCmdStatusEnum.FAILED);
         entity.setRetryCount(retryCount);
         entity.setErrorMsg(stack);
+        entity.setExpireTime(currentTimeMillis);
         if (Objects.isNull(handler)) {
             return true;
         }
@@ -400,7 +391,6 @@ public record AsyncCmdStateSupport(
                     null,
                     entity.getResult(),
                     null
-
                 )
             )
         );
@@ -478,7 +468,7 @@ public record AsyncCmdStateSupport(
         AsyncCmdSubVO entity,
         AsyncCmdSubTaskHandler handler,
         Long costTime) {
-        final Long callbackExpireTime = this.getCallbackExpireTime();
+        final Long callbackWaitExpireTime = this.getCallbackWaitExpireTime();
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
@@ -490,7 +480,7 @@ public record AsyncCmdStateSupport(
                     null,
                     null,
                     entity.getResult(),
-                    callbackExpireTime
+                    callbackWaitExpireTime
                 )
             )
         );
@@ -501,7 +491,7 @@ public record AsyncCmdStateSupport(
         entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.ASYNC_WAIT);
         entity.setCostTime(costTime);
-        entity.setCallbackExpireTime(callbackExpireTime);
+        entity.setExpireTime(callbackWaitExpireTime);
         if (Objects.isNull(handler)) {
             return true;
         }
@@ -596,16 +586,6 @@ public record AsyncCmdStateSupport(
     }
 
     /**
-     * 获取回调过期时间
-     *
-     * @return long
-     */
-    public Long getCallbackExpireTime() {
-        return System.currentTimeMillis()
-            + Optional.ofNullable(this.property.getAsyncWaitTimeoutSeconds()).orElse(1800L) * NumberConstant.NUMBER_ONE_THOUSAND;
-    }
-
-    /**
      * 获取下一次重试时间
      *
      * @return long
@@ -613,6 +593,16 @@ public record AsyncCmdStateSupport(
     public Long getNextRetryTime() {
         return System.currentTimeMillis()
             + Optional.ofNullable(this.property.getAsyncWaitPoolSeconds()).orElse(60L) * NumberConstant.NUMBER_ONE_THOUSAND;
+    }
+
+    /**
+     * 获取回调等待截止时间（主任务复用expireTime、子任务使用expireTime字段存储，作为回调超时兜底）.
+     *
+     * @return long
+     */
+    public Long getCallbackWaitExpireTime() {
+        return System.currentTimeMillis()
+            + Optional.ofNullable(this.property.getAsyncWaitTimeoutSeconds()).orElse(1800L) * NumberConstant.NUMBER_ONE_THOUSAND;
     }
 
     /**

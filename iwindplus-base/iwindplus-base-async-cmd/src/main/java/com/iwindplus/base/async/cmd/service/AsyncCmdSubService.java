@@ -26,11 +26,20 @@ public interface AsyncCmdSubService {
      * @param errorMsg           错误信息
      * @param retryCount         重试次数
      * @param result             结果
-     * @param callbackExpireTime 等待异步结果的截止时间
+     * @param expireTime         回调等待截止时间
      * @return boolean
      */
     boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result, Long callbackExpireTime);
+        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result, Long expireTime);
+
+    /**
+     * 通过异步命令主键获取已开始执行的子任务数量（状态非待执行）.
+     * <p>callbackFirst模式用于判断主任务是否已进入分发子任务阶段</p>
+     *
+     * @param asyncCmdId 异步命令主键
+     * @return long
+     */
+    long countStarted(Long asyncCmdId);
 
     /**
      * 通过异步命令主键获取子任务数量.

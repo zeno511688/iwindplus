@@ -75,32 +75,15 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
      * @param from               从状态
      * @param to                 到状态
      * @param costTime           耗时
-     * @param result             结果
-     * @param callbackExpireTime 等待异步结果的截止时间
-     * @return boolean
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to, Long costTime, Map<String, Object> result,
-        Long callbackExpireTime) {
-        return updateStatusById(id, from, to, costTime, null, null, result, callbackExpireTime);
-    }
-
-    /**
-     * 通过主键修改状态.
-     *
-     * @param id                 主键
-     * @param from               从状态
-     * @param to                 到状态
-     * @param costTime           耗时
      * @param errorMsg           错误信息
      * @param retryCount         重试次数
      * @param result             结果
-     * @param callbackExpireTime 等待异步结果的截止时间
+     * @param expireTime         回调等待截止时间
      * @return boolean
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result, Long callbackExpireTime) {
+        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result, Long expireTime) {
         final AsyncCmdSubDOBuilder<?, ?> builder = AsyncCmdSubDO.builder()
             .status(to)
             .modifiedTimestamp(System.currentTimeMillis());
@@ -116,8 +99,8 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
         if (MapUtil.isNotEmpty(result)) {
             builder.result(result);
         }
-        if (Objects.nonNull(callbackExpireTime)) {
-            builder.callbackExpireTime(callbackExpireTime);
+        if (expireTime != null) {
+            builder.expireTime(expireTime);
         }
 
         final LambdaUpdateWrapper<AsyncCmdSubDO> updateWrapper = Wrappers.<AsyncCmdSubDO>lambdaUpdate()
@@ -165,8 +148,10 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
         if (Boolean.FALSE.equals(showTextField)) {
             queryWrapper.select(AsyncCmdSubDO::getId, AsyncCmdSubDO::getCreatedTimestamp, AsyncCmdSubDO::getCreatedBy,
                 AsyncCmdSubDO::getModifiedTimestamp, AsyncCmdSubDO::getModifiedBy, AsyncCmdSubDO::getVersion,
-                AsyncCmdSubDO::getStatus, AsyncCmdSubDO::getBizType, AsyncCmdSubDO::getStage, AsyncCmdSubDO::getSeq,
-                AsyncCmdSubDO::getRetryCount, AsyncCmdSubDO::getCostTime, AsyncCmdSubDO::getAsyncCmdId, AsyncCmdSubDO::getRemark
+                AsyncCmdSubDO::getStatus, AsyncCmdSubDO::getBizType, AsyncCmdSubDO::getBizName, AsyncCmdSubDO::getBizKey,
+                AsyncCmdSubDO::getStage, AsyncCmdSubDO::getSeq,
+                AsyncCmdSubDO::getRetryCount, AsyncCmdSubDO::getCostTime, AsyncCmdSubDO::getExpireTime,
+                AsyncCmdSubDO::getAsyncCmdId, AsyncCmdSubDO::getRemark
             );
         }
 

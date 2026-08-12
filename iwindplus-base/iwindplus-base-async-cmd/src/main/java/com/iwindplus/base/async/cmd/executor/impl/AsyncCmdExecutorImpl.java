@@ -145,13 +145,14 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
     private void checkBaseParam(AsyncCmdSubmitBaseDTO entity) {
         Assert.notNull(entity, "entity must not be null");
+        Assert.notNull(entity.getBizName(), "bizName must not be null");
         Assert.hasText(entity.getBizKey(), "bizKey must not be blank");
         Assert.hasText(entity.getBizType(), "bizType must not be blank");
     }
 
     private void checkSubmitParam(AsyncCmdSubmitDTO entity) {
         checkBaseParam(entity);
-        Assert.notEmpty(entity.getContent(), "content must not be null");
+        Assert.notEmpty(entity.getParam(), "param must not be null");
         Assert.notNull(entity.getExecutorClass(), "executorClass must not be null");
     }
 
@@ -163,11 +164,18 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
     private void checkSubSubmitParam(AsyncCmdSubSubmitDTO entity, Integer index) {
         Assert.notNull(entity, "sub entity must not be null");
+        Assert.notNull(entity.getBizName(), "sub[" + index + "].bizName must not be null");
+        Assert.notNull(entity.getBizKey(), "sub[" + index + "].bizKey must not be null");
         Assert.notNull(entity.getBizType(), "sub[" + index + "].bizType must not be null");
-        Assert.notNull(entity.getSeq(), "sub[" + index + "].seq must not be null");
-        Assert.isTrue(Objects.isNull(entity.getStage()) || entity.getStage() > 0, "sub[" + index + "].stage must be greater than 0");
-        Assert.isTrue(entity.getSeq() > 0, "sub[" + index + "].seq must be greater than 0");
-        Assert.notEmpty(entity.getContent(), "sub[" + index + "].content must not be null");
+        Assert.isTrue(
+            entity.getSeq() != null && entity.getSeq() > 0,
+            "sub[" + index + "].seq must be greater than 0"
+        );
+        Assert.isTrue(
+            entity.getStage() == null || entity.getStage() > 0,
+            "sub[" + index + "].stage must be greater than 0"
+        );
+        Assert.notEmpty(entity.getParam(), "sub[" + index + "].param must not be null");
         Assert.notNull(entity.getExecutorClass(), "sub[" + index + "].executorClass must not be null");
     }
 
@@ -240,6 +248,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             .builder()
             .id(param.getId())
             .bizKey(param.getBizKey())
+            .bizName(param.getBizName())
             .bizType(param.getBizType())
             .bizNumber(param.getBizNumber())
             .build();
@@ -256,7 +265,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         }
 
         final boolean status = this.asyncCmdService.editStatusById(entity.getId(), from, AsyncCmdStatusEnum.TO_BE_EXECUTE,
-            null, null, 0, System.currentTimeMillis(), null, null);
+            null, null, 0, System.currentTimeMillis(), null);
         if (!status) {
             log.warn("Failed to retry trigger, task status has been changed, id={}", entity.getId());
 
