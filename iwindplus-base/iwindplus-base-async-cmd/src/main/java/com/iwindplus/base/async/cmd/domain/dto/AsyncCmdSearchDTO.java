@@ -44,6 +44,12 @@ public class AsyncCmdSearchDTO extends DbPageDTO {
     private String env;
 
     /**
+     * 业务名称.
+     */
+    @Schema(description = "业务名称")
+    private String bizName;
+
+    /**
      * 业务key，例如 ORDER.
      */
     @Schema(description = "业务key，例如 ORDER")

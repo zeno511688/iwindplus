@@ -270,9 +270,10 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
     private void showField(LambdaQueryWrapper<AsyncCmdDO> queryWrapper) {
         queryWrapper.select(AsyncCmdDO::getId, AsyncCmdDO::getCreatedTimestamp, AsyncCmdDO::getCreatedBy,
             AsyncCmdDO::getModifiedTimestamp, AsyncCmdDO::getModifiedBy, AsyncCmdDO::getVersion,
-            AsyncCmdDO::getStatus, AsyncCmdDO::getEnv, AsyncCmdDO::getBizKey, AsyncCmdDO::getBizName, AsyncCmdDO::getBizType, AsyncCmdDO::getExecuteName,
-            AsyncCmdDO::getDispatchMode, AsyncCmdDO::getBizNumber, AsyncCmdDO::getExpireTime, AsyncCmdDO::getRetryCount,
-            AsyncCmdDO::getNextRetryTime, AsyncCmdDO::getSubTaskCount, AsyncCmdDO::getCostTime, AsyncCmdDO::getRemark
+            AsyncCmdDO::getStatus, AsyncCmdDO::getEnv, AsyncCmdDO::getBizName, AsyncCmdDO::getBizKey, AsyncCmdDO::getBizType,
+            AsyncCmdDO::getExecuteName, AsyncCmdDO::getDispatchMode, AsyncCmdDO::getBizNumber, AsyncCmdDO::getExpireTime,
+            AsyncCmdDO::getRetryCount, AsyncCmdDO::getNextRetryTime, AsyncCmdDO::getSubTaskCount, AsyncCmdDO::getCostTime,
+            AsyncCmdDO::getRemark
         );
     }
 }
