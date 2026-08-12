@@ -8,6 +8,8 @@
 package com.iwindplus.base.xxl.job;
 
 import cn.hutool.extra.spring.SpringUtil;
+import com.iwindplus.base.monitor.support.ObservationExecutor;
+import com.iwindplus.base.xxl.job.aspect.XxlJobObservationAspect;
 import com.iwindplus.base.xxl.job.domain.property.XxlJobProperty;
 import com.xxl.job.core.executor.impl.XxlJobSpringExecutor;
 import jakarta.annotation.Resource;
@@ -51,6 +53,19 @@ public class XxlJobConfiguration {
         xxlJobSpringExecutor.setLogRetentionDays(this.property.getExecutor().getLogRetentionDays());
         log.info(">>>>>>>>>>> xxl-job config init.");
         return xxlJobSpringExecutor;
+    }
+
+    /**
+     * 创建 XxlJobObservationAspect.
+     *
+     * @param observationExecutor observationExecutor
+     * @return XxlJobObservationAspect
+     */
+    @Bean
+    public XxlJobObservationAspect xxlJobObservationAspect(ObservationExecutor observationExecutor) {
+        XxlJobObservationAspect xxlJobObservationAspect = new XxlJobObservationAspect(observationExecutor);
+        log.info("XxlJobObservationAspect={}", xxlJobObservationAspect);
+        return xxlJobObservationAspect;
     }
 
 }

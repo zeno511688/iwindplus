@@ -31,5 +31,9 @@
             <groupId>com.aizuda</groupId>
             <artifactId>snail-job-client-retry-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-monitor</artifactId>
+        </dependency>
     </dependencies>
 </project>

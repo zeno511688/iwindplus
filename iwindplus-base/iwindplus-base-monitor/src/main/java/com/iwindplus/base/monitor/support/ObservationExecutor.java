@@ -29,6 +29,30 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
      * 同步执行
      *
      * @param name     名称
+     * @param function 函数
+     * @param <T>      泛型
+     * @return T
+     */
+    public <T> T execute(
+        String name,
+        ObservationFunction<T> function) {
+
+        Objects.requireNonNull(name, "name must not be null");
+        Objects.requireNonNull(function, "function must not be null");
+
+        final Observation observation =
+            Observation.createNotStarted(
+                name,
+                observationRegistry
+            );
+
+        return this.doExecute(function, observation);
+    }
+
+    /**
+     * 同步执行
+     *
+     * @param name     名称
      * @param supplier 业务逻辑
      * @param <T>      泛型
      * @return T
@@ -37,28 +61,10 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
         String name,
         Supplier<T> supplier) {
 
-        Objects.requireNonNull(name);
-        Objects.requireNonNull(supplier);
-
-        Observation observation =
-            Observation.createNotStarted(
-                name,
-                observationRegistry
-            );
-
-        observation.start();
-
-        try {
-            try (Observation.Scope ignored = observation.openScope()) {
-                return supplier.get();
-            }
-        } catch (Throwable e) {
-            observation.error(e);
-
-            throw e;
-        } finally {
-            observation.stop();
-        }
+        return this.execute(
+            name,
+            observation -> supplier.get()
+        );
     }
 
     /**
@@ -76,9 +82,31 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
         Supplier<C> contextSupplier,
         Supplier<T> supplier) {
 
-        Objects.requireNonNull(convention);
-        Objects.requireNonNull(contextSupplier);
-        Objects.requireNonNull(supplier);
+        return this.execute(
+            convention,
+            contextSupplier,
+            observation -> supplier.get()
+        );
+    }
+
+    /**
+     * 同步执行
+     *
+     * @param convention      ObservationConvention
+     * @param contextSupplier Context
+     * @param function        函数
+     * @param <T>             泛型
+     * @param <C>             泛型
+     * @return T
+     */
+    public <T, C extends Observation.Context> T execute(
+        ObservationConvention<C> convention,
+        Supplier<C> contextSupplier,
+        ObservationFunction<T> function) {
+
+        Objects.requireNonNull(convention, "convention must not be null");
+        Objects.requireNonNull(contextSupplier, "contextSupplier must not be null");
+        Objects.requireNonNull(function, "function must not be null");
 
         Observation observation =
             Observation.createNotStarted(
@@ -87,19 +115,7 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
                 observationRegistry
             );
 
-        observation.start();
-
-        try {
-            try (Observation.Scope ignored = observation.openScope()) {
-                return supplier.get();
-            }
-        } catch (Throwable e) {
-            observation.error(e);
-
-            throw e;
-        } finally {
-            observation.stop();
-        }
+        return this.doExecute(function, observation);
     }
 
     /**
@@ -117,9 +133,9 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
         Supplier<C> contextSupplier,
         Supplier<CompletionStage<T>> supplier) {
 
-        Objects.requireNonNull(convention);
-        Objects.requireNonNull(contextSupplier);
-        Objects.requireNonNull(supplier);
+        Objects.requireNonNull(convention, "convention must not be null");
+        Objects.requireNonNull(contextSupplier, "contextSupplier must not be null");
+        Objects.requireNonNull(supplier, "supplier must not be null");
 
         Observation observation =
             Observation.createNotStarted(
@@ -131,19 +147,24 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
         observation.start();
 
         try {
-            CompletionStage<T> stage = supplier.get();
-            Objects.requireNonNull(stage, "supplier must not return null");
+            final CompletionStage<T> stage =
+                Objects.requireNonNull(
+                    supplier.get(),
+                    "supplier must not return null"
+                );
 
-            return stage.whenComplete(
-                (result, throwable) -> {
-                    try (Observation.Scope ignored = observation.openScope()) {
-                        if (throwable != null) {
-                            observation.error(throwable);
-                        }
-                    } finally {
-                        observation.stop();
+            return stage.whenComplete((result, throwable) -> {
+                try (Observation.Scope ignored =
+                    observation.openScope()) {
+
+                    if (throwable != null) {
+                        observation.error(throwable);
                     }
-                });
+
+                } finally {
+                    observation.stop();
+                }
+            });
         } catch (Throwable e) {
             observation.error(e);
             observation.stop();
@@ -167,9 +188,9 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
         Supplier<C> contextSupplier,
         Supplier<Mono<T>> supplier) {
 
-        Objects.requireNonNull(convention);
-        Objects.requireNonNull(contextSupplier);
-        Objects.requireNonNull(supplier);
+        Objects.requireNonNull(convention, "convention must not be null");
+        Objects.requireNonNull(contextSupplier, "contextSupplier must not be null");
+        Objects.requireNonNull(supplier, "supplier must not be null");
 
         return Mono.defer(() -> {
             Observation observation =
@@ -180,14 +201,47 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
                 );
 
             return Mono.using(
-                () -> observation.start(),
+                observation::start,
                 obs -> Mono.defer(() -> {
-                    try (Observation.Scope ignored = obs.openScope()) {
-                        return supplier.get();
+                    try (Observation.Scope ignored =
+                        obs.openScope()) {
+
+                        return Objects.requireNonNull(
+                            supplier.get(),
+                            "supplier must not return null"
+                        );
                     }
                 }).doOnError(obs::error),
                 Observation::stop
             );
         });
+    }
+
+    private <T> T doExecute(ObservationFunction<T> function, Observation observation) {
+        observation.start();
+
+        try {
+            try (Observation.Scope ignored = observation.openScope()) {
+                return function.execute(observation);
+            }
+        } catch (Throwable e) {
+            observation.error(e);
+
+            throw e;
+        } finally {
+            observation.stop();
+        }
+    }
+
+    @FunctionalInterface
+    public interface ObservationFunction<T> {
+
+        /**
+         * 执行Observation
+         *
+         * @param observation Observation
+         * @return T
+         */
+        T execute(Observation observation);
     }
 }

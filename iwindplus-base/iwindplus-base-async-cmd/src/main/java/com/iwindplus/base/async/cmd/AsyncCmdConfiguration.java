@@ -36,7 +36,6 @@ import com.iwindplus.base.async.cmd.support.impl.AsyncCmdExecuteHandlerGroup;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdExecuteHandlerMain;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdJobHandlerReset;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdJobHandlerRetry;
-import com.iwindplus.base.monitor.support.ObservationExecutor;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -378,16 +377,14 @@ public class AsyncCmdConfiguration {
     /**
      * 创建 AsyncCmdJob.
      *
-     * @param observationExecutor               observationExecutor
      * @param asyncCmdJobHandlerStrategyFactory asyncCmdJobHandlerStrategyFactory
      * @return AsyncCmdJob
      */
     @ConditionalOnProperty(prefix = "async-cmd.job", name = "enabled", havingValue = "true", matchIfMissing = true)
     @Bean
     public AsyncCmdJob asyncCmdJob(
-        ObservationExecutor observationExecutor,
         AsyncCmdJobHandlerStrategyFactory asyncCmdJobHandlerStrategyFactory) {
-        AsyncCmdJob asyncCmdJob = new AsyncCmdJob(observationExecutor, asyncCmdJobHandlerStrategyFactory);
+        AsyncCmdJob asyncCmdJob = new AsyncCmdJob(asyncCmdJobHandlerStrategyFactory);
         log.info("AsyncCmdJob={}", asyncCmdJob);
         return asyncCmdJob;
     }

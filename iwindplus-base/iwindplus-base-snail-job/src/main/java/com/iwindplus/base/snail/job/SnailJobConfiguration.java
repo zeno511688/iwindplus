@@ -16,6 +16,8 @@ import ch.qos.logback.core.spi.FilterReply;
 import com.aizuda.snailjob.client.common.appender.SnailLogbackAppender;
 import com.aizuda.snailjob.client.common.event.SnailClientStartingEvent;
 import com.aizuda.snailjob.client.starter.EnableSnailJob;
+import com.iwindplus.base.monitor.support.ObservationExecutor;
+import com.iwindplus.base.snail.job.aspect.SnailJobObservationAspect;
 import com.iwindplus.base.snail.job.domain.property.SnailJobProperty;
 import jakarta.annotation.Resource;
 import java.util.List;
@@ -119,4 +121,16 @@ public class SnailJobConfiguration {
         }
     }
 
+    /**
+     * 创建 SnailJobObservationAspect.
+     *
+     * @param observationExecutor observationExecutor
+     * @return SnailJobObservationAspect
+     */
+    @Bean
+    public SnailJobObservationAspect snailJobObservationAspect(ObservationExecutor observationExecutor) {
+        SnailJobObservationAspect snailJobObservationAspect = new SnailJobObservationAspect(observationExecutor);
+        log.info("SnailJobObservationAspect={}", snailJobObservationAspect);
+        return snailJobObservationAspect;
+    }
 }

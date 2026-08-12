@@ -10,7 +10,6 @@ package com.iwindplus.base.async.cmd.jobhandler;
 import cn.hutool.core.date.DatePattern;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdJobEnum;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdJobHandlerStrategyFactory;
-import com.iwindplus.base.monitor.support.ObservationExecutor;
 import com.iwindplus.base.util.DatesUtil;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
@@ -27,8 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class AsyncCmdJob {
 
-    private final ObservationExecutor observationExecutor;
-
     private final AsyncCmdJobHandlerStrategyFactory factory;
 
     /**
@@ -36,16 +33,6 @@ public class AsyncCmdJob {
      */
     @XxlJob("asyncCmdJob")
     public void jobExecute() {
-        observationExecutor.execute(
-            "xxl.job.execute",
-            () -> {
-                this.execute();
-                return null;
-            }
-        );
-    }
-
-    private void execute() {
         final long beginMillis = System.currentTimeMillis();
         final String start = DatesUtil.parseDate(beginMillis, DatePattern.NORM_DATETIME_MS_PATTERN);
 
