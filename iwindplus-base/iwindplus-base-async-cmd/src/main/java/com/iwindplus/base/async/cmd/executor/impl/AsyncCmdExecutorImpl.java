@@ -31,12 +31,10 @@ import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
@@ -181,27 +179,21 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
     private List<AsyncCmdSubSaveDTO> buildSubTasks(List<AsyncCmdSubSubmitDTO> subTasks) {
         final List<AsyncCmdSubSaveDTO> entities = new ArrayList<>(10);
-        // 全局seq唯一
-        final Set<Integer> seqSet = new HashSet<>(subTasks.size());
-        // stage -> seq集合
-        final Map<Integer, Set<Integer>> stageSeqMap = new HashMap<>(10);
+        // seq -> stage（校验seq全局从1连续，且stage按seq顺序单调不减，保证seq顺序即执行顺序）
+        final Map<Integer, Integer> seqStageMap = new HashMap<>(subTasks.size());
 
         for (int index = 0; index < subTasks.size(); index++) {
             final AsyncCmdSubSubmitDTO subTask = subTasks.get(index);
             this.checkSubSubmitParam(subTask, index);
 
             Integer seq = subTask.getSeq();
-            boolean unique = seqSet.add(seq);
-            Assert.isTrue(unique, "sub[" + index + "].seq must not be unique");
+            Assert.isTrue(
+                !seqStageMap.containsKey(seq),
+                "sub[" + index + "].seq must be unique"
+            );
 
             Integer stage = Optional.ofNullable(subTask.getStage()).orElse(0);
-            if (stage > 0) {
-                stageSeqMap.computeIfAbsent(
-                        stage,
-                        k -> new HashSet<>(16)
-                    )
-                    .add(seq);
-            }
+            seqStageMap.put(seq, stage);
 
             final AsyncCmdSubTaskHandler handler = this.resolveSubTaskHandler(subTask.getExecutorClass());
             if (Boolean.TRUE.equals(subTask.getNeedCallback())) {
@@ -215,8 +207,8 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             entities.add(entity);
         }
 
-        // 校验stage内seq连续
-        checkStageSeqContinuous(stageSeqMap);
+        // 校验seq全局从1连续，且stage按seq顺序单调不减
+        checkSeqStageOrder(seqStageMap);
 
         return entities;
     }
@@ -299,20 +291,31 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         }
     }
 
-    private void checkStageSeqContinuous(Map<Integer, Set<Integer>> stageSeqMap) {
-        stageSeqMap.forEach((stage, seqSet) -> {
-            List<Integer> seqList = seqSet.stream().sorted().toList();
-            for (int i = 0; i < seqList.size(); i++) {
+    /**
+     * 校验seq全局从1连续，且stage按seq顺序单调不减.
+     * <p>执行侧按seq升序、stage变化切分批次，该校验保证seq顺序即执行顺序，支持多stage串行编排</p>
+     *
+     * @param seqStageMap seq到stage的映射
+     */
+    private void checkSeqStageOrder(Map<Integer, Integer> seqStageMap) {
+        final List<Integer> seqList = seqStageMap.keySet().stream().sorted().toList();
+        Integer prevStage = null;
+        for (int i = 0; i < seqList.size(); i++) {
+            final Integer seq = seqList.get(i);
+            Assert.isTrue(
+                seq == i + 1,
+                "seq must continuous from 1, expect=" + (i + 1) + ", actual=" + seq
+            );
+
+            final Integer stage = seqStageMap.get(seq);
+            if (Objects.nonNull(prevStage)) {
                 Assert.isTrue(
-                    seqList.get(i) == i + 1,
-                    "stage="
-                        + stage
-                        + " seq must continuous, expect="
-                        + (i + 1)
-                        + ", actual="
-                        + seqList.get(i)
+                    stage >= prevStage,
+                    "stage must not decrease by seq order, seq=" + seq
+                        + ", stage=" + stage + ", prevStage=" + prevStage
                 );
             }
-        });
+            prevStage = stage;
+        }
     }
 }

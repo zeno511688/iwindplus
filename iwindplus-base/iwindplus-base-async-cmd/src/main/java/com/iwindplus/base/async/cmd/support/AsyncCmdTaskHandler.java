@@ -16,6 +16,7 @@ import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
  * <p>无子任务时，主任务即业务本体。抢占执行权 -> 回调主任务execute -> 置成功/失败</p>
  * <p>有子任务时，等子任务全部完成后execute做收尾</p>
  * <p>任务成功或失败执行onTaskSuccess/onTaskFail</p>
+ * <p>重试次数耗尽被丢弃时执行onTaskDiscard</p>
  *
  * @author zengdegui
  * @since 2025/09/21 20:18
@@ -70,6 +71,15 @@ public interface AsyncCmdTaskHandler {
      * @param entity 命令对象
      */
     default void onTaskAsyncWait(AsyncCmdVO entity) {
+
+    }
+
+    /**
+     * 任务丢弃，重试次数耗尽被置为DISCARD时触发，可用于补偿/告警等业务善后.
+     *
+     * @param entity 命令对象
+     */
+    default void onTaskDiscard(AsyncCmdVO entity) {
 
     }
 }

@@ -86,7 +86,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
                 if (this.asyncCmdSubService.countStarted(entity.getId()) > 0) {
                     this.executeCallbackFirstSubTasks(entity, handler, start);
                 } else {
-                    // 首次执行: 主任务业务 → 进入异步等待
+                    // 首次执行: 主任务业务 → 进入异步等待（执行业务前续期执行租约）
+                    this.getAsyncCmdService().editExpireTime(entity.getId());
                     handler.execute(entity);
                     this.taskSuccess(entity, handler, start);
                 }
@@ -99,6 +100,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
                     return;
                 }
 
+                // 主收尾业务前续期执行租约（子任务执行期间租约可能已接近到期）
+                this.getAsyncCmdService().editExpireTime(entity.getId());
                 handler.execute(entity);
                 this.taskSuccess(entity, handler, start);
             }
@@ -144,7 +147,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             return;
         }
 
-        // 子任务全部成功 → 主任务收尾 → 主任务置成功（跳过needCallback，直接置SUCCESS）
+        // 子任务全部成功 → 主任务收尾 → 主任务置成功（跳过needCallback，直接置SUCCESS，收尾前续期执行租约）
+        this.getAsyncCmdService().editExpireTime(entity.getId());
         handler.execute(entity);
         this.taskFinalSuccess(entity, handler, start);
     }

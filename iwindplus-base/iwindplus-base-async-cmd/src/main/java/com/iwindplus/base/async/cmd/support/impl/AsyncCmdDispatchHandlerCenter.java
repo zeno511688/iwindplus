@@ -35,7 +35,8 @@ public class AsyncCmdDispatchHandlerCenter extends AbstractAsyncCmdDispatchHandl
 
     @Override
     protected void doExecute(AsyncCmdVO entity) {
-
+        // 调度中心模式尚未实现，显式报错暴露；当前提交链路固定使用ASYNC模式，不受影响
+        throw new UnsupportedOperationException("asyncCmd dispatch CENTER mode not implemented yet. id=" + entity.getId());
     }
 
 }
