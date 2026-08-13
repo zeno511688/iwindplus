@@ -87,26 +87,24 @@ public record AsyncCmdStateSupport(
                     null,
                     null);
                 if (updated) {
+                    // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
+                    entity.setModifiedTimestamp(System.currentTimeMillis());
+                    entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
+                    entity.setCostTime(costTime);
+                    if (Objects.nonNull(handler)) {
+                        handler.onTaskSuccess(entity);
+                    }
+
                     // 删除记录（可选）
                     if (Boolean.TRUE.equals(this.property.getEnabledSuccessDelete())) {
                         asyncCmdService.removeById(entity.getId(), this.property.getEnabledSuccessRealDelete());
-                    }
-                    // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
-                    if (Objects.nonNull(handler)) {
-                        handler.onTaskSuccess(entity);
                     }
                 }
                 return updated;
             })
         );
 
-        if (!result) {
-            return false;
-        }
-        entity.setModifiedTimestamp(System.currentTimeMillis());
-        entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
-        entity.setCostTime(costTime);
-        return true;
+        return result;
     }
 
     /**
@@ -132,9 +130,9 @@ public record AsyncCmdStateSupport(
         final long nextRetryTime = DatesUtil.getNextRetryTime(currentTimeMillis, this.property.getRetry().getFrequency(), retryCount);
 
         final boolean result = Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
+            this.transactionTemplate.execute(status -> {
                 // 任务失败时，释放执行租约，任务成功时，不释放执行租约，任务执行中时，不释放执行租约
-                this.asyncCmdService.editStatusById(
+                boolean updated = this.asyncCmdService.editStatusById(
                     entity.getId(),
                     AsyncCmdStatusEnum.EXECUTE,
                     AsyncCmdStatusEnum.FAILED,
@@ -142,25 +140,24 @@ public record AsyncCmdStateSupport(
                     stack,
                     retryCount,
                     nextRetryTime,
-                    currentTimeMillis
-                )
-            )
+                    currentTimeMillis);
+                if (updated) {
+                    entity.setModifiedTimestamp(System.currentTimeMillis());
+                    entity.setStatus(AsyncCmdStatusEnum.FAILED);
+                    entity.setRetryCount(retryCount);
+                    entity.setNextRetryTime(nextRetryTime);
+                    entity.setErrorMsg(stack);
+                    entity.setCostTime(costTime);
+                }
+                return updated;
+            })
         );
 
-        if (!result) {
-            return false;
+        if (result && Objects.nonNull(handler)) {
+            this.safeCallback(() -> handler.onTaskFail(entity), "onTaskFail", entity.getId());
         }
-        entity.setModifiedTimestamp(System.currentTimeMillis());
-        entity.setStatus(AsyncCmdStatusEnum.FAILED);
-        entity.setRetryCount(retryCount);
-        entity.setNextRetryTime(nextRetryTime);
-        entity.setErrorMsg(stack);
-        entity.setCostTime(costTime);
-        if (Objects.isNull(handler)) {
-            return true;
-        }
-        this.safeCallback(() -> handler.onTaskFail(entity), "onTaskFail", entity.getId());
-        return true;
+
+        return result;
     }
 
     /**
@@ -191,23 +188,22 @@ public record AsyncCmdStateSupport(
                     nextRetryTime,
                     callbackWaitExpireTime
                 );
-                // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
-                if (updated && Objects.nonNull(handler)) {
-                    handler.onTaskAsyncWait(entity);
+                if (updated) {
+                    // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
+                    entity.setModifiedTimestamp(System.currentTimeMillis());
+                    entity.setStatus(AsyncCmdStatusEnum.ASYNC_WAIT);
+                    entity.setCostTime(costTime);
+                    entity.setNextRetryTime(nextRetryTime);
+                    entity.setExpireTime(callbackWaitExpireTime);
+                    if (Objects.nonNull(handler)) {
+                        handler.onTaskAsyncWait(entity);
+                    }
                 }
                 return updated;
             })
         );
 
-        if (!result) {
-            return false;
-        }
-        entity.setModifiedTimestamp(System.currentTimeMillis());
-        entity.setStatus(AsyncCmdStatusEnum.ASYNC_WAIT);
-        entity.setCostTime(costTime);
-        entity.setNextRetryTime(nextRetryTime);
-        entity.setExpireTime(callbackWaitExpireTime);
-        return true;
+        return result;
     }
 
     /**
@@ -221,8 +217,8 @@ public record AsyncCmdStateSupport(
         final Long nextRetryTime = this.getNextRetryTime();
 
         final boolean result = Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
-                asyncCmdService.editStatusById(
+            this.transactionTemplate.execute(status -> {
+                boolean updated = asyncCmdService.editStatusById(
                     entity.getId(),
                     AsyncCmdStatusEnum.EXECUTE,
                     AsyncCmdStatusEnum.TO_BE_EXECUTE,
@@ -230,19 +226,18 @@ public record AsyncCmdStateSupport(
                     null,
                     null,
                     nextRetryTime,
-                    null
-                )
-            )
+                    null);
+                if (updated) {
+                    entity.setModifiedTimestamp(System.currentTimeMillis());
+                    entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
+                    entity.setNextRetryTime(nextRetryTime);
+                    entity.setCostTime(costTime);
+                }
+                return updated;
+            })
         );
 
-        if (!result) {
-            return false;
-        }
-        entity.setModifiedTimestamp(System.currentTimeMillis());
-        entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
-        entity.setNextRetryTime(nextRetryTime);
-        entity.setCostTime(costTime);
-        return true;
+        return result;
     }
 
     /**
@@ -255,8 +250,8 @@ public record AsyncCmdStateSupport(
      */
     public boolean taskAsyncWaitToExecute(AsyncCmdVO entity, Long costTime) {
         final boolean result = Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
-                asyncCmdService.editStatusById(
+            this.transactionTemplate.execute(status -> {
+                boolean updated = asyncCmdService.editStatusById(
                     entity.getId(),
                     AsyncCmdStatusEnum.ASYNC_WAIT,
                     AsyncCmdStatusEnum.EXECUTE,
@@ -264,18 +259,17 @@ public record AsyncCmdStateSupport(
                     null,
                     null,
                     null,
-                    this.asyncCmdRepository.getNextExpireTime()
-                )
-            )
+                    this.asyncCmdRepository.getNextExpireTime());
+                if (updated) {
+                    entity.setModifiedTimestamp(System.currentTimeMillis());
+                    entity.setStatus(AsyncCmdStatusEnum.EXECUTE);
+                    entity.setCostTime(costTime);
+                }
+                return updated;
+            })
         );
 
-        if (!result) {
-            return false;
-        }
-        entity.setModifiedTimestamp(System.currentTimeMillis());
-        entity.setStatus(AsyncCmdStatusEnum.EXECUTE);
-        entity.setCostTime(costTime);
-        return true;
+        return result;
     }
 
     /**
@@ -302,20 +296,19 @@ public record AsyncCmdStateSupport(
                     null,
                     null
                 );
-                // 关键钩子纳入事务：失败回滚状态流转并外抛，等待下次轮询重试
-                if (updated && Objects.nonNull(handler)) {
-                    handler.onTaskSuccess(entity);
+                if (updated) {
+                    // 关键钩子纳入事务：失败回滚状态流转并外抛，等待下次轮询重试
+                    entity.setModifiedTimestamp(System.currentTimeMillis());
+                    entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
+                    if (Objects.nonNull(handler)) {
+                        handler.onTaskSuccess(entity);
+                    }
                 }
                 return updated;
             })
         );
 
-        if (!result) {
-            return false;
-        }
-        entity.setModifiedTimestamp(System.currentTimeMillis());
-        entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
-        return true;
+        return result;
     }
 
     /**
@@ -337,8 +330,8 @@ public record AsyncCmdStateSupport(
         final long currentTimeMillis = System.currentTimeMillis();
 
         final boolean result = Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
-                asyncCmdService.editStatusById(
+            this.transactionTemplate.execute(status -> {
+                boolean updated = asyncCmdService.editStatusById(
                     entity.getId(),
                     AsyncCmdStatusEnum.ASYNC_WAIT,
                     AsyncCmdStatusEnum.FAILED,
@@ -347,25 +340,23 @@ public record AsyncCmdStateSupport(
                     retryCount,
                     nextRetryTime,
                     // 释放回调等待截止时间，便于RESET_JOB及时重置
-                    currentTimeMillis
-                )
-            )
+                    currentTimeMillis);
+                if (updated) {
+                    entity.setModifiedTimestamp(System.currentTimeMillis());
+                    entity.setStatus(AsyncCmdStatusEnum.FAILED);
+                    entity.setRetryCount(retryCount);
+                    entity.setErrorMsg(stack);
+                    entity.setExpireTime(currentTimeMillis);
+                }
+                return updated;
+            })
         );
 
-        if (!result) {
-            return false;
-        }
-        entity.setModifiedTimestamp(System.currentTimeMillis());
-        entity.setStatus(AsyncCmdStatusEnum.FAILED);
-        entity.setRetryCount(retryCount);
-        entity.setErrorMsg(stack);
-        entity.setExpireTime(currentTimeMillis);
-        if (Objects.isNull(handler)) {
-            return true;
+        if (result && Objects.nonNull(handler)) {
+            this.safeCallback(() -> handler.onTaskFail(entity), "onTaskFail", entity.getId());
         }
 
-        this.safeCallback(() -> handler.onTaskFail(entity), "onTaskFail", entity.getId());
-        return true;
+        return result;
     }
 
     /**
@@ -392,21 +383,20 @@ public record AsyncCmdStateSupport(
                     entity.getResult(),
                     null
                 );
-                // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
-                if (updated && Objects.nonNull(handler)) {
-                    handler.onSubTaskSuccess(entity);
+                if (updated) {
+                    // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
+                    entity.setModifiedTimestamp(System.currentTimeMillis());
+                    entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
+                    entity.setCostTime(costTime);
+                    if (Objects.nonNull(handler)) {
+                        handler.onSubTaskSuccess(entity);
+                    }
                 }
                 return updated;
             })
         );
 
-        if (!result) {
-            return false;
-        }
-        entity.setModifiedTimestamp(System.currentTimeMillis());
-        entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
-        entity.setCostTime(costTime);
-        return true;
+        return result;
     }
 
     /**
@@ -428,8 +418,8 @@ public record AsyncCmdStateSupport(
         final String stack = this.getStack(ex);
 
         final boolean result = Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
-                this.asyncCmdSubService.editStatusById(
+            this.transactionTemplate.execute(status -> {
+                boolean updated = this.asyncCmdSubService.editStatusById(
                     entity.getId(),
                     AsyncCmdStatusEnum.EXECUTE,
                     AsyncCmdStatusEnum.FAILED,
@@ -437,24 +427,22 @@ public record AsyncCmdStateSupport(
                     stack,
                     retryCount,
                     null,
-                    null
-                )
-            )
+                    null);
+                if (updated) {
+                    entity.setModifiedTimestamp(System.currentTimeMillis());
+                    entity.setStatus(AsyncCmdStatusEnum.FAILED);
+                    entity.setRetryCount(retryCount);
+                    entity.setErrorMsg(stack);
+                    entity.setCostTime(costTime);
+                }
+                return updated;
+            })
         );
 
-        if (!result) {
-            return false;
+        if (result && Objects.nonNull(handler)) {
+            this.safeCallback(() -> handler.onSubTaskFail(entity), "onSubTaskFail", entity.getId());
         }
-        entity.setModifiedTimestamp(System.currentTimeMillis());
-        entity.setStatus(AsyncCmdStatusEnum.FAILED);
-        entity.setRetryCount(retryCount);
-        entity.setErrorMsg(stack);
-        entity.setCostTime(costTime);
-        if (Objects.isNull(handler)) {
-            return true;
-        }
-        this.safeCallback(() -> handler.onSubTaskFail(entity), "onSubTaskFail", entity.getId());
-        return true;
+        return result;
     }
 
     /**
@@ -483,22 +471,21 @@ public record AsyncCmdStateSupport(
                     entity.getResult(),
                     callbackWaitExpireTime
                 );
-                // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
-                if (updated && Objects.nonNull(handler)) {
-                    handler.onSubTaskAsyncWait(entity);
+                if (updated) {
+                    // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
+                    entity.setModifiedTimestamp(System.currentTimeMillis());
+                    entity.setStatus(AsyncCmdStatusEnum.ASYNC_WAIT);
+                    entity.setCostTime(costTime);
+                    entity.setExpireTime(callbackWaitExpireTime);
+                    if (Objects.nonNull(handler)) {
+                        handler.onSubTaskAsyncWait(entity);
+                    }
                 }
                 return updated;
             })
         );
 
-        if (!result) {
-            return false;
-        }
-        entity.setModifiedTimestamp(System.currentTimeMillis());
-        entity.setStatus(AsyncCmdStatusEnum.ASYNC_WAIT);
-        entity.setCostTime(costTime);
-        entity.setExpireTime(callbackWaitExpireTime);
-        return true;
+        return result;
     }
 
     /**
@@ -524,20 +511,19 @@ public record AsyncCmdStateSupport(
                     entity.getResult(),
                     null
                 );
-                // 关键钩子纳入事务：失败回滚状态流转并外抛，等待下次轮询重试
-                if (updated && Objects.nonNull(handler)) {
-                    handler.onSubTaskSuccess(entity);
+                if (updated) {
+                    // 关键钩子纳入事务：失败回滚状态流转并外抛，等待下次轮询重试
+                    entity.setModifiedTimestamp(System.currentTimeMillis());
+                    entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
+                    if (Objects.nonNull(handler)) {
+                        handler.onSubTaskSuccess(entity);
+                    }
                 }
                 return updated;
             })
         );
 
-        if (!result) {
-            return false;
-        }
-        entity.setModifiedTimestamp(System.currentTimeMillis());
-        entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
-        return true;
+        return result;
     }
 
     /**
@@ -557,8 +543,8 @@ public record AsyncCmdStateSupport(
         final String stack = this.getStack(ex);
 
         final boolean result = Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
-                asyncCmdSubService.editStatusById(
+            this.transactionTemplate.execute(status -> {
+                boolean updated = asyncCmdSubService.editStatusById(
                     entity.getId(),
                     AsyncCmdStatusEnum.ASYNC_WAIT,
                     AsyncCmdStatusEnum.FAILED,
@@ -566,24 +552,21 @@ public record AsyncCmdStateSupport(
                     stack,
                     retryCount,
                     null,
-                    null
-                )
-            )
+                    null);
+                if (updated) {
+                    entity.setModifiedTimestamp(System.currentTimeMillis());
+                    entity.setStatus(AsyncCmdStatusEnum.FAILED);
+                    entity.setRetryCount(retryCount);
+                    entity.setErrorMsg(stack);
+                }
+                return updated;
+            })
         );
 
-        if (!result) {
-            return false;
+        if (result && Objects.nonNull(handler)) {
+            this.safeCallback(() -> handler.onSubTaskFail(entity), "onSubTaskFail", entity.getId());
         }
-        entity.setModifiedTimestamp(System.currentTimeMillis());
-        entity.setStatus(AsyncCmdStatusEnum.FAILED);
-        entity.setRetryCount(retryCount);
-        entity.setErrorMsg(stack);
-        if (Objects.isNull(handler)) {
-            return true;
-        }
-
-        this.safeCallback(() -> handler.onSubTaskFail(entity), "onSubTaskFail", entity.getId());
-        return true;
+        return result;
     }
 
     /**
