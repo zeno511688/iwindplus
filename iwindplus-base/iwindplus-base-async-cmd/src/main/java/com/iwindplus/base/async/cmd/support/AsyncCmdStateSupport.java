@@ -576,7 +576,7 @@ public record AsyncCmdStateSupport(
      */
     public Long getNextRetryTime() {
         return System.currentTimeMillis()
-            + Optional.ofNullable(this.property.getAsyncWaitPoolSeconds()).orElse(60L) * NumberConstant.NUMBER_ONE_THOUSAND;
+            + Optional.ofNullable(this.property.getAsyncWaitPollSeconds()).orElse(60L) * NumberConstant.NUMBER_ONE_THOUSAND;
     }
 
     /**
