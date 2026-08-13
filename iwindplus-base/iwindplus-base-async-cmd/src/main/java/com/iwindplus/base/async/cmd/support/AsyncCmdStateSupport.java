@@ -91,6 +91,10 @@ public record AsyncCmdStateSupport(
                     if (Boolean.TRUE.equals(this.property.getEnabledSuccessDelete())) {
                         asyncCmdService.removeById(entity.getId(), this.property.getEnabledSuccessRealDelete());
                     }
+                    // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
+                    if (Objects.nonNull(handler)) {
+                        handler.onTaskSuccess(entity);
+                    }
                 }
                 return updated;
             })
@@ -102,10 +106,6 @@ public record AsyncCmdStateSupport(
         entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
         entity.setCostTime(costTime);
-        if (Objects.isNull(handler)) {
-            return true;
-        }
-        this.safeCallback(() -> handler.onTaskSuccess(entity), "onTaskSuccess", entity.getId());
         return true;
     }
 
@@ -180,8 +180,8 @@ public record AsyncCmdStateSupport(
         final Long callbackWaitExpireTime = this.getCallbackWaitExpireTime();
 
         final boolean result = Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
-                asyncCmdService.editStatusById(
+            this.transactionTemplate.execute(status -> {
+                boolean updated = asyncCmdService.editStatusById(
                     entity.getId(),
                     AsyncCmdStatusEnum.EXECUTE,
                     AsyncCmdStatusEnum.ASYNC_WAIT,
@@ -190,8 +190,13 @@ public record AsyncCmdStateSupport(
                     null,
                     nextRetryTime,
                     callbackWaitExpireTime
-                )
-            )
+                );
+                // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
+                if (updated && Objects.nonNull(handler)) {
+                    handler.onTaskAsyncWait(entity);
+                }
+                return updated;
+            })
         );
 
         if (!result) {
@@ -202,11 +207,6 @@ public record AsyncCmdStateSupport(
         entity.setCostTime(costTime);
         entity.setNextRetryTime(nextRetryTime);
         entity.setExpireTime(callbackWaitExpireTime);
-        if (Objects.isNull(handler)) {
-            return true;
-        }
-
-        this.safeCallback(() -> handler.onTaskAsyncWait(entity), "onTaskAsyncWait", entity.getId());
         return true;
     }
 
@@ -291,8 +291,8 @@ public record AsyncCmdStateSupport(
         AsyncCmdTaskHandler handler,
         Long costTime) {
         final boolean result = Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
-                asyncCmdService.editStatusById(
+            this.transactionTemplate.execute(status -> {
+                boolean updated = asyncCmdService.editStatusById(
                     entity.getId(),
                     AsyncCmdStatusEnum.ASYNC_WAIT,
                     AsyncCmdStatusEnum.SUCCESS,
@@ -301,8 +301,13 @@ public record AsyncCmdStateSupport(
                     null,
                     null,
                     null
-                )
-            )
+                );
+                // 关键钩子纳入事务：失败回滚状态流转并外抛，等待下次轮询重试
+                if (updated && Objects.nonNull(handler)) {
+                    handler.onTaskSuccess(entity);
+                }
+                return updated;
+            })
         );
 
         if (!result) {
@@ -310,11 +315,6 @@ public record AsyncCmdStateSupport(
         }
         entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
-        if (Objects.isNull(handler)) {
-            return true;
-        }
-
-        this.safeCallback(() -> handler.onTaskSuccess(entity), "onTaskSuccess", entity.getId());
         return true;
     }
 
@@ -381,8 +381,8 @@ public record AsyncCmdStateSupport(
         AsyncCmdSubTaskHandler handler,
         Long costTime) {
         final boolean result = Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
-                asyncCmdSubService.editStatusById(
+            this.transactionTemplate.execute(status -> {
+                boolean updated = asyncCmdSubService.editStatusById(
                     entity.getId(),
                     AsyncCmdStatusEnum.EXECUTE,
                     AsyncCmdStatusEnum.SUCCESS,
@@ -391,8 +391,13 @@ public record AsyncCmdStateSupport(
                     null,
                     entity.getResult(),
                     null
-                )
-            )
+                );
+                // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
+                if (updated && Objects.nonNull(handler)) {
+                    handler.onSubTaskSuccess(entity);
+                }
+                return updated;
+            })
         );
 
         if (!result) {
@@ -401,10 +406,6 @@ public record AsyncCmdStateSupport(
         entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
         entity.setCostTime(costTime);
-        if (Objects.isNull(handler)) {
-            return true;
-        }
-        this.safeCallback(() -> handler.onSubTaskSuccess(entity), "onSubTaskSuccess", entity.getId());
         return true;
     }
 
@@ -471,8 +472,8 @@ public record AsyncCmdStateSupport(
         final Long callbackWaitExpireTime = this.getCallbackWaitExpireTime();
 
         final boolean result = Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
-                asyncCmdSubService.editStatusById(
+            this.transactionTemplate.execute(status -> {
+                boolean updated = asyncCmdSubService.editStatusById(
                     entity.getId(),
                     AsyncCmdStatusEnum.EXECUTE,
                     AsyncCmdStatusEnum.ASYNC_WAIT,
@@ -481,8 +482,13 @@ public record AsyncCmdStateSupport(
                     null,
                     entity.getResult(),
                     callbackWaitExpireTime
-                )
-            )
+                );
+                // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
+                if (updated && Objects.nonNull(handler)) {
+                    handler.onSubTaskAsyncWait(entity);
+                }
+                return updated;
+            })
         );
 
         if (!result) {
@@ -492,11 +498,6 @@ public record AsyncCmdStateSupport(
         entity.setStatus(AsyncCmdStatusEnum.ASYNC_WAIT);
         entity.setCostTime(costTime);
         entity.setExpireTime(callbackWaitExpireTime);
-        if (Objects.isNull(handler)) {
-            return true;
-        }
-
-        this.safeCallback(() -> handler.onSubTaskAsyncWait(entity), "onSubTaskAsyncWait", entity.getId());
         return true;
     }
 
@@ -512,8 +513,8 @@ public record AsyncCmdStateSupport(
         AsyncCmdSubTaskHandler handler) {
 
         final boolean result = Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
-                asyncCmdSubService.editStatusById(
+            this.transactionTemplate.execute(status -> {
+                boolean updated = asyncCmdSubService.editStatusById(
                     entity.getId(),
                     AsyncCmdStatusEnum.ASYNC_WAIT,
                     AsyncCmdStatusEnum.SUCCESS,
@@ -522,8 +523,13 @@ public record AsyncCmdStateSupport(
                     null,
                     entity.getResult(),
                     null
-                )
-            )
+                );
+                // 关键钩子纳入事务：失败回滚状态流转并外抛，等待下次轮询重试
+                if (updated && Objects.nonNull(handler)) {
+                    handler.onSubTaskSuccess(entity);
+                }
+                return updated;
+            })
         );
 
         if (!result) {
@@ -531,11 +537,6 @@ public record AsyncCmdStateSupport(
         }
         entity.setModifiedTimestamp(System.currentTimeMillis());
         entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
-        if (Objects.isNull(handler)) {
-            return true;
-        }
-
-        this.safeCallback(() -> handler.onSubTaskSuccess(entity), "onSubTaskSuccess", entity.getId());
         return true;
     }
 
@@ -606,7 +607,7 @@ public record AsyncCmdStateSupport(
     }
 
     /**
-     * 安全回调
+     * 安全回调（仅用于失败通知钩子onTaskFail/onSubTaskFail，已处于失败处理链路，异常吞掉避免递归失败）.
      *
      * @param callback 回调
      * @param name     回调方法名称
