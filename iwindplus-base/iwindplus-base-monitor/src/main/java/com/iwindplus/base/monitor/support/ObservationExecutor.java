@@ -32,10 +32,11 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
      * @param function 函数
      * @param <T>      泛型
      * @return T
+     * @throws Throwable 异常
      */
     public <T> T execute(
         String name,
-        ObservationFunction<T> function) {
+        ObservationFunction<T> function) throws Throwable {
 
         Objects.requireNonNull(name, "name must not be null");
         Objects.requireNonNull(function, "function must not be null");
@@ -56,10 +57,11 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
      * @param supplier 业务逻辑
      * @param <T>      泛型
      * @return T
+     * @throws Throwable 异常
      */
     public <T> T execute(
         String name,
-        Supplier<T> supplier) {
+        Supplier<T> supplier) throws Throwable {
 
         return this.execute(
             name,
@@ -76,11 +78,12 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
      * @param <T>             泛型
      * @param <C>             泛型
      * @return T
+     * @throws Throwable 异常
      */
     public <T, C extends Observation.Context> T execute(
         ObservationConvention<C> convention,
         Supplier<C> contextSupplier,
-        Supplier<T> supplier) {
+        Supplier<T> supplier) throws Throwable {
 
         return this.execute(
             convention,
@@ -98,11 +101,12 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
      * @param <T>             泛型
      * @param <C>             泛型
      * @return T
+     * @throws Throwable 异常
      */
     public <T, C extends Observation.Context> T execute(
         ObservationConvention<C> convention,
         Supplier<C> contextSupplier,
-        ObservationFunction<T> function) {
+        ObservationFunction<T> function) throws Throwable {
 
         Objects.requireNonNull(convention, "convention must not be null");
         Objects.requireNonNull(contextSupplier, "contextSupplier must not be null");
@@ -217,7 +221,7 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
         });
     }
 
-    private <T> T doExecute(ObservationFunction<T> function, Observation observation) {
+    private <T> T doExecute(ObservationFunction<T> function, Observation observation) throws Throwable {
         observation.start();
 
         try {
@@ -241,7 +245,8 @@ public record ObservationExecutor(ObservationRegistry observationRegistry) {
          *
          * @param observation Observation
          * @return T
+         * @throws Throwable 异常
          */
-        T execute(Observation observation);
+        T execute(Observation observation) throws Throwable;
     }
 }

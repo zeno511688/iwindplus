@@ -34,9 +34,10 @@ public record SnailJobObservationAspect(ObservationExecutor observationExecutor)
      *
      * @param joinPoint 切点
      * @return Object
+     * @throws Throwable 异常
      */
     @Around("@annotation(com.aizuda.snailjob.client.job.core.annotation.JobExecutor)")
-    public Object around(ProceedingJoinPoint joinPoint) {
+    public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
         final MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         final Method method = methodSignature.getMethod();
 
@@ -49,12 +50,7 @@ public record SnailJobObservationAspect(ObservationExecutor observationExecutor)
                 observation
                     .lowCardinalityKeyValue(JOB_NAME, jobName);
 
-                try {
-                    return joinPoint.proceed();
-                } catch (Throwable e) {
-                    log.error("Throwable", e);
-                }
-                return null;
+                return joinPoint.proceed();
             }
         );
     }

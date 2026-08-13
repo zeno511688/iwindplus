@@ -72,20 +72,25 @@ public record DisruptorDispatcherHandler<T>(
                 event.getHandlerName(),
                 event.getSource(),
                 event.getDestination());
-        observationExecutor.execute(
-            CONVENTION,
-            () -> context,
-            () -> {
-                handler.execute(
-                    event.getData(),
-                    sequence,
-                    endOfBatch);
-                return null;
-            });
+        try {
+            observationExecutor.execute(
+                CONVENTION,
+                () -> context,
+                () -> {
+                    handler.execute(
+                        event.getData(),
+                        sequence,
+                        endOfBatch);
+                    return null;
+                });
 
-        log.info("Disruptor execute success, name={}, HandlerName={}, const={}",
-            name, event.getHandlerName(),
-            System.currentTimeMillis() - event.getPublishTime());
+            log.info("Disruptor execute success, name={}, HandlerName={}, const={}",
+                name, event.getHandlerName(),
+                System.currentTimeMillis() - event.getPublishTime());
+        } catch (Throwable e) {
+            log.error("Disruptor execute error, name={}, HandlerName={}",
+                name, event.getHandlerName(), e);
+        }
     }
 
     private <T> T runWithTrace(

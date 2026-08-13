@@ -69,14 +69,18 @@ public record RocketReceiverDispatcherImpl(
                 handler.getTag()
             );
 
-        observationExecutor.execute(
-            CONVENTION,
-            () -> context,
-            () -> {
-                handler.execute();
-                return null;
-            }
-        );
+        try {
+            observationExecutor.execute(
+                CONVENTION,
+                () -> context,
+                () -> {
+                    handler.execute();
+                    return null;
+                }
+            );
+        } catch (Throwable e) {
+            log.error("RocketReceiverObservationContext error", e);
+        }
 
         return null;
     }

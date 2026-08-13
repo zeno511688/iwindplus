@@ -75,11 +75,16 @@ public record RocketSenderDispatcherImpl(
         RocketSenderObservationContext context =
             new RocketSenderObservationContext(cluster, topic, tag);
 
-        return observationExecutor.execute(
-            CONVENTION,
-            () -> context,
-            () -> doExecute(producer, executor, cluster, msg)
-        );
+        try {
+            return observationExecutor.execute(
+                CONVENTION,
+                () -> context,
+                () -> doExecute(producer, executor, cluster, msg)
+            );
+        } catch (Throwable e) {
+            log.error("rocket observation error", e);
+        }
+        return null;
     }
 
     private void validate(String cluster, String topic, Object message) {

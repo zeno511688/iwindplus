@@ -71,11 +71,16 @@ public record RabbitSenderDispatcherImpl(
         RabbitSenderObservationContext context =
             new RabbitSenderObservationContext(cluster, exchange, routingKey);
 
-        return observationExecutor.execute(
-            CONVENTION,
-            () -> context,
-            () -> doExecute(template, executor, msg)
-        );
+        try {
+            return observationExecutor.execute(
+                CONVENTION,
+                () -> context,
+                () -> doExecute(template, executor, msg)
+            );
+        } catch (Throwable e) {
+            log.error("RabbitSenderObservationContext error", e);
+        }
+        return null;
     }
 
     private void validate(String cluster, String exchange, String routingKey, Object message) {

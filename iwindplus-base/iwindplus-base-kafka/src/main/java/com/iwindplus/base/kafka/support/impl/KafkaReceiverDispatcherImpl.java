@@ -91,15 +91,18 @@ public record KafkaReceiverDispatcherImpl(
                 handler::getClusterId
             );
 
-        observationExecutor.execute(
-            CONVENTION,
-            () -> context,
-            () -> {
-                doExecute(handler, consumer);
-                return null;
-            }
-        );
-
+        try {
+            observationExecutor.execute(
+                CONVENTION,
+                () -> context,
+                () -> {
+                    doExecute(handler, consumer);
+                    return null;
+                }
+            );
+        } catch (Throwable e) {
+            log.error("kafka observation error", e);
+        }
         return null;
     }
 

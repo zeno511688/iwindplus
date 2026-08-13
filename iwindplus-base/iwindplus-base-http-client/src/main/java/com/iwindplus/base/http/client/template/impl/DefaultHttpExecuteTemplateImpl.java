@@ -60,11 +60,16 @@ public record DefaultHttpExecuteTemplateImpl(
         HttpClientObservationContext context =
             new HttpClientObservationContext(client, method, url);
 
-        return observationExecutor.execute(
-            CONVENTION,
-            () -> context,
-            () -> doExecute(client, method, url, context, supplier)
-        );
+        try {
+            return observationExecutor.execute(
+                CONVENTION,
+                () -> context,
+                () -> doExecute(client, method, url, context, supplier)
+            );
+        } catch (Throwable e) {
+            log.error("HttpExecuteTemplate execute error", e);
+        }
+        return null;
     }
 
     @Override

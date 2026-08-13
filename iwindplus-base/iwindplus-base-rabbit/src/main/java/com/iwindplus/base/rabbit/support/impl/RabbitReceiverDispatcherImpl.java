@@ -77,15 +77,18 @@ public record RabbitReceiverDispatcherImpl(
                 handler.getGroup()
             );
 
-        observationExecutor.execute(
-            CONVENTION,
-            () -> context,
-            () -> {
-                handler.execute();
-                return null;
-            }
-        );
-
+        try {
+            observationExecutor.execute(
+                CONVENTION,
+                () -> context,
+                () -> {
+                    handler.execute();
+                    return null;
+                }
+            );
+        } catch (Throwable e) {
+            log.error("RabbitReceiverObservationContext error", e);
+        }
         return null;
     }
 
