@@ -235,11 +235,6 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             entity.getStage() == null || entity.getStage() > 0,
             "sub[" + index + "].stage must be greater than 0"
         );
-        // 进度占位子任务：无执行器，不允许声明回调
-        if (Objects.isNull(entity.getExecutorClass())) {
-            Assert.isTrue(Boolean.FALSE.equals(entity.getNeedCallback()),
-                "sub[" + index + "].needCallback must be false when executorClass is null (progress placeholder subTask)");
-        }
     }
 
     private List<AsyncCmdSubSaveDTO> buildSubTasks(List<AsyncCmdSubSubmitDTO> subTasks) {
