@@ -345,7 +345,6 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         this.getAsyncCmdService().editExpireTime(entity.getId());
 
         if (AsyncCmdStatusEnum.SUCCESS.equals(subEntity.getStatus())) {
-            advanced.incrementAndGet();
             return subEntity;
         }
 
