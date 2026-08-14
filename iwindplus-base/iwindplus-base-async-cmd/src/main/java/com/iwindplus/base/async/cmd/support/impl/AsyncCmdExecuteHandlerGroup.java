@@ -102,9 +102,14 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         // 子任务未全部成功，主任务判定为失败，主任务表只记"子任务有未完成的任务"
         final long unfinished = asyncCmdSubService.countUnfinished(entity.getId());
         if (unfinished > 0) {
-            String msg = "asyncCmd group has unfinished subTask";
-            log.warn(msg + ", id={} unfinished={} success={}",
-                entity.getId(), unfinished, advanced.get());
+            final String msg = String.format(
+                "asyncCmd group has unfinished subTask, id=%s unfinished=%s success=%s",
+                entity.getId(),
+                unfinished,
+                advanced.get()
+            );
+
+            log.warn(msg);
 
             this.getAsyncCmdStateSupport().taskFail(entity, handler,
                 System.currentTimeMillis() - start,
@@ -116,10 +121,14 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
 
         // 成功的数要对的上提交时的任务数
         if (subResults.size() < entity.getSubTaskCount()) {
-            String msg = "asyncCmd group execute success, but subTaskCount not match";
+            final String msg = String.format(
+                "asyncCmd group execute success, but subTaskCount not match, id=%s subTaskCount=%s success=%s",
+                entity.getId(),
+                entity.getSubTaskCount(),
+                subResults.size()
+            );
 
-            log.warn(msg + ", id={} subTaskCount={} success={}",
-                entity.getId(), entity.getSubTaskCount(), subResults.size());
+            log.warn(msg);
 
             this.getAsyncCmdStateSupport().taskFail(entity, handler,
                 System.currentTimeMillis() - start,
