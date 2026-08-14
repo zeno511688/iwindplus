@@ -171,7 +171,7 @@ public record AsyncCmdStateSupport(
         Long costTime) {
 
         final Long nextRetryTime = this.getNextRetryTime();
-        final Long callbackWaitExpireTime = this.getCallbackWaitExpireTime();
+        final Long expireTime = this.getExpireTime();
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -181,7 +181,7 @@ public record AsyncCmdStateSupport(
                     .to(AsyncCmdStatusEnum.ASYNC_WAIT)
                     .costTime(costTime)
                     .nextRetryTime(nextRetryTime)
-                    .expireTime(callbackWaitExpireTime)
+                    .expireTime(expireTime)
                     .build());
                 if (updated) {
                     // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
@@ -189,7 +189,7 @@ public record AsyncCmdStateSupport(
                     entity.setStatus(AsyncCmdStatusEnum.ASYNC_WAIT);
                     entity.setCostTime(costTime);
                     entity.setNextRetryTime(nextRetryTime);
-                    entity.setExpireTime(callbackWaitExpireTime);
+                    entity.setExpireTime(expireTime);
                     if (Objects.nonNull(handler)) {
                         handler.onTaskAsyncWait(entity);
                     }
@@ -413,7 +413,7 @@ public record AsyncCmdStateSupport(
         AsyncCmdSubVO entity,
         AsyncCmdSubTaskHandler handler,
         Long costTime) {
-        final Long callbackWaitExpireTime = this.getCallbackWaitExpireTime();
+        final Long callbackWaitExpireTime = this.getExpireTime();
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -532,7 +532,7 @@ public record AsyncCmdStateSupport(
      *
      * @return long
      */
-    public Long getCallbackWaitExpireTime() {
+    public Long getExpireTime() {
         return System.currentTimeMillis()
             + Optional.ofNullable(this.property.getAsyncWaitTimeoutSeconds()).orElse(1800L) * NumberConstant.NUMBER_ONE_THOUSAND;
     }
