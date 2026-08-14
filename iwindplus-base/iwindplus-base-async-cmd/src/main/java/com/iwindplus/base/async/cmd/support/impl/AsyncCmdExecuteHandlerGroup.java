@@ -137,7 +137,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         final List<AsyncCmdSubVO> successResults = this.listPriorSuccess(entity, subEntities);
 
         final List<List<AsyncCmdSubVO>> batches = this.groupByStage(subEntities);
-        for (List<AsyncCmdSubVO> batch : batches) {
+        for (int index = 0; index < batches.size(); index++) {
+            final List<AsyncCmdSubVO> batch = batches.get(index);
             // 设置前置成功子任务结果
             final List<AsyncCmdSubVO> snapshot = List.copyOf(successResults);
             batch.forEach(item -> item.setPriorSubTasks(snapshot));
@@ -146,6 +147,11 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
 
             // 当前批次有失败，停止后续阶段
             if (!results.stream().allMatch(this::isSuccess)) {
+                // 批次内有子任务进入异步等待（非失败）：预置后续所有占位子任务为执行中，
+                // 第三方处理期间（回调到达前）进度可见
+                if (this.hasSubAsyncWait(results)) {
+                    this.markFollowingPlaceholdersExecuting(batches, index);
+                }
                 return successResults;
             }
 
@@ -154,6 +160,45 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         }
 
         return successResults;
+    }
+
+    /**
+     * 批次内子任务进入异步等待时，将后续连续的进度占位子任务全部预置为执行中.
+     * <p>第三方处理期间（回调到达前）进度状态可见；回调到达恢复执行后，
+     * 占位子任务已在执行中，按自身逻辑直接置成功.</p>
+     * <p>从当前批次的下一批起向后扫描，仅处理占位批次，遇到含执行器的批次即停止，
+     * 避免把未执行任务之后的占位也置为执行中.</p>
+     *
+     * @param batches 全部批次
+     * @param index   当前批次下标
+     */
+    private void markFollowingPlaceholdersExecuting(List<List<AsyncCmdSubVO>> batches, int index) {
+        for (int i = index + 1; i < batches.size(); i++) {
+            final List<AsyncCmdSubVO> nextBatch = batches.get(i);
+            // 占位子任务强制独立一批，仅处理单个占位的批次，遇非占位批次停止
+            if (nextBatch.size() != 1 || CharSequenceUtil.isNotBlank(nextBatch.get(0).getExecuteName())) {
+                return;
+            }
+
+            final AsyncCmdSubVO placeholder = nextBatch.get(0);
+            // 仅待执行的占位需要预置，已预置/已流转的跳过
+            if (!AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(placeholder.getStatus())) {
+                continue;
+            }
+
+            final boolean status = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                .id(placeholder.getId())
+                .from(AsyncCmdStatusEnum.TO_BE_EXECUTE)
+                .to(AsyncCmdStatusEnum.EXECUTE)
+                .build());
+            if (!status) {
+                log.warn("asyncCmd placeholder subTask pre-execute failed, id={} asyncCmdId={} seq={}",
+                    placeholder.getId(), placeholder.getAsyncCmdId(), placeholder.getSeq());
+                continue;
+            }
+
+            placeholder.setStatus(AsyncCmdStatusEnum.EXECUTE);
+        }
     }
 
     private List<AsyncCmdSubVO> listPriorSuccess(AsyncCmdVO entity, List<AsyncCmdSubVO> subEntities) {
@@ -287,13 +332,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         // 续期
         this.getAsyncCmdService().editExpireTime(entity.getId());
 
-        final boolean status = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
-            .id(subEntity.getId())
-            .to(AsyncCmdStatusEnum.EXECUTE)
-            .build());
-        if (!status) {
-            log.warn("asyncCmd placeholder subTask execute failed, id={} asyncCmdId={} seq={}",
-                subEntity.getId(), entity.getId(), subEntity.getSeq());
+        if (AsyncCmdStatusEnum.SUCCESS.equals(subEntity.getStatus())) {
+            advanced.incrementAndGet();
             return subEntity;
         }
 
