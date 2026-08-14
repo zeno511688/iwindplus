@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
@@ -15,8 +16,8 @@ import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdExecuteHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdStateSupport;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
+import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiFunction;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +55,12 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
      * @return AsyncCmdCallbackResultEnum
      */
     protected AsyncCmdCallbackResultEnum getTaskCallback(AsyncCmdVO entity, AsyncCmdTaskHandler handler) {
+        // 回调通知预存结果优先消费，不再调用业务侧查询
+        final AsyncCmdCallbackResultEnum notified = AsyncCmdCallbackResultEnum.fromResultMap(entity.getResult());
+        if (Objects.nonNull(notified)) {
+            this.consumeNotifiedResult(entity);
+            return notified;
+        }
         try {
             final AsyncCmdCallbackResultEnum result = handler.executeCallback(entity);
             return Objects.isNull(result) ? AsyncCmdCallbackResultEnum.WAITING : result;
@@ -65,6 +72,21 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
     }
 
     /**
+     * 消费预存结果后清理保留键，避免失败重试后再次读到旧预存结果.
+     *
+     * @param entity 异步命令视图对象
+     */
+    private void consumeNotifiedResult(AsyncCmdVO entity) {
+        final Map<String, Object> result = entity.getResult();
+        result.remove(AsyncCmdCallbackResultEnum.CALLBACK_RESULT_KEY);
+        result.remove(AsyncCmdCallbackResultEnum.CALLBACK_ERROR_MSG_KEY);
+        this.getAsyncCmdService().editStatusById(AsyncCmdStatusEditDTO.builder()
+            .id(entity.getId())
+            .result(result)
+            .build());
+    }
+
+    /**
      * 异步等待执行回调.
      *
      * @param entity  异步命令视图对象
@@ -73,27 +95,11 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
      * @return AsyncCmdVO
      */
     protected AsyncCmdVO executeCallbackAsyncWait(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start) {
-        return this.executeCallbackAsyncWait(entity, handler, start,
-            (e, cost) -> this.getAsyncCmdStateSupport().taskAsyncWaitSuccess(e, handler, cost));
-    }
-
-    /**
-     * 异步等待执行回调（自定义回调成功动作）.
-     *
-     * @param entity          异步命令视图对象
-     * @param handler         异步命令执行助手
-     * @param start           开始时间
-     * @param onSuccessAction 回调成功动作（entity, costTime） -> boolean
-     * @return AsyncCmdVO
-     */
-    protected AsyncCmdVO executeCallbackAsyncWait(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start,
-        BiFunction<AsyncCmdVO, Long, Boolean> onSuccessAction) {
         final AsyncCmdCallbackResultEnum callbackResult = this.getTaskCallback(entity, handler);
         if (AsyncCmdCallbackResultEnum.SUCCESS.equals(callbackResult)) {
-            if (!onSuccessAction.apply(entity, entity.getCostTime() + System.currentTimeMillis() - start)) {
+            final long costTime = entity.getCostTime() + System.currentTimeMillis() - start;
+            if (!this.getAsyncCmdStateSupport().taskAsyncWaitSuccess(entity, handler, costTime)) {
                 log.warn("asyncCmd task callback success action failed, id={}", entity.getId());
-
-                return entity;
             }
 
             return entity;
@@ -117,11 +123,13 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
             return entity;
         }
 
-        // 仍在等待中，刷新下次轮询时间，避免每次 RETRY_JOB 都被拾起
+        // 仍在等待中，CAS刷新下次轮询时间，避免每次 RETRY_JOB 都被拾起
         final Long nextRetryTime = this.getAsyncCmdStateSupport().getNextRetryTime();
-        this.getAsyncCmdService().editStatusById(
-            entity.getId(), AsyncCmdStatusEnum.ASYNC_WAIT, AsyncCmdStatusEnum.ASYNC_WAIT,
-            null, null, null, nextRetryTime, null);
+        this.getAsyncCmdService().editStatusById(AsyncCmdStatusEditDTO.builder()
+            .id(entity.getId())
+            .from(AsyncCmdStatusEnum.ASYNC_WAIT)
+            .nextRetryTime(nextRetryTime)
+            .build());
         entity.setNextRetryTime(nextRetryTime);
 
         return entity;
@@ -148,23 +156,6 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
         }
 
         // 成功
-        final boolean taskSuccess = this.getAsyncCmdStateSupport().taskSuccess(entity, handler, costTime);
-        if (!taskSuccess) {
-            log.warn("asyncCmd task execute success, but taskSuccess failed, id={}", entity.getId());
-        }
-    }
-
-    /**
-     * 任务最终成功（跳过needCallback判断，直接置SUCCESS）.
-     * <p>用于callbackFirst模式：子任务完成后主任务直接置成功，不再进入异步等待</p>
-     *
-     * @param entity  对象
-     * @param handler 助手
-     * @param start   开始时间
-     */
-    protected void taskFinalSuccess(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start) {
-        final long costTime = System.currentTimeMillis() - start;
-
         final boolean taskSuccess = this.getAsyncCmdStateSupport().taskSuccess(entity, handler, costTime);
         if (!taskSuccess) {
             log.warn("asyncCmd task execute success, but taskSuccess failed, id={}", entity.getId());

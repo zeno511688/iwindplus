@@ -54,6 +54,12 @@ public class AsyncCmdVO extends AsyncCmdBaseVO {
     private Map<String, Object> param;
 
     /**
+     * 结果（回调通知预存/最终结果）.
+     */
+    @Schema(description = "结果")
+    private Map<String, Object> result;
+
+    /**
      * 过期时间.
      */
     @Schema(description = "过期时间")
@@ -84,12 +90,6 @@ public class AsyncCmdVO extends AsyncCmdBaseVO {
     private Boolean needCallback;
 
     /**
-     * 是否先回调（组任务模式：先主执行回调成功再分发子任务）.
-     */
-    @Schema(description = "是否先回调（组任务模式：先主执行回调成功再分发子任务）")
-    private Boolean callbackFirst;
-
-    /**
      * 是否需要显示（查进度时用）.
      */
     @Schema(description = "是否需要显示")
@@ -115,6 +115,22 @@ public class AsyncCmdVO extends AsyncCmdBaseVO {
         }
         // 使用 JSON 序列化/反序列化转换
         String json = JacksonUtil.toJsonStr(param);
+        return JacksonUtil.parseObject(json, clazz);
+    }
+
+    /**
+     * 获取结果数据并转换为指定类型.
+     *
+     * @param clazz 目标类型
+     * @param <T>   泛型
+     * @return T
+     */
+    public <T> T getResultData(Class<T> clazz) {
+        if (result == null) {
+            return null;
+        }
+        // 使用 JSON 序列化/反序列化转换
+        String json = JacksonUtil.toJsonStr(result);
         return JacksonUtil.parseObject(json, clazz);
     }
 

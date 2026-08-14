@@ -32,15 +32,15 @@ import lombok.experimental.SuperBuilder;
 public class AsyncCmdSubSubmitDTO extends AsyncCmdSubmitBaseDTO {
 
     /**
-     * 参数（必填）.
+     * 参数（有执行器时必填）.
      */
     @Schema(description = "参数")
     private Map<String, Object> param;
 
     /**
-     * 执行器类（必填）.
+     * 执行器类（可选，为空表示进度占位子任务，无业务执行，执行到位后直接置成功）.
      */
-    @Schema(description = "执行器类")
+    @Schema(description = "执行器类（为空表示进度占位子任务）")
     private Class<? extends AsyncCmdSubTaskHandler> executorClass;
 
     /**

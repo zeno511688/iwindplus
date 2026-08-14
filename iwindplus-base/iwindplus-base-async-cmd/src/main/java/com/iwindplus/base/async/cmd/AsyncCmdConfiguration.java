@@ -78,6 +78,7 @@ public class AsyncCmdConfiguration {
      * 创建 AsyncCmdExecutor.
      *
      * @param asyncCmdService                        asyncCmdService
+     * @param asyncCmdSubService                     asyncCmdSubService
      * @param asyncCmdDispatchHandlerStrategyFactory asyncCmdDispatchHandlerStrategyFactory
      * @param asyncCmdTaskHandlerStrategyFactory     asyncCmdTaskHandlerStrategyFactory
      * @param asyncCmdSubTaskHandlerStrategyFactory  asyncCmdSubTaskHandlerStrategyFactory
@@ -86,11 +87,12 @@ public class AsyncCmdConfiguration {
     @Bean
     public AsyncCmdExecutor asyncCmdExecutor(
         AsyncCmdService asyncCmdService,
+        AsyncCmdSubService asyncCmdSubService,
         AsyncCmdDispatchHandlerStrategyFactory asyncCmdDispatchHandlerStrategyFactory,
         AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory,
         AsyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory) {
         AsyncCmdExecutor asyncCmdExecutor = new AsyncCmdExecutorImpl(
-            asyncCmdService, asyncCmdDispatchHandlerStrategyFactory,
+            asyncCmdService, asyncCmdSubService, asyncCmdDispatchHandlerStrategyFactory,
             asyncCmdTaskHandlerStrategyFactory, asyncCmdSubTaskHandlerStrategyFactory);
         log.info("AsyncCmdExecutor={}", asyncCmdExecutor);
         return asyncCmdExecutor;

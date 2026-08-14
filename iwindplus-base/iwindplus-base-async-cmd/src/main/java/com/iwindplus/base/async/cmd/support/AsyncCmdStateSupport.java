@@ -8,6 +8,7 @@
 package com.iwindplus.base.async.cmd.support;
 
 import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdRepository;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
@@ -48,15 +49,12 @@ public record AsyncCmdStateSupport(
     public boolean editLockById(AsyncCmdVO entity) {
         return Boolean.TRUE.equals(
             this.transactionTemplate.execute(status ->
-                asyncCmdService.editStatusById(
-                    entity.getId(),
-                    AsyncCmdStatusEnum.TO_BE_EXECUTE,
-                    AsyncCmdStatusEnum.EXECUTE,
-                    null,
-                    null,
-                    null,
-                    null,
-                    this.asyncCmdRepository.getNextExpireTime()
+                asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                    .id(entity.getId())
+                    .from(AsyncCmdStatusEnum.TO_BE_EXECUTE)
+                    .to(AsyncCmdStatusEnum.EXECUTE)
+                    .expireTime(this.asyncCmdRepository.getNextExpireTime())
+                    .build()
                 )
             )
         );
@@ -77,15 +75,13 @@ public record AsyncCmdStateSupport(
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
-                boolean updated = asyncCmdService.editStatusById(
-                    entity.getId(),
-                    AsyncCmdStatusEnum.EXECUTE,
-                    AsyncCmdStatusEnum.SUCCESS,
-                    costTime,
-                    null,
-                    null,
-                    null,
-                    null);
+                boolean updated = asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                    .id(entity.getId())
+                    .from(AsyncCmdStatusEnum.EXECUTE)
+                    .to(AsyncCmdStatusEnum.SUCCESS)
+                    .costTime(costTime)
+                    .result(entity.getResult())
+                    .build());
                 if (updated) {
                     // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
                     entity.setModifiedTimestamp(System.currentTimeMillis());
@@ -132,15 +128,16 @@ public record AsyncCmdStateSupport(
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
                 // 任务失败时，释放执行租约，任务成功时，不释放执行租约，任务执行中时，不释放执行租约
-                boolean updated = this.asyncCmdService.editStatusById(
-                    entity.getId(),
-                    AsyncCmdStatusEnum.EXECUTE,
-                    AsyncCmdStatusEnum.FAILED,
-                    costTime,
-                    stack,
-                    retryCount,
-                    nextRetryTime,
-                    currentTimeMillis);
+                boolean updated = this.asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                    .id(entity.getId())
+                    .from(AsyncCmdStatusEnum.EXECUTE)
+                    .to(AsyncCmdStatusEnum.FAILED)
+                    .costTime(costTime)
+                    .errorMsg(stack)
+                    .retryCount(retryCount)
+                    .nextRetryTime(nextRetryTime)
+                    .expireTime(currentTimeMillis)
+                    .build());
                 if (updated) {
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.FAILED);
@@ -178,16 +175,14 @@ public record AsyncCmdStateSupport(
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
-                boolean updated = asyncCmdService.editStatusById(
-                    entity.getId(),
-                    AsyncCmdStatusEnum.EXECUTE,
-                    AsyncCmdStatusEnum.ASYNC_WAIT,
-                    costTime,
-                    null,
-                    null,
-                    nextRetryTime,
-                    callbackWaitExpireTime
-                );
+                boolean updated = asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                    .id(entity.getId())
+                    .from(AsyncCmdStatusEnum.EXECUTE)
+                    .to(AsyncCmdStatusEnum.ASYNC_WAIT)
+                    .costTime(costTime)
+                    .nextRetryTime(nextRetryTime)
+                    .expireTime(callbackWaitExpireTime)
+                    .build());
                 if (updated) {
                     // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
                     entity.setModifiedTimestamp(System.currentTimeMillis());
@@ -218,51 +213,17 @@ public record AsyncCmdStateSupport(
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
-                boolean updated = asyncCmdService.editStatusById(
-                    entity.getId(),
-                    AsyncCmdStatusEnum.EXECUTE,
-                    AsyncCmdStatusEnum.TO_BE_EXECUTE,
-                    costTime,
-                    null,
-                    null,
-                    nextRetryTime,
-                    null);
+                boolean updated = asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                    .id(entity.getId())
+                    .from(AsyncCmdStatusEnum.EXECUTE)
+                    .to(AsyncCmdStatusEnum.TO_BE_EXECUTE)
+                    .costTime(costTime)
+                    .nextRetryTime(nextRetryTime)
+                    .build());
                 if (updated) {
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
                     entity.setNextRetryTime(nextRetryTime);
-                    entity.setCostTime(costTime);
-                }
-                return updated;
-            })
-        );
-
-        return result;
-    }
-
-    /**
-     * 任务异步等待回调成功后转为执行中（callbackFirst模式，回调成功后立即分发子任务）.
-     * <p>续约执行租约，随后分发子任务</p>
-     *
-     * @param entity   对象
-     * @param costTime 耗时
-     * @return boolean
-     */
-    public boolean taskAsyncWaitToExecute(AsyncCmdVO entity, Long costTime) {
-        final boolean result = Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status -> {
-                boolean updated = asyncCmdService.editStatusById(
-                    entity.getId(),
-                    AsyncCmdStatusEnum.ASYNC_WAIT,
-                    AsyncCmdStatusEnum.EXECUTE,
-                    costTime,
-                    null,
-                    null,
-                    null,
-                    this.asyncCmdRepository.getNextExpireTime());
-                if (updated) {
-                    entity.setModifiedTimestamp(System.currentTimeMillis());
-                    entity.setStatus(AsyncCmdStatusEnum.EXECUTE);
                     entity.setCostTime(costTime);
                 }
                 return updated;
@@ -286,16 +247,13 @@ public record AsyncCmdStateSupport(
         Long costTime) {
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
-                boolean updated = asyncCmdService.editStatusById(
-                    entity.getId(),
-                    AsyncCmdStatusEnum.ASYNC_WAIT,
-                    AsyncCmdStatusEnum.SUCCESS,
-                    costTime,
-                    null,
-                    null,
-                    null,
-                    null
-                );
+                boolean updated = asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                    .id(entity.getId())
+                    .from(AsyncCmdStatusEnum.ASYNC_WAIT)
+                    .to(AsyncCmdStatusEnum.SUCCESS)
+                    .costTime(costTime)
+                    .result(entity.getResult())
+                    .build());
                 if (updated) {
                     // 关键钩子纳入事务：失败回滚状态流转并外抛，等待下次轮询重试
                     entity.setModifiedTimestamp(System.currentTimeMillis());
@@ -331,16 +289,17 @@ public record AsyncCmdStateSupport(
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
-                boolean updated = asyncCmdService.editStatusById(
-                    entity.getId(),
-                    AsyncCmdStatusEnum.ASYNC_WAIT,
-                    AsyncCmdStatusEnum.FAILED,
-                    costTime,
-                    stack,
-                    retryCount,
-                    nextRetryTime,
+                boolean updated = asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                    .id(entity.getId())
+                    .from(AsyncCmdStatusEnum.ASYNC_WAIT)
+                    .to(AsyncCmdStatusEnum.FAILED)
+                    .costTime(costTime)
+                    .errorMsg(stack)
+                    .retryCount(retryCount)
+                    .nextRetryTime(nextRetryTime)
                     // 释放回调等待截止时间，便于RESET_JOB及时重置
-                    currentTimeMillis);
+                    .expireTime(currentTimeMillis)
+                    .build());
                 if (updated) {
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.FAILED);
@@ -373,15 +332,13 @@ public record AsyncCmdStateSupport(
         Long costTime) {
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
-                boolean updated = asyncCmdSubService.editStatusById(
-                    entity.getId(),
-                    AsyncCmdStatusEnum.EXECUTE,
-                    AsyncCmdStatusEnum.SUCCESS,
-                    costTime,
-                    null,
-                    null,
-                    entity.getResult(),
-                    null
+                boolean updated = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                    .id(entity.getId())
+                    .from(AsyncCmdStatusEnum.EXECUTE)
+                    .to(AsyncCmdStatusEnum.SUCCESS)
+                    .costTime(costTime)
+                    .result(entity.getResult())
+                    .build()
                 );
                 if (updated) {
                     // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
@@ -419,15 +376,14 @@ public record AsyncCmdStateSupport(
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
-                boolean updated = this.asyncCmdSubService.editStatusById(
-                    entity.getId(),
-                    AsyncCmdStatusEnum.EXECUTE,
-                    AsyncCmdStatusEnum.FAILED,
-                    costTime,
-                    stack,
-                    retryCount,
-                    null,
-                    null);
+                boolean updated = this.asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                    .id(entity.getId())
+                    .from(AsyncCmdStatusEnum.EXECUTE)
+                    .to(AsyncCmdStatusEnum.FAILED)
+                    .costTime(costTime)
+                    .errorMsg(stack)
+                    .retryCount(retryCount)
+                    .build());
                 if (updated) {
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.FAILED);
@@ -461,16 +417,14 @@ public record AsyncCmdStateSupport(
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
-                boolean updated = asyncCmdSubService.editStatusById(
-                    entity.getId(),
-                    AsyncCmdStatusEnum.EXECUTE,
-                    AsyncCmdStatusEnum.ASYNC_WAIT,
-                    costTime,
-                    null,
-                    null,
-                    entity.getResult(),
-                    callbackWaitExpireTime
-                );
+                boolean updated = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                    .id(entity.getId())
+                    .from(AsyncCmdStatusEnum.EXECUTE)
+                    .to(AsyncCmdStatusEnum.ASYNC_WAIT)
+                    .costTime(costTime)
+                    .result(entity.getResult())
+                    .expireTime(callbackWaitExpireTime)
+                    .build());
                 if (updated) {
                     // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
                     entity.setModifiedTimestamp(System.currentTimeMillis());
@@ -501,16 +455,12 @@ public record AsyncCmdStateSupport(
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
-                boolean updated = asyncCmdSubService.editStatusById(
-                    entity.getId(),
-                    AsyncCmdStatusEnum.ASYNC_WAIT,
-                    AsyncCmdStatusEnum.SUCCESS,
-                    null,
-                    null,
-                    null,
-                    entity.getResult(),
-                    null
-                );
+                boolean updated = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                    .id(entity.getId())
+                    .from(AsyncCmdStatusEnum.ASYNC_WAIT)
+                    .to(AsyncCmdStatusEnum.SUCCESS)
+                    .result(entity.getResult())
+                    .build());
                 if (updated) {
                     // 关键钩子纳入事务：失败回滚状态流转并外抛，等待下次轮询重试
                     entity.setModifiedTimestamp(System.currentTimeMillis());
@@ -544,15 +494,13 @@ public record AsyncCmdStateSupport(
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
-                boolean updated = asyncCmdSubService.editStatusById(
-                    entity.getId(),
-                    AsyncCmdStatusEnum.ASYNC_WAIT,
-                    AsyncCmdStatusEnum.FAILED,
-                    null,
-                    stack,
-                    retryCount,
-                    null,
-                    null);
+                boolean updated = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                    .id(entity.getId())
+                    .from(AsyncCmdStatusEnum.ASYNC_WAIT)
+                    .to(AsyncCmdStatusEnum.FAILED)
+                    .errorMsg(stack)
+                    .retryCount(retryCount)
+                    .build());
                 if (updated) {
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.FAILED);

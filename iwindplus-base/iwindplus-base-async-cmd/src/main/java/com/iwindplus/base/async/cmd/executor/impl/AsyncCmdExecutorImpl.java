@@ -8,13 +8,18 @@
 package com.iwindplus.base.async.cmd.executor.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.map.MapUtil;
+import cn.hutool.core.text.CharSequenceUtil;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdCallbackDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGrouSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGroupSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSaveDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitBaseDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
+import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubmitVO;
@@ -24,6 +29,7 @@ import com.iwindplus.base.async.cmd.factory.AsyncCmdDispatchHandlerStrategyFacto
 import com.iwindplus.base.async.cmd.factory.AsyncCmdSubTaskHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdTaskHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
+import com.iwindplus.base.async.cmd.service.AsyncCmdSubService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdDispatchHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
@@ -50,6 +56,7 @@ import org.springframework.util.Assert;
 public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
     private final AsyncCmdService asyncCmdService;
+    private final AsyncCmdSubService asyncCmdSubService;
     private final AsyncCmdDispatchHandlerStrategyFactory asyncCmdDispatchHandlerStrategyFactory;
     private final AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory;
     private final AsyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory;
@@ -84,13 +91,6 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
                 "The task declared the need for a callback, but the executor did not override executeCallback method."
                     + " executorClass=" + entity.getExecutorClass());
         }
-        // callbackFirst模式必须开启needCallback
-        if (Boolean.TRUE.equals(entity.getCallbackFirst())) {
-            Assert.isTrue(Boolean.TRUE.equals(entity.getNeedCallback()),
-                "callbackFirst mode requires needCallback to be true. executorClass=" + entity.getExecutorClass());
-            Assert.isTrue(this.overrideCallback(handler),
-                "callbackFirst mode requires overriding executeCallback method. executorClass=" + entity.getExecutorClass());
-        }
         // 保存数据
         final AsyncCmdGrouSaveDTO param = BeanUtil.copyProperties(entity, AsyncCmdGrouSaveDTO.class);
         param.setExecuteName(this.resolveTaskHandler(entity.getExecutorClass()).getExecuteName());
@@ -104,6 +104,41 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         // 获取调度管理器
         this.dispatch(result);
         return this.buildSubmitResult(result);
+    }
+
+    @Override
+    public void callback(AsyncCmdCallbackDTO entity) {
+        // 校验参数
+        this.checkCallbackParam(entity);
+
+        // 子任务：通过子任务业务流水号定位
+        if (Boolean.TRUE.equals(entity.getSub())) {
+            AsyncCmdSubVO subTask = null;
+            if (Objects.nonNull(entity.getAsyncCmdId()) && Objects.nonNull(entity.getBizKey())) {
+                subTask = this.asyncCmdSubService.getDetailByAsyncCmdId(entity.getAsyncCmdId(), entity.getBizKey());
+            }
+            if (CharSequenceUtil.isNotBlank(entity.getBizNumber())) {
+                subTask = this.asyncCmdSubService.getDetailByBizNumber(entity.getBizNumber());
+            }
+            if (Objects.isNull(subTask)) {
+                return;
+            }
+            this.callbackSubTask(subTask, entity);
+            return;
+        }
+
+        // 主任务：通过业务流水号定位
+        AsyncCmdVO task = null;
+        if (Objects.nonNull(entity.getAsyncCmdId())) {
+            task = this.asyncCmdService.getDetail(entity.getAsyncCmdId());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getBizNumber())) {
+            task = this.asyncCmdService.getDetailByBizNumber(entity.getBizNumber());
+        }
+        if (Objects.isNull(task)) {
+            return;
+        }
+        this.callbackTask(task, entity);
     }
 
     @Override
@@ -132,6 +167,34 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         Assert.hasText(bizNumber, "bizNumber must not be null");
 
         return asyncCmdService.removeByBizNumber(bizNumber, true);
+    }
+
+    private void checkCallbackParam(AsyncCmdCallbackDTO entity) {
+        Assert.notNull(entity, "entity must not be null");
+        Assert.hasText(entity.getBizNumber(), "bizNumber must not be blank");
+        Assert.notNull(entity.getResult(), "result must not be null");
+        Assert.isTrue(
+            AsyncCmdCallbackResultEnum.SUCCESS == entity.getResult()
+                || AsyncCmdCallbackResultEnum.FAILED == entity.getResult(),
+            "result must be SUCCESS or FAILED"
+        );
+    }
+
+    /**
+     * 构造预存结果（保留键+业务数据）.
+     *
+     * @param entity 回调通知对象
+     * @return Map<String, Object>
+     */
+    private Map<String, Object> buildCallbackResult(AsyncCmdCallbackDTO entity) {
+        final Map<String, Object> result = MapUtil.isNotEmpty(entity.getResultData())
+            ? new HashMap<>(entity.getResultData())
+            : new HashMap<>(4);
+        result.put(AsyncCmdCallbackResultEnum.CALLBACK_RESULT_KEY, entity.getResult().name());
+        if (CharSequenceUtil.isNotBlank(entity.getErrorMsg())) {
+            result.put(AsyncCmdCallbackResultEnum.CALLBACK_ERROR_MSG_KEY, entity.getErrorMsg());
+        }
+        return result;
     }
 
     private void dispatch(AsyncCmdVO entity) {
@@ -173,8 +236,13 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             entity.getStage() == null || entity.getStage() > 0,
             "sub[" + index + "].stage must be greater than 0"
         );
+        // 进度占位子任务：无执行器，不允许声明回调
+        if (Objects.isNull(entity.getExecutorClass())) {
+            Assert.isTrue(!Boolean.TRUE.equals(entity.getNeedCallback()),
+                "sub[" + index + "].needCallback must be false when executorClass is null (progress placeholder subTask)");
+            return;
+        }
         Assert.notEmpty(entity.getParam(), "sub[" + index + "].param must not be null");
-        Assert.notNull(entity.getExecutorClass(), "sub[" + index + "].executorClass must not be null");
     }
 
     private List<AsyncCmdSubSaveDTO> buildSubTasks(List<AsyncCmdSubSubmitDTO> subTasks) {
@@ -195,6 +263,17 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             Integer stage = Optional.ofNullable(subTask.getStage()).orElse(0);
             seqStageMap.put(seq, stage);
 
+            final AsyncCmdSubSaveDTO entity = BeanUtil.copyProperties(subTask, AsyncCmdSubSaveDTO.class);
+            // 进度占位子任务：无执行器，执行到位后直接置成功
+            if (Objects.isNull(subTask.getExecutorClass())) {
+                entity.setExecuteName("");
+                if (MapUtil.isEmpty(entity.getParam())) {
+                    entity.setParam(MapUtil.newHashMap());
+                }
+                entities.add(entity);
+                continue;
+            }
+
             final AsyncCmdSubTaskHandler handler = this.resolveSubTaskHandler(subTask.getExecutorClass());
             if (Boolean.TRUE.equals(subTask.getNeedCallback())) {
                 Assert.isTrue(this.overrideSubCallback(handler),
@@ -202,7 +281,6 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
                         + "sub[" + index + "].executorClass=" + subTask.getExecutorClass());
             }
 
-            final AsyncCmdSubSaveDTO entity = BeanUtil.copyProperties(subTask, AsyncCmdSubSaveDTO.class);
             entity.setExecuteName(handler.getExecuteName());
             entities.add(entity);
         }
@@ -256,8 +334,13 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             throw new BizException(BizCodeEnum.CURRENT_STATUS_NOT_SUPPORT_RETRY, new Object[]{from});
         }
 
-        final boolean status = this.asyncCmdService.editStatusById(entity.getId(), from, AsyncCmdStatusEnum.TO_BE_EXECUTE,
-            null, null, 0, System.currentTimeMillis(), null);
+        final boolean status = this.asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+            .id(entity.getId())
+            .from(from)
+            .to(AsyncCmdStatusEnum.TO_BE_EXECUTE)
+            .retryCount(0)
+            .nextRetryTime(System.currentTimeMillis())
+            .build());
         if (!status) {
             log.warn("Failed to retry trigger, task status has been changed, id={}", entity.getId());
 
@@ -316,6 +399,78 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
                 );
             }
             prevStage = stage;
+        }
+    }
+
+    /**
+     * 主任务回调通知：预存结果，由框架轮询链路消费并驱动状态流转.
+     *
+     * @param task   主任务
+     * @param entity 回调通知对象
+     */
+    private void callbackTask(AsyncCmdVO task, AsyncCmdCallbackDTO entity) {
+        final AsyncCmdStatusEnum status = task.getStatus();
+        // 已终态任务幂等忽略重复通知
+        if (AsyncCmdStatusEnum.SUCCESS == status || AsyncCmdStatusEnum.DISCARD == status) {
+            log.warn("asyncCmd callback ignored, task already finished. id={} status={} bizNumber={}",
+                task.getId(), status, task.getBizNumber());
+            return;
+        }
+
+        // 预存回调结果，业务不直接修改任务状态
+        final Map<String, Object> result = this.buildCallbackResult(entity);
+        this.asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+            .id(task.getId())
+            .result(result)
+            .build());
+        task.setResult(result);
+
+        // 异步等待中：CAS刷新下次重试时间并立即投递，加速消费；否则等待下一轮正常执行/轮询消费
+        if (AsyncCmdStatusEnum.ASYNC_WAIT == status) {
+            final long now = System.currentTimeMillis();
+            final boolean updated = this.asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                .id(task.getId())
+                .from(AsyncCmdStatusEnum.ASYNC_WAIT)
+                .nextRetryTime(now)
+                .build());
+            if (!updated) {
+                log.warn("asyncCmd callback accelerate ignored, task status changed. id={}", task.getId());
+                return;
+            }
+            task.setNextRetryTime(now);
+            this.dispatch(task);
+        }
+    }
+
+    /**
+     * 子任务回调通知：预存结果，由框架轮询链路消费并驱动状态流转.
+     *
+     * @param subTask 子任务
+     * @param entity  回调通知对象
+     */
+    private void callbackSubTask(AsyncCmdSubVO subTask, AsyncCmdCallbackDTO entity) {
+        // 已成功子任务幂等忽略重复通知
+        if (AsyncCmdStatusEnum.SUCCESS == subTask.getStatus()) {
+            log.warn("asyncCmd subTask callback ignored, already success. id={} bizNumber={}",
+                subTask.getId(), subTask.getBizNumber());
+            return;
+        }
+
+        // 预存回调结果，业务不直接修改任务状态
+        final Map<String, Object> result = this.buildCallbackResult(entity);
+        this.asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
+            .id(subTask.getId())
+            .result(result)
+            .build());
+        subTask.setResult(result);
+
+        // 子任务异步等待中，主任务处于待执行等待轮询：CAS刷新主任务下次重试时间为当前，加速消费
+        if (AsyncCmdStatusEnum.ASYNC_WAIT == subTask.getStatus()) {
+            this.asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                .id(subTask.getAsyncCmdId())
+                .from(AsyncCmdStatusEnum.TO_BE_EXECUTE)
+                .nextRetryTime(System.currentTimeMillis())
+                .build());
         }
     }
 }

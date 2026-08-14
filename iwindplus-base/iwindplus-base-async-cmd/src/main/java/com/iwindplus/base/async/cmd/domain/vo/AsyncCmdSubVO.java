@@ -77,6 +77,12 @@ public class AsyncCmdSubVO extends AsyncCmdSubBaseVO {
     private Boolean needDisplay;
 
     /**
+     * 异步命令主键.
+     */
+    @Schema(description = "异步命令主键")
+    private Long asyncCmdId;
+
+    /**
      * 前一批次子任务列表.
      */
     @JsonIgnore

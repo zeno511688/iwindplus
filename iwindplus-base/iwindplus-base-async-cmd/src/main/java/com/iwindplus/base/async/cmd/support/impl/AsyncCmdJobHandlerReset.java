@@ -8,6 +8,7 @@
 package com.iwindplus.base.async.cmd.support.impl;
 
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdShardSearchDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdJobEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
@@ -66,8 +67,13 @@ public class AsyncCmdJobHandlerReset extends AbstractAsyncCmdJobHandler {
                     ? AsyncCmdStatusEnum.DISCARD
                     : AsyncCmdStatusEnum.TO_BE_EXECUTE;
                 final boolean result = super.getAsyncCmdService()
-                    .editStatusById(entity.getId(), entity.getStatus(), status,
-                        null, null, null, System.currentTimeMillis(), null);
+                    .editStatusById(
+                        AsyncCmdStatusEditDTO.builder()
+                            .id(entity.getId())
+                            .from(entity.getStatus())
+                            .to(status)
+                            .nextRetryTime(System.currentTimeMillis())
+                            .build());
                 if (!result) {
                     skipped++;
                     log.warn("重置任务调过，id={} from={}", entity.getId(), entity.getStatus());

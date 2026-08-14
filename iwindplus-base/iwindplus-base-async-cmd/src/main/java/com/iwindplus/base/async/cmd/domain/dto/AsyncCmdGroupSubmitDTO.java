@@ -49,12 +49,6 @@ public class AsyncCmdGroupSubmitDTO extends AsyncCmdSubmitBaseDTO {
     private Boolean needCallback;
 
     /**
-     * 是否先回调（可选，先主执行回调成功再分发子任务）.
-     */
-    @Schema(description = "是否先回调（先主执行回调成功再分发子任务）")
-    private Boolean callbackFirst;
-
-    /**
      * 是否需要显示（可选，查进度时用）.
      */
     @Schema(description = "是否需要显示")

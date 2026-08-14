@@ -25,7 +25,7 @@ import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGroupSearchDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSearchDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdShardSearchDTO;
-import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdGroupVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdPageVO;
@@ -118,10 +118,8 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
     }
 
     @Override
-    public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, Long nextRetryTime,
-        Long expireTime) {
-        return this.asyncCmdRepository.updateStatusById(id, from, to, costTime, errorMsg, retryCount, nextRetryTime, expireTime);
+    public boolean editStatusById(AsyncCmdStatusEditDTO entity) {
+        return this.asyncCmdRepository.updateStatusById(entity);
     }
 
     @Override

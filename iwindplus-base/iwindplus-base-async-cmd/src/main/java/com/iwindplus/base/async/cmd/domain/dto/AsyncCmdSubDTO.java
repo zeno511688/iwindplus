@@ -137,7 +137,7 @@ public class AsyncCmdSubDTO extends DbVersionBaseDTO {
     private Boolean needDisplay;
 
     /**
-     * 重试次数.
+     * 异步命令主键.
      */
     @Schema(description = "异步命令主键")
     private Long asyncCmdId;

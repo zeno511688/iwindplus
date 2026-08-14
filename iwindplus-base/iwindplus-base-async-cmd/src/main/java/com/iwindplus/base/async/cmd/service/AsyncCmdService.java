@@ -15,7 +15,7 @@ import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGroupSearchDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSearchDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdShardSearchDTO;
-import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdGroupVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdPageVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
@@ -102,19 +102,10 @@ public interface AsyncCmdService {
     /**
      * 通过主键修改状态.
      *
-     * @param id                 主键
-     * @param from               从状态
-     * @param to                 到状态
-     * @param costTime           耗时
-     * @param errorMsg           错误信息
-     * @param retryCount         重试次数
-     * @param nextRetryTime      下一次重试时间
-     * @param expireTime         续约时间
+     * @param entity 状态流转对象（空字段不更新）
      * @return boolean
      */
-    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount,
-        Long nextRetryTime, Long expireTime);
+    boolean editStatusById(AsyncCmdStatusEditDTO entity);
 
     /**
      * 续订租期时间.

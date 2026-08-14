@@ -3,10 +3,10 @@
  */
 package com.iwindplus.base.async.cmd.service;
 
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 异步命令子表业务层接口类.
@@ -19,27 +19,27 @@ public interface AsyncCmdSubService {
     /**
      * 通过主键修改状态.
      *
-     * @param id                 主键
-     * @param from               从状态
-     * @param to                 到状态
-     * @param costTime           耗时
-     * @param errorMsg           错误信息
-     * @param retryCount         重试次数
-     * @param result             结果
-     * @param expireTime         回调等待截止时间
+     * @param entity 状态流转对象（空字段不更新）
      * @return boolean
      */
-    boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result, Long expireTime);
+    boolean editStatusById(AsyncCmdStatusEditDTO entity);
 
     /**
-     * 通过异步命令主键获取已开始执行的子任务数量（状态非待执行）.
-     * <p>callbackFirst模式用于判断主任务是否已进入分发子任务阶段</p>
+     * 通过业务流水号查找子任务.
+     *
+     * @param bizNumber 业务流水号
+     * @return AsyncCmdSubVO
+     */
+    AsyncCmdSubVO getDetailByBizNumber(String bizNumber);
+
+    /**
+     * 通过异步命令主键查找子任务.
      *
      * @param asyncCmdId 异步命令主键
-     * @return long
+     * @param bizKey     业务键
+     * @return AsyncCmdSubVO
      */
-    long countStarted(Long asyncCmdId);
+    AsyncCmdSubVO getDetailByAsyncCmdId(Long asyncCmdId, String bizKey);
 
     /**
      * 通过异步命令主键获取子任务数量.

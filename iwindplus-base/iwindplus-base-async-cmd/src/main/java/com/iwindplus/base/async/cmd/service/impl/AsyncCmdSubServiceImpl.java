@@ -11,11 +11,14 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import com.iwindplus.base.async.cmd.dal.model.AsyncCmdSubDO;
 import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdSubRepository;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdSubService;
+import com.iwindplus.base.domain.enums.BizCodeEnum;
+import com.iwindplus.base.domain.exception.BizException;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,14 +35,28 @@ public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
     private final AsyncCmdSubRepository asyncCmdSubRepository;
 
     @Override
-    public boolean editStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, Map<String, Object> result, Long expireTime) {
-        return this.asyncCmdSubRepository.updateStatusById(id, from, to, costTime, errorMsg, retryCount, result, expireTime);
+    public boolean editStatusById(AsyncCmdStatusEditDTO entity) {
+        return this.asyncCmdSubRepository.updateStatusById(entity);
     }
 
     @Override
-    public long countStarted(Long asyncCmdId) {
-        return this.asyncCmdSubRepository.countByAsyncCmdId(asyncCmdId, AsyncCmdStatusEnum.TO_BE_EXECUTE);
+    public AsyncCmdSubVO getDetailByBizNumber(String bizNumber) {
+        final AsyncCmdSubDO data = this.asyncCmdSubRepository.getByBizNumber(bizNumber);
+        if (Objects.isNull(data)) {
+            throw new BizException(BizCodeEnum.DATA_NOT_EXIST);
+        }
+
+        return BeanUtil.copyProperties(data, AsyncCmdSubVO.class);
+    }
+
+    @Override
+    public AsyncCmdSubVO getDetailByAsyncCmdId(Long asyncCmdId, String bizKey) {
+        final AsyncCmdSubDO data = this.asyncCmdSubRepository.getByAsyncCmdId(asyncCmdId, bizKey);
+        if (Objects.isNull(data)) {
+            throw new BizException(BizCodeEnum.DATA_NOT_EXIST);
+        }
+
+        return BeanUtil.copyProperties(data, AsyncCmdSubVO.class);
     }
 
     @Override

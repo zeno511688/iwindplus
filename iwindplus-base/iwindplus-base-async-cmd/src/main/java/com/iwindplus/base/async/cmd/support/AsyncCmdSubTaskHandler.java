@@ -31,7 +31,7 @@ public interface AsyncCmdSubTaskHandler {
     }
 
     /**
-     * 执行子业务（默认空实现，callbackFirst模式下子任务仅作为状态流转载体）.
+     * 执行子业务（默认空实现）.
      *
      * @param entity 对象
      */

@@ -23,6 +23,7 @@ import com.iwindplus.base.async.cmd.dal.model.AsyncCmdDO.AsyncCmdDOBuilder;
 import com.iwindplus.base.async.cmd.dal.model.AsyncCmdSubDO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGrouSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSaveDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubSaveDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.enums.DispatchModeEnum;
@@ -162,43 +163,39 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
     /**
      * 通过主键修改状态.
      *
-     * @param id            主键
-     * @param from          从状态
-     * @param to            到状态
-     * @param costTime      耗时
-     * @param errorMsg      错误信息
-     * @param retryCount    重试次数
-     * @param nextRetryTime 下次重试时间
-     * @param expireTime    续约时间
+     * @param entity 状态流转对象（空字段不更新）
      * @return boolean
      */
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateStatusById(Long id, AsyncCmdStatusEnum from, AsyncCmdStatusEnum to,
-        Long costTime, String errorMsg, Integer retryCount, Long nextRetryTime,
-        Long expireTime) {
+    public boolean updateStatusById(AsyncCmdStatusEditDTO entity) {
         final AsyncCmdDOBuilder<?, ?> builder = AsyncCmdDO.builder()
-            .status(to)
             .modifiedTimestamp(System.currentTimeMillis());
-        if (Objects.nonNull(costTime)) {
-            builder.costTime(costTime);
+        if (Objects.nonNull(entity.getTo())) {
+            builder.status(entity.getTo());
         }
-        if (CharSequenceUtil.isNotBlank(errorMsg)) {
-            builder.errorMsg(errorMsg);
+        if (Objects.nonNull(entity.getCostTime())) {
+            builder.costTime(entity.getCostTime());
         }
-        if (retryCount != null) {
-            builder.retryCount(retryCount);
+        if (CharSequenceUtil.isNotBlank(entity.getErrorMsg())) {
+            builder.errorMsg(entity.getErrorMsg());
         }
-        if (nextRetryTime != null) {
-            builder.nextRetryTime(nextRetryTime);
+        if (entity.getRetryCount() != null) {
+            builder.retryCount(entity.getRetryCount());
         }
-        if (expireTime != null) {
-            builder.expireTime(expireTime);
+        if (Objects.nonNull(entity.getResult())) {
+            builder.result(entity.getResult());
+        }
+        if (entity.getNextRetryTime() != null) {
+            builder.nextRetryTime(entity.getNextRetryTime());
+        }
+        if (entity.getExpireTime() != null) {
+            builder.expireTime(entity.getExpireTime());
         }
 
         final LambdaUpdateWrapper<AsyncCmdDO> updateWrapper = Wrappers.<AsyncCmdDO>lambdaUpdate()
-            .eq(AsyncCmdDO::getId, id);
-        if (from != null) {
-            updateWrapper.eq(AsyncCmdDO::getStatus, from);
+            .eq(AsyncCmdDO::getId, entity.getId());
+        if (entity.getFrom() != null) {
+            updateWrapper.eq(AsyncCmdDO::getStatus, entity.getFrom());
         }
 
         return super.update(builder.build(), updateWrapper);

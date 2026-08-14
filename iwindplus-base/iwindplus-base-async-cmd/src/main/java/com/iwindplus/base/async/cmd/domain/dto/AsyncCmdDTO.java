@@ -142,12 +142,6 @@ public class AsyncCmdDTO extends DbVersionBaseDTO {
     private Boolean needCallback;
 
     /**
-     * 是否先回调（组任务模式：先主执行回调成功再分发子任务）.
-     */
-    @Schema(description = "是否先回调（组任务模式：先主执行回调成功再分发子任务）")
-    private Boolean callbackFirst;
-
-    /**
      * 是否需要显示（查进度时用）.
      */
     @Schema(description = "是否需要显示")

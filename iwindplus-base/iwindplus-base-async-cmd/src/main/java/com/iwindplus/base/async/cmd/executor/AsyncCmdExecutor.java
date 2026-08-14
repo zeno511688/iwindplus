@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.async.cmd.executor;
 
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdCallbackDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGroupSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubmitVO;
@@ -34,6 +35,16 @@ public interface AsyncCmdExecutor {
      * @return AsyncCmdSubmitVO
      */
     AsyncCmdSubmitVO submitGroup(AsyncCmdGroupSubmitDTO entity);
+
+    /**
+     * 回调通知上报.
+     *
+     * <p>业务收到外部系统回调后调用，框架预存结果并驱动状态流转，业务无需直接修改任务状态</p>
+     * <p>主任务、子任务均通过bizNumber定位，sub标识区分子任务</p>
+     *
+     * @param entity 对象
+     */
+    void callback(AsyncCmdCallbackDTO entity);
 
     /**
      * 通过主键人工触发重试.

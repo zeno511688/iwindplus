@@ -7,6 +7,8 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
+import cn.hutool.core.text.CharSequenceUtil;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
@@ -20,6 +22,7 @@ import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,101 +59,34 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
     public void execute(AsyncCmdVO entity) {
         final AsyncCmdTaskHandler handler = this.getTaskHandler(entity.getExecuteName());
         final long start = System.currentTimeMillis();
-        final boolean callbackFirst = Boolean.TRUE.equals(entity.getCallbackFirst());
 
         // 判断是否是异步等待状态
         if (entity.getStatus() == AsyncCmdStatusEnum.ASYNC_WAIT) {
-            if (callbackFirst) {
-                // callbackFirst模式: 主任务回调成功 → 转执行中 → 立即分发子任务
-                this.executeCallbackAsyncWait(entity, handler, start,
-                    (e, cost) -> {
-                        if (!this.getAsyncCmdStateSupport().taskAsyncWaitToExecute(e, cost)) {
-                            log.warn("asyncCmd callbackFirst main task to execute failed, id={}", e.getId());
-                            return false;
-                        }
-                        this.executeCallbackFirstSubTasks(e, handler, start);
-                        return true;
-                    });
-            } else {
-                this.executeCallbackAsyncWait(entity, handler, start);
-            }
-
+            this.executeCallbackAsyncWait(entity, handler, start);
             return;
         }
 
         final AtomicInteger advanced = new AtomicInteger(0);
 
         try {
-            if (callbackFirst) {
-                // callbackFirst模式: 已有子任务开始执行说明主回调已完成 → 分发/轮询子任务；否则首次执行主业务
-                if (this.asyncCmdSubService.countStarted(entity.getId()) > 0) {
-                    this.executeCallbackFirstSubTasks(entity, handler, start);
-                } else {
-                    // 首次执行: 主任务业务 → 进入异步等待（执行业务前续期执行租约）
-                    this.getAsyncCmdService().editExpireTime(entity.getId());
-                    handler.execute(entity);
-                    this.taskSuccess(entity, handler, start);
-                }
-            } else {
-                // 默认模式: 先子任务 → 主收尾 → 成功
-                final List<AsyncCmdSubVO> subEntities = this.asyncCmdSubService.listByAsyncCmdIdAndStatus(
-                    entity.getId(), AsyncCmdStatusEnum.getUnfinishedStatus());
+            // 先子任务 → 主收尾 → 成功
+            final List<AsyncCmdSubVO> subEntities = this.asyncCmdSubService.listByAsyncCmdIdAndStatus(
+                entity.getId(), AsyncCmdStatusEnum.getUnfinishedStatus());
 
-                if (!this.executeSubTaskResult(entity, handler, start, subEntities, advanced)) {
-                    return;
-                }
-
-                // 主收尾业务前续期执行租约（子任务执行期间租约可能已接近到期）
-                this.getAsyncCmdService().editExpireTime(entity.getId());
-                handler.execute(entity);
-                this.taskSuccess(entity, handler, start);
+            if (!this.executeSubTaskResult(entity, handler, start, subEntities, advanced)) {
+                return;
             }
+
+            // 主收尾业务前续期执行租约（子任务执行期间租约可能已接近到期）
+            this.getAsyncCmdService().editExpireTime(entity.getId());
+            handler.execute(entity);
+            this.taskSuccess(entity, handler, start);
         } catch (Exception ex) {
             log.error("asyncCmd task execute failed. id={}", entity.getId(), ex);
 
             this.getAsyncCmdStateSupport().taskFail(entity, handler,
                 System.currentTimeMillis() - start, ex, advanced.get() > 0);
         }
-    }
-
-    /**
-     * callbackFirst模式: 回调成功后分发子任务（executeSub为空实现，仅做状态流转）.
-     *
-     * @param entity  异步命令视图对象
-     * @param handler 异步命令任务助手
-     * @param start   开始时间
-     */
-    private void executeCallbackFirstSubTasks(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start) {
-        final List<AsyncCmdSubVO> subEntities = this.asyncCmdSubService.listByAsyncCmdIdAndStatus(
-            entity.getId(), AsyncCmdStatusEnum.getUnfinishedStatus());
-        final AtomicInteger advanced = new AtomicInteger(0);
-
-        // 执行子任务（executeSub为空实现，仅做状态流转）
-        this.executeSubTask(entity, subEntities, advanced);
-
-        // 判断子任务是否在等异步调用的结果，不能变成失败，失败会占用重试次数
-        if (this.handleSubAsyncWait(entity, subEntities, start)) {
-            return;
-        }
-
-        // 子任务未全部成功
-        final long unfinished = asyncCmdSubService.countUnfinished(entity.getId());
-        if (unfinished > 0) {
-            String msg = "asyncCmd callbackFirst group has unfinished subTask";
-            log.warn(msg + ", id={} unfinished={}", entity.getId(), unfinished);
-
-            this.getAsyncCmdStateSupport().taskFail(entity, handler,
-                System.currentTimeMillis() - start,
-                new RuntimeException(msg),
-                advanced.get() > 0);
-
-            return;
-        }
-
-        // 子任务全部成功 → 主任务收尾 → 主任务置成功（跳过needCallback，直接置SUCCESS，收尾前续期执行租约）
-        this.getAsyncCmdService().editExpireTime(entity.getId());
-        handler.execute(entity);
-        this.taskFinalSuccess(entity, handler, start);
     }
 
     private boolean executeSubTaskResult(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start,
@@ -237,6 +173,14 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         Integer currentStage = null;
 
         for (AsyncCmdSubVO subEntity : subEntities) {
+            // 进度占位子任务仅适合串行：无论stage如何，强制单独一批，不与任何任务并发
+            if (CharSequenceUtil.isBlank(subEntity.getExecuteName())) {
+                batches.add(new ArrayList<>(List.of(subEntity)));
+                currentBatch = null;
+                currentStage = null;
+                continue;
+            }
+
             Integer stage = subEntity.getStage();
             // stage=0，每个任务单独一组
             if (stage <= 0) {
@@ -269,6 +213,11 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
     }
 
     private AsyncCmdSubVO executeOneSubTask(AsyncCmdVO entity, AsyncCmdSubVO subEntity, AtomicInteger advanced) {
+        // 进度占位子任务（无执行器）：执行到位后直接置成功
+        if (CharSequenceUtil.isBlank(subEntity.getExecuteName())) {
+            return this.executePlaceholderSubTask(entity, subEntity, advanced);
+        }
+
         AsyncCmdSubTaskHandler handler = this.getSubTaskHandler(subEntity.getExecuteName());
 
         // 判断是否是异步等待状态
@@ -279,8 +228,10 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         // 续期
         this.getAsyncCmdService().editExpireTime(entity.getId());
 
-        final boolean status = asyncCmdSubService.editStatusById(subEntity.getId(), null, AsyncCmdStatusEnum.EXECUTE,
-            null, null, null, null, null);
+        final boolean status = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
+            .id(subEntity.getId())
+            .to(AsyncCmdStatusEnum.EXECUTE)
+            .build());
         if (!status) {
             log.warn("asyncCmd subTask execute failed, id={} asyncCmdId={} seq={}",
                 subEntity.getId(), entity.getId(), subEntity.getSeq());
@@ -321,6 +272,40 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             this.getAsyncCmdStateSupport().subTaskFail(subEntity, handler, System.currentTimeMillis() - start, ex);
         }
 
+        return subEntity;
+    }
+
+    /**
+     * 执行进度占位子任务（无执行器，无业务执行，执行到位后直接置成功）.
+     *
+     * @param entity    异步命令视图对象
+     * @param subEntity 子任务视图对象
+     * @param advanced  推进子任务数计数器
+     * @return AsyncCmdSubVO
+     */
+    private AsyncCmdSubVO executePlaceholderSubTask(AsyncCmdVO entity, AsyncCmdSubVO subEntity, AtomicInteger advanced) {
+        // 续期
+        this.getAsyncCmdService().editExpireTime(entity.getId());
+
+        final boolean status = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
+            .id(subEntity.getId())
+            .to(AsyncCmdStatusEnum.EXECUTE)
+            .build());
+        if (!status) {
+            log.warn("asyncCmd placeholder subTask execute failed, id={} asyncCmdId={} seq={}",
+                subEntity.getId(), entity.getId(), subEntity.getSeq());
+            return subEntity;
+        }
+
+        // 无业务可执行，转执行中后直接置成功
+        final boolean subTaskSuccess = this.getAsyncCmdStateSupport().subTaskSuccess(subEntity, null, 0L);
+        if (!subTaskSuccess) {
+            log.warn("asyncCmd placeholder subTask success failed, id={} asyncCmdId={} seq={}",
+                subEntity.getId(), entity.getId(), subEntity.getSeq());
+            return subEntity;
+        }
+
+        advanced.incrementAndGet();
         return subEntity;
     }
 
@@ -378,6 +363,12 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
     }
 
     private AsyncCmdCallbackResultEnum getSubTaskCallback(AsyncCmdVO entity, AsyncCmdSubVO subEntity, AsyncCmdSubTaskHandler handler) {
+        // 回调通知预存结果优先消费，不再调用业务侧查询
+        final AsyncCmdCallbackResultEnum notified = AsyncCmdCallbackResultEnum.fromResultMap(subEntity.getResult());
+        if (Objects.nonNull(notified)) {
+            this.consumeNotifiedResult(subEntity);
+            return notified;
+        }
         try {
             final AsyncCmdCallbackResultEnum result = handler.executeSubCallback(subEntity);
             return Objects.isNull(result) ? AsyncCmdCallbackResultEnum.WAITING : result;
@@ -387,6 +378,21 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
 
             return AsyncCmdCallbackResultEnum.WAITING;
         }
+    }
+
+    /**
+     * 消费预存结果后清理保留键，避免失败重试后再次读到旧预存结果.
+     *
+     * @param subEntity 子任务视图对象
+     */
+    private void consumeNotifiedResult(AsyncCmdSubVO subEntity) {
+        final Map<String, Object> result = subEntity.getResult();
+        result.remove(AsyncCmdCallbackResultEnum.CALLBACK_RESULT_KEY);
+        result.remove(AsyncCmdCallbackResultEnum.CALLBACK_ERROR_MSG_KEY);
+        this.asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
+            .id(subEntity.getId())
+            .result(result)
+            .build());
     }
 
     private boolean isSuccess(AsyncCmdSubVO entity) {
