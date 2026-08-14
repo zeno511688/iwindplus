@@ -491,7 +491,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
 
     /**
      * 聚合子任务进度到主任务.
-     * <p>成功的子任务视为100%，其余按已上报进度计算，取均值写入主任务.</p>
+     * <p>成功的子任务视为100%，占位任务按已上报进度计算，
+     * 非成功的实际任务排除（其进度已通过占位任务体现），取均值写入主任务.</p>
      *
      * @param asyncCmdId         主任务ID
      * @param unfinishedSubTasks 未完成的子任务列表（内存中已有）
@@ -500,12 +501,16 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         // 查询已成功子任务（不在未完成列表中）
         final List<AsyncCmdSubVO> successSubTasks = this.asyncCmdSubService.listByAsyncCmdIdAndStatus(
             asyncCmdId, List.of(AsyncCmdStatusEnum.SUCCESS));
-        final int total = successSubTasks.size() + unfinishedSubTasks.size();
+        // 未完成的只保留占位任务（实际任务进度已通过占位体现，排除避免双重计算）
+        final List<AsyncCmdSubVO> placeholderUnfinished = unfinishedSubTasks.stream()
+            .filter(sub -> CharSequenceUtil.isBlank(sub.getExecuteName()))
+            .toList();
+        final int total = successSubTasks.size() + placeholderUnfinished.size();
         if (total == 0) {
             return;
         }
         final int sum = successSubTasks.size() * 100
-            + unfinishedSubTasks.stream()
+            + placeholderUnfinished.stream()
             .mapToInt(sub -> sub.getProgress() != null ? sub.getProgress() : 0)
             .sum();
         this.getAsyncCmdService().editStatusById(AsyncCmdStatusEditDTO.builder()

@@ -18,6 +18,7 @@ import com.iwindplus.base.async.cmd.service.AsyncCmdSubService;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -83,5 +84,24 @@ public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
         }
 
         return BeanUtil.copyToList(list, AsyncCmdSubVO.class);
+    }
+
+    @Override
+    public boolean editProgressById(Long id, Integer progress) {
+        return this.asyncCmdSubRepository.updateProgressById(id, progress);
+    }
+
+    @Override
+    public List<AsyncCmdSubVO> listByBizNumbers(List<String> bizNumbers) {
+        final List<AsyncCmdSubDO> list = this.asyncCmdSubRepository.listByBizNumbers(bizNumbers);
+        if (CollUtil.isEmpty(list)) {
+            return List.of();
+        }
+        return BeanUtil.copyToList(list, AsyncCmdSubVO.class);
+    }
+
+    @Override
+    public boolean updateProgressBatch(Map<Long, Integer> idToProgress) {
+        return this.asyncCmdSubRepository.updateProgressBatch(idToProgress);
     }
 }

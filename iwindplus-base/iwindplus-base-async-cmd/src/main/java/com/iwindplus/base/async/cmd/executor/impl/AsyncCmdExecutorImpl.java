@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
@@ -475,6 +476,9 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             subTask.setProgress(entity.getProgress());
         }
 
+        // 逐个更新占位子任务进度（一次回调携带多个占位各自的进度）
+        this.updatePlaceholderProgress(entity);
+
         // 聚合子任务进度到主任务
         this.aggregateSubTaskProgress(subTask.getAsyncCmdId());
 
@@ -518,20 +522,55 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
     /**
      * 计算子任务平均进度.
-     * <p>成功的子任务视为100%，其余按已上报进度（null视为0）.</p>
+     * <p>成功的子任务视为100%，占位任务按已上报进度计算，
+     * 非成功的实际任务排除（其进度已通过占位任务体现）.</p>
      *
      * @param subTasks 子任务列表
      * @return 平均进度（0-100）
      */
     private int calculateAverageProgress(List<AsyncCmdSubVO> subTasks) {
-        if (subTasks.isEmpty()) {
+        final List<AsyncCmdSubVO> relevant = subTasks.stream()
+            .filter(sub -> AsyncCmdStatusEnum.SUCCESS == sub.getStatus() || this.isPlaceholder(sub))
+            .toList();
+        if (relevant.isEmpty()) {
             return 0;
         }
-        final int sum = subTasks.stream()
+        final int sum = relevant.stream()
             .mapToInt(sub -> AsyncCmdStatusEnum.SUCCESS == sub.getStatus()
                 ? 100
                 : (sub.getProgress() != null ? sub.getProgress() : 0))
             .sum();
-        return sum / subTasks.size();
+        return sum / relevant.size();
+    }
+
+    private boolean isPlaceholder(AsyncCmdSubVO sub) {
+        return CharSequenceUtil.isBlank(sub.getExecuteName());
+    }
+
+    /**
+     * 批量更新占位子任务进度.
+     * <p>通过subProgress Map携带每个占位子任务的独立进度，1次SELECT + 1次UPDATE批量完成.</p>
+     *
+     * @param entity 回调通知对象
+     */
+    private void updatePlaceholderProgress(AsyncCmdCallbackDTO entity) {
+        if (MapUtil.isEmpty(entity.getSubProgress())) {
+            return;
+        }
+        // 1次批量查询：bizNumber -> 子任务记录
+        final List<AsyncCmdSubVO> placeholders = this.asyncCmdSubService.listByBizNumbers(
+            new ArrayList<>(entity.getSubProgress().keySet()));
+        if (placeholders.isEmpty()) {
+            return;
+        }
+        // 构建 id -> progress 映射
+        final Map<Long, Integer> idToProgress = placeholders.stream()
+            .collect(Collectors.toMap(
+                AsyncCmdSubVO::getId,
+                sub -> entity.getSubProgress().get(sub.getBizNumber()),
+                (a, b) -> a
+            ));
+        // 1次批量更新：CASE WHEN单条SQL
+        this.asyncCmdSubService.updateProgressBatch(idToProgress);
     }
 }

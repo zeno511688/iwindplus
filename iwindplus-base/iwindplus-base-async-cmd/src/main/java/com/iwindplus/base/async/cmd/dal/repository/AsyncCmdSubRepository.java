@@ -9,6 +9,7 @@
 package com.iwindplus.base.async.cmd.dal.repository;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -23,6 +24,7 @@ import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -180,6 +182,63 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
         }
 
         return super.list(queryWrapper);
+    }
+
+    /**
+     * 按主键更新进度（仅更新progress字段）.
+     *
+     * @param id       子任务主键
+     * @param progress 进度值（0-100）
+     * @return boolean
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateProgressById(Long id, Integer progress) {
+        if (id == null || progress == null) {
+            return false;
+        }
+        final AsyncCmdSubDO data = AsyncCmdSubDO.builder()
+            .progress(progress)
+            .modifiedTimestamp(System.currentTimeMillis())
+            .build();
+        return super.updateById(data);
+    }
+
+    /**
+     * 通过业务流水号列表批量查询子任务.
+     *
+     * @param bizNumbers 业务流水号列表
+     * @return List<AsyncCmdSubDO>
+     */
+    public List<AsyncCmdSubDO> listByBizNumbers(List<String> bizNumbers) {
+        if (CollUtil.isEmpty(bizNumbers)) {
+            return List.of();
+        }
+        return super.list(Wrappers.<AsyncCmdSubDO>lambdaQuery()
+            .in(AsyncCmdSubDO::getBizNumber, bizNumbers));
+    }
+
+    /**
+     * 批量更新子任务进度（单条SQL，CASE WHEN）.
+     *
+     * @param idToProgress 主键→进度映射
+     * @return boolean
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateProgressBatch(Map<Long, Integer> idToProgress) {
+        if (MapUtil.isEmpty(idToProgress)) {
+            return false;
+        }
+        final long timestamp = System.currentTimeMillis();
+        final StringBuilder caseSql = new StringBuilder("CASE id ");
+        idToProgress.forEach((id, progress) ->
+            caseSql.append("WHEN ").append(id).append(" THEN ").append(progress).append(" ")
+        );
+        caseSql.append("END");
+        final LambdaUpdateWrapper<AsyncCmdSubDO> updateWrapper = Wrappers.<AsyncCmdSubDO>lambdaUpdate()
+            .in(AsyncCmdSubDO::getId, idToProgress.keySet())
+            .setSql("progress = " + caseSql)
+            .set(AsyncCmdSubDO::getModifiedTimestamp, timestamp);
+        return super.update(null, updateWrapper);
     }
 
     /**

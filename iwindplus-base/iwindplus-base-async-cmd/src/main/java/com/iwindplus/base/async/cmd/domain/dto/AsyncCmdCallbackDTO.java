@@ -75,6 +75,12 @@ public class AsyncCmdCallbackDTO {
     private Integer progress;
 
     /**
+     * 占位子任务进度（可选，key=占位子任务bizNumber，value=进度0-100，一次回调更新多个占位任务各自的进度）.
+     */
+    @Schema(description = "占位子任务进度（key=bizNumber，value=进度0-100）")
+    private Map<String, Integer> subProgress;
+
+    /**
      * 错误信息（可选，结果为FAILED时携带）.
      */
     @Schema(description = "错误信息")
