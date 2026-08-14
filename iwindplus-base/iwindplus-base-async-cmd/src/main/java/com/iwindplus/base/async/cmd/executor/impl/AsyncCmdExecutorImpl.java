@@ -237,7 +237,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         );
         // 进度占位子任务：无执行器，不允许声明回调
         if (Objects.isNull(entity.getExecutorClass())) {
-            Assert.isTrue(!Boolean.TRUE.equals(entity.getNeedCallback()),
+            Assert.isTrue(Boolean.FALSE.equals(entity.getNeedCallback()),
                 "sub[" + index + "].needCallback must be false when executorClass is null (progress placeholder subTask)");
         }
     }
