@@ -213,7 +213,6 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
     private void checkSubmitParam(AsyncCmdSubmitDTO entity) {
         checkBaseParam(entity);
-        Assert.notEmpty(entity.getParam(), "param must not be null");
         Assert.notNull(entity.getExecutorClass(), "executorClass must not be null");
     }
 
@@ -240,9 +239,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         if (Objects.isNull(entity.getExecutorClass())) {
             Assert.isTrue(!Boolean.TRUE.equals(entity.getNeedCallback()),
                 "sub[" + index + "].needCallback must be false when executorClass is null (progress placeholder subTask)");
-            return;
         }
-        Assert.notEmpty(entity.getParam(), "sub[" + index + "].param must not be null");
     }
 
     private List<AsyncCmdSubSaveDTO> buildSubTasks(List<AsyncCmdSubSubmitDTO> subTasks) {
@@ -266,10 +263,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             final AsyncCmdSubSaveDTO entity = BeanUtil.copyProperties(subTask, AsyncCmdSubSaveDTO.class);
             // 进度占位子任务：无执行器，执行到位后直接置成功
             if (Objects.isNull(subTask.getExecutorClass())) {
-                entity.setExecuteName("");
-                if (MapUtil.isEmpty(entity.getParam())) {
-                    entity.setParam(MapUtil.newHashMap());
-                }
+                entity.setExecuteName(null);
                 entities.add(entity);
                 continue;
             }

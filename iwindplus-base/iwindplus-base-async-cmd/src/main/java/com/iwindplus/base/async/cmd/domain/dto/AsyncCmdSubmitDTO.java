@@ -32,7 +32,7 @@ import lombok.experimental.SuperBuilder;
 public class AsyncCmdSubmitDTO extends AsyncCmdSubmitBaseDTO {
 
     /**
-     * 参数（必填）.
+     * 参数（可选）.
      */
     @Schema(description = "参数")
     private Map<String, Object> param;

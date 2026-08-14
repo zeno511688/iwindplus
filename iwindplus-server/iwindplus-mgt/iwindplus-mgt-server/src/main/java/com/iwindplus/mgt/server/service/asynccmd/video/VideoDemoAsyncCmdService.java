@@ -1,0 +1,155 @@
+/*
+ *
+ *  * Copyright (c) iwindplus Technologies Co., Ltd.2024-2030, All rights reserved.
+ *
+ *
+ */
+
+package com.iwindplus.mgt.server.service.asynccmd.video;
+
+import cn.hutool.core.util.IdUtil;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdCallbackDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGroupSubmitDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubSubmitDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
+import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubmitVO;
+import com.iwindplus.base.async.cmd.executor.AsyncCmdExecutor;
+import java.util.List;
+import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+/**
+ * 视频合成示例：异步命令演示服务.
+ *
+ * <p>覆盖README中的全部调度方式示例：
+ * 组任务（本地任务+第三方回调+进度占位+后续任务）、单任务、回调上报、重试</p>
+ *
+ * @author zengdegui
+ * @since 2026/8/12
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class VideoDemoAsyncCmdService {
+
+    private final AsyncCmdExecutor asyncCmdExecutor;
+
+    /**
+     * 用例1：组任务提交.
+     *
+     * <p>编排：素材准备(seq=1) 与 提交第三方(seq=2) 同stage=1并发 →
+     * 第三方回调成功后，3个进度占位(seq=3~5)按序点亮 → 结果转存(seq=6) → 主收尾</p>
+     *
+     * @param videoId 视频业务ID
+     * @return AsyncCmdSubmitVO 提交结果（含主任务bizNumber）
+     */
+    public AsyncCmdSubmitVO submitMergeGroup(String videoId) {
+        // 第三方回调定位键：须全局唯一，作为第三方请求流水号传给第三方
+        final String submitBizNumber = "VID-" + IdUtil.fastSimpleUUID();
+
+        final AsyncCmdSubmitVO result = asyncCmdExecutor.submitGroup(AsyncCmdGroupSubmitDTO.builder()
+            .bizName("视频合成").bizKey("VIDEO").bizType("VIDEO_MERGE")
+            .executorClass(VideoDemoMergeTaskHandler.class)
+            .needDisplay(true)
+            .subTasks(List.of(
+                // seq=1 本地任务（与seq=2同stage=1，批内并发）
+                AsyncCmdSubSubmitDTO.builder()
+                    .bizName("素材准备").bizKey("VIDEO").bizType("VIDEO_PREPARE")
+                    .seq(1).stage(1)
+                    .executorClass(VideoDemoPrepareSubHandler.class)
+                    .param(Map.of("videoId", videoId))
+                    .build(),
+                // seq=2 调第三方，提交后等回调
+                AsyncCmdSubSubmitDTO.builder()
+                    .bizName("提交第三方合成").bizKey("VIDEO").bizType("VIDEO_SUBMIT")
+                    .bizNumber(submitBizNumber)
+                    .seq(2).stage(1)
+                    .executorClass(VideoDemoSubmitSubHandler.class)
+                    .param(Map.of("videoId", videoId))
+                    .needCallback(true)
+                    .build(),
+                // seq=3~5 进度占位：executorClass为空，强制串行，执行到位直接置成功
+                AsyncCmdSubSubmitDTO.builder()
+                    .bizName("合成中").bizKey("VIDEO").bizType("VIDEO_PROGRESS")
+                    .seq(3).needDisplay(true)
+                    .build(),
+                AsyncCmdSubSubmitDTO.builder()
+                    .bizName("转码中").bizKey("VIDEO").bizType("VIDEO_PROGRESS")
+                    .seq(4).needDisplay(true)
+                    .build(),
+                AsyncCmdSubSubmitDTO.builder()
+                    .bizName("上传中").bizKey("VIDEO").bizType("VIDEO_PROGRESS")
+                    .seq(5).needDisplay(true)
+                    .build(),
+                // seq=6 后续任务，读取前置批次结果
+                AsyncCmdSubSubmitDTO.builder()
+                    .bizName("结果转存").bizKey("VIDEO").bizType("VIDEO_SAVE")
+                    .seq(6).stage(2)
+                    .executorClass(VideoDemoSaveSubHandler.class)
+                    .param(Map.of("videoId", videoId))
+                    .build()
+            )).build());
+
+        log.info("videoDemo submitMergeGroup success, id={} bizNumber={} submitBizNumber={}",
+            result.getId(), result.getBizNumber(), submitBizNumber);
+        return result;
+    }
+
+    /**
+     * 用例2：单任务提交.
+     *
+     * @param videoId 视频业务ID
+     * @return AsyncCmdSubmitVO 提交结果
+     */
+    public AsyncCmdSubmitVO submitSingle(String videoId) {
+        return asyncCmdExecutor.submit(AsyncCmdSubmitDTO.builder()
+            .bizName("视频合成").bizKey("VIDEO").bizType("VIDEO_MERGE")
+            .bizNumber("VID-" + IdUtil.fastSimpleUUID())
+            .param(Map.of("videoId", videoId))
+            .executorClass(VideoDemoMergeTaskHandler.class)
+            .needDisplay(true)
+            .build());
+    }
+
+    /**
+     * 用例3：模拟第三方回调成功（业务回调接口收到第三方通知后调用）.
+     *
+     * @param submitBizNumber 提交第三方时使用的bizNumber
+     * @param fileUrl         第三方返回的合成文件地址
+     */
+    public void mockThirdCallbackSuccess(String submitBizNumber, String fileUrl) {
+        asyncCmdExecutor.callback(AsyncCmdCallbackDTO.builder()
+            .bizNumber(submitBizNumber)
+            .sub(true)
+            .result(AsyncCmdCallbackResultEnum.SUCCESS)
+            .resultData(Map.of("fileUrl", fileUrl))
+            .build());
+    }
+
+    /**
+     * 用例4：模拟第三方回调失败.
+     *
+     * @param submitBizNumber 提交第三方时使用的bizNumber
+     * @param errorMsg        错误信息
+     */
+    public void mockThirdCallbackFailed(String submitBizNumber, String errorMsg) {
+        asyncCmdExecutor.callback(AsyncCmdCallbackDTO.builder()
+            .bizNumber(submitBizNumber)
+            .sub(true)
+            .result(AsyncCmdCallbackResultEnum.FAILED)
+            .errorMsg(errorMsg)
+            .build());
+    }
+
+    /**
+     * 用例5：丢弃任务手动重试.
+     *
+     * @param bizNumber 主任务业务流水号
+     */
+    public void retryByBizNumber(String bizNumber) {
+        asyncCmdExecutor.retryByBizNumber(bizNumber);
+    }
+}
