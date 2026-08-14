@@ -25,6 +25,15 @@ public interface AsyncCmdSubService {
     boolean editStatusById(AsyncCmdStatusEditDTO entity);
 
     /**
+     * 通过主键列表批量修改状态.
+     *
+     * @param ids    主键列表
+     * @param entity 状态流转对象（仅使用from/to字段）
+     * @return boolean
+     */
+    boolean editStatusByIds(List<Long> ids, AsyncCmdStatusEditDTO entity);
+
+    /**
      * 通过业务流水号查找子任务.
      *
      * @param bizNumber 业务流水号

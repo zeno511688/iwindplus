@@ -79,6 +79,33 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
     }
 
     /**
+     * 通过主键列表批量修改状态（单条SQL，带from状态CAS前置条件，仅流转status字段）.
+     *
+     * @param ids    主键列表
+     * @param entity 状态流转对象（仅使用from/to字段）
+     * @return boolean
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateStatusByIds(List<Long> ids, AsyncCmdStatusEditDTO entity) {
+        if (CollUtil.isEmpty(ids) || Objects.isNull(entity.getTo())) {
+            return false;
+        }
+
+        final AsyncCmdSubDO data = AsyncCmdSubDO.builder()
+            .status(entity.getTo())
+            .modifiedTimestamp(System.currentTimeMillis())
+            .build();
+
+        final LambdaUpdateWrapper<AsyncCmdSubDO> updateWrapper = Wrappers.<AsyncCmdSubDO>lambdaUpdate()
+            .in(AsyncCmdSubDO::getId, ids);
+        if (entity.getFrom() != null) {
+            updateWrapper.eq(AsyncCmdSubDO::getStatus, entity.getFrom());
+        }
+
+        return super.update(data, updateWrapper);
+    }
+
+    /**
      * 通过业务流水号查找子任务（取最新一条）.
      *
      * @param bizNumber 业务流水号

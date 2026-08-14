@@ -40,6 +40,11 @@ public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
     }
 
     @Override
+    public boolean editStatusByIds(List<Long> ids, AsyncCmdStatusEditDTO entity) {
+        return this.asyncCmdSubRepository.updateStatusByIds(ids, entity);
+    }
+
+    @Override
     public AsyncCmdSubVO getDetailByBizNumber(String bizNumber) {
         final AsyncCmdSubDO data = this.asyncCmdSubRepository.getByBizNumber(bizNumber);
         if (Objects.isNull(data)) {

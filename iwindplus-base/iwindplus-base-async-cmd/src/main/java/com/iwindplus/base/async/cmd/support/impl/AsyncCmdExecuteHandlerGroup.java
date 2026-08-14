@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
@@ -173,32 +174,37 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
      * @param index   当前批次下标
      */
     private void markFollowingPlaceholdersExecuting(List<List<AsyncCmdSubVO>> batches, int index) {
+        final List<AsyncCmdSubVO> placeholders = new ArrayList<>(10);
         for (int i = index + 1; i < batches.size(); i++) {
             final List<AsyncCmdSubVO> nextBatch = batches.get(i);
             // 占位子任务强制独立一批，仅处理单个占位的批次，遇非占位批次停止
             if (nextBatch.size() != 1 || CharSequenceUtil.isNotBlank(nextBatch.get(0).getExecuteName())) {
-                return;
+                break;
             }
 
             final AsyncCmdSubVO placeholder = nextBatch.get(0);
             // 仅待执行的占位需要预置，已预置/已流转的跳过
-            if (!AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(placeholder.getStatus())) {
-                continue;
+            if (AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(placeholder.getStatus())) {
+                placeholders.add(placeholder);
             }
-
-            final boolean status = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
-                .id(placeholder.getId())
-                .from(AsyncCmdStatusEnum.TO_BE_EXECUTE)
-                .to(AsyncCmdStatusEnum.EXECUTE)
-                .build());
-            if (!status) {
-                log.warn("asyncCmd placeholder subTask pre-execute failed, id={} asyncCmdId={} seq={}",
-                    placeholder.getId(), placeholder.getAsyncCmdId(), placeholder.getSeq());
-                continue;
-            }
-
-            placeholder.setStatus(AsyncCmdStatusEnum.EXECUTE);
         }
+
+        if (CollUtil.isEmpty(placeholders)) {
+            return;
+        }
+
+        // 批量CAS预置为执行中（单条SQL）
+        final List<Long> ids = placeholders.stream().map(AsyncCmdSubVO::getId).toList();
+        final boolean status = asyncCmdSubService.editStatusByIds(ids, AsyncCmdStatusEditDTO.builder()
+            .from(AsyncCmdStatusEnum.TO_BE_EXECUTE)
+            .to(AsyncCmdStatusEnum.EXECUTE)
+            .build());
+        if (!status) {
+            log.warn("asyncCmd placeholder subTask pre-execute failed, ids={}", ids);
+            return;
+        }
+
+        placeholders.forEach(item -> item.setStatus(AsyncCmdStatusEnum.EXECUTE));
     }
 
     private List<AsyncCmdSubVO> listPriorSuccess(AsyncCmdVO entity, List<AsyncCmdSubVO> subEntities) {
