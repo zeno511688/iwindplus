@@ -261,13 +261,16 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             }
 
             final AsyncCmdSubSaveDTO entity = BeanUtil.copyProperties(subTask, AsyncCmdSubSaveDTO.class);
+            // 有执行器则落执行名，执行器按执行名路由；executeName为空会被识别为进度占位子任务
+            if (Objects.nonNull(handler)) {
+                entity.setExecuteName(handler.getExecuteName());
+            }
 
-            // 是否需要回调，需要则必须配置执行器
-            if (Boolean.TRUE.equals(subTask.getNeedCallback()) && Objects.nonNull(handler)) {
-                Assert.isTrue(this.overrideSubCallback(handler),
+            // 是否需要回调，需要则执行器必须重写executeSubCallback
+            if (Boolean.TRUE.equals(subTask.getNeedCallback())) {
+                Assert.isTrue(Objects.nonNull(handler) && this.overrideSubCallback(handler),
                     "The subtask declared the need for a callback, but the executor did not override executeSubCallback method."
                         + "sub[" + index + "].executorClass=" + subTask.getExecutorClass());
-                entity.setExecuteName(handler.getExecuteName());
             }
 
             entities.add(entity);

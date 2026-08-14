@@ -253,11 +253,13 @@ public record AsyncCmdStateSupport(
                     .to(AsyncCmdStatusEnum.SUCCESS)
                     .costTime(costTime)
                     .result(entity.getResult())
+                    .expireTime(0L)
                     .build());
                 if (updated) {
                     // 关键钩子纳入事务：失败回滚状态流转并外抛，等待下次轮询重试
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
+                    entity.setExpireTime(0L);
                     if (Objects.nonNull(handler)) {
                         handler.onTaskSuccess(entity);
                     }
@@ -413,7 +415,7 @@ public record AsyncCmdStateSupport(
         AsyncCmdSubVO entity,
         AsyncCmdSubTaskHandler handler,
         Long costTime) {
-        final Long callbackWaitExpireTime = this.getExpireTime();
+        final Long expireTime = this.getExpireTime();
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -423,14 +425,14 @@ public record AsyncCmdStateSupport(
                     .to(AsyncCmdStatusEnum.ASYNC_WAIT)
                     .costTime(costTime)
                     .result(entity.getResult())
-                    .expireTime(callbackWaitExpireTime)
+                    .expireTime(expireTime)
                     .build());
                 if (updated) {
                     // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.ASYNC_WAIT);
                     entity.setCostTime(costTime);
-                    entity.setExpireTime(callbackWaitExpireTime);
+                    entity.setExpireTime(expireTime);
                     if (Objects.nonNull(handler)) {
                         handler.onSubTaskAsyncWait(entity);
                     }
@@ -460,11 +462,13 @@ public record AsyncCmdStateSupport(
                     .from(AsyncCmdStatusEnum.ASYNC_WAIT)
                     .to(AsyncCmdStatusEnum.SUCCESS)
                     .result(entity.getResult())
+                    .expireTime(0L)
                     .build());
                 if (updated) {
                     // 关键钩子纳入事务：失败回滚状态流转并外抛，等待下次轮询重试
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
+                    entity.setExpireTime(0L);
                     if (Objects.nonNull(handler)) {
                         handler.onSubTaskSuccess(entity);
                     }
