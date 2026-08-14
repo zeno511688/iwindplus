@@ -476,6 +476,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         if (!this.hasSubAsyncWait(subEntities)) {
             return false;
         }
+        // 聚合子任务进度到主任务
+        this.aggregateSubTaskProgress(entity.getId(), subEntities);
         // 将主任务设置为待执行，等待下一次执行
         final boolean toBeExecute = this.getAsyncCmdStateSupport().taskExecuteToBeExecute(
             entity, System.currentTimeMillis() - start);
@@ -485,6 +487,31 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             return false;
         }
         return true;
+    }
+
+    /**
+     * 聚合子任务进度到主任务.
+     * <p>成功的子任务视为100%，其余按已上报进度计算，取均值写入主任务.</p>
+     *
+     * @param asyncCmdId         主任务ID
+     * @param unfinishedSubTasks 未完成的子任务列表（内存中已有）
+     */
+    private void aggregateSubTaskProgress(Long asyncCmdId, List<AsyncCmdSubVO> unfinishedSubTasks) {
+        // 查询已成功子任务（不在未完成列表中）
+        final List<AsyncCmdSubVO> successSubTasks = this.asyncCmdSubService.listByAsyncCmdIdAndStatus(
+            asyncCmdId, List.of(AsyncCmdStatusEnum.SUCCESS));
+        final int total = successSubTasks.size() + unfinishedSubTasks.size();
+        if (total == 0) {
+            return;
+        }
+        final int sum = successSubTasks.size() * 100
+            + unfinishedSubTasks.stream()
+            .mapToInt(sub -> sub.getProgress() != null ? sub.getProgress() : 0)
+            .sum();
+        this.getAsyncCmdService().editStatusById(AsyncCmdStatusEditDTO.builder()
+            .id(asyncCmdId)
+            .progress(sum / total)
+            .build());
     }
 
     private AsyncCmdSubTaskHandler getSubTaskHandler(String executeName) {

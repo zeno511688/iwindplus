@@ -69,6 +69,12 @@ public class AsyncCmdCallbackDTO {
     private Map<String, Object> resultData;
 
     /**
+     * 进度比例（可选，0-100，回调时上报进度）.
+     */
+    @Schema(description = "进度比例（0-100）")
+    private Integer progress;
+
+    /**
      * 错误信息（可选，结果为FAILED时携带）.
      */
     @Schema(description = "错误信息")

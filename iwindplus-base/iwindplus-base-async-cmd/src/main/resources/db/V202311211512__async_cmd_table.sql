@@ -32,6 +32,7 @@ CREATE TABLE `async_cmd`
     `cost_time`          bigint unsigned  NOT NULL DEFAULT 0 COMMENT '累计耗时',
     `need_callback`      tinyint unsigned NOT NULL DEFAULT 0 COMMENT '是否需要异步回调结果（0：否，1：是）',
     `need_display`       tinyint unsigned NOT NULL DEFAULT 1 COMMENT '是否需要显示（0：否，1：是）',
+    `progress`           int unsigned     NOT NULL DEFAULT 0 COMMENT '进度比例（0-100）',
     PRIMARY KEY (`id`),
     KEY `idx_env_biz_number` (`env`, `biz_number`) COMMENT '复合索引（环境, 业务流水号）',
     KEY `idx_env_biz_key_biz_type` (`env`, `biz_key`, `biz_type`) COMMENT '复合索引（环境，业务key，业务类型）'
@@ -69,6 +70,7 @@ CREATE TABLE `async_cmd_sub`
     `need_callback`      tinyint unsigned NOT NULL DEFAULT 0 COMMENT '是否需要异步回调结果（0：否，1：是）',
     `expire_time`        bigint unsigned  NOT NULL DEFAULT 0 COMMENT '回调等待截止时间',
     `need_display`       tinyint unsigned NOT NULL DEFAULT 1 COMMENT '是否需要显示（0：否，1：是）',
+    `progress`           int unsigned     NOT NULL DEFAULT 0 COMMENT '进度比例（0-100）',
     `async_cmd_id`       bigint unsigned  NOT NULL DEFAULT 0 COMMENT '异步命令主键',
     PRIMARY KEY (`id`),
     KEY `idx_async_cmd_id_seq_status` (`async_cmd_id`, `seq`, `status`) COMMENT '复合索引（异步命令主键, 排序号, 状态）'

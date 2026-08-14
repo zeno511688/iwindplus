@@ -77,4 +77,10 @@ public class AsyncCmdBaseVO extends DbVersionBaseVO {
      */
     @Schema(description = "耗时")
     private Long costTime;
+
+    /**
+     * 进度比例（0-100）.
+     */
+    @Schema(description = "进度比例（0-100）")
+    private Integer progress;
 }

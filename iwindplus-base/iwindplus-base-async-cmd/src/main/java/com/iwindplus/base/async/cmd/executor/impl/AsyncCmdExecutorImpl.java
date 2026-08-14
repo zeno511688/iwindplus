@@ -76,7 +76,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         param.setExecuteName(entity.getExecutorClass().getSimpleName());
         final AsyncCmdVO result = this.asyncCmdService.save(param);
 
-        // 获取调度管理器
+        // 立即驱动主任务执行
         this.dispatch(result);
         return this.buildSubmitResult(result);
     }
@@ -101,7 +101,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
         final AsyncCmdVO result = this.asyncCmdService.saveGroup(param);
 
-        // 获取调度管理器
+        // 立即驱动主任务执行
         this.dispatch(result);
         return this.buildSubmitResult(result);
     }
@@ -350,6 +350,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
         entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
         entity.setRetryCount(0);
+        // 立即驱动主任务执行
         this.dispatch(entity);
     }
 
@@ -418,13 +419,17 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             return;
         }
 
-        // 预存回调结果，业务不直接修改任务状态
+        // 预存回调结果与进度，业务不直接修改任务状态
         final Map<String, Object> result = this.buildCallbackResult(entity);
         this.asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
             .id(task.getId())
             .result(result)
+            .progress(entity.getProgress())
             .build());
         task.setResult(result);
+        if (Objects.nonNull(entity.getProgress())) {
+            task.setProgress(entity.getProgress());
+        }
 
         // 异步等待中：CAS刷新下次重试时间并立即投递，加速消费；否则等待下一轮正常执行/轮询消费
         if (AsyncCmdStatusEnum.ASYNC_WAIT == status) {
@@ -439,6 +444,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
                 return;
             }
             task.setNextRetryTime(now);
+            // 立即驱动主任务执行
             this.dispatch(task);
         }
     }
@@ -457,21 +463,75 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             return;
         }
 
-        // 预存回调结果，业务不直接修改任务状态
+        // 预存回调结果与进度，业务不直接修改任务状态
         final Map<String, Object> result = this.buildCallbackResult(entity);
         this.asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
             .id(subTask.getId())
             .result(result)
+            .progress(entity.getProgress())
             .build());
         subTask.setResult(result);
+        if (Objects.nonNull(entity.getProgress())) {
+            subTask.setProgress(entity.getProgress());
+        }
+
+        // 聚合子任务进度到主任务
+        this.aggregateSubTaskProgress(subTask.getAsyncCmdId());
 
         // 子任务异步等待中，主任务处于待执行等待轮询：CAS刷新主任务下次重试时间为当前，加速消费
         if (AsyncCmdStatusEnum.ASYNC_WAIT == subTask.getStatus()) {
-            this.asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+            final boolean updated = this.asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
                 .id(subTask.getAsyncCmdId())
                 .from(AsyncCmdStatusEnum.TO_BE_EXECUTE)
                 .nextRetryTime(System.currentTimeMillis())
                 .build());
+            if (updated) {
+                final AsyncCmdVO mainTask = this.asyncCmdService.getDetail(subTask.getAsyncCmdId());
+                if (Objects.nonNull(mainTask)) {
+                    // 立即驱动主任务执行
+                    this.dispatch(mainTask);
+                }
+            }
         }
+    }
+
+    /**
+     * 聚合子任务进度到主任务.
+     * <p>查询主任务下所有子任务，成功的视为100%，其余按已上报进度计算，取均值写入主任务.</p>
+     *
+     * @param asyncCmdId 主任务ID
+     */
+    private void aggregateSubTaskProgress(Long asyncCmdId) {
+        final List<AsyncCmdStatusEnum> allStatuses = new ArrayList<>(AsyncCmdStatusEnum.getUnfinishedStatus());
+        allStatuses.add(AsyncCmdStatusEnum.SUCCESS);
+        final List<AsyncCmdSubVO> allSubTasks = this.asyncCmdSubService.listByAsyncCmdIdAndStatus(
+            asyncCmdId, allStatuses);
+        if (allSubTasks.isEmpty()) {
+            return;
+        }
+        final int progress = this.calculateAverageProgress(allSubTasks);
+        this.asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+            .id(asyncCmdId)
+            .progress(progress)
+            .build());
+    }
+
+    /**
+     * 计算子任务平均进度.
+     * <p>成功的子任务视为100%，其余按已上报进度（null视为0）.</p>
+     *
+     * @param subTasks 子任务列表
+     * @return 平均进度（0-100）
+     */
+    private int calculateAverageProgress(List<AsyncCmdSubVO> subTasks) {
+        if (subTasks.isEmpty()) {
+            return 0;
+        }
+        final int sum = subTasks.stream()
+            .mapToInt(sub -> AsyncCmdStatusEnum.SUCCESS == sub.getStatus()
+                ? 100
+                : (sub.getProgress() != null ? sub.getProgress() : 0))
+            .sum();
+        return sum / subTasks.size();
     }
 }

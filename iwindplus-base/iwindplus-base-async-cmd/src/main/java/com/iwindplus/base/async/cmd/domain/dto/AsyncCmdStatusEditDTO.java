@@ -83,4 +83,10 @@ public class AsyncCmdStatusEditDTO {
      */
     @Schema(description = "截止时间")
     private Long expireTime;
+
+    /**
+     * 进度比例（可选，0-100）.
+     */
+    @Schema(description = "进度比例（0-100）")
+    private Integer progress;
 }

@@ -137,6 +137,12 @@ public class AsyncCmdSubDO extends DbBaseDO {
     private Boolean needDisplay;
 
     /**
+     * 进度比例（0-100）.
+     */
+    @Schema(description = "进度比例（0-100）")
+    private Integer progress;
+
+    /**
      * 异步命令主键.
      */
     @Schema(description = "异步命令主键")

@@ -145,4 +145,10 @@ public class AsyncCmdDO extends DbBaseDO {
      */
     @Schema(description = "是否需要显示")
     private Boolean needDisplay;
+
+    /**
+     * 进度比例（0-100）.
+     */
+    @Schema(description = "进度比例（0-100）")
+    private Integer progress;
 }
