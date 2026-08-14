@@ -421,6 +421,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             entity, System.currentTimeMillis() - start);
         if (!toBeExecute) {
             log.warn("asyncCmd has asyncWait, id={}", entity.getId());
+
+            return false;
         }
         return true;
     }
