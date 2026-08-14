@@ -255,11 +255,15 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             Integer stage = Optional.ofNullable(subTask.getStage()).orElse(0);
             seqStageMap.put(seq, stage);
 
+            AsyncCmdSubTaskHandler handler = null;
+            if (Objects.nonNull(subTask.getExecutorClass())) {
+                handler = this.resolveSubTaskHandler(subTask.getExecutorClass());
+            }
+
             final AsyncCmdSubSaveDTO entity = BeanUtil.copyProperties(subTask, AsyncCmdSubSaveDTO.class);
 
             // 是否需要回调，需要则必须配置执行器
-            if (Boolean.TRUE.equals(subTask.getNeedCallback())) {
-                final AsyncCmdSubTaskHandler handler = this.resolveSubTaskHandler(subTask.getExecutorClass());
+            if (Boolean.TRUE.equals(subTask.getNeedCallback()) && Objects.nonNull(handler)) {
                 Assert.isTrue(this.overrideSubCallback(handler),
                     "The subtask declared the need for a callback, but the executor did not override executeSubCallback method."
                         + "sub[" + index + "].executorClass=" + subTask.getExecutorClass());
