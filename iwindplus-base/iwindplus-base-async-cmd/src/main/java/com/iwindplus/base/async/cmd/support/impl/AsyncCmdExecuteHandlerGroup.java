@@ -7,7 +7,6 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
@@ -174,36 +173,43 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
      * @param index   当前批次下标
      */
     private void markFollowingPlaceholdersExecuting(List<List<AsyncCmdSubVO>> batches, int index) {
-        final List<AsyncCmdSubVO> placeholders = new ArrayList<>(10);
-        for (int i = index + 1; i < batches.size(); i++) {
-            final List<AsyncCmdSubVO> nextBatch = batches.get(i);
-            // 占位子任务强制独立一批，仅处理单个占位的批次，遇非占位批次停止
-            if (nextBatch.size() != 1 || CharSequenceUtil.isNotBlank(nextBatch.get(0).getExecuteName())) {
-                break;
-            }
-
-            final AsyncCmdSubVO placeholder = nextBatch.get(0);
-            // 仅待执行的占位需要预置，已预置/已流转的跳过
-            if (AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(placeholder.getStatus())) {
-                placeholders.add(placeholder);
-            }
-        }
-
-        if (CollUtil.isEmpty(placeholders)) {
+        // 从当前批次的下一个批次开始，只扫描连续的占位批次。
+        // takeWhile 保证遇到第一个非占位批次后立即停止，不再处理后续批次。
+        final List<AsyncCmdSubVO> placeholders = batches.stream()
+            .skip(index + 1)
+            .takeWhile(batch -> batch.size() == 1
+                && CharSequenceUtil.isBlank(batch.get(0).getExecuteName()))
+            // 每个占位批次强制只有一个子任务，因此直接取出该任务。
+            .map(batch -> batch.get(0))
+            // 已经处于 EXECUTE 或其他状态的任务无需重复预置。
+            .filter(item -> AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(item.getStatus()))
+            .toList();
+        // 没有需要预置的占位任务，直接结束。
+        if (placeholders.isEmpty()) {
             return;
         }
 
-        // 批量CAS预置为执行中（单条SQL）
-        final List<Long> ids = placeholders.stream().map(AsyncCmdSubVO::getId).toList();
-        final boolean status = asyncCmdSubService.editStatusByIds(ids, AsyncCmdStatusEditDTO.builder()
-            .from(AsyncCmdStatusEnum.TO_BE_EXECUTE)
-            .to(AsyncCmdStatusEnum.EXECUTE)
-            .build());
-        if (!status) {
+        // 收集需要更新的子任务 ID，后续通过单条 SQL 批量执行 CAS 更新。
+        final List<Long> ids = placeholders.stream()
+            .map(AsyncCmdSubVO::getId)
+            .toList();
+
+        // 使用 TO_BE_EXECUTE → EXECUTE 的 CAS 条件更新，
+        // 防止任务已经被其他线程/节点抢先执行后又被重复预置。
+        final boolean success = asyncCmdSubService.editStatusByIds(
+            ids,
+            AsyncCmdStatusEditDTO.builder()
+                .from(AsyncCmdStatusEnum.TO_BE_EXECUTE)
+                .to(AsyncCmdStatusEnum.EXECUTE)
+                .build()
+        );
+
+        if (!success) {
             log.warn("asyncCmd placeholder subTask pre-execute failed, ids={}", ids);
             return;
         }
 
+        // 数据库批量 CAS 更新成功，同步更新内存对象状态。
         placeholders.forEach(item -> item.setStatus(AsyncCmdStatusEnum.EXECUTE));
     }
 
