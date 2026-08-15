@@ -141,22 +141,23 @@ asyncCmdExecutor.submitGroup(AsyncCmdGroupSubmitDTO.builder()
             .needCallback(true)                   // handler须重写executeSubCallback
             .build(),
         // seq=3~5 进度占位：executorClass=null，无业务执行，执行到位直接置成功
+        // ⚠️ 占位子任务必须显式指定 stage，不指定则默认 0 会触发 stage 单调不减校验失败
         AsyncCmdSubSubmitDTO.builder()
             .bizName("合成中").bizKey("VIDEO").bizType("VIDEO_PROGRESS")
-            .seq(3).needDisplay(true)
+            .seq(3).stage(2).needDisplay(true)
             .build(),
         AsyncCmdSubSubmitDTO.builder()
             .bizName("转码中").bizKey("VIDEO").bizType("VIDEO_PROGRESS")
-            .seq(4).needDisplay(true)
+            .seq(4).stage(2).needDisplay(true)
             .build(),
         AsyncCmdSubSubmitDTO.builder()
             .bizName("上传中").bizKey("VIDEO").bizType("VIDEO_PROGRESS")
-            .seq(5).needDisplay(true)
+            .seq(5).stage(2).needDisplay(true)
             .build(),
         // seq=6 后续任务
         AsyncCmdSubSubmitDTO.builder()
             .bizName("结果转存").bizKey("VIDEO").bizType("VIDEO_SAVE")
-            .seq(6).stage(2)
+            .seq(6).stage(3)
             .executorClass(VideoSaveSubHandler.class)
             .param(Map.of("videoId", videoId))
             .build()
@@ -167,24 +168,70 @@ asyncCmdExecutor.submitGroup(AsyncCmdGroupSubmitDTO.builder()
 
 - seq 从 1 开始连续且唯一；stage 按 seq 顺序单调不减（seq 顺序即执行顺序）
 - 有执行器的子任务：param 可选；needCallback=true 时 handler 必须重写 `executeSubCallback`
-- 进度占位子任务（executorClass=null）：禁止声明 needCallback；param 可省略；第三方调用可放在任意 seq 位置
+- 进度占位子任务（executorClass=null）：禁止声明 needCallback；param 可省略；**必须显式指定 stage**，不指定则默认 0 会触发 stage 单调不减校验失败
 
 ### 调度执行逻辑
 
-1. **分批**（groupByStage）：stage 变化切分批次；stage=0 或未指定的子任务每个单独一批；**进度占位子任务强制单独一批**（仅适合串行，无论 stage 如何配置都不与任何任务并发）；同 stage 连续子任务合并为一批并发执行
+1. **分批**（groupByStage）：stage 变化切分批次；stage=0 或未指定的子任务每个单独一批；同 stage 连续子任务合并为一批并发执行（占位子任务同样按 stage 分组，支持与同 stage 任务并行）
 2. **批次顺序推进**：前一批未全部成功不进入下一批；批次内任一失败则停止后续批次
 3. **结果传递**：前置批次成功子任务以 `priorSubTasks` 快照注入后续批次子任务
-4. **回调等待**：needCallback 子任务执行后转 ASYNC_WAIT，主任务转回待执行（不算失败、不占重试次数），等待下轮拾起；下轮消费回调预存结果（或调 `executeSubCallback` 查询），回调等待超时转失败进重试链
+4. **回调等待**：needCallback 子任务执行后转 ASYNC_WAIT，主任务转回待执行（不算失败、不占重试次数），等待下轮拾起；此时**后续所有批次中的占位子任务（executeName 为空）全部预置为执行中**（不限批次类型，第三方处理期间进度可见）；下轮消费回调预存结果（或调 `executeSubCallback` 查询），回调等待超时转失败进重试链
 5. **收尾**：全部子任务成功且数量与提交一致 → 续租 → 执行主收尾 handler → 主任务 SUCCESS（主任务声明 needCallback 时先进 ASYNC_WAIT）
 
-### 第三方回调 + 进度占位时序示例
+### 编排场景示例
+
+#### 场景一：占位指定独立 stage（回调期间进度可见）
 
 ```
-seq=2 调第三方 → EXECUTE → ASYNC_WAIT → 主任务转回待执行
-回调到达     → 预存结果到子任务 → CAS刷新主任务重试时间加速投递
-下一轮拾起   → seq=2 消费预存结果置 SUCCESS
-             → seq=3/4/5 占位按序逐个 EXECUTE → SUCCESS（进度逐个点亮）
-             → seq=6 执行 → 全部成功 → 主收尾 → 主任务 SUCCESS
+提交编排：
+  seq=1  stage=1  PrepareHandler
+  seq=2  stage=1  ThirdPartyHandler (needCallback=true)
+  seq=3  stage=2  占位（合成）    ← 显式指定 stage=2
+  seq=4  stage=2  占位（转码）
+  seq=5  stage=2  占位（上传）
+  seq=6  stage=3  FinalHandler
+
+分批：[seq=1,2]  [seq=3,4,5]  [seq=6]
+
+执行时序：
+  batch1: seq=1 → SUCCESS
+         seq=2 → handler.executeSub → ASYNC_WAIT
+  batch1 未全部SUCCESS → markFollowingPlaceholdersExecuting
+    → 扫描后续批次 → seq=3/4/5 占位 + TO_BE_EXECUTE
+    → 批量 TO_BE_EXECUTE → EXECUTE（回调期间进度可见）
+  → 主任务 TO_BE_EXECUTE，等待回调
+
+  回调到达 → 更新 seq=3/4/5 progress → 存 seq=2 result → CAS 加速
+  下一轮拾起：
+    batch1: seq=2 消费预存结果 → SUCCESS
+    batch2: seq=3/4/5 并发 → executePlaceholderSubTask → SUCCESS
+    batch3: seq=6 → SUCCESS
+  → 主任务 SUCCESS
+```
+
+#### 场景二：占位有 handler（空实现），同 stage 并行
+
+```
+提交编排：
+  seq=1  stage=1  PrepareHandler
+  seq=2  stage=1  ThirdPartyHandler (needCallback=true)
+  seq=3  stage=2  SynthHandler     （executeSub 空实现）
+  seq=4  stage=2  TranscodeHandler （executeSub 空实现）
+  seq=5  stage=2  UploadHandler    （executeSub 空实现）
+  seq=6  stage=3  FinalHandler
+
+分批：[seq=1,2]  [seq=3,4,5]  [seq=6]
+
+执行时序：
+  batch1: seq=1 SUCCESS, seq=2 ASYNC_WAIT
+  → markFollowingPlaceholdersExecuting
+    seq=3/4/5 有 executeName，不是占位 → 不预置
+
+  回调到达 → seq=2 SUCCESS
+  batch2: seq=3/4/5 并发 → handler.executeSub（空实现） → SUCCESS
+  batch3: seq=6 → SUCCESS
+
+特点：有 handler 的任务不算占位，走正常 handler 路径，回调后才执行
 ```
 
 # 五、回调通知 callback(AsyncCmdCallbackDTO)
@@ -192,20 +239,35 @@ seq=2 调第三方 → EXECUTE → ASYNC_WAIT → 主任务转回待执行
 业务收到外部系统回调后调用，状态流转由框架完成（业务不直接改状态）：
 
 ```java
+// 主任务回调
 asyncCmdExecutor.callback(AsyncCmdCallbackDTO.builder()
-    .bizNumber("VID20260812001")            // 必填，主任务/子任务统一定位键
-    .sub(true)                              // true=子任务（默认false主任务）
-    .result(AsyncCmdCallbackResultEnum.SUCCESS)  // 必填，仅允许SUCCESS/FAILED
-    .resultData(Map.of("url", fileUrl))     // 可选，外部系统返回的业务数据
-    .errorMsg(null)                         // 可选，FAILED时携带
+    .bizNumber("VID20260812001")                    // 主任务定位键
+    .callbackResult(AsyncCmdCallbackResultEnum.SUCCESS)  // 主任务回调结果（可选，非空时处理主任务）
+    .result(Map.of("url", fileUrl))                 // 可选，业务数据
+    .progress(100)                                  // 可选，主任务整体进度
+    .subTasks(List.of(                              // 可选，子任务回调列表
+        AsyncCmdSubCallbackDTO.builder()
+            .bizNumber("VID20260812001_SUB3")       // 子任务定位键
+            .callbackResult(AsyncCmdCallbackResultEnum.SUCCESS)
+            .progress(80)                           // 占位子任务独立进度
+            .build(),
+        AsyncCmdSubCallbackDTO.builder()
+            .bizNumber("VID20260812001_SUB4")
+            .callbackResult(AsyncCmdCallbackResultEnum.SUCCESS)
+            .progress(50)
+            .build()
+    ))
     .build());
 ```
 
 执行逻辑（回调预存机制）：
-- 不直接修改状态，只把结果预存到 result（保留键 `_callbackResult` / `_callbackErrorMsg`）
-- 任务处于 ASYNC_WAIT 时 CAS 刷新下次重试时间并立即投递，加速消费；否则等待下一轮正常执行消费
+- 通过 id（优先）或 bizNumber 定位主任务
+- callbackResult 非空时预存主任务结果与进度
+- 遍历 subTasks 列表，按各子回调的 bizNumber 定位子任务并预存结果与进度
+- 处理完所有子任务后，从 subTasks 提取 bizNumber→progress 批量更新占位任务进度（1 SELECT + 1 UPDATE）
+- 每个子任务处理后聚合进度到主任务
+- 任务处于 ASYNC_WAIT 时 CAS 刷新重试时间并立即投递，加速消费
 - 已终态主任务 / 已成功子任务幂等忽略重复通知
-- 子任务定位优先按 bizNumber，也支持 asyncCmdId + bizKey
 
 # 六、重试与删除
 
