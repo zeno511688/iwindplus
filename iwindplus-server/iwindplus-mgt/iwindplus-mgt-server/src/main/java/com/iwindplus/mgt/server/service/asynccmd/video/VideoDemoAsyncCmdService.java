@@ -10,6 +10,7 @@ package com.iwindplus.mgt.server.service.asynccmd.video;
 import cn.hutool.core.util.IdUtil;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdCallbackDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGroupSubmitDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubCallbackDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
@@ -122,10 +123,13 @@ public class VideoDemoAsyncCmdService {
      */
     public void mockThirdCallbackSuccess(String submitBizNumber, String fileUrl) {
         asyncCmdExecutor.callback(AsyncCmdCallbackDTO.builder()
-            .bizNumber(submitBizNumber)
-            .sub(true)
-            .result(AsyncCmdCallbackResultEnum.SUCCESS)
-            .resultData(Map.of("fileUrl", fileUrl))
+            .subTasks(List.of(
+                AsyncCmdSubCallbackDTO.builder()
+                    .bizNumber(submitBizNumber)
+                    .callbackResult(AsyncCmdCallbackResultEnum.SUCCESS)
+                    .result(Map.of("fileUrl", fileUrl))
+                    .build()
+            ))
             .build());
     }
 
@@ -137,10 +141,13 @@ public class VideoDemoAsyncCmdService {
      */
     public void mockThirdCallbackFailed(String submitBizNumber, String errorMsg) {
         asyncCmdExecutor.callback(AsyncCmdCallbackDTO.builder()
-            .bizNumber(submitBizNumber)
-            .sub(true)
-            .result(AsyncCmdCallbackResultEnum.FAILED)
-            .errorMsg(errorMsg)
+            .subTasks(List.of(
+                AsyncCmdSubCallbackDTO.builder()
+                    .bizNumber(submitBizNumber)
+                    .callbackResult(AsyncCmdCallbackResultEnum.FAILED)
+                    .errorMsg(errorMsg)
+                    .build()
+            ))
             .build());
     }
 
