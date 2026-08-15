@@ -20,6 +20,7 @@ import lombok.experimental.SuperBuilder;
  * @author zengdegui
  * @since 2025/12/28 00:22
  */
+@Schema(description = "异步命令提交基础数据传输对象")
 @Data
 @SuperBuilder
 @NoArgsConstructor

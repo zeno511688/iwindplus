@@ -7,42 +7,33 @@
 
 package com.iwindplus.base.async.cmd.domain.dto;
 
-import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
-import com.iwindplus.base.util.JacksonUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.Map;
+import java.util.List;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 /**
  * 异步命令回调通知数据传输对象.
- *
- * <p>业务收到外部系统回调后，通过该对象向框架上报结果，状态流转由框架完成</p>
- * <p>主任务、子任务均通过bizNumber定位，sub标识区分子任务；需要回调通知的子任务提交时须自行指定bizNumber并保证唯一</p>
  *
  * @author zengdegui
  * @since 2026/08/12 00:00
  */
 @Schema(description = "异步命令回调通知数据传输对象")
 @Data
-@Builder
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class AsyncCmdCallbackDTO {
+public class AsyncCmdCallbackDTO extends AsyncCmdCallbackBaseDTO {
 
     /**
-     * 异步命令主键.
+     * 主键.
      */
-    @Schema(description = "异步命令主键")
-    private Long asyncCmdId;
-
-    /**
-     * 业务流水号（必填，主任务/子任务统一定位键）.
-     */
-    @Schema(description = "业务流水号（主任务/子任务统一定位键）")
-    private String bizNumber;
+    @Schema(description = "主键")
+    private Long id;
 
     /**
      * 业务key，例如 ORDER.
@@ -51,64 +42,14 @@ public class AsyncCmdCallbackDTO {
     private String bizKey;
 
     /**
-     * 是否子任务（可选，默认false主任务）.
+     * 业务类型，例如 ORDER_CREATE.
      */
-    @Schema(description = "是否子任务（默认false主任务）")
-    private Boolean sub;
+    @Schema(description = "业务类型，例如 ORDER_CREATE")
+    private String bizType;
 
     /**
-     * 回调结果（必填，仅允许SUCCESS/FAILED）.
+     * 子任务回调通知列表.
      */
-    @Schema(description = "回调结果（仅允许SUCCESS/FAILED）")
-    private AsyncCmdCallbackResultEnum result;
-
-    /**
-     * 结果数据（可选，外部系统返回的业务数据）.
-     */
-    @Schema(description = "结果数据")
-    private Map<String, Object> resultData;
-
-    /**
-     * 进度比例（可选，0-100，回调时上报进度）.
-     */
-    @Schema(description = "进度比例（0-100）")
-    private Integer progress;
-
-    /**
-     * 占位子任务进度（可选，key=占位子任务bizNumber，value=进度0-100，一次回调更新多个占位任务各自的进度）.
-     */
-    @Schema(description = "占位子任务进度（key=bizNumber，value=进度0-100）")
-    private Map<String, Integer> subProgress;
-
-    /**
-     * 错误信息（可选，结果为FAILED时携带）.
-     */
-    @Schema(description = "错误信息")
-    private String errorMsg;
-
-    /**
-     * 设置回调结果.
-     *
-     * @param data 数据
-     * @param <T>  泛型
-     */
-    public <T> void setCallbackData(T data) {
-        this.resultData = JacksonUtil.parseMap(JacksonUtil.toJsonStr(data));
-    }
-
-    /**
-     * 获取结果数据并转换为指定类型.
-     *
-     * @param clazz 目标类型
-     * @param <T>   泛型
-     * @return T
-     */
-    public <T> T getCallbackData(Class<T> clazz) {
-        if (result == null) {
-            return null;
-        }
-        // 使用 JSON 序列化/反序列化转换
-        String json = JacksonUtil.toJsonStr(result);
-        return JacksonUtil.parseObject(json, clazz);
-    }
+    @Schema(description = "子任务回调通知列表")
+    private List<AsyncCmdSubCallbackDTO> subTasks;
 }

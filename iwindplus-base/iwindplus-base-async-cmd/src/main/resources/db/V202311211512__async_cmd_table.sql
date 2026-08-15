@@ -73,5 +73,6 @@ CREATE TABLE `async_cmd_sub`
     `progress`           int unsigned     NOT NULL DEFAULT 0 COMMENT '进度比例（0-100）',
     `async_cmd_id`       bigint unsigned  NOT NULL DEFAULT 0 COMMENT '异步命令主键',
     PRIMARY KEY (`id`),
+    KEY `idx_biz_number` (`biz_number`) COMMENT '普通索引（业务流水号）',
     KEY `idx_async_cmd_id_seq_status` (`async_cmd_id`, `seq`, `status`) COMMENT '复合索引（异步命令主键, 排序号, 状态）'
 ) COMMENT ='异步命令子表';

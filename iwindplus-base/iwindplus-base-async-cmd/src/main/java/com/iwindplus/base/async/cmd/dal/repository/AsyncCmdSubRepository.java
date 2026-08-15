@@ -185,25 +185,6 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
     }
 
     /**
-     * 按主键更新进度（仅更新progress字段）.
-     *
-     * @param id       子任务主键
-     * @param progress 进度值（0-100）
-     * @return boolean
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public boolean updateProgressById(Long id, Integer progress) {
-        if (id == null || progress == null) {
-            return false;
-        }
-        final AsyncCmdSubDO data = AsyncCmdSubDO.builder()
-            .progress(progress)
-            .modifiedTimestamp(System.currentTimeMillis())
-            .build();
-        return super.updateById(data);
-    }
-
-    /**
      * 通过业务流水号列表批量查询子任务.
      *
      * @param bizNumbers 业务流水号列表

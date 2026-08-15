@@ -87,11 +87,6 @@ public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
     }
 
     @Override
-    public boolean editProgressById(Long id, Integer progress) {
-        return this.asyncCmdSubRepository.updateProgressById(id, progress);
-    }
-
-    @Override
     public List<AsyncCmdSubVO> listByBizNumbers(List<String> bizNumbers) {
         final List<AsyncCmdSubDO> list = this.asyncCmdSubRepository.listByBizNumbers(bizNumbers);
         if (CollUtil.isEmpty(list)) {

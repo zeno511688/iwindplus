@@ -40,7 +40,7 @@ public interface AsyncCmdExecutor {
      * 回调通知上报.
      *
      * <p>业务收到外部系统回调后调用，框架预存结果并驱动状态流转，业务无需直接修改任务状态</p>
-     * <p>主任务、子任务均通过bizNumber定位，sub标识区分子任务</p>
+     * <p>主任务通过id或bizNumber定位，子任务通过subTasks列表携带各自的回调结果</p>
      *
      * @param entity 对象
      */

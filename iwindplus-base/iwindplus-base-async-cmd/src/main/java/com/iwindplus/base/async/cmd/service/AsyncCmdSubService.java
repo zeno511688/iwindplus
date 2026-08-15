@@ -77,15 +77,6 @@ public interface AsyncCmdSubService {
     List<AsyncCmdSubVO> listByAsyncCmdIdAndStatus(Long asyncCmdId, List<AsyncCmdStatusEnum> statusList);
 
     /**
-     * 按主键更新子任务进度.
-     *
-     * @param id       子任务主键
-     * @param progress 进度值（0-100）
-     * @return boolean
-     */
-    boolean editProgressById(Long id, Integer progress);
-
-    /**
      * 通过业务流水号列表批量查询子任务.
      *
      * @param bizNumbers 业务流水号列表
