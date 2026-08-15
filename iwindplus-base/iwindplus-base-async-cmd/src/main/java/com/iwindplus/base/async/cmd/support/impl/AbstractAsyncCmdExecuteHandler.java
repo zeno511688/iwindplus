@@ -9,6 +9,7 @@ package com.iwindplus.base.async.cmd.support.impl;
 
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
+import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdTaskHandlerStrategyFactory;
@@ -136,27 +137,36 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
     }
 
     /**
-     * 任务成功.
+     * 处理主任务执行结果，根据返回值决定状态走向.
      *
-     * @param entity  对象
-     * @param handler 助手
-     * @param start   开始时间
+     * @param entity        主任务对象
+     * @param handler       主任务助手
+     * @param start         开始时间
+     * @param result        业务执行返回值
+     * @param stateAdvanced 是否已有状态推进（子任务场景）
      */
-    protected void taskSuccess(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start) {
-        final long costTime = System.currentTimeMillis() - start;
+    protected void handleExecuteResult(AsyncCmdVO entity, AsyncCmdTaskHandler handler,
+        long start, AsyncCmdExecuteResultEnum result, boolean stateAdvanced) {
+        // 业务显式返回失败
+        if (AsyncCmdExecuteResultEnum.FAILED.equals(result)) {
+            this.getAsyncCmdStateSupport().taskFail(entity, handler,
+                System.currentTimeMillis() - start,
+                new RuntimeException("asyncCmd task execute returned failed"), stateAdvanced);
+            return;
+        }
 
-        // 判断是否需要进入异步等待状态
-        if (Boolean.TRUE.equals(entity.getNeedCallback())) {
-            final boolean taskAsyncWait = this.getAsyncCmdStateSupport().taskAsyncWait(entity, handler, costTime);
+        // 业务显式返回异步等待
+        if (AsyncCmdExecuteResultEnum.ASYNC_WAIT.equals(result)) {
+            final boolean taskAsyncWait = this.getAsyncCmdStateSupport().taskAsyncWait(entity, handler,
+                System.currentTimeMillis() - start);
             if (!taskAsyncWait) {
                 log.warn("asyncCmd task set asyncWait failed, id={}", entity.getId());
             }
-
             return;
         }
 
         // 成功
-        final boolean taskSuccess = this.getAsyncCmdStateSupport().taskSuccess(entity, handler, costTime);
+        final boolean taskSuccess = this.getAsyncCmdStateSupport().taskSuccess(entity, handler, System.currentTimeMillis() - start);
         if (!taskSuccess) {
             log.warn("asyncCmd task execute success, but taskSuccess failed, id={}", entity.getId());
         }

@@ -8,6 +8,7 @@
 package com.iwindplus.base.async.cmd.support;
 
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
+import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 
 /**
@@ -31,11 +32,16 @@ public interface AsyncCmdSubTaskHandler {
     }
 
     /**
-     * 执行子业务（默认空实现）.
+     * 执行子业务（默认空实现，返回成功）.
+     *
+     * <p>由业务方显式返回执行结果，决定子任务状态走向：
+     * SUCCESS → 成功，FAILED → 失败，ASYNC_WAIT → 进入异步等待</p>
      *
      * @param entity 对象
+     * @return AsyncCmdExecuteResultEnum 执行结果
      */
-    default void executeSub(AsyncCmdSubVO entity) {
+    default AsyncCmdExecuteResultEnum executeSub(AsyncCmdSubVO entity) {
+        return AsyncCmdExecuteResultEnum.SUCCESS;
     }
 
     /**

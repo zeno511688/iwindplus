@@ -38,9 +38,9 @@ public class AsyncCmdSubSubmitDTO extends AsyncCmdSubmitBaseDTO {
     private Map<String, Object> param;
 
     /**
-     * 执行器类（可选，为空表示进度占位子任务，无业务执行，执行到位后直接置成功）.
+     * 执行器类（必填）.
      */
-    @Schema(description = "执行器类（为空表示进度占位子任务）")
+    @Schema(description = "执行器类")
     private Class<? extends AsyncCmdSubTaskHandler> executorClass;
 
     /**

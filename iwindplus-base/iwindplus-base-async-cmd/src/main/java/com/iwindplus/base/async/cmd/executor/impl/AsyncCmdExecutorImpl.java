@@ -13,11 +13,11 @@ import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdCallbackBaseDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdCallbackDTO;
-import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubCallbackDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGrouSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGroupSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubCallbackDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitBaseDTO;
@@ -132,20 +132,15 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             this.callbackTask(task, entity);
         }
 
-        // 子任务回调列表：逐个处理
+        // 子任务回调列表
         if (CollUtil.isNotEmpty(entity.getSubTasks())) {
-            entity.getSubTasks().forEach(subCallback -> {
-                this.checkSubCallbackParam(subCallback);
-                if (CharSequenceUtil.isBlank(subCallback.getBizNumber())) {
-                    return;
-                }
-                final AsyncCmdSubVO subTask = this.asyncCmdSubService.getDetailByBizNumber(subCallback.getBizNumber());
-                if (Objects.nonNull(subTask)) {
-                    this.callbackSubTask(subTask, subCallback);
-                }
-            });
-            // 批量更新占位子任务进度（从子任务回调列表提取各占位进度）
-            this.updatePlaceholderProgress(task.getId(), entity.getSubTasks());
+            final List<AsyncCmdSubCallbackDTO> validSubTasks = entity.getSubTasks().stream()
+                .peek(this::checkSubCallbackParam)
+                .filter(subCallback -> CharSequenceUtil.isNotBlank(subCallback.getBizNumber()))
+                .toList();
+
+            // 批量更新有效子任务进度
+            this.updateSubTaskProgressBatch(validSubTasks);
         }
     }
 
@@ -232,7 +227,6 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
                 "sub[" + index + "].seq must be unique"
             );
 
-            // 未指定stage时默认0，占位子任务需显式指定stage以控制分批
             Integer stage = subTask.getStage();
             stage = Optional.ofNullable(stage).orElse(0);
             seqStageMap.put(seq, stage);
@@ -245,7 +239,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             final AsyncCmdSubSaveDTO entity = BeanUtil.copyProperties(subTask, AsyncCmdSubSaveDTO.class);
             // 落解析后的stage，避免null落库
             entity.setStage(stage);
-            // 有执行器则落执行名，执行器按执行名路由；executeName为空会被识别为进度占位子任务
+            // 有执行器则落执行名，执行器按执行名路由
             if (Objects.nonNull(handler)) {
                 entity.setExecuteName(handler.getExecuteName());
             }
@@ -533,39 +527,30 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
     /**
      * 计算子任务平均进度.
-     * <p>成功的子任务视为100%，占位任务按已上报进度计算，
-     * 非成功的实际任务排除（其进度已通过占位任务体现）.</p>
+     * <p>成功的子任务视为100%，其余按已上报进度计算，取均值写入主任务.</p>
      *
      * @param subTasks 子任务列表
      * @return 平均进度（0-100）
      */
     private int calculateAverageProgress(List<AsyncCmdSubVO> subTasks) {
-        final List<AsyncCmdSubVO> relevant = subTasks.stream()
-            .filter(sub -> AsyncCmdStatusEnum.SUCCESS.equals(sub.getStatus()) || this.isPlaceholder(sub))
-            .toList();
-        if (relevant.isEmpty()) {
+        if (subTasks.isEmpty()) {
             return 0;
         }
-        final int sum = relevant.stream()
+        final int sum = subTasks.stream()
             .mapToInt(sub -> AsyncCmdStatusEnum.SUCCESS.equals(sub.getStatus())
                 ? 100
                 : (sub.getProgress() != null ? sub.getProgress() : 0))
             .sum();
-        return sum / relevant.size();
-    }
-
-    private boolean isPlaceholder(AsyncCmdSubVO sub) {
-        return CharSequenceUtil.isBlank(sub.getExecuteName());
+        return sum / subTasks.size();
     }
 
     /**
-     * 批量更新占位子任务进度.
-     * <p>从子任务回调列表中提取各占位任务的独立进度，1次SELECT + 1次UPDATE批量完成.</p>
+     * 批量更新子任务进度.
+     * <p>从回调列表中提取各子任务的独立进度，1次SELECT + 1次UPDATE批量完成.</p>
      *
-     * @param asyncCmdId 主任务ID
-     * @param subTasks   子任务回调列表
+     * @param subTasks 子任务回调列表
      */
-    private void updatePlaceholderProgress(Long asyncCmdId, List<AsyncCmdSubCallbackDTO> subTasks) {
+    private void updateSubTaskProgressBatch(List<AsyncCmdSubCallbackDTO> subTasks) {
         if (CollUtil.isEmpty(subTasks)) {
             return;
         }
@@ -578,13 +563,13 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             return;
         }
         // 1次批量查询：bizNumber -> 子任务记录
-        final List<AsyncCmdSubVO> placeholders = this.asyncCmdSubService.listByBizNumbers(
+        final List<AsyncCmdSubVO> subTaskList = this.asyncCmdSubService.listByBizNumbers(
             new ArrayList<>(bizNumberToProgress.keySet()));
-        if (placeholders.isEmpty()) {
+        if (subTaskList.isEmpty()) {
             return;
         }
         // 构建 id -> progress 映射
-        final Map<Long, Integer> idToProgress = placeholders.stream()
+        final Map<Long, Integer> idToProgress = subTaskList.stream()
             .collect(Collectors.toMap(
                 AsyncCmdSubVO::getId,
                 sub -> bizNumberToProgress.get(sub.getBizNumber()),

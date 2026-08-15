@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
+import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdTaskHandlerStrategyFactory;
@@ -47,10 +48,10 @@ public class AsyncCmdExecuteHandlerMain extends AbstractAsyncCmdExecuteHandler {
             // 执行业务前续期执行租约，业务耗时接近timeoutSeconds时降低被RESET_JOB误重置双跑的风险
             this.getAsyncCmdService().editExpireTime(entity.getId());
 
-            // 执行业务逻辑（无事务）
-            handler.execute(entity);
+            // 执行业务逻辑（无事务），由业务方显式返回执行结果
+            final AsyncCmdExecuteResultEnum result = handler.execute(entity);
 
-            this.taskSuccess(entity, handler, start);
+            this.handleExecuteResult(entity, handler, start, result, false);
         } catch (Exception ex) {
             log.error("asyncCmd task execute failed. id={}", entity.getId(), ex);
 
@@ -59,4 +60,16 @@ public class AsyncCmdExecuteHandlerMain extends AbstractAsyncCmdExecuteHandler {
                 System.currentTimeMillis() - start, ex, false);
         }
     }
+
+    private boolean taskFail(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start, AsyncCmdExecuteResultEnum result) {
+        if (AsyncCmdExecuteResultEnum.FAILED.equals(result)) {
+            this.getAsyncCmdStateSupport().taskFail(entity, handler,
+                System.currentTimeMillis() - start,
+                new RuntimeException("asyncCmd task execute returned FAILED"), false);
+            return true;
+        }
+        return false;
+    }
+
+
 }
