@@ -172,25 +172,21 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
     }
 
     /**
-     * 批次内子任务进入异步等待时，将后续连续的进度占位子任务全部预置为执行中.
+     * 批次内子任务进入异步等待时，将后续所有进度占位子任务全部预置为执行中.
      * <p>第三方处理期间（回调到达前）进度状态可见；回调到达恢复执行后，
      * 占位子任务已在执行中，按自身逻辑直接置成功.</p>
-     * <p>从当前批次的下一批起向后扫描，仅处理占位批次，遇到含执行器的批次即停止，
-     * 避免把未执行任务之后的占位也置为执行中.</p>
+     * <p>从当前批次的下一批起向后扫描所有子任务，筛选出占位任务（executeName为空）
+     * 且状态仍为TO_BE_EXECUTE的进行预置，不限制批次类型.</p>
      *
      * @param batches 全部批次
      * @param index   当前批次下标
      */
     private void markFollowingPlaceholdersExecuting(List<List<AsyncCmdSubVO>> batches, int index) {
-        // 从当前批次的下一个批次开始，只扫描连续的占位批次。
-        // takeWhile 保证遇到第一个非占位批次后立即停止，不再处理后续批次。
+        // 从当前批次的下一个批次开始，扫描所有子任务，筛选占位（executeName为空）且待执行的。
         final List<AsyncCmdSubVO> placeholders = batches.stream()
             .skip(index + 1)
-            .takeWhile(batch -> batch.size() == 1
-                && CharSequenceUtil.isBlank(batch.get(0).getExecuteName()))
-            // 每个占位批次强制只有一个子任务，因此直接取出该任务。
-            .map(batch -> batch.get(0))
-            // 已经处于 EXECUTE 或其他状态的任务无需重复预置。
+            .flatMap(List::stream)
+            .filter(sub -> CharSequenceUtil.isBlank(sub.getExecuteName()))
             .filter(item -> AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(item.getStatus()))
             .toList();
         // 没有需要预置的占位任务，直接结束。
@@ -239,14 +235,6 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         Integer currentStage = null;
 
         for (AsyncCmdSubVO subEntity : subEntities) {
-            // 进度占位子任务仅适合串行：无论stage如何，强制单独一批，不与任何任务并发
-            if (CharSequenceUtil.isBlank(subEntity.getExecuteName())) {
-                batches.add(new ArrayList<>(List.of(subEntity)));
-                currentBatch = null;
-                currentStage = null;
-                continue;
-            }
-
             Integer stage = subEntity.getStage();
             // stage=0，每个任务单独一组
             if (stage <= 0) {
