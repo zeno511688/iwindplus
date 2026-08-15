@@ -221,7 +221,6 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         final List<AsyncCmdSubSaveDTO> entities = new ArrayList<>(10);
         // seq -> stage（校验seq全局从1连续，且stage按seq顺序单调不减，保证seq顺序即执行顺序）
         final Map<Integer, Integer> seqStageMap = new HashMap<>(subTasks.size());
-        Integer prevStage = null;
 
         for (int index = 0; index < subTasks.size(); index++) {
             final AsyncCmdSubSubmitDTO subTask = subTasks.get(index);
@@ -233,15 +232,10 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
                 "sub[" + index + "].seq must be unique"
             );
 
-            // 进度占位子任务未指定stage时继承前一任务的stage（执行侧占位强制独立批不读stage），
-            // 避免默认0破坏stage单调不减校验
+            // 未指定stage时默认0，占位子任务需显式指定stage以控制分批
             Integer stage = subTask.getStage();
-            if (Objects.isNull(stage) && Objects.isNull(subTask.getExecutorClass())) {
-                stage = Optional.ofNullable(prevStage).orElse(0);
-            }
             stage = Optional.ofNullable(stage).orElse(0);
             seqStageMap.put(seq, stage);
-            prevStage = stage;
 
             AsyncCmdSubTaskHandler handler = null;
             if (Objects.nonNull(subTask.getExecutorClass())) {
@@ -249,7 +243,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             }
 
             final AsyncCmdSubSaveDTO entity = BeanUtil.copyProperties(subTask, AsyncCmdSubSaveDTO.class);
-            // 落解析后的stage（含占位继承值），避免null落库
+            // 落解析后的stage，避免null落库
             entity.setStage(stage);
             // 有执行器则落执行名，执行器按执行名路由；executeName为空会被识别为进度占位子任务
             if (Objects.nonNull(handler)) {
