@@ -25,6 +25,11 @@ import lombok.RequiredArgsConstructor;
 public enum AsyncCmdExecuteResultEnum implements BaseEnum<Integer> {
 
     /**
+     * 执行中.
+     */
+    EXECUTE(10, "执行中"),
+
+    /**
      * 异步等待.
      */
     ASYNC_WAIT(20, "异步等待"),
