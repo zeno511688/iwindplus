@@ -72,7 +72,6 @@ public class AsyncCmdJobHandlerReset extends AbstractAsyncCmdJobHandler {
                             .id(entity.getId())
                             .from(entity.getStatus())
                             .to(status)
-                            .nextRetryTime(System.currentTimeMillis())
                             .build());
                 if (!result) {
                     skipped++;
