@@ -28,6 +28,7 @@ import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubSaveDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.enums.DispatchModeEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import java.util.List;
@@ -79,6 +80,7 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
         });
         final List<AsyncCmdSubDO> subEntities = BeanUtil.copyToList(subTasks, AsyncCmdSubDO.class);
         this.asyncCmdSubMapper.insert(subEntities);
+        result.setSubTasks(BeanUtil.copyToList(subEntities, AsyncCmdSubVO.class));
         return result;
     }
 

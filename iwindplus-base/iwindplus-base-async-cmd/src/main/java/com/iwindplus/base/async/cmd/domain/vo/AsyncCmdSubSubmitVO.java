@@ -9,24 +9,23 @@ package com.iwindplus.base.async.cmd.domain.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
- * 异步命令提交结果视图对象.
+ * 异步命令子任务提交结果视图对象.
  *
  * @author zengdegui
  * @since 2025/9/14
  */
-@Schema(description = "异步命令提交结果视图对象")
+@Schema(description = "异步命令子任务提交结果视图对象")
 @Data
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AsyncCmdSubmitVO implements Serializable {
+public class AsyncCmdSubSubmitVO implements Serializable {
 
     /**
      * 主键.
@@ -57,10 +56,4 @@ public class AsyncCmdSubmitVO implements Serializable {
      */
     @Schema(description = "业务流水号")
     private String bizNumber;
-
-    /**
-     * 子任务列表.
-     */
-    @Schema(description = "子任务列表")
-    private List<AsyncCmdSubSubmitVO> subTasks;
 }

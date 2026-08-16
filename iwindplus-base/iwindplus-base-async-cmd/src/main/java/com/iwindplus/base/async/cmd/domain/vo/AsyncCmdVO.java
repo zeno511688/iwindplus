@@ -8,7 +8,6 @@
 package com.iwindplus.base.async.cmd.domain.vo;
 
 import cn.hutool.core.collection.CollUtil;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.iwindplus.base.async.cmd.domain.enums.DispatchModeEnum;
 import com.iwindplus.base.util.JacksonUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -98,9 +97,8 @@ public class AsyncCmdVO extends AsyncCmdBaseVO {
     /**
      * 子任务列表.
      */
-    @JsonIgnore
-    @Schema(description = "子任务列表", hidden = true)
-    private transient List<AsyncCmdSubVO> subTasks;
+    @Schema(description = "子任务列表")
+    private List<AsyncCmdSubVO> subTasks;
 
     /**
      * 获取参数并转换为指定类型.

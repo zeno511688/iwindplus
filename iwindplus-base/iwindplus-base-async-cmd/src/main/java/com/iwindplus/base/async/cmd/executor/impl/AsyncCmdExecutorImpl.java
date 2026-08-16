@@ -24,6 +24,7 @@ import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitBaseDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubSubmitVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubmitVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
@@ -321,7 +322,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
     }
 
     private AsyncCmdSubmitVO buildSubmitResult(AsyncCmdVO param) {
-        return AsyncCmdSubmitVO
+        final AsyncCmdSubmitVO result = AsyncCmdSubmitVO
             .builder()
             .id(param.getId())
             .bizKey(param.getBizKey())
@@ -329,6 +330,10 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             .bizType(param.getBizType())
             .bizNumber(param.getBizNumber())
             .build();
+        if (CollUtil.isNotEmpty(param.getSubTasks())) {
+            result.setSubTasks(BeanUtil.copyToList(param.getSubTasks(), AsyncCmdSubSubmitVO.class));
+        }
+        return result;
     }
 
     public void retry(AsyncCmdVO entity) {
