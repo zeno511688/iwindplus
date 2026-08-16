@@ -7,6 +7,7 @@
 
 package com.iwindplus.mgt.server.service.asynccmd.video;
 
+import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
@@ -29,12 +30,13 @@ import org.springframework.stereotype.Component;
 public class VideoDemoMergeTaskHandler implements AsyncCmdTaskHandler {
 
     @Override
-    public void execute(AsyncCmdVO entity) {
+    public AsyncCmdExecuteResultEnum execute(AsyncCmdVO entity) {
         // 组任务收尾：entity.getSubTasks() 携带全部成功的子任务结果
         final List<AsyncCmdSubVO> subTasks = entity.getSubTasks();
         log.info("videoDemo merge task final execute, id={} bizNumber={} subTaskCount={}",
             entity.getId(), entity.getBizNumber(),
             subTasks == null ? 0 : subTasks.size());
+        return AsyncCmdExecuteResultEnum.SUCCESS;
     }
 
     @Override

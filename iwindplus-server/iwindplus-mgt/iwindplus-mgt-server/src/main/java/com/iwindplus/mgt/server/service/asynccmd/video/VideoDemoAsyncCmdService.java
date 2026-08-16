@@ -75,15 +75,21 @@ public class VideoDemoAsyncCmdService {
                 // seq=3~5 进度占位：executorClass为空，强制串行，执行到位直接置成功
                 AsyncCmdSubSubmitDTO.builder()
                     .bizName("合成中").bizKey("VIDEO").bizType("VIDEO_PROGRESS")
-                    .seq(3).needDisplay(true)
+                    .seq(3).stage(1)
+                    .executorClass(VideoDemoSubmitSubHandler.class)
+                    .needDisplay(true)
                     .build(),
                 AsyncCmdSubSubmitDTO.builder()
                     .bizName("转码中").bizKey("VIDEO").bizType("VIDEO_PROGRESS")
-                    .seq(4).needDisplay(true)
+                    .seq(4).stage(1)
+                    .executorClass(VideoDemoTransSubHandler.class)
+                    .needDisplay(true)
                     .build(),
                 AsyncCmdSubSubmitDTO.builder()
                     .bizName("上传中").bizKey("VIDEO").bizType("VIDEO_PROGRESS")
-                    .seq(5).needDisplay(true)
+                    .seq(5).stage(1)
+                    .executorClass(VideoDemoUploadSubHandler.class)
+                    .needDisplay(true)
                     .build(),
                 // seq=6 后续任务，读取前置批次结果
                 AsyncCmdSubSubmitDTO.builder()

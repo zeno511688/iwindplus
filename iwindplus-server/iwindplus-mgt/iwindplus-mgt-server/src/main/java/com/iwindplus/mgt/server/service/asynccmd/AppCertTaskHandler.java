@@ -7,6 +7,7 @@
 
 package com.iwindplus.mgt.server.service.asynccmd;
 
+import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import com.iwindplus.base.kafka.core.KafkaTemplateRouter;
@@ -34,12 +35,13 @@ public class AppCertTaskHandler implements AsyncCmdTaskHandler {
     private final KafkaMultiProperty kafkaProperty;
 
     @Override
-    public void execute(AsyncCmdVO entity) {
+    public AsyncCmdExecuteResultEnum execute(AsyncCmdVO entity) {
         log.info("AppCertTaskHandler回调");
         final Map<String, Object> paramMap = entity.getParam();
         final String content = paramMap.get("content").toString();
 
         this.sendMessage(content);
+        return AsyncCmdExecuteResultEnum.SUCCESS;
     }
 
     private void sendMessage(String content) {
