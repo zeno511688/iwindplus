@@ -76,7 +76,7 @@ public class VideoDemoAsyncCmdService {
                 AsyncCmdSubSubmitDTO.builder()
                     .bizName("合成中").bizKey("VIDEO").bizType("VIDEO_PROGRESS")
                     .seq(3).stage(1)
-                    .executorClass(VideoDemoSubmitSubHandler.class)
+                    .executorClass(VideoDemoSynthesisSubHandler.class)
                     .needDisplay(true)
                     .build(),
                 AsyncCmdSubSubmitDTO.builder()
