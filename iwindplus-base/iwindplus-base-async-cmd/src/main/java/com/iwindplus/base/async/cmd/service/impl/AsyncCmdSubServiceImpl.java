@@ -10,6 +10,7 @@ package com.iwindplus.base.async.cmd.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import com.iwindplus.base.async.cmd.dal.model.AsyncCmdSubDO;
+import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdRepository;
 import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdSubRepository;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
@@ -17,6 +18,7 @@ import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdSubService;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
 
+    private final AsyncCmdRepository asyncCmdRepository;
     private final AsyncCmdSubRepository asyncCmdSubRepository;
 
     @Override
@@ -43,6 +46,11 @@ public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
     @Override
     public boolean editStatusByIds(List<Long> ids, AsyncCmdStatusEditDTO entity) {
         return this.asyncCmdSubRepository.updateStatusByIds(ids, entity);
+    }
+
+    @Override
+    public boolean editCallbackBatch(Map<Long, Map<String, Object>> idToResult, Map<Long, Integer> idToProgress) {
+        return this.asyncCmdSubRepository.updateCallbackBatch(idToResult, idToProgress);
     }
 
     @Override
@@ -96,7 +104,36 @@ public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
     }
 
     @Override
-    public boolean updateCallbackBatch(Map<Long, Map<String, Object>> idToResult, Map<Long, Integer> idToProgress) {
-        return this.asyncCmdSubRepository.updateCallbackBatch(idToResult, idToProgress);
+    public void aggregateProgress(Long asyncCmdId) {
+        final List<AsyncCmdStatusEnum> allStatuses = new ArrayList<>(AsyncCmdStatusEnum.getUnfinishedStatus());
+        allStatuses.add(AsyncCmdStatusEnum.SUCCESS);
+        final List<AsyncCmdSubVO> allSubTasks = this.listByAsyncCmdIdAndStatus(asyncCmdId, allStatuses);
+        if (allSubTasks.isEmpty()) {
+            return;
+        }
+        final int progress = this.calculateAverageProgress(allSubTasks);
+        this.asyncCmdRepository.updateStatusById(AsyncCmdStatusEditDTO.builder()
+            .id(asyncCmdId)
+            .progress(progress)
+            .build());
+    }
+
+    /**
+     * 计算子任务平均进度.
+     * <p>成功的子任务视为100%，其余按已上报进度计算，取均值写入主任务.</p>
+     *
+     * @param subTasks 子任务列表
+     * @return 平均进度（0-100）
+     */
+    private int calculateAverageProgress(List<AsyncCmdSubVO> subTasks) {
+        if (subTasks.isEmpty()) {
+            return 0;
+        }
+        final int sum = subTasks.stream()
+            .mapToInt(sub -> AsyncCmdStatusEnum.SUCCESS.equals(sub.getStatus())
+                ? 100
+                : (sub.getProgress() != null ? sub.getProgress() : 0))
+            .sum();
+        return sum / subTasks.size();
     }
 }

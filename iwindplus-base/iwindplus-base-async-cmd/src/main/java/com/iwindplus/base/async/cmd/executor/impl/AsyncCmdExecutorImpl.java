@@ -113,6 +113,9 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
     @Override
     public boolean callback(AsyncCmdCallbackDTO entity) {
+        // 归一化：progress>=100 等价于 callbackResult=SUCCESS
+        this.normalizeCallbackResult(entity);
+
         // 定位主任务：优先主键，其次bizNumber
         AsyncCmdVO task = null;
         if (Objects.nonNull(entity.getId())) {
@@ -151,6 +154,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             boolean hasAsyncWait = false;
 
             for (AsyncCmdSubCallbackDTO subCallback : validSubTasks) {
+                this.normalizeCallbackResult(subCallback);
                 final AsyncCmdSubVO subTask = subTaskMap.get(subCallback.getBizNumber());
                 if (Objects.isNull(subTask)) {
                     continue;
@@ -167,7 +171,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             }
 
             // 批量更新子任务结果与进度（1条CASE WHEN SQL）
-            this.asyncCmdSubService.updateCallbackBatch(idToResult, idToProgress);
+            this.asyncCmdSubService.editCallbackBatch(idToResult, idToProgress);
             processed = true;
 
             // ASYNC_WAIT子任务加速调度：主任务CAS刷新下次重试时间并立即投递（只dispatch 1次）
@@ -185,7 +189,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             // 聚合进度到主任务（1次）
             if (!subTaskMap.isEmpty()) {
                 final Long asyncCmdId = subTaskMap.values().iterator().next().getAsyncCmdId();
-                this.aggregateSubTaskProgress(asyncCmdId);
+                this.asyncCmdSubService.aggregateProgress(asyncCmdId);
             }
         }
 
@@ -463,6 +467,32 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
     }
 
     /**
+     * 归一化回调结果：双向推导.
+     * <ul>
+     *   <li>callbackResult 为空 且 progress>=100 → 推导为 SUCCESS</li>
+     *   <li>callbackResult=SUCCESS 且 progress 为空 → 推导为 100</li>
+     * </ul>
+     *
+     * @param entity 回调通知对象
+     */
+    private void normalizeCallbackResult(AsyncCmdCallbackBaseDTO entity) {
+        if (Objects.isNull(entity)) {
+            return;
+        }
+        // progress>=100 → callbackResult=SUCCESS
+        if (Objects.isNull(entity.getCallbackResult())
+            && Objects.nonNull(entity.getProgress())
+            && entity.getProgress() >= 100) {
+            entity.setCallbackResult(AsyncCmdCallbackResultEnum.SUCCESS);
+        }
+        // callbackResult=SUCCESS → progress=100
+        if (AsyncCmdCallbackResultEnum.SUCCESS.equals(entity.getCallbackResult())
+            && Objects.isNull(entity.getProgress())) {
+            entity.setProgress(100);
+        }
+    }
+
+    /**
      * 构造预存结果（保留键+业务数据）.
      *
      * @param entity 回调通知对象
@@ -479,45 +509,5 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             result.put(AsyncCmdCallbackResultEnum.CALLBACK_ERROR_MSG_KEY, entity.getErrorMsg());
         }
         return result;
-    }
-
-    /**
-     * 聚合子任务进度到主任务.
-     * <p>查询主任务下所有子任务，成功的视为100%，其余按已上报进度计算，取均值写入主任务.</p>
-     *
-     * @param asyncCmdId 主任务ID
-     */
-    private void aggregateSubTaskProgress(Long asyncCmdId) {
-        final List<AsyncCmdStatusEnum> allStatuses = new ArrayList<>(AsyncCmdStatusEnum.getUnfinishedStatus());
-        allStatuses.add(AsyncCmdStatusEnum.SUCCESS);
-        final List<AsyncCmdSubVO> allSubTasks = this.asyncCmdSubService.listByAsyncCmdIdAndStatus(
-            asyncCmdId, allStatuses);
-        if (allSubTasks.isEmpty()) {
-            return;
-        }
-        final int progress = this.calculateAverageProgress(allSubTasks);
-        this.asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
-            .id(asyncCmdId)
-            .progress(progress)
-            .build());
-    }
-
-    /**
-     * 计算子任务平均进度.
-     * <p>成功的子任务视为100%，其余按已上报进度计算，取均值写入主任务.</p>
-     *
-     * @param subTasks 子任务列表
-     * @return 平均进度（0-100）
-     */
-    private int calculateAverageProgress(List<AsyncCmdSubVO> subTasks) {
-        if (subTasks.isEmpty()) {
-            return 0;
-        }
-        final int sum = subTasks.stream()
-            .mapToInt(sub -> AsyncCmdStatusEnum.SUCCESS.equals(sub.getStatus())
-                ? 100
-                : (sub.getProgress() != null ? sub.getProgress() : 0))
-            .sum();
-        return sum / subTasks.size();
     }
 }

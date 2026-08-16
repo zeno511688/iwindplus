@@ -149,14 +149,16 @@ public class AsyncCmdConfiguration {
     /**
      * 创建 AsyncCmdSubService.
      *
+     * @param asyncCmdRepository    asyncCmdRepository
      * @param asyncCmdSubRepository asyncCmdSubRepository
      * @return AsyncCmdSubService
      */
     @Bean
     public AsyncCmdSubService asyncCmdSubService(
+        AsyncCmdRepository asyncCmdRepository,
         AsyncCmdSubRepository asyncCmdSubRepository) {
         AsyncCmdSubService asyncCmdSubService = new AsyncCmdSubServiceImpl(
-            asyncCmdSubRepository);
+            asyncCmdRepository, asyncCmdSubRepository);
         log.info("AsyncCmdSubService={}", asyncCmdSubService);
         return asyncCmdSubService;
     }

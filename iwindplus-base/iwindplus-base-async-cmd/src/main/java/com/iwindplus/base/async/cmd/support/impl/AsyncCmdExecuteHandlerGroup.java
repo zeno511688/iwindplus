@@ -77,6 +77,9 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
                 return;
             }
 
+            // 收尾：聚合子任务进度到主任务
+            this.asyncCmdSubService.aggregateProgress(entity.getId());
+
             // 主收尾业务前续期执行租约（子任务执行期间租约可能已接近到期）
             this.getAsyncCmdService().editExpireTime(entity.getId(), System.currentTimeMillis());
 

@@ -35,6 +35,15 @@ public interface AsyncCmdSubService {
     boolean editStatusByIds(List<Long> ids, AsyncCmdStatusEditDTO entity);
 
     /**
+     * 批量更新子任务回调结果与进度（单条SQL）.
+     *
+     * @param idToResult   主键→回调结果映射
+     * @param idToProgress 主键→进度映射
+     * @return boolean
+     */
+    boolean editCallbackBatch(Map<Long, Map<String, Object>> idToResult, Map<Long, Integer> idToProgress);
+
+    /**
      * 通过业务流水号查找子任务.
      *
      * @param bizNumber 业务流水号
@@ -85,11 +94,11 @@ public interface AsyncCmdSubService {
     List<AsyncCmdSubVO> listByBizNumbers(List<String> bizNumbers);
 
     /**
-     * 批量更新子任务回调结果与进度（单条SQL）.
+     * 聚合子任务进度到主任务.
+     * <p>查询主任务下所有子任务，成功的视为 100%，其余按已上报进度计算，取均值写入主任务.</p>
      *
-     * @param idToResult   主键→回调结果映射
-     * @param idToProgress 主键→进度映射
-     * @return boolean
+     * @param asyncCmdId 主任务 ID
      */
-    boolean updateCallbackBatch(Map<Long, Map<String, Object>> idToResult, Map<Long, Integer> idToProgress);
+    void aggregateProgress(Long asyncCmdId);
+
 }
