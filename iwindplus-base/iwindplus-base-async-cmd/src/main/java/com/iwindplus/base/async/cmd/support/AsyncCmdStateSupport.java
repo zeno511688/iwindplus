@@ -47,7 +47,7 @@ public record AsyncCmdStateSupport(
      * @return boolean
      */
     public boolean taskToBeExecuteToExecute(AsyncCmdVO entity) {
-        final long expireTime = this.asyncCmdRepository.getNextExpireTime(entity.getExpireTime());
+        final long expireTime = this.asyncCmdRepository.getNextExpireTime(System.currentTimeMillis());
 
         return Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -129,8 +129,9 @@ public record AsyncCmdStateSupport(
 
         int retryCount = advanced ? 0 : Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
         final String stack = this.getStack(ex);
-        final long nextRetryTime = DatesUtil.getNextRetryTime(entity.getNextRetryTime(), this.property.getRetry().getFrequency(), retryCount);
-        final long expireTime = this.asyncCmdRepository.getNextExpireTime(entity.getExpireTime());
+        final long now = System.currentTimeMillis();
+        final long nextRetryTime = DatesUtil.getNextRetryTime(now, this.property.getRetry().getFrequency(), retryCount);
+        final long expireTime = this.asyncCmdRepository.getNextExpireTime(now);
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -177,8 +178,9 @@ public record AsyncCmdStateSupport(
         AsyncCmdTaskHandler handler,
         Long costTime) {
 
-        final Long nextRetryTime = this.getNextRetryTime(entity.getNextRetryTime());
-        final Long expireTime = this.getNextExpireTime(entity.getExpireTime());
+        final long now = System.currentTimeMillis();
+        final Long nextRetryTime = this.getNextRetryTime(now);
+        final Long expireTime = this.getNextExpireTime(now);
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -216,7 +218,7 @@ public record AsyncCmdStateSupport(
      * @return
      */
     public boolean taskExecuteToBeExecute(AsyncCmdVO entity, Long costTime) {
-        final Long nextRetryTime = this.getNextRetryTime(entity.getNextRetryTime());
+        final Long nextRetryTime = this.getNextRetryTime(System.currentTimeMillis());
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -293,7 +295,7 @@ public record AsyncCmdStateSupport(
         Exception ex) {
         final int retryCount = Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
         final String stack = this.getStack(ex);
-        final Long nextRetryTime = this.getNextRetryTime(entity.getNextRetryTime());
+        final Long nextRetryTime = this.getNextRetryTime(System.currentTimeMillis());
         final long currentTimeMillis = System.currentTimeMillis();
 
         final boolean result = Boolean.TRUE.equals(
@@ -422,7 +424,7 @@ public record AsyncCmdStateSupport(
         AsyncCmdSubVO entity,
         AsyncCmdSubTaskHandler handler,
         Long costTime) {
-        final Long expireTime = this.getNextExpireTime(entity.getExpireTime());
+        final Long expireTime = this.getNextExpireTime(System.currentTimeMillis());
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {

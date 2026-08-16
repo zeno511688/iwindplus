@@ -78,7 +78,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             }
 
             // 主收尾业务前续期执行租约（子任务执行期间租约可能已接近到期）
-            this.getAsyncCmdService().editExpireTime(entity.getId(), entity.getExpireTime());
+            this.getAsyncCmdService().editExpireTime(entity.getId(), System.currentTimeMillis());
 
             // 执行业务逻辑（无事务），由业务方显式返回执行结果
             final AsyncCmdExecuteResultEnum result = handler.execute(entity);
@@ -225,7 +225,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         }
 
         // 续期
-        this.getAsyncCmdService().editExpireTime(entity.getId(), entity.getExpireTime());
+        this.getAsyncCmdService().editExpireTime(entity.getId(), System.currentTimeMillis());
 
         final boolean status = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
             .id(subEntity.getId())
