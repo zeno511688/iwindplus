@@ -14,6 +14,7 @@ import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.ObjectUtil;
+import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import java.time.Duration;
@@ -29,6 +30,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -39,6 +42,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class DatesUtil extends DateUtil {
+
+    private static final Pattern FREQUENCY_PATTERN =
+        Pattern.compile("^(\\d+)([a-zA-Z]+)$");
 
     /**
      * 时间单位映射.
@@ -258,36 +264,70 @@ public class DatesUtil extends DateUtil {
     }
 
     /**
-     * 将时间频率字符串转换为时间戳.
+     * 将频率配置转换为时间戳列表.
      *
-     * @param baseTimeMillis 基准时间戳(毫秒)
-     * @param frequency      时间频率字符串，例如 "5s,10s,20s,30s,1m,30m,1h"
-     * @return List<Long>
+     * <p>例如：
+     * <pre>
+     * baseTimeMillis = 1786865640046
+     * frequency = "30s,2m,10m,15m,20m,30m,1h"
+     *
+     * 结果：
+     * base + 30秒
+     * base + 2分钟
+     * base + 10分钟
+     * base + 15分钟
+     * base + 20分钟
+     * base + 30分钟
+     * base + 1小时
+     * </pre>
+     *
+     * @param baseTimeMillis 基准时间戳，单位：毫秒
+     * @param frequency      频率配置，例如：30s,2m,10m,15m,20m,30m,1h
+     * @return 计算后的时间戳列表
      */
     private static List<Long> convertFrequencyToTimestamp(long baseTimeMillis, String frequency) {
-        if (CharSequenceUtil.isEmpty(frequency)) {
+        if (CharSequenceUtil.isBlank(frequency)) {
             return Collections.emptyList();
         }
 
-        List<String> frequencies = CharSequenceUtil.splitTrim(frequency, ',');
-        List<Long> result = new ArrayList<>(10);
+        final List<String> frequencies = CharSequenceUtil.splitTrim(frequency, SymbolConstant.COMMA);
+        final List<Long> result = new ArrayList<>(frequencies.size());
 
         for (String freq : frequencies) {
-            final String digitStr = freq.replaceAll("[^\\d]", "");
-            if (CharSequenceUtil.isBlank(digitStr)) {
-                throw new IllegalArgumentException("Unsupported frequency format: " + freq);
+            final Matcher matcher = FREQUENCY_PATTERN.matcher(freq);
+
+            // 校验格式：数字 + 时间单位，例如 30s、2m、1h
+            if (!matcher.matches()) {
+                throw new IllegalArgumentException(
+                    "Unsupported frequency format: " + freq
+                );
             }
 
-            long amount = Long.parseLong(digitStr);
+            // 提取数值
+            final long amount = Long.parseLong(matcher.group(1));
 
-            String unit = freq.replaceAll("[\\d]", "");
-            ChronoUnit chronoUnit = TIME_UNIT_MAP.get(unit);
+            // 提取时间单位
+            final String unit = matcher.group(2);
 
+            final ChronoUnit chronoUnit = TIME_UNIT_MAP.get(unit);
             if (chronoUnit == null) {
-                throw new IllegalArgumentException("Unsupported time unit: " + unit);
+                throw new IllegalArgumentException(
+                    "Unsupported time unit: " + unit
+                );
             }
 
-            result.add(baseTimeMillis + chronoUnit.getDuration().toMillis() * amount);
+            // 所有频率都相对于同一个 baseTimeMillis 计算。
+            final long offsetMillis = Math.multiplyExact(
+                chronoUnit.getDuration().toMillis(),
+                amount
+            );
+
+            final long timestamp = Math.addExact(
+                baseTimeMillis,
+                offsetMillis
+            );
+
+            result.add(timestamp);
         }
 
         return result;
