@@ -47,7 +47,7 @@ public record AsyncCmdStateSupport(
      * @return boolean
      */
     public boolean taskToBeExecuteToExecute(AsyncCmdVO entity) {
-        final long expireTime = this.asyncCmdRepository.getNextExpireTime();
+        final long expireTime = this.asyncCmdRepository.getNextExpireTime(entity.getExpireTime());
 
         return Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -127,10 +127,10 @@ public record AsyncCmdStateSupport(
         Exception ex,
         boolean advanced) {
 
-        final long currentTimeMillis = System.currentTimeMillis();
         int retryCount = advanced ? 0 : Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
         final String stack = this.getStack(ex);
-        final long nextRetryTime = DatesUtil.getNextRetryTime(currentTimeMillis, this.property.getRetry().getFrequency(), retryCount);
+        final long nextRetryTime = DatesUtil.getNextRetryTime(entity.getNextRetryTime(), this.property.getRetry().getFrequency(), retryCount);
+        final long expireTime = this.asyncCmdRepository.getNextExpireTime(entity.getExpireTime());
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -143,7 +143,7 @@ public record AsyncCmdStateSupport(
                     .errorMsg(stack)
                     .retryCount(retryCount)
                     .nextRetryTime(nextRetryTime)
-                    .expireTime(currentTimeMillis)
+                    .expireTime(expireTime)
                     .build());
                 if (updated) {
                     entity.setModifiedTimestamp(System.currentTimeMillis());
@@ -177,8 +177,8 @@ public record AsyncCmdStateSupport(
         AsyncCmdTaskHandler handler,
         Long costTime) {
 
-        final Long nextRetryTime = this.getNextRetryTime();
-        final Long expireTime = this.getNextExpireTime();
+        final Long nextRetryTime = this.getNextRetryTime(entity.getNextRetryTime());
+        final Long expireTime = this.getNextExpireTime(entity.getExpireTime());
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -216,7 +216,7 @@ public record AsyncCmdStateSupport(
      * @return
      */
     public boolean taskExecuteToBeExecute(AsyncCmdVO entity, Long costTime) {
-        final Long nextRetryTime = this.getNextRetryTime();
+        final Long nextRetryTime = this.getNextRetryTime(entity.getNextRetryTime());
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -293,7 +293,7 @@ public record AsyncCmdStateSupport(
         Exception ex) {
         final int retryCount = Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
         final String stack = this.getStack(ex);
-        final Long nextRetryTime = this.getNextRetryTime();
+        final Long nextRetryTime = this.getNextRetryTime(entity.getNextRetryTime());
         final long currentTimeMillis = System.currentTimeMillis();
 
         final boolean result = Boolean.TRUE.equals(
@@ -422,7 +422,7 @@ public record AsyncCmdStateSupport(
         AsyncCmdSubVO entity,
         AsyncCmdSubTaskHandler handler,
         Long costTime) {
-        final Long expireTime = this.getNextExpireTime();
+        final Long expireTime = this.getNextExpireTime(entity.getExpireTime());
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -531,20 +531,22 @@ public record AsyncCmdStateSupport(
     /**
      * 获取下一次重试时间
      *
+     *  @param baseTimeMillis 基准时间戳(毫秒)
      * @return long
      */
-    public Long getNextRetryTime() {
-        return System.currentTimeMillis()
+    public Long getNextRetryTime(long baseTimeMillis) {
+        return baseTimeMillis
             + Optional.ofNullable(this.property.getAsyncWaitPollSeconds()).orElse(60L) * NumberConstant.NUMBER_ONE_THOUSAND;
     }
 
     /**
      * 获取回调等待截止时间（主任务复用expireTime、子任务使用expireTime字段存储，作为回调超时兜底）.
      *
+     * @param baseTimeMillis 基准时间戳(毫秒)
      * @return long
      */
-    public Long getNextExpireTime() {
-        return System.currentTimeMillis()
+    public Long getNextExpireTime(long baseTimeMillis) {
+        return baseTimeMillis
             + Optional.ofNullable(this.property.getAsyncWaitTimeoutSeconds()).orElse(1800L) * NumberConstant.NUMBER_ONE_THOUSAND;
     }
 

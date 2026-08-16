@@ -89,8 +89,6 @@ public record AsyncCmdBizProcessor(
                 log.info("asyncCmd already handled. id={}", entity.getId());
                 return;
             }
-            // 同步内存状态，editLockById已将DB置为EXECUTE
-            entity.setStatus(AsyncCmdStatusEnum.EXECUTE);
         }
 
         final long start = System.currentTimeMillis();

@@ -125,7 +125,7 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
         }
 
         // 仍在等待中，CAS刷新下次轮询时间，避免每次 RETRY_JOB 都被拾起
-        final Long nextRetryTime = this.getAsyncCmdStateSupport().getNextRetryTime();
+        final Long nextRetryTime = this.getAsyncCmdStateSupport().getNextRetryTime(entity.getNextRetryTime());
         this.getAsyncCmdService().editStatusById(AsyncCmdStatusEditDTO.builder()
             .id(entity.getId())
             .from(AsyncCmdStatusEnum.ASYNC_WAIT)

@@ -123,8 +123,8 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
     }
 
     @Override
-    public boolean editExpireTime(Long id) {
-        return this.asyncCmdRepository.editExpireTime(id);
+    public boolean editExpireTime(Long id, long baseTimeMillis) {
+        return this.asyncCmdRepository.editExpireTime(id, baseTimeMillis);
     }
 
     @Override

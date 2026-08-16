@@ -110,10 +110,11 @@ public interface AsyncCmdService {
     /**
      * 续订租期时间.
      *
-     * @param id 主键
+     * @param id             主键
+     * @param baseTimeMillis 基准时间戳(毫秒)
      * @return boolean
      */
-    boolean editExpireTime(Long id);
+    boolean editExpireTime(Long id, long baseTimeMillis);
 
     /**
      * 列表.

@@ -210,14 +210,15 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
     /**
      * 编辑续订租期时间.
      *
-     * @param id 主键
+     * @param id             主键
+     * @param baseTimeMillis 基准时间戳(毫秒)
      * @return boolean
      */
     @Transactional(rollbackFor = Exception.class)
-    public boolean editExpireTime(Long id) {
+    public boolean editExpireTime(Long id, long baseTimeMillis) {
         final AsyncCmdDO entity = AsyncCmdDO.builder()
             .id(id)
-            .expireTime(this.getNextExpireTime())
+            .expireTime(this.getNextExpireTime(baseTimeMillis))
             .modifiedTimestamp(System.currentTimeMillis())
             .build();
         return super.updateById(entity);
@@ -227,7 +228,7 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
         entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
         entity.setDispatchMode(DispatchModeEnum.ASYNC);
         entity.setEnv(SpringUtil.getActiveProfile());
-        entity.setExpireTime(this.getNextExpireTime());
+        entity.setExpireTime(this.getNextExpireTime(System.currentTimeMillis()));
         entity.setNextRetryTime(System.currentTimeMillis());
         if (CharSequenceUtil.isBlank(entity.getBizNumber())) {
             entity.setBizNumber(IdWorker.getIdStr());
@@ -241,10 +242,11 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
     /**
      * 计算执行租约到期时间.
      *
+     * @param baseTimeMillis 基准时间戳(毫秒)
      * @return long
      */
-    public long getNextExpireTime() {
-        return System.currentTimeMillis() +
+    public long getNextExpireTime(long baseTimeMillis) {
+        return baseTimeMillis +
             Optional.ofNullable(this.property.getTimeoutSeconds()).orElse(60L) * NumberConstant.NUMBER_ONE_THOUSAND;
     }
 }

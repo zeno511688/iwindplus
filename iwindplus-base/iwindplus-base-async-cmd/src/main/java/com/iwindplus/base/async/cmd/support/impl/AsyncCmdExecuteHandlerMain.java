@@ -46,7 +46,7 @@ public class AsyncCmdExecuteHandlerMain extends AbstractAsyncCmdExecuteHandler {
 
         try {
             // 执行业务前续期执行租约，业务耗时接近timeoutSeconds时降低被RESET_JOB误重置双跑的风险
-            this.getAsyncCmdService().editExpireTime(entity.getId());
+            this.getAsyncCmdService().editExpireTime(entity.getId(), entity.getExpireTime());
 
             // 执行业务逻辑（无事务），由业务方显式返回执行结果
             final AsyncCmdExecuteResultEnum result = handler.execute(entity);
