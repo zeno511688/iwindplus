@@ -43,8 +43,9 @@ public interface AsyncCmdExecutor {
      * <p>主任务通过id或bizNumber定位，子任务通过subTasks列表携带各自的回调结果</p>
      *
      * @param entity 对象
+     * @return boolean
      */
-    void callback(AsyncCmdCallbackDTO entity);
+    boolean callback(AsyncCmdCallbackDTO entity);
 
     /**
      * 通过主键人工触发重试.

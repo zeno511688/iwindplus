@@ -77,7 +77,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         }
         // 保存数据
         final AsyncCmdSaveDTO param = BeanUtil.copyProperties(entity, AsyncCmdSaveDTO.class);
-        param.setExecuteName(entity.getExecutorClass().getSimpleName());
+        param.setExecuteName(handler.getExecuteName());
         final AsyncCmdVO result = this.asyncCmdService.save(param);
 
         // 立即驱动主任务执行
@@ -97,7 +97,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         }
         // 保存数据
         final AsyncCmdGrouSaveDTO param = BeanUtil.copyProperties(entity, AsyncCmdGrouSaveDTO.class);
-        param.setExecuteName(this.resolveTaskHandler(entity.getExecutorClass()).getExecuteName());
+        param.setExecuteName(handler.getExecuteName());
 
         List<AsyncCmdSubSaveDTO> subTasks = this.buildSubTasks(entity.getSubTasks());
         param.setSubTasks(subTasks);
@@ -111,7 +111,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
     }
 
     @Override
-    public void callback(AsyncCmdCallbackDTO entity) {
+    public boolean callback(AsyncCmdCallbackDTO entity) {
         // 定位主任务：优先主键，其次bizNumber
         AsyncCmdVO task = null;
         if (Objects.nonNull(entity.getId())) {
@@ -121,9 +121,12 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             task = this.asyncCmdService.getDetailByBizNumber(entity.getBizNumber());
         }
 
+        boolean processed = false;
+
         // 主任务回调（callbackResult非空时预存结果与进度）
         if (Objects.nonNull(task)) {
             this.callbackTask(task, entity);
+            processed = true;
         }
 
         // 子任务回调列表
@@ -164,6 +167,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
             // 批量更新子任务结果与进度（1条CASE WHEN SQL）
             this.asyncCmdSubService.updateCallbackBatch(idToResult, idToProgress);
+            processed = true;
 
             // ASYNC_WAIT子任务加速调度：主任务CAS刷新下次重试时间并立即投递（只dispatch 1次）
             if (hasAsyncWait && Objects.nonNull(task)) {
@@ -183,6 +187,8 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
                 this.aggregateSubTaskProgress(asyncCmdId);
             }
         }
+
+        return processed;
     }
 
     @Override
@@ -240,6 +246,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
     private void checkSubSubmitParam(AsyncCmdSubSubmitDTO entity, Integer index) {
         Assert.notNull(entity, "sub entity must not be null");
+        Assert.notNull(entity.getExecutorClass(), "sub[" + index + "].executorClass must not be null");
         Assert.hasText(entity.getBizName(), "sub[" + index + "].bizName must not be null");
         Assert.hasText(entity.getBizKey(), "sub[" + index + "].bizKey must not be null");
         Assert.hasText(entity.getBizType(), "sub[" + index + "].bizType must not be null");
@@ -271,27 +278,17 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             Integer stage = subTask.getStage();
             stage = Optional.ofNullable(stage).orElse(0);
             seqStageMap.put(seq, stage);
+            subTask.setStage(stage);
 
-            AsyncCmdSubTaskHandler handler = null;
-            if (Objects.nonNull(subTask.getExecutorClass())) {
-                handler = this.resolveSubTaskHandler(subTask.getExecutorClass());
-            }
-
-            final AsyncCmdSubSaveDTO entity = BeanUtil.copyProperties(subTask, AsyncCmdSubSaveDTO.class);
-            // 落解析后的stage，避免null落库
-            entity.setStage(stage);
-            // 有执行器则落执行名，执行器按执行名路由
-            if (Objects.nonNull(handler)) {
-                entity.setExecuteName(handler.getExecuteName());
-            }
-
+            AsyncCmdSubTaskHandler handler = this.resolveSubTaskHandler(subTask.getExecutorClass());
             // 是否需要回调，需要则执行器必须重写executeSubCallback
             if (Boolean.TRUE.equals(subTask.getNeedCallback())) {
                 Assert.isTrue(Objects.nonNull(handler) && this.overrideSubCallback(handler),
                     "The subtask declared the need for a callback, but the executor did not override executeSubCallback method."
                         + "sub[" + index + "].executorClass=" + subTask.getExecutorClass());
             }
-
+            final AsyncCmdSubSaveDTO entity = BeanUtil.copyProperties(subTask, AsyncCmdSubSaveDTO.class);
+            entity.setExecuteName(handler.getExecuteName());
             entities.add(entity);
         }
 
