@@ -85,10 +85,11 @@ public interface AsyncCmdSubService {
     List<AsyncCmdSubVO> listByBizNumbers(List<String> bizNumbers);
 
     /**
-     * 批量更新子任务进度（单条SQL）.
+     * 批量更新子任务回调结果与进度（单条SQL）.
      *
+     * @param idToResult   主键→回调结果映射
      * @param idToProgress 主键→进度映射
      * @return boolean
      */
-    boolean updateProgressBatch(Map<Long, Integer> idToProgress);
+    boolean updateCallbackBatch(Map<Long, Map<String, Object>> idToResult, Map<Long, Integer> idToProgress);
 }

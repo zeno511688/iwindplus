@@ -60,16 +60,4 @@ public class AsyncCmdExecuteHandlerMain extends AbstractAsyncCmdExecuteHandler {
                 System.currentTimeMillis() - start, ex, false);
         }
     }
-
-    private boolean taskFail(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start, AsyncCmdExecuteResultEnum result) {
-        if (AsyncCmdExecuteResultEnum.FAILED.equals(result)) {
-            this.getAsyncCmdStateSupport().taskFail(entity, handler,
-                System.currentTimeMillis() - start,
-                new RuntimeException("asyncCmd task execute returned FAILED"), false);
-            return true;
-        }
-        return false;
-    }
-
-
 }

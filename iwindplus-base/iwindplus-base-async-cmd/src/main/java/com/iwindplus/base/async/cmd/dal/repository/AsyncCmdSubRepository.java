@@ -16,6 +16,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.repository.CrudRepository;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iwindplus.base.async.cmd.dal.mapper.AsyncCmdSubMapper;
 import com.iwindplus.base.async.cmd.dal.model.AsyncCmdSubDO;
 import com.iwindplus.base.async.cmd.dal.model.AsyncCmdSubDO.AsyncCmdSubDOBuilder;
@@ -23,9 +24,11 @@ import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -196,6 +199,63 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
         }
         return super.list(Wrappers.<AsyncCmdSubDO>lambdaQuery()
             .in(AsyncCmdSubDO::getBizNumber, bizNumbers));
+    }
+
+    /**
+     * 批量更新子任务回调结果与进度（单条SQL，CASE WHEN）.
+     *
+     * @param idToResult   主键→回调结果映射
+     * @param idToProgress 主键→进度映射
+     * @return boolean
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateCallbackBatch(Map<Long, Map<String, Object>> idToResult,
+        Map<Long, Integer> idToProgress) {
+        if (MapUtil.isEmpty(idToResult) && MapUtil.isEmpty(idToProgress)) {
+            return false;
+        }
+
+        final Set<Long> allIds = new HashSet<>(16);
+        if (MapUtil.isNotEmpty(idToResult)) {
+            allIds.addAll(idToResult.keySet());
+        }
+        if (MapUtil.isNotEmpty(idToProgress)) {
+            allIds.addAll(idToProgress.keySet());
+        }
+
+        final long timestamp = System.currentTimeMillis();
+        final LambdaUpdateWrapper<AsyncCmdSubDO> updateWrapper = Wrappers.<AsyncCmdSubDO>lambdaUpdate()
+            .in(AsyncCmdSubDO::getId, allIds)
+            .set(AsyncCmdSubDO::getModifiedTimestamp, timestamp);
+
+        // result CASE WHEN（JSON序列化）
+        if (MapUtil.isNotEmpty(idToResult)) {
+            try {
+                final ObjectMapper objectMapper = new ObjectMapper();
+                final StringBuilder resultCase = new StringBuilder("CASE id ");
+                for (Map.Entry<Long, Map<String, Object>> entry : idToResult.entrySet()) {
+                    final String json = objectMapper.writeValueAsString(entry.getValue());
+                    resultCase.append("WHEN ").append(entry.getKey())
+                        .append(" THEN '").append(json.replace("'", "''")).append("' ");
+                }
+                resultCase.append("END");
+                updateWrapper.setSql("result = " + resultCase);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to serialize callback result", e);
+            }
+        }
+
+        // progress CASE WHEN
+        if (MapUtil.isNotEmpty(idToProgress)) {
+            final StringBuilder progressCase = new StringBuilder("CASE id ");
+            idToProgress.forEach((id, progress) ->
+                progressCase.append("WHEN ").append(id).append(" THEN ").append(progress).append(" ")
+            );
+            progressCase.append("END");
+            updateWrapper.setSql("progress = " + progressCase);
+        }
+
+        return super.update(null, updateWrapper);
     }
 
     /**

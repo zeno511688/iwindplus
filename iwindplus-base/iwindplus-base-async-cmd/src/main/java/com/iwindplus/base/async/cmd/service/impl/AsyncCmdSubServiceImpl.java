@@ -96,7 +96,7 @@ public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
     }
 
     @Override
-    public boolean updateProgressBatch(Map<Long, Integer> idToProgress) {
-        return this.asyncCmdSubRepository.updateProgressBatch(idToProgress);
+    public boolean updateCallbackBatch(Map<Long, Map<String, Object>> idToResult, Map<Long, Integer> idToProgress) {
+        return this.asyncCmdSubRepository.updateCallbackBatch(idToResult, idToProgress);
     }
 }

@@ -144,15 +144,16 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
      * @param start         开始时间
      * @param result        业务执行返回值
      * @param stateAdvanced 是否已有状态推进（子任务场景）
+     * @return boolean
      */
-    protected void handleExecuteResult(AsyncCmdVO entity, AsyncCmdTaskHandler handler,
+    protected boolean handleExecuteResult(AsyncCmdVO entity, AsyncCmdTaskHandler handler,
         long start, AsyncCmdExecuteResultEnum result, boolean stateAdvanced) {
         // 业务显式返回失败
         if (AsyncCmdExecuteResultEnum.FAILED.equals(result)) {
             this.getAsyncCmdStateSupport().taskFail(entity, handler,
                 System.currentTimeMillis() - start,
                 new RuntimeException("asyncCmd task execute returned failed"), stateAdvanced);
-            return;
+            return false;
         }
 
         // 业务显式返回异步等待
@@ -162,7 +163,7 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
             if (!taskAsyncWait) {
                 log.warn("asyncCmd task set asyncWait failed, id={}", entity.getId());
             }
-            return;
+            return false;
         }
 
         // 成功
@@ -170,5 +171,6 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
         if (!taskSuccess) {
             log.warn("asyncCmd task execute success, but taskSuccess failed, id={}", entity.getId());
         }
+        return true;
     }
 }
