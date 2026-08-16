@@ -84,8 +84,7 @@ public record AsyncCmdBizProcessor(
 
         // 待执行状态
         if (AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(entity.getStatus())) {
-            boolean locked = asyncCmdStateSupport.editLockById(entity);
-
+            boolean locked = asyncCmdStateSupport.taskToBeExecuteToExecute(entity);
             if (!locked) {
                 log.info("asyncCmd already handled. id={}", entity.getId());
                 return;

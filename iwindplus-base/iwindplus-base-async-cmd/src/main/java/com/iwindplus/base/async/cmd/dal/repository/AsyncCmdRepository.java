@@ -29,6 +29,7 @@ import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.enums.DispatchModeEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
+import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -241,6 +242,7 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
      * @return long
      */
     public long getNextExpireTime() {
-        return System.currentTimeMillis() + Optional.ofNullable(this.property.getTimeoutSeconds()).orElse(60L) * 1000;
+        return System.currentTimeMillis() +
+            Optional.ofNullable(this.property.getTimeoutSeconds()).orElse(60L) * NumberConstant.NUMBER_ONE_THOUSAND;
     }
 }

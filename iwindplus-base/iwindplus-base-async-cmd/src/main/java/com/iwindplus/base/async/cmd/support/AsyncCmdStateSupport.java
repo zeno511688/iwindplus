@@ -41,22 +41,29 @@ public record AsyncCmdStateSupport(
     TransactionTemplate transactionTemplate) {
 
     /**
-     * 抢占执行权
+     * 任务执行中
      *
      * @param entity 命令对象
      * @return boolean
      */
-    public boolean editLockById(AsyncCmdVO entity) {
+    public boolean taskToBeExecuteToExecute(AsyncCmdVO entity) {
+        final long expireTime = this.asyncCmdRepository.getNextExpireTime();
+
         return Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
-                asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+            this.transactionTemplate.execute(status -> {
+                boolean updated = asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
                     .id(entity.getId())
                     .from(AsyncCmdStatusEnum.TO_BE_EXECUTE)
                     .to(AsyncCmdStatusEnum.EXECUTE)
-                    .expireTime(this.asyncCmdRepository.getNextExpireTime())
-                    .build()
-                )
-            )
+                    .expireTime(expireTime)
+                    .build());
+                if (updated) {
+                    entity.setModifiedTimestamp(System.currentTimeMillis());
+                    entity.setStatus(AsyncCmdStatusEnum.EXECUTE);
+                    entity.setExpireTime(expireTime);
+                }
+                return updated;
+            })
         );
     }
 
@@ -171,7 +178,7 @@ public record AsyncCmdStateSupport(
         Long costTime) {
 
         final Long nextRetryTime = this.getNextRetryTime();
-        final Long expireTime = this.getExpireTime();
+        final Long expireTime = this.getNextExpireTime();
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -415,7 +422,7 @@ public record AsyncCmdStateSupport(
         AsyncCmdSubVO entity,
         AsyncCmdSubTaskHandler handler,
         Long costTime) {
-        final Long expireTime = this.getExpireTime();
+        final Long expireTime = this.getNextExpireTime();
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -536,7 +543,7 @@ public record AsyncCmdStateSupport(
      *
      * @return long
      */
-    public Long getExpireTime() {
+    public Long getNextExpireTime() {
         return System.currentTimeMillis()
             + Optional.ofNullable(this.property.getAsyncWaitTimeoutSeconds()).orElse(1800L) * NumberConstant.NUMBER_ONE_THOUSAND;
     }

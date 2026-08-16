@@ -148,11 +148,8 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
      */
     protected boolean handleExecuteResult(AsyncCmdVO entity, AsyncCmdTaskHandler handler,
         long start, AsyncCmdExecuteResultEnum result, boolean stateAdvanced) {
-        // 业务显式返回失败
-        if (AsyncCmdExecuteResultEnum.FAILED.equals(result)) {
-            this.getAsyncCmdStateSupport().taskFail(entity, handler,
-                System.currentTimeMillis() - start,
-                new RuntimeException("asyncCmd task execute returned failed"), stateAdvanced);
+        // 业务显式返回执行中
+        if (AsyncCmdExecuteResultEnum.EXECUTE.equals(result)) {
             return false;
         }
 
@@ -166,11 +163,28 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
             return false;
         }
 
-        // 成功
-        final boolean taskSuccess = this.getAsyncCmdStateSupport().taskSuccess(entity, handler, System.currentTimeMillis() - start);
-        if (!taskSuccess) {
-            log.warn("asyncCmd task execute success, but taskSuccess failed, id={}", entity.getId());
+        // 业务显式返回成功
+        if (AsyncCmdExecuteResultEnum.SUCCESS.equals(result)) {
+            // 成功
+            final boolean taskSuccess = this.getAsyncCmdStateSupport().taskSuccess(entity, handler, System.currentTimeMillis() - start);
+            if (!taskSuccess) {
+                log.warn("asyncCmd task execute success, but taskSuccess failed, id={}", entity.getId());
+            }
+            return true;
         }
+
+        // 业务显式返回失败
+        if (AsyncCmdExecuteResultEnum.FAILED.equals(result)) {
+            String msg = "asyncCmd task execute returned failed";
+            final boolean taskFail = this.getAsyncCmdStateSupport().taskFail(entity, handler,
+                System.currentTimeMillis() - start,
+                new RuntimeException(msg), stateAdvanced);
+            if (!taskFail) {
+                log.warn("asyncCmd task execute failed, but taskFail failed, id={}", entity.getId());
+            }
+            return false;
+        }
+
         return true;
     }
 }
