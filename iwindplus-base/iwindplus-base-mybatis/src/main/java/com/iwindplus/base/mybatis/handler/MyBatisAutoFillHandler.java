@@ -96,12 +96,11 @@ public class MyBatisAutoFillHandler implements MetaObjectHandler {
         this.setFieldValByName(DbConstant.CREATED_TIMESTAMP, currentTimeMillis, metaObject);
         // 强制设置更新时间戳.
         this.setFieldValByName(DbConstant.MODIFIED_TIMESTAMP, currentTimeMillis, metaObject);
-        // 设置创建人.
-        this.setFieldValByName(DbConstant.CREATED_BY, realName, metaObject);
-        // 设置更新人.
-        this.setFieldValByName(DbConstant.MODIFIED_BY, realName, metaObject);
+        // 设置创建人/更新人及主键（userId > 0时）.
         if (userId != null && userId > 0) {
+            this.setFieldValByName(DbConstant.CREATED_BY, realName, metaObject);
             this.setFieldValByName(DbConstant.CREATED_ID, userId, metaObject);
+            this.setFieldValByName(DbConstant.MODIFIED_BY, realName, metaObject);
             this.setFieldValByName(DbConstant.MODIFIED_ID, userId, metaObject);
         }
     }
@@ -112,13 +111,11 @@ public class MyBatisAutoFillHandler implements MetaObjectHandler {
         this.strictInsertFill(metaObject, DbConstant.CREATED_TIMESTAMP, () -> currentTimeMillis, Long.class);
         // 设置更新时间戳（仅未设置时填充，业务显式赋值优先）.
         this.strictInsertFill(metaObject, DbConstant.MODIFIED_TIMESTAMP, () -> currentTimeMillis, Long.class);
-        // 设置创建人.
-        this.strictInsertFill(metaObject, DbConstant.CREATED_BY, () -> realName, String.class);
-        // 设置更新人.
-        this.strictInsertFill(metaObject, DbConstant.MODIFIED_BY, () -> realName, String.class);
-        // 设置创建人/更新人主键（userId > 0时填充）.
+        // 设置创建人/更新人及主键（userId > 0时填充）.
         if (userId != null && userId > 0) {
+            this.strictInsertFill(metaObject, DbConstant.CREATED_BY, () -> realName, String.class);
             this.strictInsertFill(metaObject, DbConstant.CREATED_ID, () -> userId, Long.class);
+            this.strictInsertFill(metaObject, DbConstant.MODIFIED_BY, () -> realName, String.class);
             this.strictInsertFill(metaObject, DbConstant.MODIFIED_ID, () -> userId, Long.class);
         }
     }
