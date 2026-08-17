@@ -42,9 +42,7 @@ public interface AsyncCmdTaskHandler {
      * @param entity 对象
      * @return AsyncCmdExecuteResultEnum 执行结果
      */
-    default AsyncCmdExecuteResultEnum execute(AsyncCmdVO entity) {
-        return AsyncCmdExecuteResultEnum.SUCCESS;
-    }
+    AsyncCmdExecuteResultEnum execute(AsyncCmdVO entity);
 
     /**
      * 任务获取异步等待结果.

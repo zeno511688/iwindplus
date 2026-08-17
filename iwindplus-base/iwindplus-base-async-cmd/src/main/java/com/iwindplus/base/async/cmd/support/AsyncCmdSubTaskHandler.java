@@ -32,7 +32,7 @@ public interface AsyncCmdSubTaskHandler {
     }
 
     /**
-     * 执行子业务（默认空实现，返回成功）.
+     * 执行子业务.
      *
      * <p>由业务方显式返回执行结果，决定子任务状态走向：
      * SUCCESS → 成功，FAILED → 失败，ASYNC_WAIT → 进入异步等待</p>
@@ -40,9 +40,7 @@ public interface AsyncCmdSubTaskHandler {
      * @param entity 对象
      * @return AsyncCmdExecuteResultEnum 执行结果
      */
-    default AsyncCmdExecuteResultEnum executeSub(AsyncCmdSubVO entity) {
-        return AsyncCmdExecuteResultEnum.SUCCESS;
-    }
+    AsyncCmdExecuteResultEnum executeSub(AsyncCmdSubVO entity);
 
     /**
      * 子任务获取异步等待结果.

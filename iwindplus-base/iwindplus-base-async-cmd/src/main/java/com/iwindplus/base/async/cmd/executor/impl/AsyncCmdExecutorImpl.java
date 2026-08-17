@@ -136,8 +136,13 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         AsyncCmdDO taskUpdate = buildTask(entity, task);
 
         final boolean result = this.asyncCmdService.editCallbackBatch(taskUpdate, subTaskUpdates);
-        if (result && Objects.nonNull(task)) {
-            this.dispatch(task);
+        if (result) {
+            if (Objects.nonNull(task)) {
+                this.dispatch(task);
+            } else if (CollUtil.isNotEmpty(subTaskUpdates)) {
+                final Long asyncCmdId = subTaskUpdates.get(0).getAsyncCmdId();
+                this.dispatch(this.asyncCmdService.getDetail(asyncCmdId));
+            }
         }
         return result;
     }
@@ -469,7 +474,8 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
                 continue;
             }
             final AsyncCmdSubDO.AsyncCmdSubDOBuilder<?, ?> builder = AsyncCmdSubDO.builder()
-                .id(subTask.getId());
+                .id(subTask.getId())
+                .asyncCmdId(subTask.getAsyncCmdId());
             if (Objects.nonNull(subCallback.getCallbackResult())) {
                 builder.result(this.buildCallbackResult(subCallback));
             }
