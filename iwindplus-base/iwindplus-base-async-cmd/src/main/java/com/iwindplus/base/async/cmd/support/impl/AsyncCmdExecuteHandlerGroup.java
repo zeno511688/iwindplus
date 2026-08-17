@@ -7,6 +7,8 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
+import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdRepository;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdEditDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
@@ -45,11 +47,12 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
     public AsyncCmdExecuteHandlerGroup(
         AsyncCmdTaskHandlerStrategyFactory asyncTaskHandlerStrategyFactory,
         AsyncCmdStateSupport asyncCmdStateSupport,
+        AsyncCmdRepository asyncCmdRepository,
         AsyncCmdService asyncCmdService,
         AsyncCmdSubService asyncCmdSubService,
         AsyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory,
         DtpExecutor asyncCmdSubTaskExecutor) {
-        super(asyncTaskHandlerStrategyFactory, asyncCmdStateSupport, asyncCmdService);
+        super(asyncTaskHandlerStrategyFactory, asyncCmdStateSupport, asyncCmdRepository, asyncCmdService);
         this.asyncCmdSubService = asyncCmdSubService;
         this.asyncCmdSubTaskHandlerStrategyFactory = asyncCmdSubTaskHandlerStrategyFactory;
         this.asyncCmdSubTaskExecutor = asyncCmdSubTaskExecutor;
@@ -77,11 +80,15 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
                 return;
             }
 
-            // 收尾：聚合子任务进度到主任务
-            this.asyncCmdSubService.aggregateProgress(entity.getId());
-
-            // 主收尾业务前续期执行租约（子任务执行期间租约可能已接近到期）
-            this.getAsyncCmdService().editExpireTime(entity.getId(), System.currentTimeMillis());
+            //  主收尾业务前续期执行租约，聚合子任务进度到主任务
+            final Integer progress = this.asyncCmdSubService.getAggregateProgress(entity.getId());
+            this.getAsyncCmdService().edit(
+                AsyncCmdEditDTO.builder()
+                    .id(entity.getId())
+                    .expireTime(this.getAsyncCmdService().getNextExpireTime(System.currentTimeMillis()))
+                    .progress(progress)
+                    .build()
+            );
 
             // 执行业务逻辑（无事务），由业务方显式返回执行结果
             final AsyncCmdExecuteResultEnum result = handler.execute(entity);
@@ -228,7 +235,12 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         }
 
         // 续期
-        this.getAsyncCmdService().editExpireTime(entity.getId(), System.currentTimeMillis());
+        this.getAsyncCmdService().edit(
+            AsyncCmdEditDTO.builder()
+                .id(entity.getId())
+                .expireTime(this.getAsyncCmdService().getNextExpireTime(System.currentTimeMillis()))
+                .build()
+        );
 
         final boolean status = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
             .id(subEntity.getId())

@@ -61,6 +61,12 @@ public class AsyncCmdCallbackBaseDTO implements Serializable {
     private String errorMsg;
 
     /**
+     * 耗时（可选，单位毫秒，业务方可上报实际处理耗时）.
+     */
+    @Schema(description = "耗时（毫秒）")
+    private Long costTime;
+
+    /**
      * 设置回调结果.
      *
      * @param data 数据

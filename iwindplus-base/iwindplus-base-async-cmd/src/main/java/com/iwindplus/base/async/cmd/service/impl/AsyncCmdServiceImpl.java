@@ -118,13 +118,26 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
     }
 
     @Override
-    public boolean editStatusById(AsyncCmdStatusEditDTO entity) {
-        return this.asyncCmdRepository.updateStatusById(entity);
+    public boolean editCallbackBatch(AsyncCmdDO mainTask, List<AsyncCmdSubDO> subTasks) {
+        return Boolean.TRUE.equals(
+            this.transactionTemplate.execute(status -> {
+                boolean result = false;
+                if (Objects.nonNull(mainTask)) {
+                    mainTask.setNextRetryTime(System.currentTimeMillis());
+                    result = this.asyncCmdRepository.updateById(mainTask);
+                }
+                if (CollUtil.isNotEmpty(subTasks)) {
+                    this.asyncCmdSubRepository.updateBatchById(subTasks, 1000);
+                    result = true;
+                }
+                return result;
+            })
+        );
     }
 
     @Override
-    public boolean editExpireTime(Long id, long baseTimeMillis) {
-        return this.asyncCmdRepository.editExpireTime(id, baseTimeMillis);
+    public boolean editStatusById(AsyncCmdStatusEditDTO entity) {
+        return this.asyncCmdRepository.updateStatusById(entity);
     }
 
     @Override
@@ -249,6 +262,11 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
         }
 
         return BeanUtil.copyToList(list, AsyncCmdVO.class);
+    }
+
+    @Override
+    public long getNextExpireTime(long baseTimeMillis) {
+        return this.asyncCmdRepository.getNextExpireTime(baseTimeMillis);
     }
 
     private AsyncCmdVO getDetailByBizKeyAndType(String bizKey, String bizType) {

@@ -20,7 +20,6 @@ import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,11 +45,6 @@ public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
     @Override
     public boolean editStatusByIds(List<Long> ids, AsyncCmdStatusEditDTO entity) {
         return this.asyncCmdSubRepository.updateStatusByIds(ids, entity);
-    }
-
-    @Override
-    public boolean editCallbackBatch(Map<Long, Map<String, Object>> idToResult, Map<Long, Integer> idToProgress) {
-        return this.asyncCmdSubRepository.updateCallbackBatch(idToResult, idToProgress);
     }
 
     @Override
@@ -104,18 +98,14 @@ public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
     }
 
     @Override
-    public void aggregateProgress(Long asyncCmdId) {
+    public Integer getAggregateProgress(Long asyncCmdId) {
         final List<AsyncCmdStatusEnum> allStatuses = new ArrayList<>(AsyncCmdStatusEnum.getUnfinishedStatus());
         allStatuses.add(AsyncCmdStatusEnum.SUCCESS);
         final List<AsyncCmdSubVO> allSubTasks = this.listByAsyncCmdIdAndStatus(asyncCmdId, allStatuses);
         if (allSubTasks.isEmpty()) {
-            return;
+            return null;
         }
-        final int progress = this.calculateAverageProgress(allSubTasks);
-        this.asyncCmdRepository.updateStatusById(AsyncCmdStatusEditDTO.builder()
-            .id(asyncCmdId)
-            .progress(progress)
-            .build());
+        return this.calculateAverageProgress(allSubTasks);
     }
 
     /**

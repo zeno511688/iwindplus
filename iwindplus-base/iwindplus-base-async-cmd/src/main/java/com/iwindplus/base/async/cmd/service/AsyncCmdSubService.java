@@ -7,7 +7,6 @@ import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 异步命令子表业务层接口类.
@@ -33,15 +32,6 @@ public interface AsyncCmdSubService {
      * @return boolean
      */
     boolean editStatusByIds(List<Long> ids, AsyncCmdStatusEditDTO entity);
-
-    /**
-     * 批量更新子任务回调结果与进度（单条SQL）.
-     *
-     * @param idToResult   主键→回调结果映射
-     * @param idToProgress 主键→进度映射
-     * @return boolean
-     */
-    boolean editCallbackBatch(Map<Long, Map<String, Object>> idToResult, Map<Long, Integer> idToProgress);
 
     /**
      * 通过业务流水号查找子任务.
@@ -98,7 +88,8 @@ public interface AsyncCmdSubService {
      * <p>查询主任务下所有子任务，成功的视为 100%，其余按已上报进度计算，取均值写入主任务.</p>
      *
      * @param asyncCmdId 主任务 ID
+     * @return Integer
      */
-    void aggregateProgress(Long asyncCmdId);
+    Integer getAggregateProgress(Long asyncCmdId);
 
 }

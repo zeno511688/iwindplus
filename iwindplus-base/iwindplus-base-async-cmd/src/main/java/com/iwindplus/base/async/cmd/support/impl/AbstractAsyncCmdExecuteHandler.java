@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
+import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdRepository;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
@@ -36,6 +37,7 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
 
     private final AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory;
     private final AsyncCmdStateSupport asyncCmdStateSupport;
+    private final AsyncCmdRepository asyncCmdRepository;
     private final AsyncCmdService asyncCmdService;
 
     /**

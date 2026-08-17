@@ -9,6 +9,8 @@ package com.iwindplus.base.async.cmd.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
+import com.iwindplus.base.async.cmd.dal.model.AsyncCmdDO;
+import com.iwindplus.base.async.cmd.dal.model.AsyncCmdSubDO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdEditDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGrouSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGroupSearchDTO;
@@ -100,21 +102,21 @@ public interface AsyncCmdService {
     }
 
     /**
+     * 回调批量更新：写入主任务预存结果与子任务回调数据.
+     *
+     * @param mainTask 主任务更新对象（null时跳过）
+     * @param subTasks 子任务更新对象列表（空时跳过）
+     * @return boolean
+     */
+    boolean editCallbackBatch(AsyncCmdDO mainTask, List<AsyncCmdSubDO> subTasks);
+
+    /**
      * 通过主键修改状态.
      *
      * @param entity 状态流转对象（空字段不更新）
      * @return boolean
      */
     boolean editStatusById(AsyncCmdStatusEditDTO entity);
-
-    /**
-     * 续订租期时间.
-     *
-     * @param id             主键
-     * @param baseTimeMillis 基准时间戳(毫秒)
-     * @return boolean
-     */
-    boolean editExpireTime(Long id, long baseTimeMillis);
 
     /**
      * 列表.
@@ -162,4 +164,12 @@ public interface AsyncCmdService {
      * @return List<AsyncCmdVO>
      */
     List<AsyncCmdVO> listByShard(AsyncCmdShardSearchDTO entity);
+
+    /**
+     * 获取下一次租约到期时间.
+     *
+     * @param baseTimeMillis 基准时间戳(毫秒)
+     * @return long
+     */
+    long getNextExpireTime(long baseTimeMillis);
 }

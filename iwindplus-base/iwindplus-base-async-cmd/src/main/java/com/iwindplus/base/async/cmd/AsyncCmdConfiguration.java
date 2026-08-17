@@ -248,6 +248,7 @@ public class AsyncCmdConfiguration {
      *
      * @param asyncCmdTaskHandlerStrategyFactor asyncCmdTaskHandlerStrategyFactor
      * @param asyncCmdStateSupport              asyncCmdStateSupport
+     * @param asyncCmdRepository                asyncCmdRepository
      * @param asyncCmdService                   asyncCmdService
      * @return AsyncCmdExecuteHandlerMain
      */
@@ -255,9 +256,10 @@ public class AsyncCmdConfiguration {
     public AsyncCmdExecuteHandlerMain asyncCmdExecuteHandlerMain(
         AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactor,
         AsyncCmdStateSupport asyncCmdStateSupport,
+        AsyncCmdRepository asyncCmdRepository,
         AsyncCmdService asyncCmdService) {
         AsyncCmdExecuteHandlerMain asyncCmdExecuteHandlerMain = new AsyncCmdExecuteHandlerMain(
-            asyncCmdTaskHandlerStrategyFactor, asyncCmdStateSupport, asyncCmdService);
+            asyncCmdTaskHandlerStrategyFactor, asyncCmdStateSupport, asyncCmdRepository, asyncCmdService);
         log.info("AsyncCmdExecuteHandlerMain={}", asyncCmdExecuteHandlerMain);
         return asyncCmdExecuteHandlerMain;
     }
@@ -267,6 +269,7 @@ public class AsyncCmdConfiguration {
      *
      * @param asyncCmdTaskHandlerStrategyFactory    asyncCmdTaskHandlerStrategyFactory
      * @param asyncCmdStateSupport                  asyncCmdStateSupport
+     * @param asyncCmdRepository                    asyncCmdRepository
      * @param asyncCmdService                       asyncCmdService
      * @param asyncCmdSubService                    asyncCmdSubService
      * @param asyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory
@@ -276,11 +279,12 @@ public class AsyncCmdConfiguration {
     public AsyncCmdExecuteHandlerGroup asyncCmdExecuteHandlerGroup(
         AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory,
         AsyncCmdStateSupport asyncCmdStateSupport,
+        AsyncCmdRepository asyncCmdRepository,
         AsyncCmdService asyncCmdService,
         AsyncCmdSubService asyncCmdSubService,
         AsyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory) {
         AsyncCmdExecuteHandlerGroup asyncCmdExecuteHandlerGroup = new AsyncCmdExecuteHandlerGroup(
-            asyncCmdTaskHandlerStrategyFactory, asyncCmdStateSupport, asyncCmdService,
+            asyncCmdTaskHandlerStrategyFactory, asyncCmdStateSupport, asyncCmdRepository, asyncCmdService,
             asyncCmdSubService, asyncCmdSubTaskHandlerStrategyFactory, asyncCmdSubTaskExecutor);
         log.info("AsyncCmdExecuteHandlerGroup={}", asyncCmdExecuteHandlerGroup);
         return asyncCmdExecuteHandlerGroup;
