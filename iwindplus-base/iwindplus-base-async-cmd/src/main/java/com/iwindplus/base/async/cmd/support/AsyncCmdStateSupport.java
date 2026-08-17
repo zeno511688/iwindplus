@@ -184,7 +184,9 @@ public record AsyncCmdStateSupport(
 
         final long now = System.currentTimeMillis();
         final Long nextRetryTime = this.getNextRetryTime(now);
-        final Long expireTime = this.getNextExpireTime(now);
+        final Long exist = entity.getExpireTime();
+        final Long expireTime = Objects.nonNull(exist) && exist > 0L
+            ? exist : this.getNextExpireTime(System.currentTimeMillis());
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -429,7 +431,9 @@ public record AsyncCmdStateSupport(
         AsyncCmdSubVO entity,
         AsyncCmdSubTaskHandler handler,
         Long costTime) {
-        final Long expireTime = this.getNextExpireTime(System.currentTimeMillis());
+        final Long exist = entity.getExpireTime();
+        final Long expireTime = Objects.nonNull(exist) && exist > 0L
+            ? exist : this.getNextExpireTime(System.currentTimeMillis());
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
