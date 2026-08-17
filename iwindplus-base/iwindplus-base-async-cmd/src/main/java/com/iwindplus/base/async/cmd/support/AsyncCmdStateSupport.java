@@ -96,9 +96,6 @@ public record AsyncCmdStateSupport(
                     entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
                     entity.setCostTime(costTime);
                     entity.setProgress(100);
-                    if (Objects.nonNull(handler)) {
-                        handler.onTaskSuccess(entity);
-                    }
 
                     // 删除记录（可选）
                     if (Boolean.TRUE.equals(this.property.getEnabledSuccessDelete())) {
@@ -108,6 +105,10 @@ public record AsyncCmdStateSupport(
                 return updated;
             })
         );
+
+        if (result && Objects.nonNull(handler)) {
+            this.safeCallback(() -> handler.onTaskSuccess(entity), "onTaskSuccess", entity.getId());
+        }
 
         return result;
     }
