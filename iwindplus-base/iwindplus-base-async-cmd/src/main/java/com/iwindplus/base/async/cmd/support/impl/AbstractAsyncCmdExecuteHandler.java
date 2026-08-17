@@ -131,7 +131,7 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
         final Long nextRetryTime = this.getAsyncCmdStateSupport().getNextRetryTime(System.currentTimeMillis());
         this.getAsyncCmdService().editStatusById(AsyncCmdStatusEditDTO.builder()
             .id(entity.getId())
-            .from(AsyncCmdStatusEnum.ASYNC_WAIT)
+            .from(AsyncCmdStatusEnum.WAITING)
             .nextRetryTime(nextRetryTime)
             .build());
         entity.setNextRetryTime(nextRetryTime);
@@ -157,7 +157,7 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
         }
 
         // 业务显式返回异步等待
-        if (AsyncCmdExecuteResultEnum.ASYNC_WAIT.equals(result)) {
+        if (AsyncCmdExecuteResultEnum.WAITING.equals(result)) {
             final boolean taskAsyncWait = this.getAsyncCmdStateSupport().taskAsyncWait(entity, handler,
                 System.currentTimeMillis() - start);
             if (!taskAsyncWait) {

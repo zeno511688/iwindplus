@@ -187,7 +187,7 @@ public record AsyncCmdStateSupport(
                 boolean updated = asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
                     .id(entity.getId())
                     .from(AsyncCmdStatusEnum.EXECUTE)
-                    .to(AsyncCmdStatusEnum.ASYNC_WAIT)
+                    .to(AsyncCmdStatusEnum.WAITING)
                     .costTime(costTime)
                     .nextRetryTime(nextRetryTime)
                     .expireTime(expireTime)
@@ -195,7 +195,7 @@ public record AsyncCmdStateSupport(
                 if (updated) {
                     // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
                     entity.setModifiedTimestamp(System.currentTimeMillis());
-                    entity.setStatus(AsyncCmdStatusEnum.ASYNC_WAIT);
+                    entity.setStatus(AsyncCmdStatusEnum.WAITING);
                     entity.setCostTime(costTime);
                     entity.setNextRetryTime(nextRetryTime);
                     entity.setExpireTime(expireTime);
@@ -258,7 +258,7 @@ public record AsyncCmdStateSupport(
             this.transactionTemplate.execute(status -> {
                 boolean updated = asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
                     .id(entity.getId())
-                    .from(AsyncCmdStatusEnum.ASYNC_WAIT)
+                    .from(AsyncCmdStatusEnum.WAITING)
                     .to(AsyncCmdStatusEnum.SUCCESS)
                     .costTime(costTime)
                     .result(entity.getResult())
@@ -302,7 +302,7 @@ public record AsyncCmdStateSupport(
             this.transactionTemplate.execute(status -> {
                 boolean updated = asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
                     .id(entity.getId())
-                    .from(AsyncCmdStatusEnum.ASYNC_WAIT)
+                    .from(AsyncCmdStatusEnum.WAITING)
                     .to(AsyncCmdStatusEnum.FAILED)
                     .costTime(costTime)
                     .errorMsg(stack)
@@ -431,7 +431,7 @@ public record AsyncCmdStateSupport(
                 boolean updated = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
                     .id(entity.getId())
                     .from(AsyncCmdStatusEnum.EXECUTE)
-                    .to(AsyncCmdStatusEnum.ASYNC_WAIT)
+                    .to(AsyncCmdStatusEnum.WAITING)
                     .costTime(costTime)
                     .result(entity.getResult())
                     .expireTime(expireTime)
@@ -439,7 +439,7 @@ public record AsyncCmdStateSupport(
                 if (updated) {
                     // 关键钩子纳入事务：失败回滚状态流转并外抛，由上层失败链路接管
                     entity.setModifiedTimestamp(System.currentTimeMillis());
-                    entity.setStatus(AsyncCmdStatusEnum.ASYNC_WAIT);
+                    entity.setStatus(AsyncCmdStatusEnum.WAITING);
                     entity.setCostTime(costTime);
                     entity.setExpireTime(expireTime);
                     if (Objects.nonNull(handler)) {
@@ -468,7 +468,7 @@ public record AsyncCmdStateSupport(
             this.transactionTemplate.execute(status -> {
                 boolean updated = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
                     .id(entity.getId())
-                    .from(AsyncCmdStatusEnum.ASYNC_WAIT)
+                    .from(AsyncCmdStatusEnum.WAITING)
                     .to(AsyncCmdStatusEnum.SUCCESS)
                     .result(entity.getResult())
                     .expireTime(0L)
@@ -509,7 +509,7 @@ public record AsyncCmdStateSupport(
             this.transactionTemplate.execute(status -> {
                 boolean updated = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
                     .id(entity.getId())
-                    .from(AsyncCmdStatusEnum.ASYNC_WAIT)
+                    .from(AsyncCmdStatusEnum.WAITING)
                     .to(AsyncCmdStatusEnum.FAILED)
                     .errorMsg(stack)
                     .retryCount(retryCount)

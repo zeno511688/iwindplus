@@ -107,7 +107,7 @@ public record AsyncCmdBizProcessor(
             }
 
             // 兜底主任务卡在异步等待中只能等重置状态
-            if (AsyncCmdStatusEnum.ASYNC_WAIT.equals(entity.getStatus())) {
+            if (AsyncCmdStatusEnum.WAITING.equals(entity.getStatus())) {
                 this.asyncCmdStateSupport.taskAsyncWaitFail(entity, null,
                     System.currentTimeMillis() - start, ex);
                 return;
@@ -118,7 +118,7 @@ public record AsyncCmdBizProcessor(
     private boolean needProcessStatus(AsyncCmdVO entity) {
         AsyncCmdStatusEnum status = entity.getStatus();
         return AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(status)
-            || AsyncCmdStatusEnum.ASYNC_WAIT.equals(status);
+            || AsyncCmdStatusEnum.WAITING.equals(status);
     }
 
     /**

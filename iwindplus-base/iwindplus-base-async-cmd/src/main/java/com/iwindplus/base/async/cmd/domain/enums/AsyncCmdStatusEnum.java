@@ -33,9 +33,9 @@ public enum AsyncCmdStatusEnum implements BaseEnum<Integer> {
     EXECUTE(10, "执行中"),
 
     /**
-     * 异步等待.
+     * 等待中.
      */
-    ASYNC_WAIT(20, "异步等待"),
+    WAITING(20, "等待中"),
 
     /**
      * 成功.
@@ -80,7 +80,7 @@ public enum AsyncCmdStatusEnum implements BaseEnum<Integer> {
      * @return List<AsyncCmdStatusEnum>
      */
     public static List<AsyncCmdStatusEnum> getRetryStatus() {
-        return List.of(AsyncCmdStatusEnum.TO_BE_EXECUTE, AsyncCmdStatusEnum.ASYNC_WAIT);
+        return List.of(AsyncCmdStatusEnum.TO_BE_EXECUTE, AsyncCmdStatusEnum.WAITING);
     }
 
     /**
@@ -89,6 +89,6 @@ public enum AsyncCmdStatusEnum implements BaseEnum<Integer> {
      * @return List<AsyncCmdStatusEnum>
      */
     public static List<AsyncCmdStatusEnum> getUnfinishedStatus() {
-        return List.of(AsyncCmdStatusEnum.TO_BE_EXECUTE, AsyncCmdStatusEnum.EXECUTE, AsyncCmdStatusEnum.ASYNC_WAIT, AsyncCmdStatusEnum.FAILED);
+        return List.of(AsyncCmdStatusEnum.TO_BE_EXECUTE, AsyncCmdStatusEnum.EXECUTE, AsyncCmdStatusEnum.WAITING, AsyncCmdStatusEnum.FAILED);
     }
 }

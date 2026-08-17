@@ -35,14 +35,14 @@ public class VideoDemoSubmitSubHandler implements AsyncCmdSubTaskHandler {
     public AsyncCmdExecuteResultEnum executeSub(AsyncCmdSubVO entity) {
         final Map<String, Object> param = entity.getParam();
         final String videoId = String.valueOf(param.get("videoId"));
-    
+
         // 示例：调用第三方合成接口，用entity.getBizNumber()作为第三方请求流水号
         // 第三方处理完成后回调业务接口，业务再调用AsyncCmdExecutor.callback上报
         log.info("videoDemo submit third subTask execute, subId={} bizNumber={} videoId={}",
             entity.getId(), entity.getBizNumber(), videoId);
-    
+
         // 已发起第三方异步调用，显式返回ASYNC_WAIT进入异步等待
-        return AsyncCmdExecuteResultEnum.ASYNC_WAIT;
+        return AsyncCmdExecuteResultEnum.WAITING;
     }
 
     /**

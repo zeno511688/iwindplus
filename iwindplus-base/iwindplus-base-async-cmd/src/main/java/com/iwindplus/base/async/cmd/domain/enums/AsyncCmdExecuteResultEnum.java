@@ -30,9 +30,9 @@ public enum AsyncCmdExecuteResultEnum implements BaseEnum<Integer> {
     EXECUTE(10, "执行中"),
 
     /**
-     * 异步等待.
+     * 等待中.
      */
-    ASYNC_WAIT(20, "异步等待"),
+    WAITING(20, "等待中"),
 
     /**
      * 成功.

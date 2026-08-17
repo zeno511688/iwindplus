@@ -65,7 +65,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         final long start = System.currentTimeMillis();
 
         // 判断是否是异步等待状态
-        if (AsyncCmdStatusEnum.ASYNC_WAIT.equals(entity.getStatus())) {
+        if (AsyncCmdStatusEnum.WAITING.equals(entity.getStatus())) {
             this.executeCallbackAsyncWait(entity, handler, start);
             return;
         }
@@ -231,7 +231,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         AsyncCmdSubTaskHandler handler = this.getSubTaskHandler(subEntity.getExecuteName());
 
         // 判断是否是异步等待状态
-        if (AsyncCmdStatusEnum.ASYNC_WAIT.equals(subEntity.getStatus())) {
+        if (AsyncCmdStatusEnum.WAITING.equals(subEntity.getStatus())) {
             return this.executeSubCallbackAsyncWait(entity, handler, subEntity, advanced);
         }
 
@@ -284,7 +284,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         }
 
         // 业务显式返回异步等待
-        if (AsyncCmdExecuteResultEnum.ASYNC_WAIT.equals(result)) {
+        if (AsyncCmdExecuteResultEnum.WAITING.equals(result)) {
             final boolean subTaskAsyncWait = this.getAsyncCmdStateSupport().subTaskAsyncWait(subEntity, handler, costTime);
             if (!subTaskAsyncWait) {
                 log.warn("asyncCmd subTask set asyncWait failed, id={} asyncCmdId={} seq={}",
@@ -410,7 +410,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
     }
 
     private boolean hasSubAsyncWait(List<AsyncCmdSubVO> subEntities) {
-        return subEntities.stream().anyMatch(item -> AsyncCmdStatusEnum.ASYNC_WAIT.equals(item.getStatus()));
+        return subEntities.stream().anyMatch(item -> AsyncCmdStatusEnum.WAITING.equals(item.getStatus()));
     }
 
     /**
