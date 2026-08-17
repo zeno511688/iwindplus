@@ -30,4 +30,14 @@ public class AsyncCmdConstant {
      * 异步命令bean扫描包名.
      */
     public static final String ASYNC_CMD_COMPONENT_SCAN_BASE_PACKAGE = "com.iwindplus.base.async.cmd";
+
+    /**
+     * 预存回调结果在result中的保留键.
+     */
+    public static final String CALLBACK_RESULT_KEY = "_callbackResult";
+
+    /**
+     * 预存回调错误信息在result中的保留键.
+     */
+    public static final String CALLBACK_ERROR_MSG_KEY = "_callbackErrorMsg";
 }

@@ -8,6 +8,7 @@
 package com.iwindplus.base.async.cmd.domain.enums;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
+import com.iwindplus.base.async.cmd.domain.constant.AsyncCmdConstant;
 import com.iwindplus.base.domain.enums.BaseEnum;
 import java.util.Map;
 import java.util.Objects;
@@ -42,16 +43,6 @@ public enum AsyncCmdCallbackResultEnum implements BaseEnum<Integer> {
     ;
 
     /**
-     * 预存回调结果在result中的保留键.
-     */
-    public static final String CALLBACK_RESULT_KEY = "_callbackResult";
-
-    /**
-     * 预存回调错误信息在result中的保留键.
-     */
-    public static final String CALLBACK_ERROR_MSG_KEY = "_callbackErrorMsg";
-
-    /**
      * 值.
      */
     @EnumValue
@@ -73,7 +64,7 @@ public enum AsyncCmdCallbackResultEnum implements BaseEnum<Integer> {
             return null;
         }
 
-        final Object value = result.get(CALLBACK_RESULT_KEY);
+        final Object value = result.get(AsyncCmdConstant.CALLBACK_RESULT_KEY);
         if (Objects.isNull(value)) {
             return null;
         }

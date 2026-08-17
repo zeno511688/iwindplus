@@ -13,6 +13,7 @@ import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.async.cmd.dal.model.AsyncCmdDO;
 import com.iwindplus.base.async.cmd.dal.model.AsyncCmdSubDO;
+import com.iwindplus.base.async.cmd.domain.constant.AsyncCmdConstant;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdCallbackBaseDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdCallbackDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGrouSaveDTO;
@@ -489,10 +490,10 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             ? new HashMap<>(entity.getResult())
             : new HashMap<>(4);
         if (Objects.nonNull(entity.getCallbackResult())) {
-            result.put(AsyncCmdCallbackResultEnum.CALLBACK_RESULT_KEY, entity.getCallbackResult().name());
+            result.put(AsyncCmdConstant.CALLBACK_RESULT_KEY, entity.getCallbackResult().name());
         }
         if (CharSequenceUtil.isNotBlank(entity.getErrorMsg())) {
-            result.put(AsyncCmdCallbackResultEnum.CALLBACK_ERROR_MSG_KEY, entity.getErrorMsg());
+            result.put(AsyncCmdConstant.CALLBACK_ERROR_MSG_KEY, entity.getErrorMsg());
         }
         return result;
     }

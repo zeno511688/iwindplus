@@ -8,6 +8,7 @@
 package com.iwindplus.base.async.cmd.support.impl;
 
 import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdRepository;
+import com.iwindplus.base.async.cmd.domain.constant.AsyncCmdConstant;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdEditDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
@@ -396,8 +397,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
      */
     private void consumeNotifiedResult(AsyncCmdSubVO subEntity) {
         final Map<String, Object> result = subEntity.getResult();
-        result.remove(AsyncCmdCallbackResultEnum.CALLBACK_RESULT_KEY);
-        result.remove(AsyncCmdCallbackResultEnum.CALLBACK_ERROR_MSG_KEY);
+        result.remove(AsyncCmdConstant.CALLBACK_RESULT_KEY);
+        result.remove(AsyncCmdConstant.CALLBACK_ERROR_MSG_KEY);
         this.asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
             .id(subEntity.getId())
             .result(result)
