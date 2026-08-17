@@ -8,6 +8,7 @@
 package com.iwindplus.base.async.cmd.support;
 
 import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdRepository;
+import com.iwindplus.base.async.cmd.domain.constant.AsyncCmdConstant;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
@@ -87,7 +88,7 @@ public record AsyncCmdStateSupport(
                     .from(AsyncCmdStatusEnum.EXECUTE)
                     .to(AsyncCmdStatusEnum.SUCCESS)
                     .costTime(costTime)
-                    .progress(100)
+                    .progress(NumberConstant.NUMBER_ONE_HUNDRED)
                     .result(entity.getResult())
                     .build());
                 if (updated) {
@@ -95,7 +96,7 @@ public record AsyncCmdStateSupport(
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
                     entity.setCostTime(costTime);
-                    entity.setProgress(100);
+                    entity.setProgress(NumberConstant.NUMBER_ONE_HUNDRED);
 
                     // 删除记录（可选）
                     if (Boolean.TRUE.equals(this.property.getEnabledSuccessDelete())) {
@@ -107,7 +108,7 @@ public record AsyncCmdStateSupport(
         );
 
         if (result && Objects.nonNull(handler)) {
-            this.safeCallback(() -> handler.onTaskSuccess(entity), "onTaskSuccess", entity.getId());
+            this.safeCallback(() -> handler.onTaskSuccess(entity), AsyncCmdConstant.HOOK_ON_TASK_SUCCESS, entity.getId());
         }
 
         return result;
@@ -162,7 +163,7 @@ public record AsyncCmdStateSupport(
         );
 
         if (result && Objects.nonNull(handler)) {
-            this.safeCallback(() -> handler.onTaskFail(entity), "onTaskFail", entity.getId());
+            this.safeCallback(() -> handler.onTaskFail(entity), AsyncCmdConstant.HOOK_ON_TASK_FAIL, entity.getId());
         }
 
         return result;
@@ -202,13 +203,14 @@ public record AsyncCmdStateSupport(
                     entity.setCostTime(costTime);
                     entity.setNextRetryTime(nextRetryTime);
                     entity.setExpireTime(expireTime);
-                    if (Objects.nonNull(handler)) {
-                        handler.onTaskAsyncWait(entity);
-                    }
                 }
                 return updated;
             })
         );
+
+        if (result && Objects.nonNull(handler)) {
+            this.safeCallback(() -> handler.onTaskAsyncWait(entity), AsyncCmdConstant.HOOK_ON_TASK_ASYNC_WAIT, entity.getId());
+        }
 
         return result;
     }
@@ -272,13 +274,14 @@ public record AsyncCmdStateSupport(
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
                     entity.setExpireTime(0L);
-                    if (Objects.nonNull(handler)) {
-                        handler.onTaskSuccess(entity);
-                    }
                 }
                 return updated;
             })
         );
+
+        if (result && Objects.nonNull(handler)) {
+            this.safeCallback(() -> handler.onTaskSuccess(entity), AsyncCmdConstant.HOOK_ON_TASK_SUCCESS, entity.getId());
+        }
 
         return result;
     }
@@ -326,9 +329,8 @@ public record AsyncCmdStateSupport(
         );
 
         if (result && Objects.nonNull(handler)) {
-            this.safeCallback(() -> handler.onTaskFail(entity), "onTaskFail", entity.getId());
+            this.safeCallback(() -> handler.onTaskFail(entity), AsyncCmdConstant.HOOK_ON_TASK_FAIL, entity.getId());
         }
-
         return result;
     }
 
@@ -359,14 +361,14 @@ public record AsyncCmdStateSupport(
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
                     entity.setCostTime(costTime);
-                    if (Objects.nonNull(handler)) {
-                        handler.onSubTaskSuccess(entity);
-                    }
                 }
                 return updated;
             })
         );
 
+        if (result && Objects.nonNull(handler)) {
+            this.safeCallback(() -> handler.onSubTaskSuccess(entity), AsyncCmdConstant.HOOK_ON_SUB_TASK_SUCCESS, entity.getId());
+        }
         return result;
     }
 
@@ -410,7 +412,7 @@ public record AsyncCmdStateSupport(
         );
 
         if (result && Objects.nonNull(handler)) {
-            this.safeCallback(() -> handler.onSubTaskFail(entity), "onSubTaskFail", entity.getId());
+            this.safeCallback(() -> handler.onSubTaskFail(entity), AsyncCmdConstant.HOOK_ON_SUB_TASK_FAIL, entity.getId());
         }
         return result;
     }
@@ -445,14 +447,14 @@ public record AsyncCmdStateSupport(
                     entity.setStatus(AsyncCmdStatusEnum.WAITING);
                     entity.setCostTime(costTime);
                     entity.setExpireTime(expireTime);
-                    if (Objects.nonNull(handler)) {
-                        handler.onSubTaskAsyncWait(entity);
-                    }
                 }
                 return updated;
             })
         );
 
+        if (result && Objects.nonNull(handler)) {
+            this.safeCallback(() -> handler.onSubTaskAsyncWait(entity), AsyncCmdConstant.HOOK_ON_SUB_TASK_ASYNC_WAIT, entity.getId());
+        }
         return result;
     }
 
@@ -481,14 +483,14 @@ public record AsyncCmdStateSupport(
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
                     entity.setExpireTime(0L);
-                    if (Objects.nonNull(handler)) {
-                        handler.onSubTaskSuccess(entity);
-                    }
                 }
                 return updated;
             })
         );
 
+        if (result && Objects.nonNull(handler)) {
+            this.safeCallback(() -> handler.onSubTaskSuccess(entity), AsyncCmdConstant.HOOK_ON_SUB_TASK_SUCCESS, entity.getId());
+        }
         return result;
     }
 
@@ -528,7 +530,7 @@ public record AsyncCmdStateSupport(
         );
 
         if (result && Objects.nonNull(handler)) {
-            this.safeCallback(() -> handler.onSubTaskFail(entity), "onSubTaskFail", entity.getId());
+            this.safeCallback(() -> handler.onSubTaskFail(entity), AsyncCmdConstant.HOOK_ON_SUB_TASK_FAIL, entity.getId());
         }
         return result;
     }

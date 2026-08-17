@@ -135,7 +135,11 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         // 构建主任务更新参数 ---
         AsyncCmdDO taskUpdate = buildTask(entity, task);
 
-        return this.asyncCmdService.editCallbackBatch(taskUpdate, subTaskUpdates);
+        final boolean result = this.asyncCmdService.editCallbackBatch(taskUpdate, subTaskUpdates);
+        if (result && Objects.nonNull(task)) {
+            this.dispatch(task);
+        }
+        return result;
     }
 
     @Override
@@ -314,7 +318,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
     private boolean overrideCallback(AsyncCmdTaskHandler handler) {
         try {
             final Class<?> executeCallback = handler.getClass()
-                .getMethod("executeCallback", AsyncCmdVO.class).getDeclaringClass();
+                .getMethod(AsyncCmdConstant.METHOD_EXECUTE_CALLBACK, AsyncCmdVO.class).getDeclaringClass();
             return !AsyncCmdTaskHandler.class.equals(executeCallback);
         } catch (NoSuchMethodException ex) {
             log.error("Override executeCallback method is not exist, handler={}", handler.getClass().getName());
@@ -325,7 +329,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
     private boolean overrideSubCallback(AsyncCmdSubTaskHandler handler) {
         try {
             final Class<?> executeSubCallback = handler.getClass()
-                .getMethod("executeSubCallback", AsyncCmdSubVO.class).getDeclaringClass();
+                .getMethod(AsyncCmdConstant.METHOD_EXECUTE_SUB_CALLBACK, AsyncCmdSubVO.class).getDeclaringClass();
             return !AsyncCmdSubTaskHandler.class.equals(executeSubCallback);
         } catch (NoSuchMethodException ex) {
             log.error("Override executeSubCallback method is not exist, handler={}", handler.getClass().getName());

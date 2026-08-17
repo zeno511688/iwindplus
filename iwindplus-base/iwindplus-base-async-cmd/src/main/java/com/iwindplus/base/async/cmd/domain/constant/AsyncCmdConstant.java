@@ -34,10 +34,50 @@ public class AsyncCmdConstant {
     /**
      * 预存回调结果在result中的保留键.
      */
-    public static final String CALLBACK_RESULT_KEY = "_callbackResult";
+    public static final String CALLBACK_RESULT_KEY = "callbackResult";
 
     /**
      * 预存回调错误信息在result中的保留键.
      */
-    public static final String CALLBACK_ERROR_MSG_KEY = "_callbackErrorMsg";
+    public static final String CALLBACK_ERROR_MSG_KEY = "callbackErrorMsg";
+
+    /**
+     * 反射方法名：主任务回调执行方法.
+     */
+    public static final String METHOD_EXECUTE_CALLBACK = "executeCallback";
+
+    /**
+     * 反射方法名：子任务回调执行方法.
+     */
+    public static final String METHOD_EXECUTE_SUB_CALLBACK = "executeSubCallback";
+
+    /**
+     * 钩子方法名：主任务执行成功.
+     */
+    public static final String HOOK_ON_TASK_SUCCESS = "onTaskSuccess";
+
+    /**
+     * 钩子方法名：主任务执行失败.
+     */
+    public static final String HOOK_ON_TASK_FAIL = "onTaskFail";
+
+    /**
+     * 钩子方法名：主任务异步等待.
+     */
+    public static final String HOOK_ON_TASK_ASYNC_WAIT = "onTaskAsyncWait";
+
+    /**
+     * 钩子方法名：子任务执行成功.
+     */
+    public static final String HOOK_ON_SUB_TASK_SUCCESS = "onSubTaskSuccess";
+
+    /**
+     * 钩子方法名：子任务执行失败.
+     */
+    public static final String HOOK_ON_SUB_TASK_FAIL = "onSubTaskFail";
+
+    /**
+     * 钩子方法名：子任务异步等待.
+     */
+    public static final String HOOK_ON_SUB_TASK_ASYNC_WAIT = "onSubTaskAsyncWait";
 }
