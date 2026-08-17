@@ -103,6 +103,7 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
         final List<Long> ids = super.listObjs(Wrappers.lambdaQuery(AsyncCmdDO.class)
                 .eq(AsyncCmdDO::getEnv, env.trim())
                 .eq(AsyncCmdDO::getBizNumber, bizNumber.trim())
+                .last("LIMIT 1")
             , value -> Long.valueOf(value.toString()));
         if (CollUtil.isEmpty(ids)) {
             return false;

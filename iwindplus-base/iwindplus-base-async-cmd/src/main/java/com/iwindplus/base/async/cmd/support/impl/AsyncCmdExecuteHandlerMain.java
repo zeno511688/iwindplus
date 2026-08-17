@@ -7,7 +7,6 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
-import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdRepository;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
@@ -30,9 +29,8 @@ public class AsyncCmdExecuteHandlerMain extends AbstractAsyncCmdExecuteHandler {
     public AsyncCmdExecuteHandlerMain(
         AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory,
         AsyncCmdStateSupport asyncCmdStateSupport,
-        AsyncCmdRepository asyncCmdRepository,
         AsyncCmdService asyncCmdService) {
-        super(asyncCmdTaskHandlerStrategyFactory, asyncCmdStateSupport, asyncCmdRepository, asyncCmdService);
+        super(asyncCmdTaskHandlerStrategyFactory, asyncCmdStateSupport, asyncCmdService);
     }
 
     @Override

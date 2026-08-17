@@ -87,6 +87,7 @@ public record AsyncCmdStateSupport(
                     .from(AsyncCmdStatusEnum.EXECUTE)
                     .to(AsyncCmdStatusEnum.SUCCESS)
                     .costTime(costTime)
+                    .progress(100)
                     .result(entity.getResult())
                     .build());
                 if (updated) {
@@ -94,6 +95,7 @@ public record AsyncCmdStateSupport(
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
                     entity.setCostTime(costTime);
+                    entity.setProgress(100);
                     if (Objects.nonNull(handler)) {
                         handler.onTaskSuccess(entity);
                     }
@@ -533,7 +535,7 @@ public record AsyncCmdStateSupport(
     /**
      * 获取下一次重试时间
      *
-     *  @param baseTimeMillis 基准时间戳(毫秒)
+     * @param baseTimeMillis 基准时间戳(毫秒)
      * @return long
      */
     public Long getNextRetryTime(long baseTimeMillis) {

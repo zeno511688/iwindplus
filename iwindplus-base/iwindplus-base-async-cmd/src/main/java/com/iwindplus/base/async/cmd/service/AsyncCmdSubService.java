@@ -82,14 +82,4 @@ public interface AsyncCmdSubService {
      * @return List<AsyncCmdSubVO>
      */
     List<AsyncCmdSubVO> listByBizNumbers(List<String> bizNumbers);
-
-    /**
-     * 聚合子任务进度到主任务.
-     * <p>查询主任务下所有子任务，成功的视为 100%，其余按已上报进度计算，取均值写入主任务.</p>
-     *
-     * @param asyncCmdId 主任务 ID
-     * @return Integer
-     */
-    Integer getAggregateProgress(Long asyncCmdId);
-
 }

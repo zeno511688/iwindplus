@@ -7,7 +7,6 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
-import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdRepository;
 import com.iwindplus.base.async.cmd.domain.constant.AsyncCmdConstant;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdEditDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
@@ -48,12 +47,11 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
     public AsyncCmdExecuteHandlerGroup(
         AsyncCmdTaskHandlerStrategyFactory asyncTaskHandlerStrategyFactory,
         AsyncCmdStateSupport asyncCmdStateSupport,
-        AsyncCmdRepository asyncCmdRepository,
         AsyncCmdService asyncCmdService,
         AsyncCmdSubService asyncCmdSubService,
         AsyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory,
         DtpExecutor asyncCmdSubTaskExecutor) {
-        super(asyncTaskHandlerStrategyFactory, asyncCmdStateSupport, asyncCmdRepository, asyncCmdService);
+        super(asyncTaskHandlerStrategyFactory, asyncCmdStateSupport, asyncCmdService);
         this.asyncCmdSubService = asyncCmdSubService;
         this.asyncCmdSubTaskHandlerStrategyFactory = asyncCmdSubTaskHandlerStrategyFactory;
         this.asyncCmdSubTaskExecutor = asyncCmdSubTaskExecutor;
@@ -81,13 +79,11 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
                 return;
             }
 
-            //  主收尾业务前续期执行租约，聚合子任务进度到主任务
-            final Integer progress = this.asyncCmdSubService.getAggregateProgress(entity.getId());
+            //  主收尾业务前续期执行租约
             this.getAsyncCmdService().edit(
                 AsyncCmdEditDTO.builder()
                     .id(entity.getId())
                     .expireTime(this.getAsyncCmdService().getNextExpireTime(System.currentTimeMillis()))
-                    .progress(progress)
                     .build()
             );
 
