@@ -101,15 +101,15 @@ public record AsyncCmdBizProcessor(
 
             // 兜底主任务卡在执行中只能等重置状态
             if (AsyncCmdStatusEnum.EXECUTE.equals(entity.getStatus())) {
-                this.asyncCmdStateSupport.taskFail(entity, null,
-                    System.currentTimeMillis() - start, ex, false);
+                final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+                this.asyncCmdStateSupport.taskFail(entity, null, costTime, ex, false);
                 return;
             }
 
             // 兜底主任务卡在异步等待中只能等重置状态
             if (AsyncCmdStatusEnum.WAITING.equals(entity.getStatus())) {
-                this.asyncCmdStateSupport.taskAsyncWaitFail(entity, null,
-                    System.currentTimeMillis() - start, ex);
+                final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+                this.asyncCmdStateSupport.taskAsyncWaitFail(entity, null, costTime, ex);
                 return;
             }
         }
