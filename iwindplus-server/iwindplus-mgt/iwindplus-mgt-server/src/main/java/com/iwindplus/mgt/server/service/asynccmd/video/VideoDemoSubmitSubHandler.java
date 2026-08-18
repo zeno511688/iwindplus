@@ -7,7 +7,7 @@
 
 package com.iwindplus.mgt.server.service.asynccmd.video;
 
-import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdCallbackResultVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
@@ -50,11 +50,11 @@ public class VideoDemoSubmitSubHandler implements AsyncCmdSubTaskHandler {
      * <p>回调预存结果由框架优先消费，仅当预存结果不存在时才调用本方法</p>
      */
     @Override
-    public AsyncCmdCallbackResultEnum executeSubCallback(AsyncCmdSubVO entity) {
+    public AsyncCmdCallbackResultVO executeSubCallback(AsyncCmdSubVO entity) {
         // 示例：实际场景调用第三方查询接口，返回SUCCESS/FAILED/WAITING
         log.info("videoDemo submit third subTask poll callback, subId={} bizNumber={}",
             entity.getId(), entity.getBizNumber());
-        return AsyncCmdCallbackResultEnum.WAITING;
+        return AsyncCmdCallbackResultVO.waiting();
     }
 
     @Override

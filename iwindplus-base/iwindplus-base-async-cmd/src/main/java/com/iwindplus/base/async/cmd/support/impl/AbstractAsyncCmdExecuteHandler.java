@@ -13,6 +13,7 @@ import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdCallbackResultVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdTaskHandlerStrategyFactory;
@@ -60,20 +61,20 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
      * @param handler 异步命令任务助手
      * @return AsyncCmdCallbackResultEnum
      */
-    protected AsyncCmdCallbackResultEnum getTaskCallback(AsyncCmdVO entity, AsyncCmdTaskHandler handler) {
+    protected AsyncCmdCallbackResultVO getTaskCallback(AsyncCmdVO entity, AsyncCmdTaskHandler handler) {
         // 回调通知预存结果优先消费，不再调用业务侧查询
         final AsyncCmdCallbackResultEnum notified = AsyncCmdCallbackResultEnum.fromResultMap(entity.getResult());
         if (Objects.nonNull(notified)) {
             this.consumeNotifiedResult(entity);
-            return notified;
+            return AsyncCmdCallbackResultVO.setStatus(notified);
         }
         try {
-            final AsyncCmdCallbackResultEnum result = handler.executeCallback(entity);
-            return Objects.isNull(result) ? AsyncCmdCallbackResultEnum.WAITING : result;
+            final AsyncCmdCallbackResultVO result = handler.executeCallback(entity);
+            return Objects.isNull(result) ? AsyncCmdCallbackResultVO.waiting() : result;
         } catch (Exception ex) {
             log.error("asyncCmd task callback failed, id={}", entity.getId(), ex);
 
-            return AsyncCmdCallbackResultEnum.WAITING;
+            return AsyncCmdCallbackResultVO.waiting();
         }
     }
 
@@ -101,8 +102,14 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
      * @return AsyncCmdVO
      */
     protected AsyncCmdVO executeCallbackAsyncWait(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start) {
-        final AsyncCmdCallbackResultEnum callbackResult = this.getTaskCallback(entity, handler);
-        if (AsyncCmdCallbackResultEnum.SUCCESS.equals(callbackResult)) {
+        final AsyncCmdCallbackResultVO callbackResult = this.getTaskCallback(entity, handler);
+        if (callbackResult == null) {
+            return entity;
+        }
+
+        final AsyncCmdCallbackResultEnum status = callbackResult.getStatus();
+
+        if (AsyncCmdCallbackResultEnum.SUCCESS.equals(status)) {
             final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
             if (!this.getAsyncCmdStateSupport().taskAsyncWaitSuccess(entity, handler, costTime)) {
                 log.warn("asyncCmd task execute callback success failed, id={}", entity.getId());
@@ -111,7 +118,7 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
             return entity;
         }
 
-        if (AsyncCmdCallbackResultEnum.FAILED.equals(callbackResult)) {
+        if (AsyncCmdCallbackResultEnum.FAILED.equals(status)) {
             final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
             final String msg = String.format(
                 "asyncCmd task execute callback failed, id=%s",
@@ -163,7 +170,7 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
      */
     protected boolean handleExecuteResult(AsyncCmdVO entity, AsyncCmdTaskHandler handler,
         long start, AsyncCmdExecuteResultVO executeResult, boolean stateAdvanced) {
-        if(executeResult == null) {
+        if (executeResult == null) {
             return false;
         }
 

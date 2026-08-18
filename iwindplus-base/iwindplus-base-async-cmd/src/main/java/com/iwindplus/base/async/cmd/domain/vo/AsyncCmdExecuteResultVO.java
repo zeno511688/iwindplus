@@ -16,14 +16,12 @@ import lombok.Getter;
 import lombok.ToString;
 
 /**
- * 异步命令执行结果包装.
- *
- * <p>携带状态决策枚举与可选的业务返回值，业务返回值最终保存到 result 字段中持久化.</p>
+ * 异步命令执行结果视图对象.
  *
  * @author zengdegui
  * @since 2026/8/16
  */
-@Schema(description = "异步命令执行结果包装")
+@Schema(description = "异步命令执行结果视图对象")
 @ToString
 @Getter
 public class AsyncCmdExecuteResultVO implements Serializable {
@@ -45,6 +43,19 @@ public class AsyncCmdExecuteResultVO implements Serializable {
         Map<String, Object> result) {
         this.status = status;
         this.result = result;
+    }
+
+    /**
+     * 设置状态.
+     *
+     * @param status 状态
+     * @return 当前执行结果
+     */
+    public static AsyncCmdExecuteResultVO setStatus(AsyncCmdExecuteResultEnum status) {
+        return new AsyncCmdExecuteResultVO(
+            status,
+            null
+        );
     }
 
     /**

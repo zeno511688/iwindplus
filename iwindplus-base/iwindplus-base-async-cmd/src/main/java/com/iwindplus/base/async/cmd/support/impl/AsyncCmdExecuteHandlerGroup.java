@@ -10,11 +10,12 @@ package com.iwindplus.base.async.cmd.support.impl;
 import cn.hutool.core.collection.CollUtil;
 import com.iwindplus.base.async.cmd.domain.constant.AsyncCmdConstant;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdEditDTO;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdCallbackResultVO;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
-import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdSubTaskHandlerStrategyFactory;
@@ -341,9 +342,12 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
     private AsyncCmdSubVO executeSubCallbackAsyncWait(
         AsyncCmdVO entity, AsyncCmdSubTaskHandler handler,
         AsyncCmdSubVO subEntity, long start, AtomicInteger advanced) {
-
-        final AsyncCmdCallbackResultEnum callbackResult = this.getSubTaskCallback(entity, subEntity, handler);
-        if (AsyncCmdCallbackResultEnum.SUCCESS.equals(callbackResult)) {
+        final AsyncCmdCallbackResultVO callbackResult = this.getSubTaskCallback(entity, subEntity, handler);
+        if (callbackResult == null) {
+            return subEntity;
+        }
+        final AsyncCmdCallbackResultEnum status = callbackResult.getStatus();
+        if (AsyncCmdCallbackResultEnum.SUCCESS.equals(status)) {
             final long costTime = Optional.ofNullable(subEntity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
             if (!this.getAsyncCmdStateSupport().subTaskAsyncWaitSuccess(subEntity, handler, costTime)) {
                 log.warn("asyncCmd subTask execute callback failed, id={} asyncCmdId={} seq={}",
@@ -356,7 +360,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             return subEntity;
         }
 
-        if (AsyncCmdCallbackResultEnum.FAILED.equals(callbackResult)) {
+        if (AsyncCmdCallbackResultEnum.FAILED.equals(status)) {
             final long costTime = Optional.ofNullable(subEntity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
             final String msg = String.format(
                 "asyncCmd subTask execute callback failed, id=%s asyncCmdId=%s seq=%s",
@@ -391,21 +395,21 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         return subEntity;
     }
 
-    private AsyncCmdCallbackResultEnum getSubTaskCallback(AsyncCmdVO entity, AsyncCmdSubVO subEntity, AsyncCmdSubTaskHandler handler) {
+    private AsyncCmdCallbackResultVO getSubTaskCallback(AsyncCmdVO entity, AsyncCmdSubVO subEntity, AsyncCmdSubTaskHandler handler) {
         // 回调通知预存结果优先消费，不再调用业务侧查询
         final AsyncCmdCallbackResultEnum notified = AsyncCmdCallbackResultEnum.fromResultMap(subEntity.getResult());
         if (Objects.nonNull(notified)) {
             this.consumeNotifiedResult(subEntity);
-            return notified;
+            return AsyncCmdCallbackResultVO.setStatus(notified);
         }
         try {
-            final AsyncCmdCallbackResultEnum result = handler.executeSubCallback(subEntity);
-            return Objects.isNull(result) ? AsyncCmdCallbackResultEnum.WAITING : result;
+            final AsyncCmdCallbackResultVO result = handler.executeSubCallback(subEntity);
+            return Objects.isNull(result) ? AsyncCmdCallbackResultVO.waiting() : result;
         } catch (Exception ex) {
             log.error("asyncCmd subTask callback failed, id={} asyncCmdId={} seq={}",
                 subEntity.getId(), entity.getId(), subEntity.getSeq(), ex);
 
-            return AsyncCmdCallbackResultEnum.WAITING;
+            return AsyncCmdCallbackResultVO.waiting();
         }
     }
 
