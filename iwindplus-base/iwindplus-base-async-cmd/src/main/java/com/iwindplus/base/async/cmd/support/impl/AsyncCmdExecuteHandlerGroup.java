@@ -10,11 +10,11 @@ package com.iwindplus.base.async.cmd.support.impl;
 import cn.hutool.core.collection.CollUtil;
 import com.iwindplus.base.async.cmd.domain.constant.AsyncCmdConstant;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdEditDTO;
-import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdSubTaskHandlerStrategyFactory;
@@ -268,6 +268,9 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
 
     private boolean handleSubExecuteResult(AsyncCmdVO entity, AsyncCmdSubVO subEntity, AsyncCmdSubTaskHandler handler,
         long start, AsyncCmdExecuteResultVO executeResult, AtomicInteger advanced) {
+        if (executeResult == null) {
+            return false;
+        }
 
         final AsyncCmdExecuteResultEnum result = executeResult.getStatus();
 

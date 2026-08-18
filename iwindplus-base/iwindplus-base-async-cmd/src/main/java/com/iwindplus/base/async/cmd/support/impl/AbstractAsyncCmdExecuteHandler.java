@@ -163,6 +163,10 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
      */
     protected boolean handleExecuteResult(AsyncCmdVO entity, AsyncCmdTaskHandler handler,
         long start, AsyncCmdExecuteResultVO executeResult, boolean stateAdvanced) {
+        if(executeResult == null) {
+            return false;
+        }
+
         final AsyncCmdExecuteResultEnum result = executeResult.getStatus();
 
         // 业务显式返回执行中
