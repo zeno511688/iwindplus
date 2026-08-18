@@ -20,6 +20,7 @@ import com.iwindplus.base.async.cmd.support.AsyncCmdStateSupport;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -99,18 +100,23 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
     protected AsyncCmdVO executeCallbackAsyncWait(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start) {
         final AsyncCmdCallbackResultEnum callbackResult = this.getTaskCallback(entity, handler);
         if (AsyncCmdCallbackResultEnum.SUCCESS.equals(callbackResult)) {
-            final long costTime = entity.getCostTime() + System.currentTimeMillis() - start;
+            final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
             if (!this.getAsyncCmdStateSupport().taskAsyncWaitSuccess(entity, handler, costTime)) {
-                log.warn("asyncCmd task callback success action failed, id={}", entity.getId());
+                log.warn("asyncCmd task execute callback success failed, id={}", entity.getId());
             }
 
             return entity;
         }
 
         if (AsyncCmdCallbackResultEnum.FAILED.equals(callbackResult)) {
-            this.getAsyncCmdStateSupport().taskAsyncWaitFail(entity, handler,
-                entity.getCostTime() + System.currentTimeMillis() - start,
-                new RuntimeException("asyncCmd task callback failed"));
+            final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+            final String msg = String.format(
+                "asyncCmd task execute callback failed, id=%s",
+                entity.getId()
+            );
+            if (!this.getAsyncCmdStateSupport().taskAsyncWaitFail(entity, handler, costTime, new RuntimeException(msg))) {
+                log.warn(msg);
+            }
 
             return entity;
         }
@@ -118,9 +124,14 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
         // 回调等待截止时间到期（expireTime复用存储），转失败走重置重试/丢弃链路，避免无限轮询
         final Long expireTime = entity.getExpireTime();
         if (Objects.nonNull(expireTime) && expireTime <= System.currentTimeMillis()) {
-            this.getAsyncCmdStateSupport().taskAsyncWaitFail(entity, handler,
-                entity.getCostTime() + System.currentTimeMillis() - start,
-                new RuntimeException("asyncCmd task callback timeout"));
+            final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+            final String msg = String.format(
+                "asyncCmd task execute callback timeout, id=%s",
+                entity.getId()
+            );
+            if (!this.getAsyncCmdStateSupport().taskAsyncWaitFail(entity, handler, costTime, new RuntimeException(msg))) {
+                log.warn(msg);
+            }
 
             return entity;
         }
@@ -156,20 +167,18 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
 
         // 业务显式返回异步等待
         if (AsyncCmdExecuteResultEnum.WAITING.equals(result)) {
-            final boolean taskAsyncWait = this.getAsyncCmdStateSupport().taskAsyncWait(entity, handler,
-                System.currentTimeMillis() - start);
-            if (!taskAsyncWait) {
-                log.warn("asyncCmd task set asyncWait failed, id={}", entity.getId());
+            final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+            if (!this.getAsyncCmdStateSupport().taskAsyncWait(entity, handler, costTime)) {
+                log.warn("asyncCmd task execute waiting failed, id={}", entity.getId());
             }
             return false;
         }
 
         // 业务显式返回成功
         if (AsyncCmdExecuteResultEnum.SUCCESS.equals(result)) {
-            // 成功
-            final boolean taskSuccess = this.getAsyncCmdStateSupport().taskSuccess(entity, handler, System.currentTimeMillis() - start);
-            if (!taskSuccess) {
-                log.warn("asyncCmd task execute success, but taskSuccess failed, id={}", entity.getId());
+            final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+            if (!this.getAsyncCmdStateSupport().taskSuccess(entity, handler, costTime)) {
+                log.warn("asyncCmd task execute success failed, id={}", entity.getId());
                 return false;
             }
             return true;
@@ -177,12 +186,13 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
 
         // 业务显式返回失败
         if (AsyncCmdExecuteResultEnum.FAILED.equals(result)) {
-            String msg = "asyncCmd task execute returned failed";
-            final boolean taskFail = this.getAsyncCmdStateSupport().taskFail(entity, handler,
-                System.currentTimeMillis() - start,
-                new RuntimeException(msg), stateAdvanced);
-            if (!taskFail) {
-                log.warn("asyncCmd task execute failed, but taskFail failed, id={}", entity.getId());
+            final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+            final String msg = String.format(
+                "asyncCmd task execute failed, id=%s",
+                entity.getId()
+            );
+            if (!this.getAsyncCmdStateSupport().taskFail(entity, handler, costTime, new RuntimeException(msg), stateAdvanced)) {
+                log.warn(msg);
             }
             return false;
         }

@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
@@ -94,15 +95,15 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         } catch (Exception ex) {
             log.error("asyncCmd task execute failed. id={}", entity.getId(), ex);
 
-            this.getAsyncCmdStateSupport().taskFail(entity, handler,
-                System.currentTimeMillis() - start, ex, advanced.get() > 0);
+            final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+            this.getAsyncCmdStateSupport().taskFail(entity, handler, costTime, ex, advanced.get() > 0);
         }
     }
 
     private boolean executeSubTaskResult(AsyncCmdVO entity, AsyncCmdTaskHandler handler, long start,
         List<AsyncCmdSubVO> subEntities, AtomicInteger advanced) {
         // 执行子任务，返回成功的个数
-        final List<AsyncCmdSubVO> subResults = this.executeSubTask(entity, subEntities, advanced);
+        final List<AsyncCmdSubVO> subResults = this.executeSubTask(entity, subEntities, start, advanced);
 
         // 判断子任务是否在等异步调用的结果，不能变成失败，失败会占用重试次数
         if (this.handleSubAsyncWait(entity, subEntities, start)) {
@@ -121,10 +122,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
 
             log.warn(msg);
 
-            this.getAsyncCmdStateSupport().taskFail(entity, handler,
-                System.currentTimeMillis() - start,
-                new RuntimeException(msg),
-                advanced.get() > 0);
+            final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+            this.getAsyncCmdStateSupport().taskFail(entity, handler, costTime, new RuntimeException(msg), advanced.get() > 0);
 
             return false;
         }
@@ -140,10 +139,9 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
 
             log.warn(msg);
 
-            this.getAsyncCmdStateSupport().taskFail(entity, handler,
-                System.currentTimeMillis() - start,
-                new RuntimeException(msg),
-                advanced.get() > 0);
+            final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+            this.getAsyncCmdStateSupport().taskFail(entity, handler, costTime, new RuntimeException(msg), advanced.get() > 0);
+
             return false;
         }
 
@@ -152,7 +150,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         return true;
     }
 
-    private List<AsyncCmdSubVO> executeSubTask(AsyncCmdVO entity, List<AsyncCmdSubVO> subEntities, AtomicInteger advanced) {
+    private List<AsyncCmdSubVO> executeSubTask(AsyncCmdVO entity, List<AsyncCmdSubVO> subEntities, long start, AtomicInteger advanced) {
         final List<AsyncCmdSubVO> successResults = this.listPriorSuccess(entity, subEntities);
 
         final List<List<AsyncCmdSubVO>> batches = this.groupByStage(subEntities);
@@ -161,7 +159,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             final List<AsyncCmdSubVO> snapshot = List.copyOf(successResults);
             batch.forEach(item -> item.setPriorSubTasks(snapshot));
 
-            final List<AsyncCmdSubVO> results = this.executeSubTaskGroups(entity, batch, advanced);
+            final List<AsyncCmdSubVO> results = this.executeSubTaskGroups(entity, batch, start, advanced);
 
             // 当前批次有失败，停止后续阶段
             if (!results.stream().allMatch(this::isSuccess)) {
@@ -214,21 +212,21 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         return batches;
     }
 
-    private List<AsyncCmdSubVO> executeSubTaskGroups(AsyncCmdVO entity, List<AsyncCmdSubVO> batch, AtomicInteger advanced) {
+    private List<AsyncCmdSubVO> executeSubTaskGroups(AsyncCmdVO entity, List<AsyncCmdSubVO> batch, long start, AtomicInteger advanced) {
         // 单任务直接执行
         if (batch.size() == 1) {
-            return List.of(executeOneSubTask(entity, batch.get(0), advanced));
+            return List.of(executeOneSubTask(entity, batch.get(0), start, advanced));
         }
         // 多任务并发执行
-        return this.executeBatchSubTask(entity, batch, advanced);
+        return this.executeBatchSubTask(entity, batch, start, advanced);
     }
 
-    private AsyncCmdSubVO executeOneSubTask(AsyncCmdVO entity, AsyncCmdSubVO subEntity, AtomicInteger advanced) {
+    private AsyncCmdSubVO executeOneSubTask(AsyncCmdVO entity, AsyncCmdSubVO subEntity, long start, AtomicInteger advanced) {
         AsyncCmdSubTaskHandler handler = this.getSubTaskHandler(subEntity.getExecuteName());
 
         // 判断是否是异步等待状态
         if (AsyncCmdStatusEnum.WAITING.equals(subEntity.getStatus())) {
-            return this.executeSubCallbackAsyncWait(entity, handler, subEntity, advanced);
+            return this.executeSubCallbackAsyncWait(entity, handler, subEntity, start, advanced);
         }
 
         // 续期
@@ -249,7 +247,6 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             return subEntity;
         }
 
-        long start = System.currentTimeMillis();
         try {
             // 执行业务逻辑（无事务），由业务方显式返回执行结果
             final AsyncCmdExecuteResultEnum result = handler.executeSub(subEntity);
@@ -259,7 +256,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             log.error("asyncCmd subTask execute failed, id={} asyncCmdId={} seq={}",
                 subEntity.getId(), entity.getId(), subEntity.getSeq(), ex);
 
-            this.getAsyncCmdStateSupport().subTaskFail(subEntity, handler, System.currentTimeMillis() - start, ex);
+            final long costTime = Optional.ofNullable(subEntity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+            this.getAsyncCmdStateSupport().subTaskFail(subEntity, handler, costTime, ex);
         }
 
         return subEntity;
@@ -267,7 +265,6 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
 
     private boolean handleSubExecuteResult(AsyncCmdVO entity, AsyncCmdSubVO subEntity, AsyncCmdSubTaskHandler handler,
         long start, AsyncCmdExecuteResultEnum result, AtomicInteger advanced) {
-        final long costTime = System.currentTimeMillis() - start;
 
         // 业务显式返回执行中
         if (AsyncCmdExecuteResultEnum.EXECUTE.equals(result)) {
@@ -276,9 +273,9 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
 
         // 业务显式返回异步等待
         if (AsyncCmdExecuteResultEnum.WAITING.equals(result)) {
-            final boolean subTaskAsyncWait = this.getAsyncCmdStateSupport().subTaskAsyncWait(subEntity, handler, costTime);
-            if (!subTaskAsyncWait) {
-                log.warn("asyncCmd subTask set asyncWait failed, id={} asyncCmdId={} seq={}",
+            final long costTime = Optional.ofNullable(subEntity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+            if (!this.getAsyncCmdStateSupport().subTaskAsyncWait(subEntity, handler, costTime)) {
+                log.warn("asyncCmd subTask execute waiting failed, id={} asyncCmdId={} seq={}",
                     subEntity.getId(), entity.getId(), subEntity.getSeq());
             }
             return false;
@@ -286,10 +283,9 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
 
         // 业务显式返回成功
         if (AsyncCmdExecuteResultEnum.SUCCESS.equals(result)) {
-            // 成功
-            final boolean subTaskSuccess = this.getAsyncCmdStateSupport().subTaskSuccess(subEntity, handler, costTime);
-            if (!subTaskSuccess) {
-                log.warn("asyncCmd subTask execute failed, id={} asyncCmdId={} seq={}",
+            final long costTime = Optional.ofNullable(subEntity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+            if (!this.getAsyncCmdStateSupport().subTaskSuccess(subEntity, handler, costTime)) {
+                log.warn("asyncCmd subTask execute success failed, id={} asyncCmdId={} seq={}",
                     subEntity.getId(), entity.getId(), subEntity.getSeq());
 
                 return false;
@@ -300,12 +296,13 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
 
         // 业务显式返回失败
         if (AsyncCmdExecuteResultEnum.FAILED.equals(result)) {
-            String msg = "asyncCmd subTask execute returned failed";
-            final boolean subTaskFail = this.getAsyncCmdStateSupport().subTaskFail(subEntity, handler, costTime,
-                new RuntimeException(msg));
-            if (!subTaskFail) {
-                log.warn("asyncCmd subTask set failed failed, id={} asyncCmdId={} seq={}",
-                    subEntity.getId(), entity.getId(), subEntity.getSeq());
+            final long costTime = Optional.ofNullable(subEntity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+            final String msg = String.format(
+                "asyncCmd subTask execute failed, id=%s asyncCmdId=%s seq=%s",
+                subEntity.getId(), entity.getId(), subEntity.getSeq()
+            );
+            if (!this.getAsyncCmdStateSupport().subTaskFail(subEntity, handler, costTime, new RuntimeException(msg))) {
+                log.warn(msg);
             }
             return false;
         }
@@ -313,12 +310,12 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         return false;
     }
 
-    private List<AsyncCmdSubVO> executeBatchSubTask(AsyncCmdVO entity, List<AsyncCmdSubVO> batch, AtomicInteger advanced) {
+    private List<AsyncCmdSubVO> executeBatchSubTask(AsyncCmdVO entity, List<AsyncCmdSubVO> batch, long start, AtomicInteger advanced) {
         List<CompletableFuture<AsyncCmdSubVO>> futures = batch.stream()
             .map(task ->
                 CompletableFuture.supplyAsync(
                     () ->
-                        executeOneSubTask(entity, task, advanced)
+                        executeOneSubTask(entity, task, start, advanced)
                     , asyncCmdSubTaskExecutor
                 )
             ).toList();
@@ -333,12 +330,13 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
 
     private AsyncCmdSubVO executeSubCallbackAsyncWait(
         AsyncCmdVO entity, AsyncCmdSubTaskHandler handler,
-        AsyncCmdSubVO subEntity, AtomicInteger advanced) {
+        AsyncCmdSubVO subEntity, long start, AtomicInteger advanced) {
 
         final AsyncCmdCallbackResultEnum callbackResult = this.getSubTaskCallback(entity, subEntity, handler);
         if (AsyncCmdCallbackResultEnum.SUCCESS.equals(callbackResult)) {
-            if (!this.getAsyncCmdStateSupport().subTaskAsyncWaitSuccess(subEntity, handler)) {
-                log.warn("asyncCmd subTask callback failed, id={} asyncCmdId={} seq={}",
+            final long costTime = Optional.ofNullable(subEntity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+            if (!this.getAsyncCmdStateSupport().subTaskAsyncWaitSuccess(subEntity, handler, costTime)) {
+                log.warn("asyncCmd subTask execute callback failed, id={} asyncCmdId={} seq={}",
                     subEntity.getId(), entity.getId(), subEntity.getSeq());
 
                 return subEntity;
@@ -349,11 +347,12 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         }
 
         if (AsyncCmdCallbackResultEnum.FAILED.equals(callbackResult)) {
+            final long costTime = Optional.ofNullable(subEntity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
             final String msg = String.format(
-                "asyncCmd subTask callback failed, id=%s asyncCmdId=%s seq=%s",
+                "asyncCmd subTask execute callback failed, id=%s asyncCmdId=%s seq=%s",
                 subEntity.getId(), entity.getId(), subEntity.getSeq()
             );
-            if (!this.getAsyncCmdStateSupport().subTaskAsyncWaitFail(subEntity, handler, new RuntimeException(msg))) {
+            if (!this.getAsyncCmdStateSupport().subTaskAsyncWaitFail(subEntity, handler, costTime, new RuntimeException(msg))) {
                 log.warn(msg);
 
                 return subEntity;
@@ -365,11 +364,12 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         // 回调等待截止时间到期，转失败走重试链路，避免无限轮询
         final Long expireTime = subEntity.getExpireTime();
         if (Objects.nonNull(expireTime) && expireTime > 0 && expireTime <= System.currentTimeMillis()) {
+            final long costTime = Optional.ofNullable(subEntity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
             final String msg = String.format(
-                "asyncCmd subTask callback timeout, id=%s asyncCmdId=%s seq=%s",
+                "asyncCmd subTask execute callback timeout, id=%s asyncCmdId=%s seq=%s",
                 subEntity.getId(), entity.getId(), subEntity.getSeq()
             );
-            if (!this.getAsyncCmdStateSupport().subTaskAsyncWaitFail(subEntity, handler, new RuntimeException(msg))) {
+            if (!this.getAsyncCmdStateSupport().subTaskAsyncWaitFail(subEntity, handler, costTime, new RuntimeException(msg))) {
                 log.warn(msg);
 
                 return subEntity;
@@ -436,9 +436,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             return false;
         }
         // 将主任务设置为待执行，等待下一次执行
-        final boolean toBeExecute = this.getAsyncCmdStateSupport().taskExecuteToBeExecute(
-            entity, System.currentTimeMillis() - start);
-        if (!toBeExecute) {
+        final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+        if (!this.getAsyncCmdStateSupport().taskExecuteToBeExecute(entity, costTime)) {
             log.warn("asyncCmd has asyncWait, id={}", entity.getId());
 
             return false;

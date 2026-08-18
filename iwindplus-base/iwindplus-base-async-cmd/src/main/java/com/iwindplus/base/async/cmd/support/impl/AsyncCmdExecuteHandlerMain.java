@@ -15,6 +15,7 @@ import com.iwindplus.base.async.cmd.factory.AsyncCmdTaskHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdStateSupport;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -62,8 +63,9 @@ public class AsyncCmdExecuteHandlerMain extends AbstractAsyncCmdExecuteHandler {
             log.error("asyncCmd task execute failed. id={}", entity.getId(), ex);
 
             // 失败
+            final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
             this.getAsyncCmdStateSupport().taskFail(entity, handler,
-                System.currentTimeMillis() - start, ex, false);
+                costTime, ex, false);
         }
     }
 }

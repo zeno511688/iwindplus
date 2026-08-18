@@ -153,10 +153,11 @@ public record AsyncCmdStateSupport(
                 if (updated) {
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.FAILED);
+                    entity.setCostTime(costTime);
+                    entity.setErrorMsg(stack);
                     entity.setRetryCount(retryCount);
                     entity.setNextRetryTime(nextRetryTime);
-                    entity.setErrorMsg(stack);
-                    entity.setCostTime(costTime);
+                    entity.setExpireTime(expireTime);
                 }
                 return updated;
             })
@@ -239,8 +240,8 @@ public record AsyncCmdStateSupport(
                 if (updated) {
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
-                    entity.setNextRetryTime(nextRetryTime);
                     entity.setCostTime(costTime);
+                    entity.setNextRetryTime(nextRetryTime);
                 }
                 return updated;
             })
@@ -275,6 +276,7 @@ public record AsyncCmdStateSupport(
                     // 关键钩子纳入事务：失败回滚状态流转并外抛，等待下次轮询重试
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
+                    entity.setCostTime(costTime);
                     entity.setExpireTime(0L);
                 }
                 return updated;
@@ -322,8 +324,10 @@ public record AsyncCmdStateSupport(
                 if (updated) {
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.FAILED);
-                    entity.setRetryCount(retryCount);
+                    entity.setCostTime(costTime);
                     entity.setErrorMsg(stack);
+                    entity.setRetryCount(retryCount);
+                    entity.setNextRetryTime(nextRetryTime);
                     entity.setExpireTime(currentTimeMillis);
                 }
                 return updated;
@@ -405,9 +409,9 @@ public record AsyncCmdStateSupport(
                 if (updated) {
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.FAILED);
-                    entity.setRetryCount(retryCount);
-                    entity.setErrorMsg(stack);
                     entity.setCostTime(costTime);
+                    entity.setErrorMsg(stack);
+                    entity.setRetryCount(retryCount);
                 }
                 return updated;
             })
@@ -465,13 +469,15 @@ public record AsyncCmdStateSupport(
     /**
      * 子任务异步等待执行成功
      *
-     * @param entity  对象
-     * @param handler 任务助手
+     * @param entity   对象
+     * @param handler  任务助手
+     * @param costTime 耗时
      * @return boolean
      */
     public boolean subTaskAsyncWaitSuccess(
         AsyncCmdSubVO entity,
-        AsyncCmdSubTaskHandler handler) {
+        AsyncCmdSubTaskHandler handler,
+        Long costTime) {
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -479,6 +485,7 @@ public record AsyncCmdStateSupport(
                     .id(entity.getId())
                     .from(AsyncCmdStatusEnum.WAITING)
                     .to(AsyncCmdStatusEnum.SUCCESS)
+                    .costTime(costTime)
                     .result(entity.getResult())
                     .expireTime(0L)
                     .build());
@@ -486,6 +493,7 @@ public record AsyncCmdStateSupport(
                     // 关键钩子纳入事务：失败回滚状态流转并外抛，等待下次轮询重试
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.SUCCESS);
+                    entity.setCostTime(costTime);
                     entity.setExpireTime(0L);
                 }
                 return updated;
@@ -501,14 +509,16 @@ public record AsyncCmdStateSupport(
     /**
      * 子任务异步等待执行失败
      *
-     * @param entity  对象
-     * @param handler 任务助手
-     * @param ex      异常
+     * @param entity   对象
+     * @param handler  任务助手
+     * @param ex       异常
+     * @param costTime 耗时
      * @return boolean
      */
     public boolean subTaskAsyncWaitFail(
         AsyncCmdSubVO entity,
         AsyncCmdSubTaskHandler handler,
+        Long costTime,
         Exception ex) {
 
         final int retryCount = Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
@@ -520,14 +530,16 @@ public record AsyncCmdStateSupport(
                     .id(entity.getId())
                     .from(AsyncCmdStatusEnum.WAITING)
                     .to(AsyncCmdStatusEnum.FAILED)
+                    .costTime(costTime)
                     .errorMsg(stack)
                     .retryCount(retryCount)
                     .build());
                 if (updated) {
                     entity.setModifiedTimestamp(System.currentTimeMillis());
                     entity.setStatus(AsyncCmdStatusEnum.FAILED);
-                    entity.setRetryCount(retryCount);
+                    entity.setCostTime(costTime);
                     entity.setErrorMsg(stack);
+                    entity.setRetryCount(retryCount);
                 }
                 return updated;
             })
