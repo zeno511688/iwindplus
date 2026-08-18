@@ -87,19 +87,6 @@ public class AsyncCmdExecuteResultVO implements Serializable {
     }
 
     /**
-     * 执行中，携带业务返回值.
-     *
-     * @param result 业务返回值
-     * @return 执行结果
-     */
-    public static AsyncCmdExecuteResultVO execute(Map<String, Object> result) {
-        return new AsyncCmdExecuteResultVO(
-            AsyncCmdExecuteResultEnum.EXECUTE,
-            result
-        );
-    }
-
-    /**
      * 成功.
      *
      * @return 执行结果
@@ -137,19 +124,6 @@ public class AsyncCmdExecuteResultVO implements Serializable {
     }
 
     /**
-     * 失败，携带业务返回值.
-     *
-     * @param result 业务返回值
-     * @return 执行结果
-     */
-    public static AsyncCmdExecuteResultVO failed(Map<String, Object> result) {
-        return new AsyncCmdExecuteResultVO(
-            AsyncCmdExecuteResultEnum.FAILED,
-            result
-        );
-    }
-
-    /**
      * 异步等待.
      *
      * @return 执行结果
@@ -158,19 +132,6 @@ public class AsyncCmdExecuteResultVO implements Serializable {
         return new AsyncCmdExecuteResultVO(
             AsyncCmdExecuteResultEnum.WAITING,
             null
-        );
-    }
-
-    /**
-     * 异步等待，携带业务返回值.
-     *
-     * @param result 业务返回值
-     * @return 执行结果
-     */
-    public static AsyncCmdExecuteResultVO waiting(Map<String, Object> result) {
-        return new AsyncCmdExecuteResultVO(
-            AsyncCmdExecuteResultEnum.WAITING,
-            result
         );
     }
 }
