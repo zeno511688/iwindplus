@@ -254,12 +254,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             // 执行业务逻辑（无事务），由业务方显式返回执行结果
             final AsyncCmdExecuteResultEnum result = handler.executeSub(subEntity);
 
-            final boolean executeResult = this.handleSubExecuteResult(entity, subEntity, handler, start, result);
-            if (!executeResult) {
-                return subEntity;
-            }
-
-            advanced.incrementAndGet();
+            this.handleSubExecuteResult(entity, subEntity, handler, start, result, advanced);
         } catch (Exception ex) {
             log.error("asyncCmd subTask execute failed, id={} asyncCmdId={} seq={}",
                 subEntity.getId(), entity.getId(), subEntity.getSeq(), ex);
@@ -271,7 +266,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
     }
 
     private boolean handleSubExecuteResult(AsyncCmdVO entity, AsyncCmdSubVO subEntity, AsyncCmdSubTaskHandler handler,
-        long start, AsyncCmdExecuteResultEnum result) {
+        long start, AsyncCmdExecuteResultEnum result, AtomicInteger advanced) {
         final long costTime = System.currentTimeMillis() - start;
 
         // 业务显式返回执行中
@@ -297,6 +292,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
                 log.warn("asyncCmd subTask execute failed, id={} asyncCmdId={} seq={}",
                     subEntity.getId(), entity.getId(), subEntity.getSeq());
             }
+
+            advanced.incrementAndGet();
             return true;
         }
 
@@ -312,7 +309,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             return false;
         }
 
-        return true;
+        return false;
     }
 
     private List<AsyncCmdSubVO> executeBatchSubTask(AsyncCmdVO entity, List<AsyncCmdSubVO> batch, AtomicInteger advanced) {

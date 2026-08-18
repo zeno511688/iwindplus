@@ -186,6 +186,6 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
             return false;
         }
 
-        return true;
+        return false;
     }
 }
