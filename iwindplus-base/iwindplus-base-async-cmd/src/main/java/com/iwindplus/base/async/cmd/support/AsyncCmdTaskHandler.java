@@ -7,8 +7,8 @@
 
 package com.iwindplus.base.async.cmd.support;
 
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
-import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 
 /**
@@ -40,9 +40,9 @@ public interface AsyncCmdTaskHandler {
      * SUCCESS → 成功，FAILED → 失败，ASYNC_WAIT → 进入异步等待</p>
      *
      * @param entity 对象
-     * @return AsyncCmdExecuteResultEnum 执行结果
+     * @return AsyncCmdExecuteResultVO
      */
-    AsyncCmdExecuteResultEnum execute(AsyncCmdVO entity);
+    AsyncCmdExecuteResultVO execute(AsyncCmdVO entity);
 
     /**
      * 任务获取异步等待结果.

@@ -7,7 +7,7 @@
 
 package com.iwindplus.mgt.server.service.asynccmd.video;
 
-import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
 public class VideoDemoUploadSubHandler implements AsyncCmdSubTaskHandler {
 
     @Override
-    public AsyncCmdExecuteResultEnum executeSub(AsyncCmdSubVO entity) {
-        return AsyncCmdExecuteResultEnum.EXECUTE;
+    public AsyncCmdExecuteResultVO executeSub(AsyncCmdSubVO entity) {
+        return AsyncCmdExecuteResultVO.execute();
     }
 }

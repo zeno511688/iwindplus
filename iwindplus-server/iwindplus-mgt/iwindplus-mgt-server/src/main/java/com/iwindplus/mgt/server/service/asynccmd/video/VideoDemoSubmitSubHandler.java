@@ -8,7 +8,7 @@
 package com.iwindplus.mgt.server.service.asynccmd.video;
 
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
-import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import java.util.Map;
@@ -32,7 +32,7 @@ import org.springframework.stereotype.Component;
 public class VideoDemoSubmitSubHandler implements AsyncCmdSubTaskHandler {
 
     @Override
-    public AsyncCmdExecuteResultEnum executeSub(AsyncCmdSubVO entity) {
+    public AsyncCmdExecuteResultVO executeSub(AsyncCmdSubVO entity) {
         final Map<String, Object> param = entity.getParam();
         final String videoId = String.valueOf(param.get("videoId"));
 
@@ -42,7 +42,7 @@ public class VideoDemoSubmitSubHandler implements AsyncCmdSubTaskHandler {
             entity.getId(), entity.getBizNumber(), videoId);
 
         // 已发起第三方异步调用，显式返回ASYNC_WAIT进入异步等待
-        return AsyncCmdExecuteResultEnum.WAITING;
+        return AsyncCmdExecuteResultVO.waiting();
     }
 
     /**

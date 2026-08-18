@@ -7,8 +7,10 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import com.iwindplus.base.async.cmd.domain.constant.AsyncCmdConstant;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdEditDTO;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
@@ -23,6 +25,7 @@ import com.iwindplus.base.async.cmd.support.AsyncCmdStateSupport;
 import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -89,7 +92,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             );
 
             // 执行业务逻辑（无事务），由业务方显式返回执行结果
-            final AsyncCmdExecuteResultEnum result = handler.execute(entity);
+            final AsyncCmdExecuteResultVO result = handler.execute(entity);
 
             this.handleExecuteResult(entity, handler, start, result, advanced.get() > 0);
         } catch (Exception ex) {
@@ -249,7 +252,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
 
         try {
             // 执行业务逻辑（无事务），由业务方显式返回执行结果
-            final AsyncCmdExecuteResultEnum result = handler.executeSub(subEntity);
+            final AsyncCmdExecuteResultVO result = handler.executeSub(subEntity);
 
             this.handleSubExecuteResult(entity, subEntity, handler, start, result, advanced);
         } catch (Exception ex) {
@@ -264,7 +267,9 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
     }
 
     private boolean handleSubExecuteResult(AsyncCmdVO entity, AsyncCmdSubVO subEntity, AsyncCmdSubTaskHandler handler,
-        long start, AsyncCmdExecuteResultEnum result, AtomicInteger advanced) {
+        long start, AsyncCmdExecuteResultVO executeResult, AtomicInteger advanced) {
+
+        final AsyncCmdExecuteResultEnum result = executeResult.getStatus();
 
         // 业务显式返回执行中
         if (AsyncCmdExecuteResultEnum.EXECUTE.equals(result)) {
@@ -283,6 +288,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
 
         // 业务显式返回成功
         if (AsyncCmdExecuteResultEnum.SUCCESS.equals(result)) {
+            // 合并业务返回值到 result
+            this.mergeSubResult(subEntity, executeResult.getResult());
             final long costTime = Optional.ofNullable(subEntity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
             if (!this.getAsyncCmdStateSupport().subTaskSuccess(subEntity, handler, costTime)) {
                 log.warn("asyncCmd subTask execute success failed, id={} asyncCmdId={} seq={}",
@@ -443,6 +450,16 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             return false;
         }
         return true;
+    }
+
+    /**
+     * 合并业务返回值到子任务 result.
+     */
+    private void mergeSubResult(AsyncCmdSubVO entity, Map<String, Object> businessResult) {
+        if (CollUtil.isEmpty(businessResult)) {
+            return;
+        }
+        entity.setResult(new HashMap<>(businessResult));
     }
 
     private AsyncCmdSubTaskHandler getSubTaskHandler(String executeName) {

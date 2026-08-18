@@ -8,7 +8,7 @@
 package com.iwindplus.base.async.cmd.support.impl;
 
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdEditDTO;
-import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdTaskHandlerStrategyFactory;
@@ -56,7 +56,7 @@ public class AsyncCmdExecuteHandlerMain extends AbstractAsyncCmdExecuteHandler {
             );
 
             // 执行业务逻辑（无事务），由业务方显式返回执行结果
-            final AsyncCmdExecuteResultEnum result = handler.execute(entity);
+            final AsyncCmdExecuteResultVO result = handler.execute(entity);
 
             this.handleExecuteResult(entity, handler, start, result, false);
         } catch (Exception ex) {

@@ -72,7 +72,6 @@ public class VideoDemoAsyncCmdService {
                     .param(Map.of("videoId", videoId))
                     .needCallback(true)
                     .build(),
-                // seq=3~5 进度占位：executorClass为空，强制串行，执行到位直接置成功
                 AsyncCmdSubSubmitDTO.builder()
                     .bizName("合成中").bizKey("VIDEO").bizType("VIDEO_PROGRESS")
                     .seq(3).stage(1)

@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 异步回调结果回调枚举定义.
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
  * @author zengdegui
  * @since 2025/9/14
  */
+@Slf4j
 @Getter
 @RequiredArgsConstructor
 public enum AsyncCmdCallbackResultEnum implements BaseEnum<Integer> {
@@ -72,6 +74,7 @@ public enum AsyncCmdCallbackResultEnum implements BaseEnum<Integer> {
         try {
             return AsyncCmdCallbackResultEnum.valueOf(String.valueOf(value));
         } catch (IllegalArgumentException ex) {
+            log.error("AsyncCmdCallbackResultEnum parse error", ex);
             return null;
         }
     }

@@ -7,7 +7,7 @@
 
 package com.iwindplus.mgt.server.service.asynccmd.video;
 
-import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import java.util.Map;
@@ -27,14 +27,14 @@ import org.springframework.stereotype.Component;
 public class VideoDemoPrepareSubHandler implements AsyncCmdSubTaskHandler {
 
     @Override
-    public AsyncCmdExecuteResultEnum executeSub(AsyncCmdSubVO entity) {
+    public AsyncCmdExecuteResultVO executeSub(AsyncCmdSubVO entity) {
         final Map<String, Object> param = entity.getParam();
         final String videoId = String.valueOf(param.get("videoId"));
 
         // 示例：本地素材准备业务，抛异常即子任务失败进入重试链
         log.info("videoDemo prepare subTask execute, subId={} bizNumber={} videoId={}",
             entity.getId(), entity.getBizNumber(), videoId);
-        return AsyncCmdExecuteResultEnum.SUCCESS;
+        return AsyncCmdExecuteResultVO.success();
     }
 
     @Override

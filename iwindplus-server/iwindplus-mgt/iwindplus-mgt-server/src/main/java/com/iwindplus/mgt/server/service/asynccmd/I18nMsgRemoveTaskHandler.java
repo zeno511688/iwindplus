@@ -8,7 +8,7 @@
 package com.iwindplus.mgt.server.service.asynccmd;
 
 import com.alibaba.cloud.nacos.NacosConfigManager;
-import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import com.iwindplus.base.i18n.domain.constant.I18nConstant;
@@ -32,13 +32,13 @@ public class I18nMsgRemoveTaskHandler implements AsyncCmdTaskHandler {
     private final Optional<NacosConfigManager> nacosConfigManagerOpt;
 
     @Override
-    public AsyncCmdExecuteResultEnum execute(AsyncCmdVO entity) {
+    public AsyncCmdExecuteResultVO execute(AsyncCmdVO entity) {
         final Map<String, Object> paramMap = entity.getParam();
         final String fileName = paramMap.get("fileName").toString();
 
         if (nacosConfigManagerOpt.isEmpty()) {
             log.warn("NacosConfigManager not present, skip route push");
-            return AsyncCmdExecuteResultEnum.SUCCESS;
+            return AsyncCmdExecuteResultVO.success();
         }
         NacosConfigManager nacosConfigManager = nacosConfigManagerOpt.get();
 
@@ -53,6 +53,6 @@ public class I18nMsgRemoveTaskHandler implements AsyncCmdTaskHandler {
         } catch (Exception ex) {
             log.error("删除 Nacos 国际化文件={}， Exception={}", dataId, ex);
         }
-        return AsyncCmdExecuteResultEnum.SUCCESS;
+        return AsyncCmdExecuteResultVO.success();
     }
 }

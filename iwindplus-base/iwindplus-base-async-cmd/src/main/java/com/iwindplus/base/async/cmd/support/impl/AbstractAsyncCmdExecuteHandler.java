@@ -7,17 +7,20 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import com.iwindplus.base.async.cmd.domain.constant.AsyncCmdConstant;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdTaskHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdExecuteHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdStateSupport;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -154,12 +157,14 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
      * @param entity        主任务对象
      * @param handler       主任务助手
      * @param start         开始时间
-     * @param result        业务执行返回值
+     * @param executeResult 业务执行返回值
      * @param stateAdvanced 是否已有状态推进（子任务场景）
      * @return boolean
      */
     protected boolean handleExecuteResult(AsyncCmdVO entity, AsyncCmdTaskHandler handler,
-        long start, AsyncCmdExecuteResultEnum result, boolean stateAdvanced) {
+        long start, AsyncCmdExecuteResultVO executeResult, boolean stateAdvanced) {
+        final AsyncCmdExecuteResultEnum result = executeResult.getStatus();
+
         // 业务显式返回执行中
         if (AsyncCmdExecuteResultEnum.EXECUTE.equals(result)) {
             return false;
@@ -176,6 +181,8 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
 
         // 业务显式返回成功
         if (AsyncCmdExecuteResultEnum.SUCCESS.equals(result)) {
+            // 合并业务返回值到 result
+            this.mergeResult(entity, executeResult.getResult());
             final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
             if (!this.getAsyncCmdStateSupport().taskSuccess(entity, handler, costTime)) {
                 log.warn("asyncCmd task execute success failed, id={}", entity.getId());
@@ -198,5 +205,15 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
         }
 
         return false;
+    }
+
+    /**
+     * 合并业务返回值到主任务 result.
+     */
+    protected void mergeResult(AsyncCmdVO entity, Map<String, Object> businessResult) {
+        if (CollUtil.isEmpty(businessResult)) {
+            return;
+        }
+        entity.setResult(new HashMap<>(businessResult));
     }
 }

@@ -9,7 +9,7 @@ package com.iwindplus.mgt.server.service.asynccmd;
 
 import com.alibaba.cloud.nacos.NacosConfigManager;
 import com.alibaba.nacos.api.config.ConfigType;
-import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import com.iwindplus.base.i18n.domain.constant.I18nConstant;
@@ -33,14 +33,14 @@ public class I18nMsgPushTaskHandler implements AsyncCmdTaskHandler {
     private final Optional<NacosConfigManager> nacosConfigManagerOpt;
 
     @Override
-    public AsyncCmdExecuteResultEnum execute(AsyncCmdVO entity) {
+    public AsyncCmdExecuteResultVO execute(AsyncCmdVO entity) {
         final Map<String, Object> paramMap = entity.getParam();
         final String fileName = paramMap.get("fileName").toString();
         final String content = paramMap.get("content").toString();
 
         if (nacosConfigManagerOpt.isEmpty()) {
             log.warn("NacosConfigManager not present, skip route push");
-            return AsyncCmdExecuteResultEnum.SUCCESS;
+            return AsyncCmdExecuteResultVO.success();
         }
         NacosConfigManager nacosConfigManager = nacosConfigManagerOpt.get();
 
@@ -56,6 +56,6 @@ public class I18nMsgPushTaskHandler implements AsyncCmdTaskHandler {
         } catch (Exception ex) {
             log.error("推送国际化文件文件={}，到 Nacos Exception={}", dataId, ex);
         }
-        return AsyncCmdExecuteResultEnum.SUCCESS;
+        return AsyncCmdExecuteResultVO.success();
     }
 }
