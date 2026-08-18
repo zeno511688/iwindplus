@@ -174,15 +174,15 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
             return false;
         }
 
-        final AsyncCmdExecuteResultEnum result = executeResult.getStatus();
+        final AsyncCmdExecuteResultEnum status = executeResult.getStatus();
 
         // 业务显式返回执行中
-        if (AsyncCmdExecuteResultEnum.EXECUTE.equals(result)) {
+        if (AsyncCmdExecuteResultEnum.EXECUTE.equals(status)) {
             return false;
         }
 
         // 业务显式返回异步等待
-        if (AsyncCmdExecuteResultEnum.WAITING.equals(result)) {
+        if (AsyncCmdExecuteResultEnum.WAITING.equals(status)) {
             final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
             if (!this.getAsyncCmdStateSupport().taskAsyncWait(entity, handler, costTime)) {
                 log.warn("asyncCmd task execute waiting failed, id={}", entity.getId());
@@ -191,7 +191,7 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
         }
 
         // 业务显式返回成功
-        if (AsyncCmdExecuteResultEnum.SUCCESS.equals(result)) {
+        if (AsyncCmdExecuteResultEnum.SUCCESS.equals(status)) {
             // 合并业务返回值到 result
             this.mergeResult(entity, executeResult.getResult());
             final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
@@ -203,7 +203,7 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
         }
 
         // 业务显式返回失败
-        if (AsyncCmdExecuteResultEnum.FAILED.equals(result)) {
+        if (AsyncCmdExecuteResultEnum.FAILED.equals(status)) {
             final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
             final String msg = String.format(
                 "asyncCmd task execute failed, id=%s",
