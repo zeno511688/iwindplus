@@ -170,6 +170,7 @@ public abstract class AbstractAsyncCmdExecuteHandler implements AsyncCmdExecuteH
             final boolean taskSuccess = this.getAsyncCmdStateSupport().taskSuccess(entity, handler, System.currentTimeMillis() - start);
             if (!taskSuccess) {
                 log.warn("asyncCmd task execute success, but taskSuccess failed, id={}", entity.getId());
+                return false;
             }
             return true;
         }

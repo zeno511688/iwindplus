@@ -291,8 +291,9 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             if (!subTaskSuccess) {
                 log.warn("asyncCmd subTask execute failed, id={} asyncCmdId={} seq={}",
                     subEntity.getId(), entity.getId(), subEntity.getSeq());
-            }
 
+                return false;
+            }
             advanced.incrementAndGet();
             return true;
         }
@@ -339,6 +340,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             if (!this.getAsyncCmdStateSupport().subTaskAsyncWaitSuccess(subEntity, handler)) {
                 log.warn("asyncCmd subTask callback failed, id={} asyncCmdId={} seq={}",
                     subEntity.getId(), entity.getId(), subEntity.getSeq());
+
                 return subEntity;
             }
 
@@ -347,8 +349,15 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         }
 
         if (AsyncCmdCallbackResultEnum.FAILED.equals(callbackResult)) {
-            this.getAsyncCmdStateSupport().subTaskAsyncWaitFail(subEntity, handler,
-                new RuntimeException("asyncCmd subTask callback failed"));
+            final String msg = String.format(
+                "asyncCmd subTask callback failed, id=%s asyncCmdId=%s seq=%s",
+                subEntity.getId(), entity.getId(), subEntity.getSeq()
+            );
+            if (!this.getAsyncCmdStateSupport().subTaskAsyncWaitFail(subEntity, handler, new RuntimeException(msg))) {
+                log.warn(msg);
+
+                return subEntity;
+            }
 
             return subEntity;
         }
@@ -356,8 +365,15 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         // 回调等待截止时间到期，转失败走重试链路，避免无限轮询
         final Long expireTime = subEntity.getExpireTime();
         if (Objects.nonNull(expireTime) && expireTime > 0 && expireTime <= System.currentTimeMillis()) {
-            this.getAsyncCmdStateSupport().subTaskAsyncWaitFail(subEntity, handler,
-                new RuntimeException("asyncCmd subTask callback timeout"));
+            final String msg = String.format(
+                "asyncCmd subTask callback timeout, id=%s asyncCmdId=%s seq=%s",
+                subEntity.getId(), entity.getId(), subEntity.getSeq()
+            );
+            if (!this.getAsyncCmdStateSupport().subTaskAsyncWaitFail(subEntity, handler, new RuntimeException(msg))) {
+                log.warn(msg);
+
+                return subEntity;
+            }
 
             return subEntity;
         }
