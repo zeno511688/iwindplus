@@ -295,7 +295,7 @@ public final class CommonConstant {
         /**
          * 追踪父级标识.
          */
-        public static final String TRACE_PARENT = "traceparent";
+        public static final String X_TRACE_PARENT = "traceparent";
 
         /**
          * 跟踪唯一标识.

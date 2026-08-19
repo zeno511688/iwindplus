@@ -55,7 +55,7 @@ public class BaseFilter extends BaseGatewayFilter {
         final Set<String> headersToRemove = Set.of(
             HeaderConstant.X_USER_INFO,
             HeaderConstant.X_FORWARDED_FOR,
-            HeaderConstant.TRACE_PARENT,
+            HeaderConstant.X_TRACE_PARENT,
             HeaderConstant.X_TRACE_ID,
             HeaderConstant.X_REAL_IP,
             HeaderConstant.X_REQUESTED_WITH,
