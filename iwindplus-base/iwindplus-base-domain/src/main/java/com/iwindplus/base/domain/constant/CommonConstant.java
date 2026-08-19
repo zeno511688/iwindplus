@@ -258,9 +258,9 @@ public final class CommonConstant {
         }
 
         /**
-         * BEARER_TYPE.
+         * X_BEARER_TYPE.
          */
-        public static final String BEARER_TYPE = "Bearer";
+        public static final String X_BEARER_TYPE = "Bearer";
 
         /**
          * 转发ip列表.
@@ -290,7 +290,7 @@ public final class CommonConstant {
         /**
          * Sec-WebSocket-Protocol.
          */
-        public static final String SEC_WEBSOCKET_PROTOCOL = "Sec-WebSocket-Protocol";
+        public static final String X_SEC_WEBSOCKET_PROTOCOL = "Sec-WebSocket-Protocol";
 
         /**
          * 追踪父级标识.

@@ -237,7 +237,7 @@ public class HttpsUtil extends HttpUtil {
     public static String getAuthorization(HttpRequest request) {
         final HttpHeaders headers = request.getHeaders();
         final String authorizationParam = headers.getFirst(HttpHeaders.AUTHORIZATION);
-        final String wsAuthorizationParam = headers.getFirst(HeaderConstant.SEC_WEBSOCKET_PROTOCOL);
+        final String wsAuthorizationParam = headers.getFirst(HeaderConstant.X_SEC_WEBSOCKET_PROTOCOL);
         return Optional.ofNullable(authorizationParam).orElse(wsAuthorizationParam);
     }
 

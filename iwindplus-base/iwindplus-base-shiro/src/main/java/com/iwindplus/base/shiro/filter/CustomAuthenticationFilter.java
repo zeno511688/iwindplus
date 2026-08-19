@@ -8,7 +8,7 @@
 package com.iwindplus.base.shiro.filter;
 
 import cn.hutool.core.text.CharSequenceUtil;
-import com.iwindplus.base.domain.constant.CommonConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.shiro.domain.dto.ShiroTokenDTO;
 import com.iwindplus.base.shiro.exception.BizShiroAuthenticationException;
@@ -114,10 +114,10 @@ public class CustomAuthenticationFilter extends BasicHttpAuthenticationFilter {
 
     private String getAuthorization(HttpServletRequest httpServletRequest) {
         final String authorizationParam = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
-        final String wsAuthorizationParam = httpServletRequest.getHeader(CommonConstant.HeaderConstant.SEC_WEBSOCKET_PROTOCOL);
+        final String wsAuthorizationParam = httpServletRequest.getHeader(HeaderConstant.X_SEC_WEBSOCKET_PROTOCOL);
         final String token = Optional.ofNullable(authorizationParam).orElse(wsAuthorizationParam);
         if (CharSequenceUtil.isNotBlank(token)) {
-            return CharSequenceUtil.replace(token, CommonConstant.HeaderConstant.BEARER_TYPE, "").trim();
+            return CharSequenceUtil.replace(token, HeaderConstant.X_BEARER_TYPE, "").trim();
         }
         return null;
     }

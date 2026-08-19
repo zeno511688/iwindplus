@@ -45,7 +45,7 @@ public record CustomLogoutHandler(OAuth2AuthorizationService authorizationServic
         if (CharSequenceUtil.isBlank(authHeader)) {
             return;
         }
-        String token = CharSequenceUtil.replace(authHeader, CommonConstant.HeaderConstant.BEARER_TYPE, "").trim();
+        String token = CharSequenceUtil.replace(authHeader, CommonConstant.HeaderConstant.X_BEARER_TYPE, "").trim();
         OAuth2Authorization authorization = this.authorizationService.findByToken(token, OAuth2TokenType.ACCESS_TOKEN);
         if (Objects.isNull(authorization)) {
             return;

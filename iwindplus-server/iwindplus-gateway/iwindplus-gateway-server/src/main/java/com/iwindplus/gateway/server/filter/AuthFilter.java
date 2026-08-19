@@ -146,8 +146,8 @@ public class AuthFilter extends BaseGatewayFilter {
         if (CharSequenceUtil.isBlank(auth)) {
             return null;
         }
-        return auth.startsWith(HeaderConstant.BEARER_TYPE)
-            ? auth.substring(HeaderConstant.BEARER_TYPE.length())
+        return auth.startsWith(HeaderConstant.X_BEARER_TYPE)
+            ? auth.substring(HeaderConstant.X_BEARER_TYPE.length())
             : auth;
     }
 

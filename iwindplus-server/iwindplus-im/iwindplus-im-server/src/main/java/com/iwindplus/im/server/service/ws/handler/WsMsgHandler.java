@@ -69,7 +69,7 @@ public class WsMsgHandler implements IWsMsgHandler {
     @Override
     public HttpResponse handshake(HttpRequest httpRequest, HttpResponse httpResponse, ChannelContext channelContext) throws Exception {
         final String clientIp = httpRequest.getClientIp();
-        final String token = httpRequest.getHeader(HeaderConstant.SEC_WEBSOCKET_PROTOCOL.toLowerCase());
+        final String token = httpRequest.getHeader(HeaderConstant.X_SEC_WEBSOCKET_PROTOCOL.toLowerCase());
         if (ObjectUtil.isEmpty(token)) {
             log.warn("handshake，token为空，无法连接，ip={}", clientIp);
 
@@ -109,7 +109,7 @@ public class WsMsgHandler implements IWsMsgHandler {
         }
 
         // 如果传了请求头参数sec-websocket-protocol，需要响应客户端返回回去
-        httpResponse.addHeader(HeaderName.from(HeaderConstant.SEC_WEBSOCKET_PROTOCOL.toLowerCase()), HeaderValue.from(token));
+        httpResponse.addHeader(HeaderName.from(HeaderConstant.X_SEC_WEBSOCKET_PROTOCOL.toLowerCase()), HeaderValue.from(token));
         return httpResponse;
     }
 
