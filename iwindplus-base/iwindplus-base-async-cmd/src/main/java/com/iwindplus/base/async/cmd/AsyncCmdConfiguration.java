@@ -116,11 +116,13 @@ public class AsyncCmdConfiguration {
     /**
      * 创建 AsyncCmdSubRepository.
      *
+     * @param property property
      * @return AsyncCmdSubRepository
      */
     @Bean
-    public AsyncCmdSubRepository asyncCmdSubRepository() {
-        AsyncCmdSubRepository asyncCmdSubRepository = new AsyncCmdSubRepository();
+    public AsyncCmdSubRepository asyncCmdSubRepository(
+        AsyncCmdProperty property) {
+        AsyncCmdSubRepository asyncCmdSubRepository = new AsyncCmdSubRepository(property);
         log.info("AsyncCmdSubRepository={}", asyncCmdSubRepository);
         return asyncCmdSubRepository;
     }
@@ -234,10 +236,12 @@ public class AsyncCmdConfiguration {
         AsyncCmdProperty property,
         AsyncCmdRepository asyncCmdRepository,
         AsyncCmdService asyncCmdService,
+        AsyncCmdSubRepository asyncCmdSubRepository,
         AsyncCmdSubService asyncCmdSubService,
         TransactionTemplate transactionTemplate) {
         AsyncCmdStateSupport asyncCmdStateSupport = new AsyncCmdStateSupport(
-            property, asyncCmdRepository, asyncCmdService, asyncCmdSubService, transactionTemplate);
+            property, asyncCmdRepository, asyncCmdService, asyncCmdSubRepository,
+            asyncCmdSubService, transactionTemplate);
         return asyncCmdStateSupport;
     }
 

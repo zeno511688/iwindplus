@@ -8,10 +8,13 @@
 
 package com.iwindplus.base.async.cmd.dal.repository;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Constants;
+import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.repository.CrudRepository;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
@@ -20,10 +23,15 @@ import com.iwindplus.base.async.cmd.dal.model.AsyncCmdSubDO;
 import com.iwindplus.base.async.cmd.dal.model.AsyncCmdSubDO.AsyncCmdSubDOBuilder;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
+import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
+import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
+import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -32,7 +40,30 @@ import org.springframework.transaction.annotation.Transactional;
  * @author zengdegui
  * @since 2025/9/14
  */
+@RequiredArgsConstructor
 public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, AsyncCmdSubDO> {
+
+    private final AsyncCmdProperty property;
+
+    /**
+     * 批量保存.
+     *
+     * @param entities 实体对象列表
+     * @return boolean
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public List<AsyncCmdSubVO> saveBatch(List<AsyncCmdSubDO> entities) {
+        entities.forEach(entity -> {
+            if (CharSequenceUtil.isBlank(entity.getBizNumber())) {
+                entity.setBizNumber(IdWorker.getIdStr());
+            }
+            if (Objects.isNull(entity.getExpireTime())) {
+                entity.setExpireTime(this.getNextExpireTime(System.currentTimeMillis()));
+            }
+        });
+        super.saveBatch(entities, Constants.DEFAULT_BATCH_SIZE);
+        return BeanUtil.copyToList(entities, AsyncCmdSubVO.class);
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -207,5 +238,27 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
         if (Boolean.TRUE.equals(result)) {
             throw new BizException(BizCodeEnum.DATA_EXIST);
         }
+    }
+
+    /**
+     * 获取下一次重试时间
+     *
+     * @param baseTimeMillis 基准时间戳(毫秒)
+     * @return long
+     */
+    public Long getNextRetryTime(long baseTimeMillis) {
+        return baseTimeMillis
+            + Optional.ofNullable(this.property.getAsyncWaitPollSeconds()).orElse(60L) * NumberConstant.NUMBER_ONE_THOUSAND;
+    }
+
+    /**
+     * 获取回调等待截止时间（主任务复用expireTime、子任务使用expireTime字段存储，作为回调超时兜底）.
+     *
+     * @param baseTimeMillis 基准时间戳(毫秒)
+     * @return long
+     */
+    public Long getNextExpireTime(long baseTimeMillis) {
+        return baseTimeMillis
+            + Optional.ofNullable(this.property.getAsyncWaitTimeoutSeconds()).orElse(1800L) * NumberConstant.NUMBER_ONE_THOUSAND;
     }
 }

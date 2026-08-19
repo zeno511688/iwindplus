@@ -8,6 +8,7 @@
 package com.iwindplus.base.async.cmd.support;
 
 import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdRepository;
+import com.iwindplus.base.async.cmd.dal.repository.AsyncCmdSubRepository;
 import com.iwindplus.base.async.cmd.domain.constant.AsyncCmdConstant;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
@@ -38,8 +39,18 @@ public record AsyncCmdStateSupport(
     AsyncCmdProperty property,
     AsyncCmdRepository asyncCmdRepository,
     AsyncCmdService asyncCmdService,
+    AsyncCmdSubRepository asyncCmdSubRepository,
     AsyncCmdSubService asyncCmdSubService,
     TransactionTemplate transactionTemplate) {
+
+    /**
+     * 获取AsyncCmdSubRepository
+     *
+     * @return AsyncCmdSubRepository
+     */
+    public AsyncCmdSubRepository getAsyncCmdSubRepository() {
+        return this.asyncCmdSubRepository;
+    }
 
     /**
      * 任务执行中
@@ -184,10 +195,10 @@ public record AsyncCmdStateSupport(
         Long costTime) {
 
         final long now = System.currentTimeMillis();
-        final Long nextRetryTime = this.getNextRetryTime(now);
+        final Long nextRetryTime = this.getAsyncCmdSubRepository().getNextRetryTime(now);
         final Long exist = entity.getExpireTime();
         final Long expireTime = Objects.nonNull(exist) && exist > 0L
-            ? exist : this.getNextExpireTime(System.currentTimeMillis());
+            ? exist : this.getAsyncCmdSubRepository().getNextExpireTime(System.currentTimeMillis());
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -226,7 +237,7 @@ public record AsyncCmdStateSupport(
      * @return
      */
     public boolean taskExecuteToBeExecute(AsyncCmdVO entity, Long costTime) {
-        final Long nextRetryTime = this.getNextRetryTime(System.currentTimeMillis());
+        final Long nextRetryTime = this.getAsyncCmdSubRepository().getNextRetryTime(System.currentTimeMillis());
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -305,7 +316,7 @@ public record AsyncCmdStateSupport(
         Exception ex) {
         final int retryCount = Optional.ofNullable(entity.getRetryCount()).orElse(0) + 1;
         final String stack = this.getStack(ex);
-        final Long nextRetryTime = this.getNextRetryTime(System.currentTimeMillis());
+        final Long nextRetryTime = this.getAsyncCmdSubRepository().getNextRetryTime(System.currentTimeMillis());
         final long currentTimeMillis = System.currentTimeMillis();
 
         final boolean result = Boolean.TRUE.equals(
@@ -437,7 +448,7 @@ public record AsyncCmdStateSupport(
         Long costTime) {
         final Long exist = entity.getExpireTime();
         final Long expireTime = Objects.nonNull(exist) && exist > 0L
-            ? exist : this.getNextExpireTime(System.currentTimeMillis());
+            ? exist : this.getAsyncCmdSubRepository().getNextExpireTime(System.currentTimeMillis());
 
         final boolean result = Boolean.TRUE.equals(
             this.transactionTemplate.execute(status -> {
@@ -549,28 +560,6 @@ public record AsyncCmdStateSupport(
             this.safeCallback(() -> handler.onSubTaskFail(entity), AsyncCmdConstant.HOOK_ON_SUB_TASK_FAIL, entity.getId());
         }
         return result;
-    }
-
-    /**
-     * 获取下一次重试时间
-     *
-     * @param baseTimeMillis 基准时间戳(毫秒)
-     * @return long
-     */
-    public Long getNextRetryTime(long baseTimeMillis) {
-        return baseTimeMillis
-            + Optional.ofNullable(this.property.getAsyncWaitPollSeconds()).orElse(60L) * NumberConstant.NUMBER_ONE_THOUSAND;
-    }
-
-    /**
-     * 获取回调等待截止时间（主任务复用expireTime、子任务使用expireTime字段存储，作为回调超时兜底）.
-     *
-     * @param baseTimeMillis 基准时间戳(毫秒)
-     * @return long
-     */
-    public Long getNextExpireTime(long baseTimeMillis) {
-        return baseTimeMillis
-            + Optional.ofNullable(this.property.getAsyncWaitTimeoutSeconds()).orElse(1800L) * NumberConstant.NUMBER_ONE_THOUSAND;
     }
 
     /**

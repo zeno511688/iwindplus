@@ -40,15 +40,16 @@ import com.iwindplus.base.async.cmd.service.AsyncCmdSubService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdDispatchHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
+import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -117,34 +118,57 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
     @Override
     public boolean callback(AsyncCmdCallbackDTO entity) {
-        // 归一化：progress>=100 等价于 callbackResult=SUCCESS
+        Assert.notNull(entity, "callback request must not be null");
+
+        // 归一化回调结果
         this.normalizeCallbackResult(entity);
-
-        // 定位主任务：优先主键，其次bizNumber
-        AsyncCmdVO task = null;
-        if (Objects.nonNull(entity.getId())) {
-            task = this.asyncCmdService.getDetail(entity.getId());
+        // 定位主任务：优先 ID，其次 bizNumber
+        final AsyncCmdVO task = this.getCallbackTask(entity);
+        // 主任务存在时，终态直接幂等返回
+        if (Objects.nonNull(task) && this.isFinished(task)) {
+            log.warn(
+                "asyncCmd callback ignored, task already finished. id={} status={} bizNumber={}",
+                task.getId(),
+                task.getStatus(),
+                task.getBizNumber()
+            );
+            return true;
         }
-        if (Objects.isNull(task) && CharSequenceUtil.isNotBlank(entity.getBizNumber())) {
-            task = this.asyncCmdService.getDetailByBizNumber(entity.getBizNumber());
-        }
+        // 构建子任务更新
+        final List<AsyncCmdSubDO> subTaskUpdates = this.buildSubTaskUpdates(entity, task);
+        // 构建主任务更新
+        final AsyncCmdDO taskUpdate = this.buildTask(entity, task);
 
-        // 构建子任务更新参数 ---
-        List<AsyncCmdSubDO> subTaskUpdates = this.buildSubTask(entity);
+        // 主任务、子任务都不存在
+        Assert.isTrue(
+            Objects.nonNull(taskUpdate) || CollUtil.isNotEmpty(subTaskUpdates),
+            "async command callback target not found"
+        );
 
-        // 构建主任务更新参数 ---
-        AsyncCmdDO taskUpdate = buildTask(entity, task);
-
+        // 批量更新
         final boolean result = this.asyncCmdService.editCallbackBatch(taskUpdate, subTaskUpdates);
-        if (result) {
-            if (Objects.nonNull(task)) {
-                this.dispatch(task);
-            } else if (CollUtil.isNotEmpty(subTaskUpdates)) {
-                final Long asyncCmdId = subTaskUpdates.get(0).getAsyncCmdId();
-                this.dispatch(this.asyncCmdService.getDetail(asyncCmdId));
-            }
+        if (!result) {
+            return false;
         }
-        return result;
+
+        // 主任务存在，直接调度
+        if (Objects.nonNull(task)) {
+            this.dispatch(task);
+            return true;
+        }
+
+        // 主任务不存在，通过子任务找到主任务后调度
+        if (CollUtil.isNotEmpty(subTaskUpdates)) {
+            final Long asyncCmdId = subTaskUpdates.get(0).getAsyncCmdId();
+            final AsyncCmdVO parentTask =
+                this.asyncCmdService.getDetail(asyncCmdId);
+
+            Assert.notNull(parentTask, "async command task not found");
+
+            this.dispatch(parentTask);
+        }
+
+        return true;
     }
 
     @Override
@@ -383,16 +407,20 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         if (Objects.isNull(entity)) {
             return;
         }
-        // progress>=100 → callbackResult=SUCCESS
-        if (Objects.isNull(entity.getCallbackResult())
-            && Objects.nonNull(entity.getProgress())
-            && entity.getProgress() >= 100) {
+
+        final Integer progress = entity.getProgress();
+        final AsyncCmdCallbackResultEnum callbackResult = entity.getCallbackResult();
+
+        if (Objects.isNull(callbackResult)
+            && Objects.nonNull(progress)
+            && progress >= NumberConstant.NUMBER_ONE_HUNDRED) {
             entity.setCallbackResult(AsyncCmdCallbackResultEnum.SUCCESS);
+            return;
         }
-        // callbackResult=SUCCESS → progress=100
-        if (AsyncCmdCallbackResultEnum.SUCCESS.equals(entity.getCallbackResult())
-            && Objects.isNull(entity.getProgress())) {
-            entity.setProgress(100);
+
+        if (AsyncCmdCallbackResultEnum.SUCCESS.equals(callbackResult)
+            && Objects.isNull(progress)) {
+            entity.setProgress(NumberConstant.NUMBER_ONE_HUNDRED);
         }
     }
 
@@ -406,91 +434,196 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         final Map<String, Object> result = MapUtil.isNotEmpty(entity.getResult())
             ? new HashMap<>(entity.getResult())
             : new HashMap<>(4);
-        if (Objects.nonNull(entity.getCallbackResult())) {
-            result.put(AsyncCmdConstant.CALLBACK_RESULT_KEY, entity.getCallbackResult().name());
+
+        final AsyncCmdCallbackResultEnum callbackResult = entity.getCallbackResult();
+        if (Objects.nonNull(callbackResult)) {
+            result.put(
+                AsyncCmdConstant.CALLBACK_RESULT_KEY,
+                callbackResult.name()
+            );
         }
+
         if (CharSequenceUtil.isNotBlank(entity.getErrorMsg())) {
-            result.put(AsyncCmdConstant.CALLBACK_ERROR_MSG_KEY, entity.getErrorMsg());
+            result.put(
+                AsyncCmdConstant.CALLBACK_ERROR_MSG_KEY,
+                entity.getErrorMsg()
+            );
         }
+
         return result;
     }
 
-    private AsyncCmdDO buildTask(AsyncCmdCallbackDTO entity, AsyncCmdVO task) {
+    /**
+     * 定位回调对应的主任务。
+     *
+     * <p>优先使用主键 ID 查询，查询不到时再使用 bizNumber 查询。</p>
+     *
+     * @param entity 回调参数
+     * @return 主任务
+     */
+    private AsyncCmdVO getCallbackTask(AsyncCmdCallbackDTO entity) {
+        AsyncCmdVO task = null;
+
+        if (Objects.nonNull(entity.getId())) {
+            task = this.asyncCmdService.getDetail(entity.getId());
+        }
+
+        if (Objects.isNull(task) && CharSequenceUtil.isNotBlank(entity.getBizNumber())) {
+            task = this.asyncCmdService.getDetailByBizNumber(entity.getBizNumber());
+        }
+
+        return task;
+    }
+
+    /**
+     * 构建子任务更新参数。
+     *
+     * @param entity 回调参数
+     * @param task   主任务
+     * @return 子任务更新列表
+     */
+    private List<AsyncCmdSubDO> buildSubTaskUpdates(
+        AsyncCmdCallbackDTO entity,
+        AsyncCmdVO task) {
+        final List<AsyncCmdSubCallbackDTO> subTasks = entity.getSubTasks();
+        if (CollUtil.isEmpty(subTasks)) {
+            return null;
+        }
+
+        final List<String> bizNumbers = subTasks.stream()
+            .filter(Objects::nonNull)
+            .map(AsyncCmdSubCallbackDTO::getBizNumber)
+            .filter(CharSequenceUtil::isNotBlank)
+            .distinct()
+            .toList();
+
+        Assert.isTrue(
+            bizNumbers.size() == subTasks.size(),
+            "subTasks contains invalid bizNumber"
+        );
+
+        // 一次查询全部子任务
+        final List<AsyncCmdSubVO> subTaskList =
+            this.asyncCmdSubService.listByBizNumbers(bizNumbers);
+
+        final Map<String, AsyncCmdSubVO> subTaskMap = subTaskList.stream()
+            .collect(Collectors.toMap(
+                AsyncCmdSubVO::getBizNumber,
+                Function.identity()
+            ));
+
+        // 所有回调子任务必须存在
+        Assert.isTrue(
+            subTaskMap.size() == bizNumbers.size(),
+            "some subTasks do not exist"
+        );
+
+        // 只有主任务存在时，才校验子任务归属
+        if (Objects.nonNull(task)) {
+            Assert.isTrue(
+                subTaskList.stream().allMatch(sub -> Objects.equals(sub.getAsyncCmdId(), task.getId())),
+                "subTasks do not belong to the current task"
+            );
+        }
+
+        return this.buildSubTask(subTasks, subTaskMap);
+    }
+
+    /**
+     * 构建子任务更新对象。
+     *
+     * @param subTasks   回调子任务
+     * @param subTaskMap 数据库子任务
+     * @return 子任务更新列表
+     */
+    private List<AsyncCmdSubDO> buildSubTask(
+        List<AsyncCmdSubCallbackDTO> subTasks,
+        Map<String, AsyncCmdSubVO> subTaskMap) {
+        final List<AsyncCmdSubDO> updates = new ArrayList<>(subTasks.size());
+
+        for (int index = 0; index < subTasks.size(); index++) {
+            final AsyncCmdSubCallbackDTO callback = subTasks.get(index);
+
+            Assert.notNull(
+                callback,
+                "sub[" + index + "] must not be null"
+            );
+
+            Assert.isTrue(
+                callback.getProgress() != null
+                    || callback.getCallbackResult() != null,
+                "sub[" + index + "].progress or callbackResult must be provided"
+            );
+
+            // 归一化：
+            // progress >= 100 -> SUCCESS
+            // SUCCESS + progress == null -> progress = 100
+            this.normalizeCallbackResult(callback);
+
+            final AsyncCmdSubVO subTask = subTaskMap.get(callback.getBizNumber());
+            Assert.notNull(
+                subTask,
+                "sub[" + index + "] not found: " + callback.getBizNumber()
+            );
+
+            // 已经成功的任务忽略重复回调
+            if (AsyncCmdStatusEnum.SUCCESS.equals(subTask.getStatus())) {
+                continue;
+            }
+
+            final AsyncCmdSubDO.AsyncCmdSubDOBuilder<?, ?> builder = AsyncCmdSubDO.builder()
+                .id(subTask.getId())
+                .asyncCmdId(subTask.getAsyncCmdId())
+                .progress(callback.getProgress())
+                .result(this.buildCallbackResult(callback))
+                .costTime(callback.getCostTime())
+                .errorMsg(callback.getErrorMsg());
+
+            if (Objects.nonNull(callback.getCallbackResult())) {
+                builder.status(
+                    AsyncCmdStatusEnum.valueOf(callback.getCallbackResult().name())
+                );
+            }
+
+            updates.add(builder.build());
+        }
+
+        return updates;
+    }
+
+    /**
+     * 构建主任务更新参数。
+     *
+     * @param entity 回调参数
+     * @param task   主任务
+     * @return 主任务更新对象
+     */
+    private AsyncCmdDO buildTask(
+        AsyncCmdCallbackDTO entity,
+        AsyncCmdVO task) {
+
         if (Objects.isNull(task)) {
             return null;
         }
-        final AsyncCmdStatusEnum status = task.getStatus();
-        // 已终态任务幂等忽略重复通知
-        if (AsyncCmdStatusEnum.SUCCESS.equals(status) || AsyncCmdStatusEnum.DISCARD.equals(status)) {
-            log.warn("asyncCmd callback ignored, task already finished. id={} status={} bizNumber={}",
-                task.getId(), status, task.getBizNumber());
-            return null;
-        }
 
-        final AsyncCmdDO.AsyncCmdDOBuilder<?, ?> builder = AsyncCmdDO.builder()
-            .id(task.getId());
-        if (Objects.nonNull(entity.getCallbackResult())) {
-            builder.result(this.buildCallbackResult(entity));
-        }
-        if (Objects.nonNull(entity.getProgress())) {
-            builder.progress(entity.getProgress());
-        }
-        if (Objects.nonNull(entity.getCostTime())) {
-            builder.costTime(entity.getCostTime());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getErrorMsg())) {
-            builder.errorMsg(entity.getErrorMsg());
-        }
-        return builder.build();
+        return AsyncCmdDO.builder()
+            .id(task.getId())
+            .status(AsyncCmdStatusEnum.valueOf(entity.getCallbackResult().name()))
+            .result(this.buildCallbackResult(entity))
+            .progress(entity.getProgress())
+            .costTime(entity.getCostTime())
+            .errorMsg(entity.getErrorMsg())
+            .build();
     }
 
-    private List<AsyncCmdSubDO> buildSubTask(AsyncCmdCallbackDTO entity) {
-        final List<AsyncCmdSubDO> subTaskUpdates = new ArrayList<>(10);
-
-        final List<AsyncCmdSubCallbackDTO> subTasks = entity.getSubTasks();
-        if (CollUtil.isEmpty(subTasks)) {
-            return Collections.emptyList();
-        }
-
-        // 批量查询子任务（1次SELECT）
-        final List<String> bizNumbers = subTasks.stream()
-            .filter(sub -> Objects.nonNull(sub) && CharSequenceUtil.isNotBlank(sub.getBizNumber()))
-            .map(AsyncCmdSubCallbackDTO::getBizNumber)
-            .toList();
-
-        final List<AsyncCmdSubVO> subTaskList = this.asyncCmdSubService.listByBizNumbers(bizNumbers);
-        Assert.isTrue(subTaskList.size() == subTasks.size(), "The number of sub tasks does not match.");
-
-        final Map<String, AsyncCmdSubVO> subTaskMap = subTaskList
-            .stream()
-            .filter(sub -> !AsyncCmdStatusEnum.SUCCESS.equals(sub.getStatus()))
-            .collect(Collectors.toMap(AsyncCmdSubVO::getBizNumber, v -> v, (a, b) -> a));
-
-        // 构建子任务更新对象
-        for (AsyncCmdSubCallbackDTO subCallback : subTasks) {
-            this.normalizeCallbackResult(subCallback);
-            final AsyncCmdSubVO subTask = subTaskMap.get(subCallback.getBizNumber());
-            if (Objects.isNull(subTask)) {
-                continue;
-            }
-            final AsyncCmdSubDO.AsyncCmdSubDOBuilder<?, ?> builder = AsyncCmdSubDO.builder()
-                .id(subTask.getId())
-                .asyncCmdId(subTask.getAsyncCmdId());
-            if (Objects.nonNull(subCallback.getCallbackResult())) {
-                builder.result(this.buildCallbackResult(subCallback));
-            }
-            if (Objects.nonNull(subCallback.getProgress())) {
-                builder.progress(subCallback.getProgress());
-            }
-            if (Objects.nonNull(subCallback.getCostTime())) {
-                builder.costTime(subCallback.getCostTime());
-            }
-            if (CharSequenceUtil.isNotBlank(subCallback.getErrorMsg())) {
-                builder.errorMsg(subCallback.getErrorMsg());
-            }
-            subTaskUpdates.add(builder.build());
-        }
-
-        return subTaskUpdates;
+    /**
+     * 判断主任务是否已经进入终态。
+     *
+     * @param task 主任务
+     */
+    private boolean isFinished(AsyncCmdVO task) {
+        final AsyncCmdStatusEnum status = task.getStatus();
+        return AsyncCmdStatusEnum.SUCCESS.equals(status)
+            || AsyncCmdStatusEnum.DISCARD.equals(status);
     }
 }
