@@ -16,9 +16,12 @@ import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.vo.ResultVO;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;
@@ -46,6 +49,70 @@ public class ExceptionUtil {
     }
 
     /**
+     * 异常处理器映射（保持插入顺序）.
+     */
+    private static final Map<String, BiFunction<Throwable, String, ResponseEntity<ResultVO<Object>>>> EXCEPTION_HANDLERS = new LinkedHashMap<>();
+
+    static {
+        // 参数校验相关异常（需要提取消息）
+        registerHandler(ExceptionConstant.CONSTRAINT_VIOLATION_EXCEPTION, ExceptionUtil::handleConstraintViolation);
+        registerHandler(ExceptionConstant.METHOD_ARGUMENT_NOT_VALID_EXCEPTION, ExceptionUtil::handleMethodArgumentNotValid);
+        registerHandler(ExceptionConstant.BIND_EXCEPTION, ExceptionUtil::handleBindException);
+
+        // 参数相关异常（需要提取参数名）
+        registerHandler(ExceptionConstant.SERVER_WEB_INPUT_EXCEPTION, ExceptionUtil::handleServerWebInput);
+        registerHandler(ExceptionConstant.MISSING_SERVLET_REQUEST_PARAMETER_EXCEPTION, ExceptionUtil::handleMissingServletRequestParameter);
+        registerHandler(ExceptionConstant.METHOD_ARGUMENT_TYPE_MISMATCH_EXCEPTION, ExceptionUtil::handleMethodArgumentTypeMismatch);
+
+        // 简单异常（直接返回固定错误码）
+        registerSimpleHandler(ExceptionConstant.MULTIPART_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.FILE_SIZE_LIMIT);
+        registerSimpleHandler(ExceptionConstant.ILLEGAL_ARGUMENT_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.PARAM_ILLEGAL);
+        registerSimpleHandler(ExceptionConstant.UNKNOWN_HOST_EXCEPTION, HttpStatus.SERVICE_UNAVAILABLE, BizCodeEnum.UNKNOWN_HOST);
+        registerSimpleHandler(ExceptionConstant.SOCKET_EXCEPTION, HttpStatus.SERVICE_UNAVAILABLE, BizCodeEnum.SOCKET_ERROR);
+        registerSimpleHandler(ExceptionConstant.SERVICE_UNAVAILABLE_EXCEPTION, HttpStatus.SERVICE_UNAVAILABLE, BizCodeEnum.SERVICE_UNAVAILABLE);
+        registerSimpleHandler(ExceptionConstant.TIMEOUT_EXCEPTION, HttpStatus.REQUEST_TIMEOUT, BizCodeEnum.REQUEST_TIMEOUT);
+        registerSimpleHandler(ExceptionConstant.DECODING_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.DECODING_ERROR);
+        registerSimpleHandler(ExceptionConstant.FILE_NOT_FOUND_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.FILE_NOT_FOUND);
+        registerSimpleHandler(ExceptionConstant.UNSUPPORTED_OPERATION_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.UNSUPPORTED_OPERATION);
+        registerSimpleHandler(ExceptionConstant.HTTP_MESSAGE_NOT_READABLE_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.NOT_READABLE);
+        registerSimpleHandler(ExceptionConstant.HTTP_MESSAGE_NOT_WRITABLE_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.NOT_WRITABLE);
+        registerSimpleHandler(ExceptionConstant.NULL_POINTER_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.NULL_POINTER);
+        registerSimpleHandler(ExceptionConstant.CONVERSION_NOT_SUPPORTED_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.CONVERSION_NOT_SUPPORTED);
+        registerSimpleHandler(ExceptionConstant.MISSING_SERVLET_REQUEST_PART_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.MISSING_FILE);
+        registerSimpleHandler(ExceptionConstant.MAX_UPLOAD_SIZE_EXCEEDED_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.FILE_TOO_BIG);
+        registerSimpleHandler(ExceptionConstant.CLASS_CAST_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.CLASS_CAST_ERROR);
+        registerSimpleHandler(ExceptionConstant.NUMBER_FORMAT_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.ONLY_SUPPORT_NUMBER);
+        registerSimpleHandler(ExceptionConstant.SECURITY_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.SECURITY_ERROR);
+        registerSimpleHandler(ExceptionConstant.BAD_SQL_GRAMMAR_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.BAD_SQL_GRAMMAR);
+        registerSimpleHandler(ExceptionConstant.SQL_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.SQL_ERROR);
+        registerSimpleHandler(ExceptionConstant.MYBATIS_SYSTEM_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.MYBATIS_ERROR);
+        registerSimpleHandler(ExceptionConstant.DATA_INTEGRITY_VIOLATION_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.DATA_INTEGRITY_VIOLATION_ERROR);
+        registerSimpleHandler(ExceptionConstant.TYPE_NOT_PRESENT_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.TYPE_NOT_PRESENT);
+        registerSimpleHandler(ExceptionConstant.IO_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.IO_ERROR);
+        registerSimpleHandler(ExceptionConstant.NO_SUCH_METHOD_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.NO_SUCH_METHOD);
+        registerSimpleHandler(ExceptionConstant.INDEX_OUT_OF_BOUNDS_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.INDEX_OUT_OF_BOUNDS);
+        registerSimpleHandler(ExceptionConstant.NO_SUCH_BEAN_DEFINITION_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.NO_SUCH_BEAN);
+        registerSimpleHandler(ExceptionConstant.TYPE_MISMATCH_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.TYPE_MISMATCH);
+        registerSimpleHandler(ExceptionConstant.STACK_OVERFLOW_ERROR, HttpStatus.BAD_REQUEST, BizCodeEnum.STACK_OVERFLOW);
+        registerSimpleHandler(ExceptionConstant.ARITHMETIC_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.ARITHMETIC_ERROR);
+        registerSimpleHandler(ExceptionConstant.MAIL_SEND_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.SEND_ERROR);
+        registerSimpleHandler(ExceptionConstant.SERIALIZATION_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.SERIALIZE_ERROR);
+        registerSimpleHandler(ExceptionConstant.JSON_PROCESSING_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.JSON_PROCESSING_ERROR);
+        registerSimpleHandler(ExceptionConstant.JSON_MAPPING_EXCEPTION, HttpStatus.BAD_REQUEST, BizCodeEnum.JSON_MAPPING_ERROR);
+
+        // 使用 HttpStatus 的异常
+        registerHttpStatusHandler(ExceptionConstant.UNAUTHORIZED_EXCEPTION, HttpStatus.UNAUTHORIZED);
+        registerHttpStatusHandler(ExceptionConstant.HTTP_REQUEST_METHOD_NOT_SUPPORTED_EXCEPTION, HttpStatus.METHOD_NOT_ALLOWED);
+        registerHttpStatusHandler(ExceptionConstant.HTTP_MEDIA_TYPE_NOT_SUPPORTED_EXCEPTION, HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+        registerHttpStatusHandler(ExceptionConstant.HTTP_MEDIA_TYPE_NOT_ACCEPTABLE_EXCEPTION, HttpStatus.NOT_ACCEPTABLE);
+
+        // 404 相关异常（多个异常类型对应同一处理）
+        registerHandler(ExceptionConstant.NO_HANDLER_FOUND_EXCEPTION, ExceptionUtil::handleNotFound);
+        registerHandler(ExceptionConstant.NO_RESOURCE_FOUND_EXCEPTION, ExceptionUtil::handleNotFound);
+        registerHandler(ExceptionConstant.NOT_FOUND_EXCEPTION, ExceptionUtil::handleNotFound);
+    }
+
+    /**
      * 捕获异常信息（用于统一异常处理）.
      *
      * @param ex        异常
@@ -53,150 +120,174 @@ public class ExceptionUtil {
      * @return ResponseEntity<ResultVO < Object>>
      */
     public static ResponseEntity<ResultVO<Object>> getException(Throwable ex, String className) {
-        if (CharSequenceUtil.contains(className, ExceptionConstant.CONSTRAINT_VIOLATION_EXCEPTION)) {
-            final ConstraintViolationException exs = (ConstraintViolationException) ex;
-            final String message = ExceptionUtil.getMessage(exs);
-            final BizCodeEnum bizCodeEnum = BizCodeEnum.PARAM_CONSTRAINT_VIOLATION;
-            final String bizCode = bizCodeEnum.getBizCode();
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.buildSourceResult(bizCode, message));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.METHOD_ARGUMENT_NOT_VALID_EXCEPTION)) {
-            final MethodArgumentNotValidException exs = (MethodArgumentNotValidException) ex;
-            final String message = ExceptionUtil.getMessage(exs.getBindingResult());
-            final BizCodeEnum bizCodeEnum = BizCodeEnum.PARAM_INVALID;
-            final String bizCode = bizCodeEnum.getBizCode();
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.buildSourceResult(bizCode, message));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.BIND_EXCEPTION)) {
-            final BindException exs = (BindException) ex;
-            final String message = ExceptionUtil.getMessage(exs.getBindingResult());
-            final BizCodeEnum bizCodeEnum = BizCodeEnum.PARAM_BIND_ERROR;
-            final String bizCode = bizCodeEnum.getBizCode();
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.buildSourceResult(bizCode, message));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.MULTIPART_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.FILE_SIZE_LIMIT));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.ILLEGAL_ARGUMENT_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.PARAM_ILLEGAL));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.SERVER_WEB_INPUT_EXCEPTION)) {
-            final ServerWebInputException item = (ServerWebInputException) ex;
-            String parameterName = Optional.ofNullable(item).map(ServerWebInputException::getMethodParameter)
-                .map(MethodParameter::getParameterName).orElse(null);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.PARAM_INPUT_ERROR, new Object[]{parameterName}));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.MISSING_SERVLET_REQUEST_PARAMETER_EXCEPTION)) {
-            final MissingServletRequestParameterException item = (MissingServletRequestParameterException) ex;
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.PARAM_MISS, new Object[]{item.getParameterName()}));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.METHOD_ARGUMENT_TYPE_MISMATCH_EXCEPTION)) {
-            final MethodArgumentTypeMismatchException item = (MethodArgumentTypeMismatchException) ex;
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.PARAM_TYPE_MISMATCH, new Object[]{item.getName()}));
+        for (Map.Entry<String, BiFunction<Throwable, String, ResponseEntity<ResultVO<Object>>>> entry : EXCEPTION_HANDLERS.entrySet()) {
+            if (CharSequenceUtil.contains(className, entry.getKey())) {
+                return entry.getValue().apply(ex, className);
+            }
         }
-
-        return ExceptionUtil.getExceptionOne(className);
-    }
-
-    private static ResponseEntity<ResultVO<Object>> getExceptionOne(String className) {
-        if (CharSequenceUtil.contains(className, ExceptionConstant.UNKNOWN_HOST_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ResultVO.error(BizCodeEnum.UNKNOWN_HOST));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.SOCKET_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ResultVO.error(BizCodeEnum.SOCKET_ERROR));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.SERVICE_UNAVAILABLE_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ResultVO.error(BizCodeEnum.SERVICE_UNAVAILABLE));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.TIMEOUT_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body(ResultVO.error(BizCodeEnum.REQUEST_TIMEOUT));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.DECODING_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.DECODING_ERROR));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.UNAUTHORIZED_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResultVO.error(HttpStatus.UNAUTHORIZED));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.FILE_NOT_FOUND_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.FILE_NOT_FOUND));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.NO_HANDLER_FOUND_EXCEPTION)
-            || CharSequenceUtil.contains(className, ExceptionConstant.NO_RESOURCE_FOUND_EXCEPTION)
-            || CharSequenceUtil.contains(className, ExceptionConstant.NOT_FOUND_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResultVO.error(HttpStatus.NOT_FOUND));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.HTTP_REQUEST_METHOD_NOT_SUPPORTED_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(ResultVO.error(HttpStatus.METHOD_NOT_ALLOWED));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.HTTP_MEDIA_TYPE_NOT_SUPPORTED_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(ResultVO.error(HttpStatus.UNSUPPORTED_MEDIA_TYPE));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.HTTP_MEDIA_TYPE_NOT_ACCEPTABLE_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(ResultVO.error(HttpStatus.NOT_ACCEPTABLE));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.UNSUPPORTED_OPERATION_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.UNSUPPORTED_OPERATION));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.HTTP_MESSAGE_NOT_READABLE_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.NOT_READABLE));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.HTTP_MESSAGE_NOT_WRITABLE_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.NOT_WRITABLE));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.NULL_POINTER_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.NULL_POINTER));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.CONVERSION_NOT_SUPPORTED_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.CONVERSION_NOT_SUPPORTED));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.MISSING_SERVLET_REQUEST_PART_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.MISSING_FILE));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.MAX_UPLOAD_SIZE_EXCEEDED_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.FILE_TOO_BIG));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.CLASS_CAST_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.CLASS_CAST_ERROR));
-        }
-
-        return ExceptionUtil.getExceptionTwo(className);
-    }
-
-    private static ResponseEntity<ResultVO<Object>> getExceptionTwo(String className) {
-        if (CharSequenceUtil.contains(className, ExceptionConstant.NUMBER_FORMAT_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.ONLY_SUPPORT_NUMBER));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.SECURITY_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.SECURITY_ERROR));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.BAD_SQL_GRAMMAR_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.BAD_SQL_GRAMMAR));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.SQL_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.SQL_ERROR));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.MYBATIS_SYSTEM_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.MYBATIS_ERROR));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.DATA_INTEGRITY_VIOLATION_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.DATA_INTEGRITY_VIOLATION_ERROR));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.TYPE_NOT_PRESENT_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.TYPE_NOT_PRESENT));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.IO_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.IO_ERROR));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.NO_SUCH_METHOD_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.NO_SUCH_METHOD));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.INDEX_OUT_OF_BOUNDS_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.INDEX_OUT_OF_BOUNDS));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.NO_SUCH_BEAN_DEFINITION_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.NO_SUCH_BEAN));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.TYPE_MISMATCH_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.TYPE_MISMATCH));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.STACK_OVERFLOW_ERROR)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.STACK_OVERFLOW));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.ARITHMETIC_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.ARITHMETIC_ERROR));
-        }
-
-        return ExceptionUtil.getExceptionThree(className);
-    }
-
-    private static ResponseEntity<ResultVO<Object>> getExceptionThree(String className) {
-        if (CharSequenceUtil.contains(className, ExceptionConstant.MAIL_SEND_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.SEND_ERROR));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.SERIALIZATION_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.SERIALIZE_ERROR));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.JSON_PROCESSING_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.JSON_PROCESSING_ERROR));
-        } else if (CharSequenceUtil.contains(className, ExceptionConstant.JSON_MAPPING_EXCEPTION)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultVO.error(BizCodeEnum.JSON_MAPPING_ERROR));
-        }
-
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResultVO.error(HttpStatus.INTERNAL_SERVER_ERROR));
     }
 
+    /**
+     * 注册异常处理器.
+     *
+     * @param exceptionKey 异常键（异常类型标识）
+     * @param handler      异常处理器
+     */
+    private static void registerHandler(String exceptionKey, BiFunction<Throwable, String, ResponseEntity<ResultVO<Object>>> handler) {
+        EXCEPTION_HANDLERS.put(exceptionKey, handler);
+    }
+
+    /**
+     * 注册简单异常处理器（返回固定 BizCodeEnum）.
+     *
+     * @param exceptionKey 异常键（异常类型标识）
+     * @param status       HTTP 状态码
+     * @param bizCode      业务错误码枚举
+     */
+    private static void registerSimpleHandler(String exceptionKey, HttpStatus status, BizCodeEnum bizCode) {
+        EXCEPTION_HANDLERS.put(exceptionKey, (ex, className) ->
+            ResponseEntity.status(status).body(ResultVO.error(bizCode)));
+    }
+
+    /**
+     * 注册使用 HttpStatus 的异常处理器.
+     *
+     * @param exceptionKey 异常键（异常类型标识）
+     * @param status       HTTP 状态码
+     */
+    private static void registerHttpStatusHandler(String exceptionKey, HttpStatus status) {
+        EXCEPTION_HANDLERS.put(exceptionKey, (ex, className) ->
+            ResponseEntity.status(status).body(ResultVO.error(status)));
+    }
+
+    /**
+     * 处理约束违反异常.
+     *
+     * @param ex        异常对象
+     * @param className 类名
+     * @return 响应实体
+     */
+    private static ResponseEntity<ResultVO<Object>> handleConstraintViolation(Throwable ex, String className) {
+        ConstraintViolationException exs = (ConstraintViolationException) ex;
+        String message = getMessage(exs);
+        BizCodeEnum bizCodeEnum = BizCodeEnum.PARAM_CONSTRAINT_VIOLATION;
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ResultVO.buildSourceResult(bizCodeEnum.getBizCode(), message));
+    }
+
+    /**
+     * 处理方法参数无效异常.
+     *
+     * @param ex        异常对象
+     * @param className 类名
+     * @return 响应实体
+     */
+    private static ResponseEntity<ResultVO<Object>> handleMethodArgumentNotValid(Throwable ex, String className) {
+        MethodArgumentNotValidException exs = (MethodArgumentNotValidException) ex;
+        String message = getMessage(exs.getBindingResult());
+        BizCodeEnum bizCodeEnum = BizCodeEnum.PARAM_INVALID;
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ResultVO.buildSourceResult(bizCodeEnum.getBizCode(), message));
+    }
+
+    /**
+     * 处理绑定异常.
+     *
+     * @param ex        异常对象
+     * @param className 类名
+     * @return 响应实体
+     */
+    private static ResponseEntity<ResultVO<Object>> handleBindException(Throwable ex, String className) {
+        BindException exs = (BindException) ex;
+        String message = getMessage(exs.getBindingResult());
+        BizCodeEnum bizCodeEnum = BizCodeEnum.PARAM_BIND_ERROR;
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ResultVO.buildSourceResult(bizCodeEnum.getBizCode(), message));
+    }
+
+    /**
+     * 处理 Web 输入异常.
+     *
+     * @param ex        异常对象
+     * @param className 类名
+     * @return 响应实体
+     */
+    private static ResponseEntity<ResultVO<Object>> handleServerWebInput(Throwable ex, String className) {
+        ServerWebInputException item = (ServerWebInputException) ex;
+        String parameterName = Optional.ofNullable(item)
+            .map(ServerWebInputException::getMethodParameter)
+            .map(MethodParameter::getParameterName)
+            .orElse(null);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ResultVO.error(BizCodeEnum.PARAM_INPUT_ERROR, new Object[]{parameterName}));
+    }
+
+    /**
+     * 处理缺少请求参数异常.
+     *
+     * @param ex        异常对象
+     * @param className 类名
+     * @return 响应实体
+     */
+    private static ResponseEntity<ResultVO<Object>> handleMissingServletRequestParameter(Throwable ex, String className) {
+        MissingServletRequestParameterException item = (MissingServletRequestParameterException) ex;
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ResultVO.error(BizCodeEnum.PARAM_MISS, new Object[]{item.getParameterName()}));
+    }
+
+    /**
+     * 处理参数类型不匹配异常.
+     *
+     * @param ex        异常对象
+     * @param className 类名
+     * @return 响应实体
+     */
+    private static ResponseEntity<ResultVO<Object>> handleMethodArgumentTypeMismatch(Throwable ex, String className) {
+        MethodArgumentTypeMismatchException item = (MethodArgumentTypeMismatchException) ex;
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ResultVO.error(BizCodeEnum.PARAM_TYPE_MISMATCH, new Object[]{item.getName()}));
+    }
+
+    /**
+     * 处理 404 异常.
+     *
+     * @param ex        异常对象
+     * @param className 类名
+     * @return 响应实体
+     */
+    private static ResponseEntity<ResultVO<Object>> handleNotFound(Throwable ex, String className) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResultVO.error(HttpStatus.NOT_FOUND));
+    }
+
+    /**
+     * 从约束违反异常中提取错误消息.
+     *
+     * @param exs 约束违反异常
+     * @return 错误消息（多个消息用分号分隔）
+     */
     private static String getMessage(ConstraintViolationException exs) {
-        final Set<ConstraintViolation<?>> violations = exs.getConstraintViolations();
+        Set<ConstraintViolation<?>> violations = exs.getConstraintViolations();
         if (CollUtil.isNotEmpty(violations)) {
-            return violations.stream().map(ConstraintViolation::getMessage).collect(Collectors.joining(SymbolConstant.SEMICOLON));
+            return violations.stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining(SymbolConstant.SEMICOLON));
         }
         return null;
     }
 
+    /**
+     * 从绑定结果中提取错误消息.
+     *
+     * @param exs 绑定结果
+     * @return 错误消息（多个消息用分号分隔）
+     */
     private static String getMessage(BindingResult exs) {
         List<ObjectError> allErrors = exs.getAllErrors();
         if (CollUtil.isNotEmpty(allErrors)) {
-            return allErrors.stream().map(s -> s.getDefaultMessage()).collect(Collectors.joining(SymbolConstant.SEMICOLON));
+            return allErrors.stream()
+                .map(ObjectError::getDefaultMessage)
+                .collect(Collectors.joining(SymbolConstant.SEMICOLON));
         }
         return null;
     }
