@@ -190,8 +190,8 @@ public class GatewayUtil {
 
         GatewayLogDTOBuilder<?, ?> builder = GatewayLogDTO.builder()
             .requestId(headers.getFirst(HeaderConstant.X_REQUESTED_ID))
-            .bizTraceId(MDC.get(HeaderConstant.TRACE_ID))
-            .ip(headers.getFirst(HeaderConstant.REAL_IP))
+            .bizTraceId(MDC.get(HeaderConstant.X_TRACE_ID))
+            .ip(headers.getFirst(HeaderConstant.X_REAL_IP))
             .requestSchema(request.getURI().getScheme())
             .requestPath(request.getPath().value())
             .requestMethod(request.getMethod().name())

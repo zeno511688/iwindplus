@@ -56,8 +56,8 @@ public class BaseFilter extends BaseGatewayFilter {
             HeaderConstant.X_USER_INFO,
             HeaderConstant.X_FORWARDED_FOR,
             HeaderConstant.TRACE_PARENT,
-            HeaderConstant.TRACE_ID,
-            HeaderConstant.REAL_IP,
+            HeaderConstant.X_TRACE_ID,
+            HeaderConstant.X_REAL_IP,
             HeaderConstant.X_REQUESTED_WITH,
             HeaderConstant.X_FORWARDED_PREFIX,
             ApiSignConstant.X_PATH
@@ -87,7 +87,7 @@ public class BaseFilter extends BaseGatewayFilter {
             .headers(h -> {
                 h.set(ApiSignConstant.X_PATH, path);
                 h.set(HttpHeaders.ACCEPT_LANGUAGE, lang);
-                h.set(HeaderConstant.REAL_IP, realIp);
+                h.set(HeaderConstant.X_REAL_IP, realIp);
                 h.set(HeaderConstant.X_FORWARDED_PREFIX, prefix);
             })
             .build();

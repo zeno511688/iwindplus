@@ -26,9 +26,9 @@ db.getCollection("gateway_log").createIndex({
     name: "idx_target_server"
 });
 db.getCollection("gateway_log").createIndex({
-    trace_id: NumberInt("1")
+    X_TRACE_ID: NumberInt("1")
 }, {
-    name: "idx_trace_id"
+    name: "idx_X_TRACE_ID"
 });
 db.getCollection("gateway_log").createIndex({
     user_id: NumberInt("1")
@@ -47,9 +47,9 @@ db.getCollection("gateway_log").createIndex({
 db.getCollection("login_log").drop();
 db.createCollection("login_log");
 db.getCollection("login_log").createIndex({
-    trace_id: NumberInt("1")
+    X_TRACE_ID: NumberInt("1")
 }, {
-    name: "idx_trace_id"
+    name: "idx_X_TRACE_ID"
 });
 db.getCollection("login_log").createIndex({
     user_id: NumberInt("1")
@@ -115,9 +115,9 @@ db.getCollection("operation_log").createIndex({
     name: "idx_biz_number"
 });
 db.getCollection("operation_log").createIndex({
-    trace_id: NumberInt("1")
+    X_TRACE_ID: NumberInt("1")
 }, {
-    name: "idx_trace_id"
+    name: "idx_X_TRACE_ID"
 });
 db.getCollection("operation_log").createIndex({
     ip: NumberInt("1")

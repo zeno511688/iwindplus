@@ -71,10 +71,10 @@ public class OperationLogServiceImpl extends EsBaseServiceImpl<OperationLogDO>
     @Override
     public boolean save(OperationLogDTO entity) {
         if (CharSequenceUtil.isBlank(entity.getIp())) {
-            entity.setIp(MDC.get(HeaderConstant.REAL_IP));
+            entity.setIp(MDC.get(HeaderConstant.X_REAL_IP));
         }
         if (CharSequenceUtil.isBlank(entity.getBizTraceId())) {
-            entity.setBizTraceId(MDC.get(HeaderConstant.TRACE_ID));
+            entity.setBizTraceId(MDC.get(HeaderConstant.X_TRACE_ID));
         }
         if (ObjectUtil.isEmpty(entity.getBizNumber())) {
             entity.setBizNumber(IdUtil.simpleUUID());

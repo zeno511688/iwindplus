@@ -300,12 +300,12 @@ public final class CommonConstant {
         /**
          * 跟踪唯一标识.
          */
-        public static final String TRACE_ID = "traceId";
+        public static final String X_TRACE_ID = "traceId";
 
         /**
          * 真实ip.
          */
-        public static final String REAL_IP = "realIp";
+        public static final String X_REAL_IP = "X-Real-Ip";
 
         /**
          * 用户信息.

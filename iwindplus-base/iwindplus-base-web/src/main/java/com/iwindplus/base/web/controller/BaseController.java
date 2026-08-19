@@ -96,7 +96,7 @@ public class BaseController {
      * @return String
      */
     protected String getRealId() {
-        return getHeaderMap().get(HeaderConstant.REAL_IP);
+        return getHeaderMap().get(HeaderConstant.X_REAL_IP);
     }
 
     /**

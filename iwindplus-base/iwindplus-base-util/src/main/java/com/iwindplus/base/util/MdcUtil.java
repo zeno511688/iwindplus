@@ -28,7 +28,7 @@ public class MdcUtil {
      * 获取跟踪唯一标识.
      */
     public static String getTraceId() {
-        return MDC.get(HeaderConstant.TRACE_ID);
+        return MDC.get(HeaderConstant.X_TRACE_ID);
     }
 
     /**
@@ -40,14 +40,14 @@ public class MdcUtil {
         if (CharSequenceUtil.isBlank(traceId)) {
             return;
         }
-        MDC.put(HeaderConstant.TRACE_ID, traceId);
+        MDC.put(HeaderConstant.X_TRACE_ID, traceId);
     }
 
     /**
      * 清理MDC.
      */
     public static void clearTraceId() {
-        MDC.remove(HeaderConstant.TRACE_ID);
+        MDC.remove(HeaderConstant.X_TRACE_ID);
     }
 
     /**
@@ -61,10 +61,10 @@ public class MdcUtil {
         String traceId = MdcUtil.getTraceId();
 
         return Mono.deferContextual(ctxView -> {
-            String ctxTraceId = ctxView.getOrDefault(HeaderConstant.TRACE_ID, traceId);
+            String ctxTraceId = ctxView.getOrDefault(HeaderConstant.X_TRACE_ID, traceId);
 
             return mono
-                .contextWrite(ctx -> ctx.put(HeaderConstant.TRACE_ID, ctxTraceId))
+                .contextWrite(ctx -> ctx.put(HeaderConstant.X_TRACE_ID, ctxTraceId))
                 .doOnEach(signal -> {
                     if (!signal.isOnComplete() && !signal.isOnError()) {
                         return;

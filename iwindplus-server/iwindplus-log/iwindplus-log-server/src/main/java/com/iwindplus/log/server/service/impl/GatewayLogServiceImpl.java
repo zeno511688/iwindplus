@@ -77,10 +77,10 @@ public class GatewayLogServiceImpl extends EsBaseServiceImpl<GatewayLogDO> imple
     public boolean saveBatch(List<GatewayLogDTO> entities) {
         entities.forEach(entity -> {
             if (CharSequenceUtil.isBlank(entity.getIp())) {
-                entity.setIp(MDC.get(HeaderConstant.REAL_IP));
+                entity.setIp(MDC.get(HeaderConstant.X_REAL_IP));
             }
             if (CharSequenceUtil.isBlank(entity.getBizTraceId())) {
-                entity.setBizTraceId(MDC.get(HeaderConstant.TRACE_ID));
+                entity.setBizTraceId(MDC.get(HeaderConstant.X_TRACE_ID));
             }
             this.buildSystemInfo(entity);
             if (CharSequenceUtil.isNotBlank(entity.getRequestParam())) {

@@ -91,7 +91,7 @@ public class HttpsUtil extends HttpUtil {
      * @return String
      */
     public static String getRealIp(ServerWebExchange exchange) {
-        final String realIp = MDC.get(HeaderConstant.REAL_IP);
+        final String realIp = MDC.get(HeaderConstant.X_REAL_IP);
         if (CharSequenceUtil.isNotBlank(realIp)) {
             return realIp;
         }
@@ -108,7 +108,7 @@ public class HttpsUtil extends HttpUtil {
      * @return String
      */
     public static String getRealIp(HttpServletRequest request) {
-        final String realIp = MDC.get(HeaderConstant.REAL_IP);
+        final String realIp = MDC.get(HeaderConstant.X_REAL_IP);
         if (CharSequenceUtil.isNotBlank(realIp)) {
             return realIp;
         }

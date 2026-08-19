@@ -70,10 +70,10 @@ public class LoginLogServiceImpl extends EsBaseServiceImpl<LoginLogDO>
     @Override
     public boolean save(LoginLogDTO entity) {
         if (CharSequenceUtil.isBlank(entity.getIp())) {
-            entity.setIp(MDC.get(HeaderConstant.REAL_IP));
+            entity.setIp(MDC.get(HeaderConstant.X_REAL_IP));
         }
         if (CharSequenceUtil.isBlank(entity.getBizTraceId())) {
-            entity.setBizTraceId(MDC.get(HeaderConstant.TRACE_ID));
+            entity.setBizTraceId(MDC.get(HeaderConstant.X_TRACE_ID));
         }
         this.buildSystemInfo(entity);
         final LoginLogDO model = BeanUtil.copyProperties(entity, LoginLogDO.class);
@@ -88,10 +88,10 @@ public class LoginLogServiceImpl extends EsBaseServiceImpl<LoginLogDO>
         if (CollUtil.isNotEmpty(entities)) {
             entities.forEach(entity -> {
                 if (CharSequenceUtil.isBlank(entity.getIp())) {
-                    entity.setIp(MDC.get(HeaderConstant.REAL_IP));
+                    entity.setIp(MDC.get(HeaderConstant.X_REAL_IP));
                 }
                 if (CharSequenceUtil.isBlank(entity.getBizTraceId())) {
-                    entity.setBizTraceId(MDC.get(HeaderConstant.TRACE_ID));
+                    entity.setBizTraceId(MDC.get(HeaderConstant.X_TRACE_ID));
                 }
                 this.buildSystemInfo(entity);
             });

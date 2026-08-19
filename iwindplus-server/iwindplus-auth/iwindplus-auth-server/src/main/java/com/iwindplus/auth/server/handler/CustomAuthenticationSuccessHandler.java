@@ -164,8 +164,8 @@ public record CustomAuthenticationSuccessHandler(AuthProperty property
         final LoginLogDTOBuilder<?, ?> builder = LoginLogDTO
             .builder()
             .requestId(request.getHeader(HeaderConstant.X_REQUESTED_ID))
-            .bizTraceId(MDC.get(HeaderConstant.TRACE_ID))
-            .ip(MDC.get(HeaderConstant.REAL_IP))
+            .bizTraceId(MDC.get(HeaderConstant.X_TRACE_ID))
+            .ip(MDC.get(HeaderConstant.X_REAL_IP))
             .moduleName(moduleName)
             .moduleDesc(moduleDesc)
             .userId(userId)

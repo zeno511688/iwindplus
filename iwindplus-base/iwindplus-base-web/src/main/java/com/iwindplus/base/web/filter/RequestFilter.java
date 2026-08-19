@@ -106,10 +106,10 @@ public class RequestFilter extends OncePerRequestFilter {
     }
 
     private void buildRealIp(HttpServletRequest httpServletRequest, Map<String, String> headers) {
-        String realIp = headers.get(HeaderConstant.REAL_IP);
+        String realIp = headers.get(HeaderConstant.X_REAL_IP);
         if (CharSequenceUtil.isBlank(realIp)) {
             realIp = JakartaServletUtil.getClientIP(httpServletRequest);
-            headers.put(HeaderConstant.REAL_IP, realIp);
+            headers.put(HeaderConstant.X_REAL_IP, realIp);
         }
     }
 

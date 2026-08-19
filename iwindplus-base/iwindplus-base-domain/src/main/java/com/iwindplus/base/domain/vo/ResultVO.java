@@ -97,7 +97,7 @@ public class ResultVO<T> implements Serializable {
         this.bizCode = HttpStatus.OK.name().toLowerCase();
         this.bizMessage = HttpStatus.OK.getReasonPhrase();
         this.bizTimestamp = System.currentTimeMillis();
-        this.bizTraceId = MDC.get(HeaderConstant.TRACE_ID);
+        this.bizTraceId = MDC.get(HeaderConstant.X_TRACE_ID);
     }
 
     /**
