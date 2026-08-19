@@ -34,8 +34,10 @@ import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.base.util.TransactionUtil;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,37 +68,24 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
 
     @Override
     public AsyncCmdVO saveGroup(AsyncCmdGrouSaveDTO entity) {
-        return this.transactionTemplate.execute(status ->
-            this.asyncCmdRepository.saveGroup(entity)
-        );
+        return TransactionUtil.executeInTransaction(this.transactionTemplate, () -> this.asyncCmdRepository.saveGroup(entity));
     }
 
     @Override
     public boolean removeById(Long id, boolean deleted) {
-        return Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
-                this.asyncCmdRepository.deleteById(id, deleted)
-            )
-        );
+        return Boolean.TRUE.equals(TransactionUtil.executeInTransaction(this.transactionTemplate, () -> this.asyncCmdRepository.deleteById(id, deleted)));
     }
 
     @Override
     public boolean removeByIds(List<Long> ids, boolean deleted) {
-        return Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
-                this.asyncCmdRepository.deleteByIds(ids, deleted)
-            )
-        );
+        return Boolean.TRUE.equals(TransactionUtil.executeInTransaction(this.transactionTemplate, () -> this.asyncCmdRepository.deleteByIds(ids, deleted)));
     }
 
     @Override
     public boolean removeByBizNumber(String bizNumber, boolean deleted) {
-        return Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status ->
-                this.asyncCmdRepository.deleteByBizNumber(
-                    SpringUtil.getActiveProfile(), bizNumber, deleted)
-            )
-        );
+        return Boolean.TRUE.equals(TransactionUtil.executeInTransaction(this.transactionTemplate, () ->
+            this.asyncCmdRepository.deleteByBizNumber(SpringUtil.getActiveProfile(), bizNumber, deleted)
+        ));
     }
 
     @Override
@@ -119,20 +108,18 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
 
     @Override
     public boolean editCallbackBatch(AsyncCmdDO mainTask, List<AsyncCmdSubDO> subTasks) {
-        return Boolean.TRUE.equals(
-            this.transactionTemplate.execute(status -> {
-                boolean result = false;
-                if (Objects.nonNull(mainTask)) {
-                    mainTask.setNextRetryTime(System.currentTimeMillis());
-                    result = this.asyncCmdRepository.updateById(mainTask);
-                }
-                if (CollUtil.isNotEmpty(subTasks)) {
-                    this.asyncCmdSubRepository.updateBatchById(subTasks, 1000);
-                    result = true;
-                }
-                return result;
-            })
-        );
+        return Boolean.TRUE.equals(TransactionUtil.executeInTransaction(this.transactionTemplate, () -> {
+            boolean result = false;
+            if (Objects.nonNull(mainTask)) {
+                mainTask.setNextRetryTime(System.currentTimeMillis());
+                result = this.asyncCmdRepository.updateById(mainTask);
+            }
+            if (CollUtil.isNotEmpty(subTasks)) {
+                this.asyncCmdSubRepository.updateBatchById(subTasks, 1000);
+                result = true;
+            }
+            return result;
+        }));
     }
 
     @Override
@@ -145,28 +132,13 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
         PageDTO<AsyncCmdDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
         page.setOptimizeCountSql(Boolean.FALSE);
         page.setOptimizeJoinOfCountSql(Boolean.FALSE);
+
         LambdaQueryWrapper<AsyncCmdDO> queryWrapper = Wrappers.lambdaQuery(AsyncCmdDO.class)
             .orderByDesc(AsyncCmdDO::getModifiedTimestamp)
             .eq(AsyncCmdDO::getEnv, SpringUtil.getActiveProfile());
-        if (Objects.nonNull(entity.getStatus())) {
-            queryWrapper.eq(AsyncCmdDO::getStatus, entity.getStatus());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getBizKey())) {
-            queryWrapper.eq(AsyncCmdDO::getBizKey, entity.getBizKey().trim());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getBizType())) {
-            queryWrapper.eq(AsyncCmdDO::getBizType, entity.getBizType().trim());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getBizNumber())) {
-            queryWrapper.eq(AsyncCmdDO::getBizNumber, entity.getBizNumber().trim());
-        }
-        if (CollUtil.isNotEmpty(entity.getStatusList())) {
-            queryWrapper.in(AsyncCmdDO::getStatus, entity.getStatusList());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getExecuteName())) {
-            queryWrapper.eq(AsyncCmdDO::getExecuteName, entity.getExecuteName().trim());
-        }
 
+        // 添加查询条件
+        this.addQueryConditions(queryWrapper, entity);
         showField(queryWrapper);
 
         final PageDTO<AsyncCmdDO> modelPage = this.asyncCmdRepository.page(page, queryWrapper);
@@ -291,5 +263,34 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
             AsyncCmdDO::getRetryCount, AsyncCmdDO::getNextRetryTime, AsyncCmdDO::getSubTaskCount, AsyncCmdDO::getCostTime,
             AsyncCmdDO::getRemark
         );
+    }
+
+    /**
+     * 添加查询条件.
+     *
+     * @param queryWrapper 查询包装器
+     * @param entity 查询参数
+     */
+    private void addQueryConditions(LambdaQueryWrapper<AsyncCmdDO> queryWrapper, AsyncCmdSearchDTO entity) {
+        Optional.ofNullable(entity.getStatus()).ifPresent(status -> queryWrapper.eq(AsyncCmdDO::getStatus, status));
+        Optional.ofNullable(entity.getStatusList())
+            .filter(CollUtil::isNotEmpty)
+            .ifPresent(statusList -> queryWrapper.in(AsyncCmdDO::getStatus, statusList));
+
+        Optional.ofNullable(entity.getBizKey())
+            .filter(CharSequenceUtil::isNotBlank)
+            .ifPresent(bizKey -> queryWrapper.eq(AsyncCmdDO::getBizKey, bizKey.trim()));
+
+        Optional.ofNullable(entity.getBizType())
+            .filter(CharSequenceUtil::isNotBlank)
+            .ifPresent(bizType -> queryWrapper.eq(AsyncCmdDO::getBizType, bizType.trim()));
+
+        Optional.ofNullable(entity.getBizNumber())
+            .filter(CharSequenceUtil::isNotBlank)
+            .ifPresent(bizNumber -> queryWrapper.eq(AsyncCmdDO::getBizNumber, bizNumber.trim()));
+
+        Optional.ofNullable(entity.getExecuteName())
+            .filter(CharSequenceUtil::isNotBlank)
+            .ifPresent(executeName -> queryWrapper.eq(AsyncCmdDO::getExecuteName, executeName.trim()));
     }
 }

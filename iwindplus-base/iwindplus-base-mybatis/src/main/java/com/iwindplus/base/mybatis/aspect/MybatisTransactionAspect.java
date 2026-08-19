@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.mybatis.aspect;
 
+import com.iwindplus.base.util.TransactionUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -15,7 +16,6 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
@@ -69,9 +69,7 @@ public class MybatisTransactionAspect {
     @Around("pointCutMethod()")
     public Object around(ProceedingJoinPoint pjp) throws Throwable {
         // 根据配置决定是否强制新事务
-        if (TransactionSynchronizationManager.isSynchronizationActive()
-            && TransactionSynchronizationManager.isActualTransactionActive()) {
-
+        if (TransactionUtil.isTransactionActive()) {
             log.debug("Transaction already active, proceeding without new transaction for method={}.{}",
                 pjp.getTarget().getClass().getSimpleName(),
                 pjp.getSignature().getName());
@@ -79,7 +77,7 @@ public class MybatisTransactionAspect {
             return pjp.proceed();
         }
 
-        return transactionTemplate.execute(status -> {
+        return TransactionUtil.executeInTransaction(this.transactionTemplate, () -> {
             try {
                 return pjp.proceed();
             } catch (Throwable ex) {

@@ -74,7 +74,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
     @Override
     public AsyncCmdSubmitVO submit(AsyncCmdSubmitDTO entity) {
         // 校验参数
-        this.checkSubmitParam(entity);
+        this.checkSubmitParam(entity, false);
         final AsyncCmdTaskHandler handler = this.resolveTaskHandler(entity.getExecutorClass());
         if (Boolean.TRUE.equals(entity.getNeedCallback())) {
             Assert.isTrue(this.overrideCallback(handler),
@@ -94,7 +94,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
     @Override
     public AsyncCmdSubmitVO submitGroup(AsyncCmdGroupSubmitDTO entity) {
         // 校验参数
-        this.checkGroupSubmitParam(entity);
+        this.checkSubmitParam(entity, true);
         final AsyncCmdTaskHandler handler = this.resolveTaskHandler(entity.getExecutorClass());
         if (Boolean.TRUE.equals(entity.getNeedCallback())) {
             Assert.isTrue(this.overrideCallback(handler),
@@ -206,22 +206,26 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         dispatchHandler.execute(entity);
     }
 
-    private void checkBaseParam(AsyncCmdSubmitBaseDTO entity) {
+    /**
+     * 统一校验提交参数.
+     *
+     * @param entity 提交参数
+     * @param needCheckSubTasks 是否需要校验子任务
+     */
+    private void checkSubmitParam(AsyncCmdSubmitBaseDTO entity, boolean needCheckSubTasks) {
         Assert.notNull(entity, "entity must not be null");
         Assert.hasText(entity.getBizName(), "bizName must not be null");
         Assert.hasText(entity.getBizKey(), "bizKey must not be blank");
         Assert.hasText(entity.getBizType(), "bizType must not be blank");
-    }
 
-    private void checkSubmitParam(AsyncCmdSubmitDTO entity) {
-        checkBaseParam(entity);
-        Assert.notNull(entity.getExecutorClass(), "executorClass must not be null");
-    }
-
-    private void checkGroupSubmitParam(AsyncCmdGroupSubmitDTO entity) {
-        checkBaseParam(entity);
-        Assert.notNull(entity.getExecutorClass(), "executorClass must not be null");
-        Assert.notEmpty(entity.getSubTasks(), "subTasks must not be null");
+        if (entity instanceof AsyncCmdSubmitDTO asyncCmdSubmitDTO) {
+            Assert.notNull(asyncCmdSubmitDTO.getExecutorClass(), "executorClass must not be null");
+        } else if (entity instanceof AsyncCmdGroupSubmitDTO asyncCmdGroupSubmitDTO) {
+            Assert.notNull(asyncCmdGroupSubmitDTO.getExecutorClass(), "executorClass must not be null");
+            if (needCheckSubTasks) {
+                Assert.notEmpty(asyncCmdGroupSubmitDTO.getSubTasks(), "subTasks must not be null");
+            }
+        }
     }
 
     private void checkSubSubmitParam(AsyncCmdSubSubmitDTO entity, Integer index) {
@@ -411,15 +415,14 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         final Integer progress = entity.getProgress();
         final AsyncCmdCallbackResultEnum callbackResult = entity.getCallbackResult();
 
-        if (Objects.isNull(callbackResult)
-            && Objects.nonNull(progress)
-            && progress >= NumberConstant.NUMBER_ONE_HUNDRED) {
+        // progress >= 100 且无结果 → SUCCESS
+        if (Objects.isNull(callbackResult) && Objects.nonNull(progress) && progress >= NumberConstant.NUMBER_ONE_HUNDRED) {
             entity.setCallbackResult(AsyncCmdCallbackResultEnum.SUCCESS);
             return;
         }
 
-        if (AsyncCmdCallbackResultEnum.SUCCESS.equals(callbackResult)
-            && Objects.isNull(progress)) {
+        // SUCCESS 且无进度 → 100
+        if (AsyncCmdCallbackResultEnum.SUCCESS.equals(callbackResult) && Objects.isNull(progress)) {
             entity.setProgress(NumberConstant.NUMBER_ONE_HUNDRED);
         }
     }
@@ -435,20 +438,14 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             ? new HashMap<>(entity.getResult())
             : new HashMap<>(4);
 
-        final AsyncCmdCallbackResultEnum callbackResult = entity.getCallbackResult();
-        if (Objects.nonNull(callbackResult)) {
-            result.put(
-                AsyncCmdConstant.CALLBACK_RESULT_KEY,
-                callbackResult.name()
-            );
-        }
+        // 添加回调结果
+        Optional.ofNullable(entity.getCallbackResult())
+            .ifPresent(callbackResult -> result.put(AsyncCmdConstant.CALLBACK_RESULT_KEY, callbackResult.name()));
 
-        if (CharSequenceUtil.isNotBlank(entity.getErrorMsg())) {
-            result.put(
-                AsyncCmdConstant.CALLBACK_ERROR_MSG_KEY,
-                entity.getErrorMsg()
-            );
-        }
+        // 添加错误信息
+        Optional.ofNullable(entity.getErrorMsg())
+            .filter(CharSequenceUtil::isNotBlank)
+            .ifPresent(errorMsg -> result.put(AsyncCmdConstant.CALLBACK_ERROR_MSG_KEY, errorMsg));
 
         return result;
     }
@@ -623,7 +620,6 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
      */
     private boolean isFinished(AsyncCmdVO task) {
         final AsyncCmdStatusEnum status = task.getStatus();
-        return AsyncCmdStatusEnum.SUCCESS.equals(status)
-            || AsyncCmdStatusEnum.DISCARD.equals(status);
+        return AsyncCmdStatusEnum.SUCCESS.equals(status) || AsyncCmdStatusEnum.DISCARD.equals(status);
     }
 }
