@@ -14,7 +14,6 @@ import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.ObjectUtil;
-import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import java.time.Duration;
@@ -264,49 +263,46 @@ public class DatesUtil extends DateUtil {
     }
 
     /**
-     * 将频率配置转换为时间戳列表.
+     * 根据频率配置计算后续执行时间.
+     *
+     * <p>频率按照累计间隔计算。
      *
      * <p>例如：
      * <pre>
-     * baseTimeMillis = 1786865640046
-     * frequency = "30s,2m,10m,15m,20m,30m,1h"
+     * frequency = 30s,2m,10m,15m,20m,30m,1h
      *
-     * 结果：
-     * base + 30秒
-     * base + 2分钟
-     * base + 10分钟
-     * base + 15分钟
-     * base + 20分钟
-     * base + 30分钟
-     * base + 1小时
+     * 第一次：base + 30s
+     * 第二次：第一次 + 2m
+     * 第三次：第二次 + 10m
+     * 第四次：第三次 + 15m
+     * ...
      * </pre>
      *
-     * @param baseTimeMillis 基准时间戳，单位：毫秒
-     * @param frequency      频率配置，例如：30s,2m,10m,15m,20m,30m,1h
-     * @return 计算后的时间戳列表
+     * @param baseTimeMillis 基准时间，毫秒时间戳
+     * @param frequency      频率，例如 30s,2m,10m,15m,20m,30m,1h
+     * @return 后续执行时间戳
      */
-    private static List<Long> convertFrequencyToTimestamp(long baseTimeMillis, String frequency) {
+    private static List<Long> convertFrequencyToTimestamp(
+        long baseTimeMillis,
+        String frequency) {
         if (CharSequenceUtil.isBlank(frequency)) {
             return Collections.emptyList();
         }
 
-        final List<String> frequencies = CharSequenceUtil.splitTrim(frequency, SymbolConstant.COMMA);
+        final List<String> frequencies = CharSequenceUtil.splitTrim(frequency, ',');
         final List<Long> result = new ArrayList<>(frequencies.size());
+
+        long timestamp = baseTimeMillis;
 
         for (String freq : frequencies) {
             final Matcher matcher = FREQUENCY_PATTERN.matcher(freq);
-
-            // 校验格式：数字 + 时间单位，例如 30s、2m、1h
             if (!matcher.matches()) {
                 throw new IllegalArgumentException(
                     "Unsupported frequency format: " + freq
                 );
             }
 
-            // 提取数值
             final long amount = Long.parseLong(matcher.group(1));
-
-            // 提取时间单位
             final String unit = matcher.group(2);
 
             final ChronoUnit chronoUnit = TIME_UNIT_MAP.get(unit);
@@ -316,16 +312,13 @@ public class DatesUtil extends DateUtil {
                 );
             }
 
-            // 所有频率都相对于同一个 baseTimeMillis 计算。
             final long offsetMillis = Math.multiplyExact(
                 chronoUnit.getDuration().toMillis(),
                 amount
             );
 
-            final long timestamp = Math.addExact(
-                baseTimeMillis,
-                offsetMillis
-            );
+            // 累计计算：下一次执行时间 = 上一次执行时间 + 当前间隔
+            timestamp = Math.addExact(timestamp, offsetMillis);
 
             result.add(timestamp);
         }

@@ -23,6 +23,7 @@ import com.iwindplus.base.oss.domain.constant.OssConstant;
 import com.iwindplus.base.oss.domain.property.OssProperty;
 import com.iwindplus.base.oss.service.OssMinioService;
 import com.iwindplus.base.util.FilesUtil;
+import com.iwindplus.base.util.IosUtil;
 import com.iwindplus.base.util.JacksonUtil;
 import io.minio.GetBucketPolicyArgs;
 import io.minio.GetObjectArgs;
@@ -365,12 +366,6 @@ public class OssMinioServiceImpl extends AbstractOssBaseServiceImpl implements O
     }
 
     private void closeMinioClient(MinioClient minioClient) {
-        if (Objects.nonNull(minioClient)) {
-            try {
-                minioClient.close();
-            } catch (Exception ex) {
-                log.error(ExceptionConstant.IO_EXCEPTION, ex);
-            }
-        }
+        IosUtil.closeQuietly(minioClient);
     }
 }

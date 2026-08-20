@@ -13,6 +13,7 @@ import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.ocr.domain.property.OcrProperty;
 import com.iwindplus.base.ocr.service.OcrBaseConfigService;
+import com.iwindplus.base.util.IosUtil;
 import com.iwindplus.base.util.domain.enums.ImageTypeEnum;
 import jakarta.annotation.Resource;
 import java.util.Objects;
@@ -72,8 +73,6 @@ public abstract class AbstractOcrBaseConfigServiceImpl implements OcrBaseConfigS
      * @param response 响应
      */
     protected void closeResponse(Response response) {
-        if (Objects.nonNull(response)) {
-            response.close();
-        }
+        IosUtil.closeQuietly(response);
     }
 }

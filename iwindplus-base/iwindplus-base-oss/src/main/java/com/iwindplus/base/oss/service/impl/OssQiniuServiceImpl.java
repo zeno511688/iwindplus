@@ -22,6 +22,7 @@ import com.iwindplus.base.domain.vo.UploadVO;
 import com.iwindplus.base.oss.domain.constant.OssConstant;
 import com.iwindplus.base.oss.service.OssQiniuService;
 import com.iwindplus.base.util.FilesUtil;
+import com.iwindplus.base.util.IosUtil;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
 import com.qiniu.storage.BucketManager;
@@ -191,9 +192,7 @@ public class OssQiniuServiceImpl extends AbstractOssBaseServiceImpl implements O
     }
 
     private void closeResponse(Response response) {
-        if (Objects.nonNull(response)) {
-            response.close();
-        }
+        IosUtil.closeQuietly(response, Response::close);
     }
 
     private List<FilePathVO> getFilePathList(Integer timeout, DtpExecutor taskExecutor, List<List<String>> batches, List<FilePathVO> result) {

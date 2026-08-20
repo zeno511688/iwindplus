@@ -25,8 +25,7 @@ import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
-import com.iwindplus.base.util.AddressUtil;
-import com.iwindplus.base.util.domain.vo.AddressVO;
+import com.iwindplus.base.http.client.integration.service.AddressService;
 import com.iwindplus.log.domain.dto.GatewayLogDTO;
 import com.iwindplus.log.domain.dto.GatewayLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.GatewayLogSearchDTO;
@@ -71,6 +70,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class GatewayLogServiceImpl extends EsBaseServiceImpl<GatewayLogDO> implements GatewayLogService {
 
     private final UserClient userClient;
+    private final AddressService addressService;
 
     @CacheEvict(allEntries = true)
     @Override
@@ -204,9 +204,11 @@ public class GatewayLogServiceImpl extends EsBaseServiceImpl<GatewayLogDO> imple
             return;
         }
         try {
-            AddressVO result = AddressUtil.getAddress(entity.getIp());
-            entity.setProvince(Optional.ofNullable(result).map(AddressVO::getProvince).orElse(null));
-            entity.setCity(Optional.ofNullable(result).map(AddressVO::getCity).orElse(null));
+            this.addressService.getAddressByPconline(entity.getIp())
+                .ifPresent(address -> {
+                    entity.setProvince(address.getProvince());
+                    entity.setCity(address.getCity());
+                });
         } catch (Exception e) {
             log.error("获取地址信息异常", e);
         }

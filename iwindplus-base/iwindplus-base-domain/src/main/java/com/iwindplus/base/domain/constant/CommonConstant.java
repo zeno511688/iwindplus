@@ -147,6 +147,11 @@ public final class CommonConstant {
                 "parentspanid",
                 "parent_span_id"
             );
+
+        /**
+         * 结果.
+         */
+        public static final String RESULT = "result";
     }
 
     /**
@@ -285,7 +290,7 @@ public final class CommonConstant {
         /**
          * XMLHttpRequest.
          */
-        public static final String XML_HTTP_REQUEST = "XMLHttpRequest";
+        public static final String X_XML_HTTP_REQUEST = "XMLHttpRequest";
 
         /**
          * Sec-WebSocket-Protocol.

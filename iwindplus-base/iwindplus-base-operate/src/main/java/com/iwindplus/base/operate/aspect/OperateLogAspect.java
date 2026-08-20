@@ -144,13 +144,22 @@ public class OperateLogAspect {
         final Long userId = Optional.ofNullable(userInfo).map(UserBaseVO::getUserId).orElse(null);
         final Long orgId = Optional.ofNullable(userInfo).map(UserBaseVO::getOrgId).orElse(null);
         final String realName = Optional.ofNullable(userInfo).map(UserBaseVO::getRealName).orElse(null);
+
+        // 解析spel表达式字段
+        String bizType = this.parseSpelField(entity.bizType(), method, args, result, String.class);
+        String operateType = this.parseSpelField(entity.operateType(), method, args, result, String.class);
+        String operateName = this.parseSpelField(entity.operateName(), method, args, result, String.class);
+        String operateDesc = this.parseSpelField(
+            CharSequenceUtil.isNotBlank(entity.operateDesc()) ? entity.operateDesc() : entity.operateName(),
+            method, args, result, String.class);
+
         final OperateLogDTO param = OperateLogDTO.builder()
             .targetServer(applicationName)
             .bizNumber(this.buildBizNumber(entity, target, method, args))
-            .bizType(entity.bizType())
-            .operateType(entity.operateType())
-            .operateName(entity.operateName())
-            .operateDesc(CharSequenceUtil.isNotBlank(entity.operateDesc()) ? entity.operateDesc() : entity.operateName())
+            .bizType(bizType)
+            .operateType(operateType)
+            .operateName(operateName)
+            .operateDesc(operateDesc)
             .responseBody(this.buildResponseBody(result))
             .requestTime(DatesUtil.parseDate(beginMillis, DatePattern.NORM_DATETIME_MS_PATTERN))
             .responseTime(DatesUtil.parseDate(endMillis, DatePattern.NORM_DATETIME_MS_PATTERN))
@@ -269,6 +278,39 @@ public class OperateLogAspect {
             entity.setOsName(Optional.ofNullable(userAgent).map(UserAgent::getOs).map(OS::getName).orElse(null));
             entity.setBrowserName(Optional.ofNullable(userAgent).map(UserAgent::getBrowser).map(Browser::getName).orElse(null));
         });
+    }
+
+    /**
+     * 解析spel表达式字段.
+     *
+     * @param fieldExpression 字段表达式（可能是spel表达式或普通字符串）
+     * @param method          方法
+     * @param args            参数值
+     * @param result          返回结果
+     * @param clz             返回结果的类型
+     * @param <T>             泛型
+     * @return 解析结果
+     */
+    private <T> T parseSpelField(String fieldExpression, Method method, Object[] args, Object result, Class<T> clz) {
+        if (CharSequenceUtil.isBlank(fieldExpression)) {
+            return null;
+        }
+        try {
+            List<T> parsedList = ExpressionUtil.parse(method, args, result, new String[]{fieldExpression}, clz);
+            if (CollUtil.isNotEmpty(parsedList) && parsedList.get(0) != null) {
+                return parsedList.get(0);
+            }
+            // 解析失败或返回null，尝试直接转换为目标类型
+            return clz.cast(fieldExpression);
+        } catch (Exception ex) {
+            // spel表达式解析异常，直接返回原值
+            log.error("操作日志审计spel表达式解析异常，表达式={}，使用原值", fieldExpression);
+            try {
+                return clz.cast(fieldExpression);
+            } catch (ClassCastException e) {
+                return null;
+            }
+        }
     }
 
 }

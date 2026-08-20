@@ -168,9 +168,7 @@ public class SwaggerListener {
     private Mono<Boolean> registerApiReactive(AppApiVO entity) {
         return Mono.fromCompletionStage(() ->
                 httpClientExecutorStrategyFactory
-                    .getHttpClientExecutor(
-                        HttpClientTypeEnum.WEB_CLIENT
-                    )
+                    .getHttpClientExecutor(HttpClientTypeEnum.WEB_CLIENT )
                     .postAsync(
                         property.getServerApi().getUrl(),
                         entity,

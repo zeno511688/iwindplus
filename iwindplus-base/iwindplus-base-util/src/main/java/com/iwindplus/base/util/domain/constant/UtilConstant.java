@@ -22,31 +22,6 @@ public final class UtilConstant {
     }
 
     /**
-     * 地址相关常数 .
-     */
-    public final class AddressConstant {
-
-        private AddressConstant() {
-            throw new IllegalStateException(CommonConstant.UTILITY_CLASS);
-        }
-
-        /**
-         * 太平洋网络的接口.
-         */
-        public static final String PCONLINE_URL_STR = "http://whois.pconline.com.cn/ipJson.jsp";
-
-        /**
-         * 高德云图的接口.
-         */
-        public static final String GAODEYUNTU_URL_STR = "http://iploc.market.alicloudapi.com/v3/ip";
-
-        /**
-         * ip138的接口（准确）.
-         */
-        public static final String IP138_URL_STR = "https://api.ip138.com/ip";
-    }
-
-    /**
      * 加解密安全相关常数 .
      */
     public final class CryptoConstant {

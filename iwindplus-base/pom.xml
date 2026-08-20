@@ -129,6 +129,7 @@
         <module>iwindplus-base-domain</module>
         <module>iwindplus-base-excel</module>
         <module>iwindplus-base-http-client</module>
+        <module>iwindplus-base-http-client-integration</module>
         <module>iwindplus-base-kafka</module>
         <module>iwindplus-base-mail</module>
         <module>iwindplus-base-mongo</module>
@@ -668,6 +669,11 @@
             <dependency>
                 <groupId>com.iwindplus.base</groupId>
                 <artifactId>iwindplus-base-http-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.base</groupId>
+                <artifactId>iwindplus-base-http-client-integration</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

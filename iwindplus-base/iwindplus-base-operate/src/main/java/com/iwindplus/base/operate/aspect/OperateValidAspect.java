@@ -20,7 +20,6 @@ import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.domain.vo.UserBaseVO;
 import com.iwindplus.base.domain.vo.UserExtendFunctionValidVO;
-import com.iwindplus.base.http.client.domain.enums.HttpClientTypeEnum;
 import com.iwindplus.base.http.client.factory.HttpClientExecutorStrategyFactory;
 import com.iwindplus.base.operate.domain.annotation.OperateValid;
 import com.iwindplus.base.operate.domain.property.OperateProperty;
@@ -159,7 +158,7 @@ public class OperateValidAspect {
         UserExtendFunctionValidDTO dto = collectCaptchaData(annotation, context, request);
         final Map<String, Object> query = BeanUtil.beanToMap(dto);
         final ResultVO<UserExtendFunctionValidVO> result = httpClientExecutorStrategyFactory
-            .getHttpClientExecutor(HttpClientTypeEnum.REST_CLIENT)
+            .getDefaultHttpClientExecutor()
             .post(
                 cfg.getUrl(),
                 query,

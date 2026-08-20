@@ -19,7 +19,6 @@ import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.domain.vo.BaseSignExtendVO;
 import com.iwindplus.base.domain.vo.BaseSignVO;
 import com.iwindplus.base.domain.vo.ResultVO;
-import com.iwindplus.base.http.client.domain.enums.HttpClientTypeEnum;
 import com.iwindplus.base.http.client.domain.property.HttpClientProperty;
 import com.iwindplus.base.http.client.domain.property.HttpClientProperty.ApiProtectionConfig;
 import com.iwindplus.base.http.client.factory.HttpClientExecutorStrategyFactory;
@@ -152,7 +151,7 @@ public record ApiProtectionProvider(
             "appCertType", certType
         );
         final ResultVO<BaseSignVO> result = httpClientExecutorStrategyFactory
-            .getHttpClientExecutor(HttpClientTypeEnum.REST_CLIENT)
+            .getDefaultHttpClientExecutor()
             .get(cfg.getUrl(), query, null, new TypeReference<>() {
             });
         result.errorThrow();

@@ -75,8 +75,8 @@ public class PdfUtil {
 
         } finally {
             // PdfStamper 必须先关闭，否则PDF内容不会完全写入
-            closeQuietly(stamper);
-            closeQuietly(reader);
+            IosUtil.closeQuietly(stamper, PdfStamper::close);
+            IosUtil.closeQuietly(reader, PdfReader::close);
         }
     }
 

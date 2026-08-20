@@ -13,6 +13,7 @@ import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.ArrayUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
+import com.iwindplus.base.util.IosUtil;
 import com.iwindplus.base.util.JacksonUtil;
 import com.iwindplus.base.util.PathMatchUtil;
 import com.iwindplus.base.web.domain.property.FilterProperty;
@@ -243,6 +244,8 @@ public class XssHttpServletRequestWrapper extends HttpServletRequestWrapper {
             }
         } catch (IOException e) {
             log.error(ExceptionConstant.IO_EXCEPTION, e);
+        } finally {
+            IosUtil.close(in);
         }
         return sb.toString();
     }

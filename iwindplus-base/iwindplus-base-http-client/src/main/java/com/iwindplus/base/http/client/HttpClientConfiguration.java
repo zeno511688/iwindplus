@@ -57,7 +57,7 @@ public class HttpClientConfiguration {
     @Resource
     private HttpClientProperty property;
 
-    @Resource
+    @Resource(name = "httpClientTaskExecutor")
     private DtpExecutor httpClientTaskExecutor;
 
     /**

@@ -46,28 +46,28 @@ public @interface OperateLog {
     String[] conditions() default {};
 
     /**
-     * 业务类型（必填）.
+     * 业务类型（必填，支持spel表达式）.
      *
      * @return String
      */
     String bizType();
 
     /**
-     * 操作类型（必填）.
+     * 操作类型（必填，支持spel表达式）.
      *
      * @return String
      */
     String operateType();
 
     /**
-     * 操作名称（必填）.
+     * 操作名称（必填，支持spel表达式）.
      *
      * @return String
      */
     String operateName();
 
     /**
-     * 操作描述（可选，默认等于操作名称）.
+     * 操作描述（可选，默认等于操作名称，支持spel表达式）.
      *
      * @return String
      */

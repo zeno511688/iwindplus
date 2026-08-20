@@ -498,7 +498,7 @@ public class HttpsUtil extends HttpUtil {
      * @return boolean
      */
     public static boolean isAjaxRequest(HttpServletRequest request) {
-        return CharSequenceUtil.equalsIgnoreCase(HeaderConstant.XML_HTTP_REQUEST,
+        return CharSequenceUtil.equalsIgnoreCase(HeaderConstant.X_XML_HTTP_REQUEST,
             request.getHeader(HeaderConstant.X_REQUESTED_WITH));
     }
 

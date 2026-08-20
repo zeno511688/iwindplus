@@ -5,7 +5,7 @@
  *
  */
 
-package com.iwindplus.log.server.handler.job;
+package com.iwindplus.log.server.jobhandler;
 
 import cn.hutool.core.date.DatePattern;
 import com.iwindplus.base.util.DatesUtil;

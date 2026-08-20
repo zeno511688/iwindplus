@@ -5,7 +5,7 @@
  *
  */
 
-package com.iwindplus.base.util.domain.vo;
+package com.iwindplus.base.http.client.integration.domain.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

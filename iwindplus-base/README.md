@@ -1,53 +1,46 @@
-# iwindplus-bae
+# iwindplus-base
 
-#### 介绍
+`iwindplus-base` 是项目基础能力聚合模块，为业务服务提供可复用的基础设施适配、Web 能力、数据访问、消息、任务、监控和通用工具。
 
-base框架: iwindplus-base
+## 模块组织
 
-编码枚举规范
+| 模块 | 职责 |
+| --- | --- |
+| `iwindplus-base-domain` | 公共领域模型、基础枚举和通用对象 |
+| `iwindplus-base-util` | 日期、JSON、加解密、校验、事务等通用工具 |
+| `iwindplus-base-web` | Web 基础过滤器、上下文、脱敏和校验能力 |
+| `iwindplus-base-webmvc` / `iwindplus-base-webflux` | MVC、WebFlux 全局异常、跨域和响应增强 |
+| `iwindplus-base-http-client` | HTTP 客户端执行器及策略工厂 |
+| `iwindplus-base-http-client-integration` | 基于 HTTP 客户端的第三方接口集成 |
+| `iwindplus-base-feign` | Feign 请求传递、重试和统一异常处理 |
+| `iwindplus-base-mybatis` / `iwindplus-base-es` | MyBatis、Elasticsearch 数据访问能力 |
+| `iwindplus-base-redis` / `iwindplus-base-mongo` | Redis、MongoDB 集成能力 |
+| `iwindplus-base-kafka` / `iwindplus-base-rabbit` / `iwindplus-base-rocket` | 消息中间件集成能力 |
+| `iwindplus-base-async-cmd` | 本地事务消息、异步命令和失败重试 |
+| `iwindplus-base-binlog` | Binlog 事件监听和投递 |
+| `iwindplus-base-disruptor` | Disruptor 高并发队列处理 |
+| `iwindplus-base-loadbalancer` | 服务发现、权重负载均衡和灰度发布 |
+| `iwindplus-base-monitor` / `iwindplus-base-log` | 链路上下文、监控埋点和日志告警 |
+| `iwindplus-base-alert` | 告警渠道和告警执行器 |
+| `iwindplus-base-oss` / `iwindplus-base-mail` / `iwindplus-base-sms` | 对象存储、邮件和短信服务 |
+| `iwindplus-base-wechat` / `iwindplus-base-ocr` | 微信生态和 OCR 能力 |
+| `iwindplus-base-shiro` / `iwindplus-base-operate` | 权限、安全操作校验和操作日志 |
+| `iwindplus-base-i18n` | 国际化资源和动态更新 |
+| `iwindplus-base-excel` / `iwindplus-base-pdf` | Excel、PDF 等文件处理 |
+| `iwindplus-base-swagger` | API 文档和接口定义查询 |
+| `iwindplus-base-snail-job` / `iwindplus-base-xxl-job` | 任务调度集成 |
 
-#### 软件架构
-软件架构说明
-project-name/
-├── src/main/java/com/example/
-│   ├── application/           // 应用层
-│   │   ├── command/           // 命令对象
-│   │   ├── dto/               // 数据传输对象
-│   │   ├── service/           // 应用服务
-│   │   └── mapper/            // DTO与领域对象映射
-│   ├── domain/                // 领域层
-│   │   ├── model/             // 领域模型
-│   │   │   ├── entity/        // 实体
-│   │   │   ├── vo/            // 值对象
-│   │   │   └── aggregate/     // 聚合根
-│   │   ├── repository/        // 仓储接口
-│   │   └── service/           // 领域服务
-│   ├── infrastructure/        // 基础设施层
-│   │   ├── persistence/       // 持久化实现
-│   │   ├── messaging/         // 消息组件
-│   │   └── config/            // 配置类
-│   └── interfaces/            // 用户接口层
-│       ├── rest/              // REST接口
-│       └── facade/            // 外部服务接口
-└── src/main/resources/
-├── application.yml        // 应用配置
-└── db/migration/          // 数据库迁移脚本
+## 使用原则
 
-#### 安装教程
+1. 业务模块只引入实际使用的基础模块，避免引入无关传递依赖。
+2. 优先使用模块提供的接口、策略工厂和自动配置，不直接依赖具体实现类。
+3. 配置项、扩展点和示例以对应子模块 README 为准。
+4. 第三方客户端和基础设施连接由基础模块统一管理，业务代码不重复创建客户端。
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## 构建
 
-#### 使用说明
+```bash
+mvn -pl iwindplus-base -am clean install
+```
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### 参与贡献
-
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+单独使用子模块时，请先确认其父工程版本和必要的基础依赖已安装。

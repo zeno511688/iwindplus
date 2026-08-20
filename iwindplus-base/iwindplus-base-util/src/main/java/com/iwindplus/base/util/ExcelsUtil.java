@@ -312,13 +312,7 @@ public class ExcelsUtil extends ExcelUtil {
      * @param workbook workbook
      */
     public static void closeWorkbook(Workbook workbook) {
-        if (Objects.nonNull(workbook)) {
-            try {
-                workbook.close();
-            } catch (IOException ex) {
-                log.error(ExceptionConstant.IO_EXCEPTION, ex);
-            }
-        }
+        IosUtil.closeQuietly(workbook);
     }
 
     private static void parseRow(List<String> excelList, int ii, Row row) {

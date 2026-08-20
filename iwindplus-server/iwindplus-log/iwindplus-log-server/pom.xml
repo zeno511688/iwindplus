@@ -122,6 +122,10 @@
             <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-disruptor</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-http-client-integration</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

@@ -21,6 +21,7 @@ import com.iwindplus.base.sms.domain.constant.SmsConstant.QiniuConstant;
 import com.iwindplus.base.sms.domain.vo.SmsBatchVO;
 import com.iwindplus.base.sms.domain.vo.SmsLogVO;
 import com.iwindplus.base.sms.service.SmsQiniuService;
+import com.iwindplus.base.util.IosUtil;
 import com.iwindplus.base.util.JacksonUtil;
 import com.iwindplus.base.util.TemplateUtil;
 import com.qiniu.common.QiniuException;
@@ -113,8 +114,6 @@ public class SmsQiniuServiceImpl extends AbstractSmsBaseServiceImpl implements S
     }
 
     private void closeResponse(Response response) {
-        if (Objects.nonNull(response)) {
-            response.close();
-        }
+        IosUtil.closeQuietly(response, Response::close);
     }
 }

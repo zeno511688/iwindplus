@@ -10,7 +10,6 @@ package com.iwindplus.base.operate.listener;
 import cn.hutool.extra.spring.SpringUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.iwindplus.base.domain.vo.ResultVO;
-import com.iwindplus.base.http.client.domain.enums.HttpClientTypeEnum;
 import com.iwindplus.base.http.client.factory.HttpClientExecutorStrategyFactory;
 import com.iwindplus.base.operate.domain.dto.OperateLogDTO;
 import com.iwindplus.base.operate.domain.event.OperateLogEvent;
@@ -53,7 +52,7 @@ public class OperateLogListener {
 
         final OperateLogConfig cfg = property.getLog();
         httpClientExecutorStrategyFactory
-            .getHttpClientExecutor(HttpClientTypeEnum.REST_CLIENT)
+            .getDefaultHttpClientExecutor()
             .post(
                 cfg.getUrl(),
                 logData,

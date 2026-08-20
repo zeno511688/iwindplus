@@ -25,7 +25,6 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -219,13 +218,7 @@ public class FilesUtil extends FileUtil {
      * @param inputStream 输入流
      */
     public static void closeInputStream(InputStream inputStream) {
-        if (Objects.nonNull(inputStream)) {
-            try {
-                inputStream.close();
-            } catch (IOException ex) {
-                log.error(ExceptionConstant.IO_EXCEPTION, ex);
-            }
-        }
+        IosUtil.closeInputStream(inputStream);
     }
 
     /**
@@ -234,13 +227,7 @@ public class FilesUtil extends FileUtil {
      * @param outputStream 输出流
      */
     public static void closeOutputStream(OutputStream outputStream) {
-        if (Objects.nonNull(outputStream)) {
-            try {
-                outputStream.close();
-            } catch (IOException ex) {
-                log.error(ExceptionConstant.IO_EXCEPTION, ex);
-            }
-        }
+        IosUtil.closeOutputStream(outputStream);
     }
 
     /**

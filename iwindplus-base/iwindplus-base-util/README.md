@@ -1,6 +1,5 @@
 # 工具类模块
 
-    AddressUtil -- 获取所在省市信息工具类
     ApiSignUtil -- API签名工具类
     BeanCopierUtil -- 对象复制工具类
     CheckDataUtil -- 校验数据相关工具类
@@ -20,6 +19,7 @@
     HttpsUtil -- Http请求相关工具类
     I18nUtil -- 国际化工具类
     ImageUtil -- 图片处理工具类
+    IosUtil -- IO工具类
     JacksonUtil -- jackson工具类
     KeysUtil -- 唯一key工具类
     KryoUtil -- kryo工具类
