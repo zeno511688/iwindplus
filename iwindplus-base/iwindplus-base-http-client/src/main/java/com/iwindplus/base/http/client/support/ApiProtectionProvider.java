@@ -8,8 +8,8 @@
 package com.iwindplus.base.http.client.support;
 
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.core.util.RandomUtil;
 import cn.hutool.extra.spring.SpringUtil;
+import com.iwindplus.base.util.SecureRandomUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -120,7 +120,7 @@ public record ApiProtectionProvider(
         }
 
         final String timestamp = String.valueOf(System.currentTimeMillis());
-        final String nonce = RandomUtil.randomString(12);
+        final String nonce = SecureRandomUtil.randomString(12);
         return ApiSignGenerateDTO.builder()
             .accessKey(entity.getAccessKey())
             .secretKey(entity.getSecretKey())

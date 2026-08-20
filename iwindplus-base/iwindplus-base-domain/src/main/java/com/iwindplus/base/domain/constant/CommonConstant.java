@@ -823,6 +823,11 @@ public final class CommonConstant {
         public static final String ASTERISK = "*";
 
         /**
+         * 双星号.
+         */
+        public static final String DOUBLE_ASTERISK = "**";
+
+        /**
          * 逗号.
          */
         public static final String COMMA = ",";

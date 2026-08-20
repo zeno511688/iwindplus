@@ -35,6 +35,7 @@
     PropertyUtil -- Property工具类
     ProtostuffUtil -- protobuf工具类
     ReactorUtil -- reactor工具类
+    SecureRandomUtil -- 安全随机数工具类
     SensitiveUtil -- 脱敏工具类
     TemplateUtil -- freemark模板变量替换工具类
     TreesUtil -- 树形工具类

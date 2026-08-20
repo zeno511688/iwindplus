@@ -9,7 +9,7 @@ package com.iwindplus.base.sms.service.impl;
 
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.core.util.RandomUtil;
+import com.iwindplus.base.util.SecureRandomUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
@@ -48,7 +48,7 @@ public class SmsQiniuServiceImpl extends AbstractSmsBaseServiceImpl implements S
 
     @Override
     public SmsLogVO smsSendCaptcha(String phoneNumber, Integer captchaLength, Integer captchaTimeout) {
-        String captcha = RandomUtil.randomNumbers(Optional.ofNullable(captchaLength).orElse(SmsConstant.CAPTCHA_LENGTH));
+        String captcha = SecureRandomUtil.randomNumbers(Optional.ofNullable(captchaLength).orElse(SmsConstant.CAPTCHA_LENGTH));
         List<SmsBatchVO> result = this.smsSend(Arrays.asList(phoneNumber), Arrays.asList(captcha), null);
         return super.getSmsLogVO(captchaTimeout, result);
     }

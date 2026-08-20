@@ -8,7 +8,7 @@
 package com.iwindplus.base.sms.service.impl;
 
 import cn.hutool.core.net.url.UrlBuilder;
-import cn.hutool.core.util.RandomUtil;
+import com.iwindplus.base.util.SecureRandomUtil;
 import com.google.common.collect.Lists;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
@@ -46,7 +46,7 @@ public class SmsLingkaiServiceImpl extends AbstractSmsBaseServiceImpl implements
 
     @Override
     public SmsLogVO smsSendCaptcha(String phoneNumber, Integer captchaLength, Integer captchaTimeout) {
-        String captcha = RandomUtil.randomNumbers(Optional.ofNullable(captchaLength).orElse(SmsConstant.CAPTCHA_LENGTH));
+        String captcha = SecureRandomUtil.randomNumbers(Optional.ofNullable(captchaLength).orElse(SmsConstant.CAPTCHA_LENGTH));
         List<SmsBatchVO> result = this.smsSend(Arrays.asList(phoneNumber), Arrays.asList(captcha), null);
         return super.getSmsLogVO(captchaTimeout, result);
     }

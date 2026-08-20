@@ -7,7 +7,7 @@ package com.iwindplus.setup.server.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
-import cn.hutool.core.util.RandomUtil;
+import com.iwindplus.base.util.SecureRandomUtil;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.mail.domain.dto.MailDTO;
 import com.iwindplus.base.mail.domain.property.MailProperty;
@@ -190,7 +190,7 @@ public class MailboxServiceImpl implements MailboxService {
 
         MailDTO cond = new MailDTO();
         cond.setTos(Arrays.asList(mail));
-        String captcha = RandomUtil.randomNumbers(6);
+        String captcha = SecureRandomUtil.randomNumbers(6);
         Integer timeout = Objects.isNull(mailTpl.getCaptchaTimeout()) ? SmsConstant.CAPTCHA_TIMEOUT : mailTpl.getCaptchaTimeout();
         cond.setSubject(mailTpl.getName());
         List<String> templateParams = Arrays.asList(captcha, timeout.toString());

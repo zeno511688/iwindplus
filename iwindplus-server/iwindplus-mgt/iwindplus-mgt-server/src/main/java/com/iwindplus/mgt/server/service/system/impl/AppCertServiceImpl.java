@@ -8,7 +8,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.IdUtil;
-import cn.hutool.core.util.RandomUtil;
+import com.iwindplus.base.util.SecureRandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -68,7 +68,7 @@ public class AppCertServiceImpl implements AppCertService {
     @Override
     public boolean save(AppCertDTO entity) {
         entity.setAccessKey(IdUtil.simpleUUID());
-        String secret = RandomUtil.randomString(32);
+        String secret = SecureRandomUtil.randomString(32);
         entity.setSecretKey(secret);
         entity.setStatus(EnableStatusEnum.ENABLE);
         this.appCertRepository.getAppCertTypeIsExist(entity.getCertType());
@@ -216,7 +216,7 @@ public class AppCertServiceImpl implements AppCertService {
             throw new BizException(BizCodeEnum.DATA_NOT_EXIST);
         }
         // 生成新的密钥
-        String secret = RandomUtil.randomString(32);
+        String secret = SecureRandomUtil.randomString(32);
         AppCertDO param = new AppCertDO();
         param.setId(data.getId());
         param.setSecretKey(secret);

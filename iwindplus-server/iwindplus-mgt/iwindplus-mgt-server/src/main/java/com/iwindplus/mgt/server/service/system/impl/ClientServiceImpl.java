@@ -8,7 +8,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.IdUtil;
-import cn.hutool.core.util.RandomUtil;
+import com.iwindplus.base.util.SecureRandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -92,7 +92,7 @@ public class ClientServiceImpl implements ClientService {
             entity.setTokenSetting(tokenSetting);
         }
         String clientId = IdUtil.simpleUUID();
-        String secret = RandomUtil.randomString(32);
+        String secret = SecureRandomUtil.randomString(32);
         final ClientDO model = BeanUtil.copyProperties(entity, ClientDO.class);
         model.setClientId(clientId);
         model.setClientIdIssuedAt(System.currentTimeMillis());
@@ -175,7 +175,7 @@ public class ClientServiceImpl implements ClientService {
             throw new BizException(BizCodeEnum.DATA_NOT_EXIST);
         }
         // 生成新的密钥
-        String secret = RandomUtil.randomString(32);
+        String secret = SecureRandomUtil.randomString(32);
         ClientDO param = new ClientDO();
         param.setId(data.getId());
         param.setClientSecret(this.passwordEncoder.encode(secret));

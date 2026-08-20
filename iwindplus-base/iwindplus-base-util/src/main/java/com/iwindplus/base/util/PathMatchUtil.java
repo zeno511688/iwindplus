@@ -10,6 +10,7 @@ package com.iwindplus.base.util;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.iwindplus.base.domain.constant.CommonConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import java.time.Duration;
 import java.util.ArrayDeque;
@@ -42,11 +43,11 @@ public final class PathMatchUtil {
         throw new IllegalStateException(CommonConstant.UTILITY_CLASS);
     }
 
-    private static final String STAR = "*";
-    private static final String DOUBLE_STAR = "**";
-    private static final char SLASH_CHAR = '/';
-    private static final int DEFAULT_CACHE_SIZE = 1024;
-    private static final int DFS_POOL_SIZE = 512;
+    private static final String STAR = SymbolConstant.ASTERISK;
+    private static final String DOUBLE_STAR = SymbolConstant.DOUBLE_ASTERISK;
+    private static final char SLASH_CHAR = SymbolConstant.SLASH.charAt(0);
+    private static final int DEFAULT_CACHE_SIZE = NumberConstant.NUMBER_ONE_THOUSAND_TWENTY_FOUR;
+    private static final int DFS_POOL_SIZE = NumberConstant.NUMBER_FIVE_HUNDRED_TWELVE;
 
     /**
      * 匹配结果缓存： key = patterns.hashCode + ":" + path
