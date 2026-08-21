@@ -84,7 +84,7 @@ public final class AddressConstant {
         /**
          * 太平洋网络的接口.
          */
-        public static final String PCONLINE_URL_STR = "http://whois.pconline.com.cn/ipJson.jsp";
+        public static final String PCONLINE_URL_STR = "https://whois.pconline.com.cn/ipJson.jsp";
 
         /**
          * 高德云图的接口.
