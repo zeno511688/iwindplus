@@ -5,7 +5,7 @@
  *
  */
 
-package com.iwindplus.im.server.strategy.impl;
+package com.iwindplus.im.server.support.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
@@ -16,7 +16,7 @@ import com.iwindplus.im.domain.enums.CommandEnum;
 import com.iwindplus.im.domain.enums.SendStatusEnum;
 import com.iwindplus.im.server.dal.model.SysNoticeMsgDO;
 import com.iwindplus.im.server.service.SysNoticeMsgService;
-import com.iwindplus.im.server.strategy.WsMsgStrategy;
+import com.iwindplus.im.server.support.WsMsgStrategy;
 import com.iwindplus.mgt.client.power.OrgClient;
 import jakarta.annotation.Resource;
 import java.util.Objects;

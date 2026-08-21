@@ -5,12 +5,12 @@
  *
  */
 
-package com.iwindplus.im.server.strategy.impl;
+package com.iwindplus.im.server.support.impl;
 
 import com.iwindplus.base.util.JacksonUtil;
 import com.iwindplus.base.websocket.service.WebSocketServerBootstrap;
 import com.iwindplus.im.domain.dto.WsSendMsgDTO;
-import com.iwindplus.im.server.strategy.WsMsgStrategy;
+import com.iwindplus.im.server.support.WsMsgStrategy;
 import jakarta.annotation.Resource;
 import java.util.Objects;
 import org.tio.core.ChannelContext;

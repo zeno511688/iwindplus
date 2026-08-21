@@ -5,17 +5,16 @@
  *
  */
 
-package com.iwindplus.im.server.strategy.impl;
+package com.iwindplus.im.server.support.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import com.iwindplus.im.domain.dto.WsSendMsgDTO;
 import com.iwindplus.im.domain.enums.CommandEnum;
-import com.iwindplus.im.domain.enums.MsgTypeEnum;
 import com.iwindplus.im.domain.enums.SendStatusEnum;
-import com.iwindplus.im.domain.vo.AddFriendMsgVO;
-import com.iwindplus.im.server.dal.model.AddFriendMsgDO;
-import com.iwindplus.im.server.service.AddFriendMsgService;
-import com.iwindplus.im.server.strategy.WsMsgStrategy;
+import com.iwindplus.im.domain.vo.DirectMsgVO;
+import com.iwindplus.im.server.dal.model.DirectMsgDO;
+import com.iwindplus.im.server.service.DirectMsgService;
+import com.iwindplus.im.server.support.WsMsgStrategy;
 import com.iwindplus.mgt.client.power.OrgClient;
 import jakarta.annotation.Resource;
 import java.util.List;
@@ -26,24 +25,24 @@ import org.tio.core.ChannelContext;
 import org.tio.core.TioConfig;
 
 /**
- * 离线添加好友聊天消息策略实现类.
+ * 离线直发消息策略实现类.
  *
  * @author zengdegui
  * @since 2025/09/21 20:33
  */
 @Slf4j
 @Service
-public class OfficeAddFriendMsgStrategyImpl extends AbstractWsMsgStrategyImpl implements WsMsgStrategy {
+public class OfficeDirectMsgStrategyImpl extends AbstractWsMsgStrategyImpl implements WsMsgStrategy {
 
     @Resource
-    private AddFriendMsgService addFriendMsgService;
+    private DirectMsgService directMsgService;
 
     @Resource
     private OrgClient orgClient;
 
     @Override
     public CommandEnum support() {
-        return CommandEnum.OFFLINE_ADD_FRIEND_MSG;
+        return CommandEnum.OFFLINE_DIRECT_MSG;
     }
 
     @Override
@@ -54,24 +53,24 @@ public class OfficeAddFriendMsgStrategyImpl extends AbstractWsMsgStrategyImpl im
 
         final TioConfig tioConfig = this.getTioConfig(ctx);
 
-        final List<AddFriendMsgVO> list = this.addFriendMsgService.listByUnSendSuccess(msg.getSendUserId(), msg.getSendOrgId());
+        final List<DirectMsgVO> list = this.directMsgService.listByUnSendSuccess(msg.getSendUserId(), msg.getSendOrgId());
         if (CollUtil.isNotEmpty(list)) {
-            list.forEach(data -> this.offlineAddFriendMsg(tioConfig, msg, data));
+            list.forEach(data -> this.offlineDirectMsg(tioConfig, msg, data));
         }
     }
 
-    private void offlineAddFriendMsg(TioConfig tioConfig, WsSendMsgDTO wsMsg, AddFriendMsgVO entity) {
+    private void offlineDirectMsg(TioConfig tioConfig, WsSendMsgDTO wsMsg, DirectMsgVO entity) {
         final WsSendMsgDTO msg = WsSendMsgDTO.builder()
             .command(wsMsg.getCommand())
-            .msgType(MsgTypeEnum.TEXT)
+            .msgType(entity.getMsgType())
+            .title(entity.getTitle())
             .content(entity.getContent())
             .sendUserId(wsMsg.getSendUserId())
-            .sendOrgId(wsMsg.getSendOrgId())
             .receiverId(wsMsg.getReceiverId())
             .msgId(entity.getId())
             .build();
 
-        AddFriendMsgDO param = AddFriendMsgDO.builder()
+        DirectMsgDO param = DirectMsgDO.builder()
             .id(entity.getId())
             .sendTime(System.currentTimeMillis())
             .build();
@@ -83,7 +82,6 @@ public class OfficeAddFriendMsgStrategyImpl extends AbstractWsMsgStrategyImpl im
         } else {
             param.setSendStatus(SendStatusEnum.FAILED);
         }
-        this.addFriendMsgService.updateById(param);
+        this.directMsgService.updateById(param);
     }
-
 }

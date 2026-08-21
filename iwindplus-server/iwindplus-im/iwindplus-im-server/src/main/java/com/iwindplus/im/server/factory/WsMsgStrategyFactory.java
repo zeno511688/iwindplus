@@ -11,7 +11,7 @@ import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.im.domain.dto.WsSendMsgDTO;
 import com.iwindplus.im.domain.enums.CommandEnum;
 import com.iwindplus.im.domain.enums.ImCodeEnum;
-import com.iwindplus.im.server.strategy.WsMsgStrategy;
+import com.iwindplus.im.server.support.WsMsgStrategy;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;

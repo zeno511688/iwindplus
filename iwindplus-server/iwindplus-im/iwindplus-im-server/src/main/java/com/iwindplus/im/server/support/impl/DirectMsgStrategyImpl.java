@@ -5,16 +5,16 @@
  *
  */
 
-package com.iwindplus.im.server.strategy.impl;
+package com.iwindplus.im.server.support.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.iwindplus.im.domain.dto.FriendChatMsgDTO;
+import com.iwindplus.im.domain.dto.DirectMsgDTO;
 import com.iwindplus.im.domain.dto.WsSendMsgDTO;
 import com.iwindplus.im.domain.enums.CommandEnum;
 import com.iwindplus.im.domain.enums.SendStatusEnum;
-import com.iwindplus.im.server.dal.model.FriendChatMsgDO;
-import com.iwindplus.im.server.service.FriendChatMsgService;
-import com.iwindplus.im.server.strategy.WsMsgStrategy;
+import com.iwindplus.im.server.dal.model.DirectMsgDO;
+import com.iwindplus.im.server.service.DirectMsgService;
+import com.iwindplus.im.server.support.WsMsgStrategy;
 import com.iwindplus.mgt.client.power.OrgClient;
 import jakarta.annotation.Resource;
 import java.util.Objects;
@@ -26,24 +26,24 @@ import org.tio.core.TioConfig;
 import org.tio.utils.lock.SetWithLock;
 
 /**
- * 好友聊天消息策略实现类.
+ * 直发消息策略实现类.
  *
  * @author zengdegui
  * @since 2025/09/21 20:33
  */
 @Slf4j
 @Service
-public class FriendChatMsgStrategyImpl extends AbstractWsMsgStrategyImpl implements WsMsgStrategy {
+public class DirectMsgStrategyImpl extends AbstractWsMsgStrategyImpl implements WsMsgStrategy {
 
     @Resource
-    private FriendChatMsgService friendChatMsgService;
+    private DirectMsgService directMsgService;
 
     @Resource
     private OrgClient orgClient;
 
     @Override
     public CommandEnum support() {
-        return CommandEnum.FRIEND_CHAT_MSG;
+        return CommandEnum.DIRECT_MSG;
     }
 
     @Override
@@ -57,17 +57,17 @@ public class FriendChatMsgStrategyImpl extends AbstractWsMsgStrategyImpl impleme
             return;
         }
 
-        FriendChatMsgDTO param = BeanUtil.copyProperties(msg, FriendChatMsgDTO.class);
+        DirectMsgDTO param = BeanUtil.copyProperties(msg, DirectMsgDTO.class);
         param.setSenderId(msg.getSendUserId());
         param.setOrgId(msg.getSendOrgId());
         param.setReceiverId(msg.getReceiverId());
         param.setSendStatus(SendStatusEnum.TO_BE_SENT);
-        this.friendChatMsgService.save(param);
+        this.directMsgService.save(param);
 
         final TioConfig tioConfig = this.getTioConfig(ctx);
         SetWithLock<ChannelContext> channelContextSetWithLock = Tio.getByUserid(tioConfig, msg.getReceiverId().toString());
         if (Objects.nonNull(channelContextSetWithLock) && 0 < channelContextSetWithLock.size()) {
-            FriendChatMsgDO entity = FriendChatMsgDO.builder()
+            DirectMsgDO entity = DirectMsgDO.builder()
                 .id(param.getId())
                 .sendTime(System.currentTimeMillis())
                 .build();
@@ -79,7 +79,7 @@ public class FriendChatMsgStrategyImpl extends AbstractWsMsgStrategyImpl impleme
             } else {
                 entity.setSendStatus(SendStatusEnum.FAILED);
             }
-            this.friendChatMsgService.updateById(entity);
+            this.directMsgService.updateById(entity);
         }
     }
 }

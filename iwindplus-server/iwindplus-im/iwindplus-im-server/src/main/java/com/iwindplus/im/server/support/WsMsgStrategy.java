@@ -5,7 +5,7 @@
  *
  */
 
-package com.iwindplus.im.server.strategy;
+package com.iwindplus.im.server.support;
 
 import com.iwindplus.im.domain.dto.WsSendMsgDTO;
 import com.iwindplus.im.domain.enums.CommandEnum;

@@ -5,12 +5,12 @@
  *
  */
 
-package com.iwindplus.im.server.strategy.impl;
+package com.iwindplus.im.server.support.impl;
 
 import com.iwindplus.base.util.JacksonUtil;
 import com.iwindplus.im.domain.dto.WsSendMsgDTO;
 import com.iwindplus.im.domain.enums.CommandEnum;
-import com.iwindplus.im.server.strategy.WsMsgStrategy;
+import com.iwindplus.im.server.support.WsMsgStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.tio.core.ChannelContext;

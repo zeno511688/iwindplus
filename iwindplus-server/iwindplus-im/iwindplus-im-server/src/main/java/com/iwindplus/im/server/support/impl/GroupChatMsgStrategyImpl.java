@@ -5,16 +5,18 @@
  *
  */
 
-package com.iwindplus.im.server.strategy.impl;
+package com.iwindplus.im.server.support.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.iwindplus.im.domain.dto.DirectMsgDTO;
+import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
+import com.iwindplus.base.util.JacksonUtil;
+import com.iwindplus.im.domain.dto.GroupChatMsgDTO;
 import com.iwindplus.im.domain.dto.WsSendMsgDTO;
 import com.iwindplus.im.domain.enums.CommandEnum;
 import com.iwindplus.im.domain.enums.SendStatusEnum;
-import com.iwindplus.im.server.dal.model.DirectMsgDO;
-import com.iwindplus.im.server.service.DirectMsgService;
-import com.iwindplus.im.server.strategy.WsMsgStrategy;
+import com.iwindplus.im.server.dal.model.GroupChatMsgDO;
+import com.iwindplus.im.server.service.GroupChatMsgService;
+import com.iwindplus.im.server.support.WsMsgStrategy;
 import com.iwindplus.mgt.client.power.OrgClient;
 import jakarta.annotation.Resource;
 import java.util.Objects;
@@ -24,26 +26,28 @@ import org.tio.core.ChannelContext;
 import org.tio.core.Tio;
 import org.tio.core.TioConfig;
 import org.tio.utils.lock.SetWithLock;
+import org.tio.websocket.common.WsPacket;
+import org.tio.websocket.common.WsResponse;
 
 /**
- * 直发消息策略实现类.
+ * 群聊消息策略实现类.
  *
  * @author zengdegui
  * @since 2025/09/21 20:33
  */
 @Slf4j
 @Service
-public class DirectMsgStrategyImpl extends AbstractWsMsgStrategyImpl implements WsMsgStrategy {
+public class GroupChatMsgStrategyImpl extends AbstractWsMsgStrategyImpl implements WsMsgStrategy {
 
     @Resource
-    private DirectMsgService directMsgService;
+    private GroupChatMsgService groupChatMsgService;
 
     @Resource
     private OrgClient orgClient;
 
     @Override
     public CommandEnum support() {
-        return CommandEnum.DIRECT_MSG;
+        return CommandEnum.GROUP_CHAT_MSG;
     }
 
     @Override
@@ -57,29 +61,31 @@ public class DirectMsgStrategyImpl extends AbstractWsMsgStrategyImpl implements 
             return;
         }
 
-        DirectMsgDTO param = BeanUtil.copyProperties(msg, DirectMsgDTO.class);
+        GroupChatMsgDTO param = BeanUtil.copyProperties(msg, GroupChatMsgDTO.class);
         param.setSenderId(msg.getSendUserId());
         param.setOrgId(msg.getSendOrgId());
-        param.setReceiverId(msg.getReceiverId());
         param.setSendStatus(SendStatusEnum.TO_BE_SENT);
-        this.directMsgService.save(param);
+        this.groupChatMsgService.save(param);
 
         final TioConfig tioConfig = this.getTioConfig(ctx);
-        SetWithLock<ChannelContext> channelContextSetWithLock = Tio.getByUserid(tioConfig, msg.getReceiverId().toString());
+        SetWithLock<ChannelContext> channelContextSetWithLock = Tio.getByGroup(tioConfig, msg.getReceiverId().toString());
         if (Objects.nonNull(channelContextSetWithLock) && 0 < channelContextSetWithLock.size()) {
-            DirectMsgDO entity = DirectMsgDO.builder()
+            GroupChatMsgDO entity = GroupChatMsgDO.builder()
                 .id(param.getId())
                 .sendTime(System.currentTimeMillis())
                 .build();
 
             msg.setMsgId(param.getId());
-            final Boolean flag = this.sendToUserMsg(msg, tioConfig);
-            if (Boolean.TRUE.equals(flag)) {
+            String text = JacksonUtil.toJsonStr(msg);
+            final WsResponse wsResponse = WsResponse.fromText(text, WsPacket.CHARSET_NAME);
+            try {
+                Tio.sendToGroup(tioConfig, msg.getReceiverId().toString(), wsResponse);
                 entity.setSendStatus(SendStatusEnum.SUCCESS);
-            } else {
+            } catch (Exception ex) {
+                log.warn(ExceptionConstant.EXCEPTION, ex);
                 entity.setSendStatus(SendStatusEnum.FAILED);
             }
-            this.directMsgService.updateById(entity);
+            this.groupChatMsgService.updateById(entity);
         }
     }
 }
