@@ -9,21 +9,19 @@ package com.iwindplus.base.http.client.integration.service.impl;
 
 import com.iwindplus.base.http.client.executor.HttpClientExecutor;
 import com.iwindplus.base.http.client.factory.HttpClientExecutorStrategyFactory;
-import com.iwindplus.base.http.client.integration.domain.constant.HttpClientIntegrationConstant.AddressConstant;
-import com.iwindplus.base.http.client.integration.domain.dto.BaiduAddressDTO;
-import com.iwindplus.base.http.client.integration.domain.dto.GaodeAddressDTO;
-import com.iwindplus.base.http.client.integration.domain.dto.Ip138AddressDTO;
-import com.iwindplus.base.http.client.integration.domain.dto.PconlineAddressDTO;
-import com.iwindplus.base.http.client.integration.domain.dto.TencentAddressDTO;
-import com.iwindplus.base.http.client.integration.domain.vo.AddressVO;
+import com.iwindplus.base.http.client.integration.domain.constant.AddressConstant;
+import com.iwindplus.base.http.client.integration.domain.dto.address.BaiduAddressDTO;
+import com.iwindplus.base.http.client.integration.domain.dto.address.GaodeAddressDTO;
+import com.iwindplus.base.http.client.integration.domain.dto.address.Ip138AddressDTO;
+import com.iwindplus.base.http.client.integration.domain.dto.address.PconlineAddressDTO;
+import com.iwindplus.base.http.client.integration.domain.dto.address.TencentAddressDTO;
+import com.iwindplus.base.http.client.integration.domain.vo.address.AddressVO;
 import com.iwindplus.base.http.client.integration.service.AddressService;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
-import org.springframework.stereotype.Service;
 
 /**
  * 地址服务实现类.
@@ -32,21 +30,21 @@ import org.springframework.stereotype.Service;
  * @since 2025/08/20
  */
 @Slf4j
-@Service
-@RequiredArgsConstructor
-public class AddressServiceImpl implements AddressService {
+public class AddressServiceImpl extends AbstractBaseServiceImpl implements AddressService {
 
-    private final HttpClientExecutorStrategyFactory httpClientExecutorStrategyFactory;
+    public AddressServiceImpl(HttpClientExecutorStrategyFactory httpClientExecutorStrategyFactory) {
+        super(httpClientExecutorStrategyFactory);
+    }
 
     @Override
     public Optional<AddressVO> getAddressByPconline(String ip) {
-        HttpClientExecutor executor = this.httpClientExecutorStrategyFactory.getDefaultHttpClientExecutor();
+        HttpClientExecutor executor = super.getHttpClientExecutorStrategyFactory().getDefaultHttpClientExecutor();
         Map<String, String> queryParams = new HashMap<>(4);
         queryParams.put(AddressConstant.PARAM_JSON,
             AddressConstant.VALUE_TRUE);
         queryParams.put(AddressConstant.PARAM_IP, ip);
         PconlineAddressDTO response = executor.get(
-            AddressConstant.PCONLINE_URL_STR,
+            AddressConstant.Url.PCONLINE_URL_STR,
             queryParams,
             null,
             PconlineAddressDTO.class
@@ -56,13 +54,13 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public Optional<AddressVO> getAddressByGaode(String ip, String appCode) {
-        HttpClientExecutor executor = this.httpClientExecutorStrategyFactory.getDefaultHttpClientExecutor();
+        HttpClientExecutor executor = super.getHttpClientExecutorStrategyFactory().getDefaultHttpClientExecutor();
         Map<String, String> headers = new HashMap<>(4);
         headers.put(HttpHeaders.AUTHORIZATION, "APPCODE " + appCode);
         Map<String, String> queryParams = new HashMap<>(4);
         queryParams.put(AddressConstant.PARAM_IP, ip);
         GaodeAddressDTO response = executor.get(
-            AddressConstant.GAODEYUNTU_URL_STR,
+            AddressConstant.Url.GAODEYUNTU_URL_STR,
             queryParams,
             headers,
             GaodeAddressDTO.class
@@ -72,13 +70,13 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public Optional<AddressVO> getAddressByIp138(String ip, String token) {
-        HttpClientExecutor executor = this.httpClientExecutorStrategyFactory.getDefaultHttpClientExecutor();
+        HttpClientExecutor executor = super.getHttpClientExecutorStrategyFactory().getDefaultHttpClientExecutor();
         Map<String, String> headers = new HashMap<>(4);
         headers.put(AddressConstant.PARAM_TOKEN, token);
         Map<String, String> queryParams = new HashMap<>(4);
         queryParams.put(AddressConstant.PARAM_IP, ip);
         Ip138AddressDTO response = executor.get(
-            AddressConstant.IP138_URL_STR,
+            AddressConstant.Url.IP138_URL_STR,
             queryParams,
             headers,
             Ip138AddressDTO.class
@@ -95,12 +93,12 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public Optional<AddressVO> getAddressByBaidu(String ip, String ak) {
-        HttpClientExecutor executor = this.httpClientExecutorStrategyFactory.getDefaultHttpClientExecutor();
+        HttpClientExecutor executor = super.getHttpClientExecutorStrategyFactory().getDefaultHttpClientExecutor();
         Map<String, String> queryParams = new HashMap<>(4);
         queryParams.put(AddressConstant.PARAM_IP, ip);
         queryParams.put(AddressConstant.PARAM_AK, ak);
         BaiduAddressDTO response = executor.get(
-            AddressConstant.BAIDU_URL_STR,
+            AddressConstant.Url.BAIDU_URL_STR,
             queryParams,
             null,
             BaiduAddressDTO.class
@@ -115,12 +113,12 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public Optional<AddressVO> getAddressByTencent(String ip, String key) {
-        HttpClientExecutor executor = this.httpClientExecutorStrategyFactory.getDefaultHttpClientExecutor();
+        HttpClientExecutor executor = super.getHttpClientExecutorStrategyFactory().getDefaultHttpClientExecutor();
         Map<String, String> queryParams = new HashMap<>(4);
         queryParams.put(AddressConstant.PARAM_IP, ip);
         queryParams.put(AddressConstant.PARAM_KEY, key);
         TencentAddressDTO response = executor.get(
-            AddressConstant.TENCENT_URL_STR,
+            AddressConstant.Url.TENCENT_URL_STR,
             queryParams,
             null,
             TencentAddressDTO.class
@@ -137,7 +135,7 @@ public class AddressServiceImpl implements AddressService {
      * 将省份和城市转换为地址对象.
      *
      * @param province 省份
-     * @param city 城市
+     * @param city     城市
      * @return 地址信息
      */
     private Optional<AddressVO> toAddress(String province, String city) {

@@ -16,14 +16,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * HTTP客户端集成自动配置.
+ * 地址服务自动配置.
  *
  * @author zengdegui
- * @since 2025/08/20
+ * @since 2026/08/21
  */
 @Slf4j
 @Configuration
-public class HttpClientIntegrationConfiguration {
+public class AddressAutoConfiguration {
 
     /**
      * 地址服务.
@@ -33,7 +33,8 @@ public class HttpClientIntegrationConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public AddressService addressService(HttpClientExecutorStrategyFactory httpClientExecutorStrategyFactory) {
+    public AddressService addressService(
+        HttpClientExecutorStrategyFactory httpClientExecutorStrategyFactory) {
         return new AddressServiceImpl(httpClientExecutorStrategyFactory);
     }
 }

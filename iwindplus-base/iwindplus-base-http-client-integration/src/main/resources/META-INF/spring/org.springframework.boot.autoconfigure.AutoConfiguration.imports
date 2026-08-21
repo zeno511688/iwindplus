@@ -1,1 +1,3 @@
-com.iwindplus.base.http.client.integration.HttpClientIntegrationConfiguration
+com.iwindplus.base.http.client.integration.AddressAutoConfiguration
+com.iwindplus.base.http.client.integration.SumSubAutoConfiguration
+com.iwindplus.base.http.client.integration.web.SumSubController

@@ -7,7 +7,7 @@
 
 package com.iwindplus.base.http.client.integration.service;
 
-import com.iwindplus.base.http.client.integration.domain.vo.AddressVO;
+import com.iwindplus.base.http.client.integration.domain.vo.address.AddressVO;
 import java.util.Optional;
 
 /**

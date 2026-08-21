@@ -24,6 +24,7 @@ import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
+import org.springframework.util.Assert;
 
 /**
  * yubikey 校验工具类.
@@ -41,12 +42,18 @@ public class YubikeyUtil {
     /**
      * 校验签名.
      *
-     * @param publicKey 公钥
+     * @param publicKey 公钥（PGP格式字符串）
      * @param source    源数据
-     * @param sign      签名数据
-     * @return boolean
+     * @param sign      签名数据（PGP格式字符串）
+     * @return boolean 验证成功返回true，失败返回false
+     * @throws BizException 当参数为空或验证过程发生错误时抛出
      */
     public static boolean verifySign(String publicKey, String source, String sign) {
+        // 参数验证
+        Assert.hasText(publicKey, "Public key must not be blank");
+        Assert.hasText(source, "Source data must not be blank");
+        Assert.hasText(sign, "Sign data must not be blank");
+
         try {
             // 解析公钥
             PGPPublicKeyRingCollection pgpPub = new PGPPublicKeyRingCollection(
@@ -68,7 +75,7 @@ public class YubikeyUtil {
             }
 
             if (signatureList == null || signatureList.isEmpty()) {
-                log.warn("No signatures found.");
+                log.warn("No signatures found");
                 return false;
             }
 
@@ -77,7 +84,7 @@ public class YubikeyUtil {
             // 查找公钥
             PGPPublicKey key = pgpPub.getPublicKey(sig.getKeyID());
             if (key == null) {
-                log.warn("Cannot find public key for keyID: " + sig.getKeyID());
+                log.warn("Cannot find public key for keyID: {}", sig.getKeyID());
                 return false;
             }
 
@@ -91,7 +98,7 @@ public class YubikeyUtil {
             // 验证签名
             return sig.verify();
         } catch (PGPException | IOException ex) {
-            log.warn("yubikey verify sign failed", ex);
+            log.error("Yubikey verify sign failed", ex);
             throw new BizException(BizCodeEnum.YUBIKEY_VERIFY_ERROR);
         }
     }

@@ -5,7 +5,7 @@
  *
  */
 
-package com.iwindplus.base.http.client.integration.domain.dto;
+package com.iwindplus.base.http.client.integration.domain.dto.address;
 
 import java.util.List;
 import lombok.Data;

@@ -5,10 +5,10 @@
  *
  */
 
-package com.iwindplus.base.http.client.integration.domain.dto;
+package com.iwindplus.base.http.client.integration.domain.dto.address;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.iwindplus.base.http.client.integration.domain.constant.HttpClientIntegrationConstant.AddressConstant;
+import com.iwindplus.base.http.client.integration.domain.constant.AddressConstant;
 import lombok.Data;
 
 /**
