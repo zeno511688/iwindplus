@@ -99,7 +99,7 @@ public final class AddressConstant {
         /**
          * 百度地图IP定位接口.
          */
-        public static final String BAIDU_URL_STR = "http://api.map.baidu.com/location/ip";
+        public static final String BAIDU_URL_STR = "https://api.map.baidu.com/location/ip";
 
         /**
          * 腾讯地图IP定位接口.
