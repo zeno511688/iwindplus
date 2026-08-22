@@ -320,7 +320,7 @@ public class LoginLogServiceImpl extends EsBaseServiceImpl<LoginLogDO>
     }
 
     private EsLambdaQueryWrapper<LoginLogDO> buildPageWrapper(LoginLogSearchAfterDTO entity) {
-        final EsLambdaQueryWrapper<LoginLogDO> wrapper = new EsLambdaQueryWrapper<>();
+        final EsLambdaQueryWrapper<LoginLogDO> wrapper = EsWrappers.lambdaQuery();
         if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
             wrapper.eq(LoginLogDO::getRequestId, entity.getRequestId());
         }

@@ -5,6 +5,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.domain.constant.CommonConstant;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
+import com.iwindplus.base.es.support.EsWrappers;
 import com.iwindplus.im.domain.dto.MsgIntegrationDetailDTO;
 import com.iwindplus.im.domain.enums.CommandEnum;
 import com.iwindplus.im.domain.enums.MsgStatusEnum;
@@ -96,8 +97,8 @@ public class MsgIntegrationServiceImpl implements MsgIntegrationService {
         Consumer<List<DirectMsgVO>> setter,
         Consumer<Integer> countSetter) {
 
-        EsLambdaQueryWrapper<DirectMsgDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper.eq(DirectMsgDO::getOrgId, orgId)
+        EsLambdaQueryWrapper<DirectMsgDO> wrapper = EsWrappers.<DirectMsgDO>lambdaQuery()
+            .eq(DirectMsgDO::getOrgId, orgId)
             .orderByDesc(DirectMsgDO::getModifiedTimestamp)
             .limit(limit);
         if (userId != null) {
@@ -119,8 +120,8 @@ public class MsgIntegrationServiceImpl implements MsgIntegrationService {
         Consumer<List<SysNoticeMsgVO>> setter,
         Consumer<Integer> countSetter) {
 
-        EsLambdaQueryWrapper<SysNoticeMsgDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper.eq(SysNoticeMsgDO::getOrgId, orgId)
+        EsLambdaQueryWrapper<SysNoticeMsgDO> wrapper = EsWrappers.<SysNoticeMsgDO>lambdaQuery()
+            .eq(SysNoticeMsgDO::getOrgId, orgId)
             .orderByDesc(SysNoticeMsgDO::getModifiedTimestamp)
             .limit(limit);
 

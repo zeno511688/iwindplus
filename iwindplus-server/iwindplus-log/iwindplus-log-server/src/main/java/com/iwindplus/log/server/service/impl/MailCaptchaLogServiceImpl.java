@@ -219,8 +219,8 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
 
     @Override
     public boolean validateByUserId(String tplCode, Long userId, Long orgId, String captcha) {
-        final EsLambdaQueryWrapper<MailCaptchaLogDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper.eq(MailCaptchaLogDO::getUserId, userId)
+        final EsLambdaQueryWrapper<MailCaptchaLogDO> wrapper = EsWrappers.<MailCaptchaLogDO>lambdaQuery()
+            .eq(MailCaptchaLogDO::getUserId, userId)
             .eq(MailCaptchaLogDO::getOrgId, orgId)
             .eq(MailCaptchaLogDO::getCaptcha, captcha.trim())
             .eq(MailCaptchaLogDO::getTplCode, tplCode)
@@ -256,7 +256,7 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
     }
 
     private EsLambdaQueryWrapper<MailCaptchaLogDO> buildPageWrapper(MailCaptchaLogSearchDTO entity) {
-        final EsLambdaQueryWrapper<MailCaptchaLogDO> wrapper = new EsLambdaQueryWrapper<>();
+        final EsLambdaQueryWrapper<MailCaptchaLogDO> wrapper = EsWrappers.lambdaQuery();
         if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
             wrapper.eq(MailCaptchaLogDO::getRequestId, entity.getRequestId());
         }
@@ -286,7 +286,7 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
     }
 
     private EsLambdaQueryWrapper<MailCaptchaLogDO> buildPageWrapper(MailCaptchaLogSearchAfterDTO entity) {
-        final EsLambdaQueryWrapper<MailCaptchaLogDO> wrapper = new EsLambdaQueryWrapper<>();
+        final EsLambdaQueryWrapper<MailCaptchaLogDO> wrapper = EsWrappers.lambdaQuery();
         if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
             wrapper.eq(MailCaptchaLogDO::getRequestId, entity.getRequestId());
         }

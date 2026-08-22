@@ -18,6 +18,7 @@ import com.iwindplus.base.domain.vo.FilePathVO;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
+import com.iwindplus.base.es.support.EsWrappers;
 import com.iwindplus.im.domain.dto.SysNoticeMsgDTO;
 import com.iwindplus.im.domain.dto.SysNoticeMsgSearchDTO;
 import com.iwindplus.im.domain.enums.SendStatusEnum;
@@ -110,8 +111,8 @@ public class SysNoticeMsgServiceImpl extends EsBaseServiceImpl<SysNoticeMsgDO> i
         if (Objects.isNull(entity.getSendStatus())) {
             entity.setSendStatus(SendStatusEnum.SUCCESS);
         }
-        final EsLambdaQueryWrapper<SysNoticeMsgDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper.eq(SysNoticeMsgDO::getOrgId, orgId)
+        final EsLambdaQueryWrapper<SysNoticeMsgDO> wrapper = EsWrappers.<SysNoticeMsgDO>lambdaQuery()
+            .eq(SysNoticeMsgDO::getOrgId, orgId)
             .eq(SysNoticeMsgDO::getSenderId, entity.getSenderId())
             .eq(SysNoticeMsgDO::getSendStatus, entity.getSendStatus());
         if (CharSequenceUtil.isNotBlank(entity.getTitle())) {
@@ -152,9 +153,7 @@ public class SysNoticeMsgServiceImpl extends EsBaseServiceImpl<SysNoticeMsgDO> i
      * @return Integer
      */
     private Integer getNextSeq(Long orgId) {
-        EsLambdaQueryWrapper<SysNoticeMsgDO> wrapper = new EsLambdaQueryWrapper<>();
-
-        wrapper
+        EsLambdaQueryWrapper<SysNoticeMsgDO> wrapper = EsWrappers.<SysNoticeMsgDO>lambdaQuery()
             .eq(SysNoticeMsgDO::getOrgId, orgId)
             .max(SysNoticeMsgDO::getSeq)
             .limit(0);
