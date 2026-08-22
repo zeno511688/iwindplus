@@ -208,23 +208,6 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
         return super.update(builder.build(), updateWrapper);
     }
 
-    /**
-     * 编辑续订租期时间.
-     *
-     * @param id             主键
-     * @param baseTimeMillis 基准时间戳(毫秒)
-     * @return boolean
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public boolean editExpireTime(Long id, long baseTimeMillis) {
-        final AsyncCmdDO entity = AsyncCmdDO.builder()
-            .id(id)
-            .expireTime(this.getNextExpireTime(baseTimeMillis))
-            .modifiedTimestamp(System.currentTimeMillis())
-            .build();
-        return super.updateById(entity);
-    }
-
     private AsyncCmdDO buildAsyncCmd(AsyncCmdSaveDTO entity) {
         entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
         entity.setDispatchMode(DispatchModeEnum.ASYNC);

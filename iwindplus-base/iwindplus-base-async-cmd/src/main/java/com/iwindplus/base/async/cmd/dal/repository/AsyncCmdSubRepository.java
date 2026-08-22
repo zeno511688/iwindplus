@@ -57,9 +57,6 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
             if (CharSequenceUtil.isBlank(entity.getBizNumber())) {
                 entity.setBizNumber(IdWorker.getIdStr());
             }
-            if (Objects.isNull(entity.getExpireTime())) {
-                entity.setExpireTime(this.getNextExpireTime(System.currentTimeMillis()));
-            }
         });
         super.saveBatch(entities, Constants.DEFAULT_BATCH_SIZE);
         return BeanUtil.copyToList(entities, AsyncCmdSubVO.class);
@@ -181,6 +178,29 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
             queryWrapper.ne(AsyncCmdSubDO::getStatus, notStatus);
         }
         return super.count(queryWrapper);
+    }
+
+    /**
+     * 通过异步命令主键获取仍在有效执行或等待的子任务数量.
+     * EXECUTE 状态按最近更新时间和执行超时时间判断，WAITING 状态按异步等待截止时间判断。
+     *
+     * @param asyncCmdId 异步命令主键
+     * @return long
+     */
+    public long countNotTimeout(Long asyncCmdId) {
+        final long currentTime = System.currentTimeMillis();
+        final long executeExpireTime = currentTime
+            - Optional.ofNullable(this.property.getTimeoutSeconds()).orElse(60L) * NumberConstant.NUMBER_ONE_THOUSAND;
+        return super.count(Wrappers.<AsyncCmdSubDO>lambdaQuery()
+            .eq(AsyncCmdSubDO::getAsyncCmdId, asyncCmdId)
+            .and(wrapper -> wrapper
+                .and(executeWrapper -> executeWrapper
+                    .eq(AsyncCmdSubDO::getStatus, AsyncCmdStatusEnum.EXECUTE)
+                    .gt(AsyncCmdSubDO::getModifiedTimestamp, executeExpireTime))
+                .or(waitingWrapper -> waitingWrapper
+                    .eq(AsyncCmdSubDO::getStatus, AsyncCmdStatusEnum.WAITING)
+                    .gt(AsyncCmdSubDO::getExpireTime, currentTime))
+            ));
     }
 
     /**

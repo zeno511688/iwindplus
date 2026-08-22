@@ -236,11 +236,6 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
         return BeanUtil.copyToList(list, AsyncCmdVO.class);
     }
 
-    @Override
-    public long getNextExpireTime(long baseTimeMillis) {
-        return this.asyncCmdRepository.getNextExpireTime(baseTimeMillis);
-    }
-
     private AsyncCmdVO getDetailByBizKeyAndType(String bizKey, String bizType) {
         final AsyncCmdDO data = this.asyncCmdRepository.getOne(Wrappers.lambdaQuery(AsyncCmdDO.class)
             .eq(AsyncCmdDO::getEnv, SpringUtil.getActiveProfile())

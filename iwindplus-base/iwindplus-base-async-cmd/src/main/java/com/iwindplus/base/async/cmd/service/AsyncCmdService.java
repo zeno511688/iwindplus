@@ -164,12 +164,4 @@ public interface AsyncCmdService {
      * @return List<AsyncCmdVO>
      */
     List<AsyncCmdVO> listByShard(AsyncCmdShardSearchDTO entity);
-
-    /**
-     * 获取下一次租约到期时间.
-     *
-     * @param baseTimeMillis 基准时间戳(毫秒)
-     * @return long
-     */
-    long getNextExpireTime(long baseTimeMillis);
 }
