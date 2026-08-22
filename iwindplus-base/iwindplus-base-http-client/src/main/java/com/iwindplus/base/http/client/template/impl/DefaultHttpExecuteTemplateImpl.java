@@ -68,8 +68,12 @@ public record DefaultHttpExecuteTemplateImpl(
             );
         } catch (Throwable e) {
             log.error("HttpExecuteTemplate execute error", e);
+            // 不应该返回null，而是重新抛出异常，让调用方处理
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            }
+            throw new RuntimeException("Http execute failed", e);
         }
-        return null;
     }
 
     @Override

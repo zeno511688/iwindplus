@@ -67,6 +67,18 @@ public class ResponseExtractorStrategyFactory {
         return doExtract(result, ResponseTypeDescriptor.forTypeReference(typeReference));
     }
 
+    /**
+     * 响应提取.
+     *
+     * @param result    执行结果
+     * @param descriptor 响应类型描述符
+     * @param <T>       响应类型
+     * @return 响应结果
+     */
+    public <T> T extract(HttpExecuteResultDTO result, ResponseTypeDescriptor descriptor) {
+        return doExtract(result, descriptor);
+    }
+
     private <T> T doExtract(HttpExecuteResultDTO result, ResponseTypeDescriptor descriptor) {
         for (ResponseExtractor<?> extractor : extractors) {
             if (extractor.supports(descriptor)) {

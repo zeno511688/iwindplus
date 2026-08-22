@@ -298,6 +298,26 @@ public final class CommonConstant {
         public static final String X_SEC_WEBSOCKET_PROTOCOL = "Sec-WebSocket-Protocol";
 
         /**
+         * 设备号.
+         */
+        public static final String X_DEVICE_NUMBER = "X-Device-Number";
+
+        /**
+         * 设备版本.
+         */
+        public static final String X_DEVICE_VERSION = "X-Device-Version";
+
+        /**
+         * 设备指纹.
+         */
+        public static final String X_DEVICE_FINGERPRINT = "X-Device-Fingerprint";
+
+        /**
+         * 应用版本.
+         */
+        public static final String X_APP_VERSION = "X-App-Version";
+
+        /**
          * 追踪父级标识.
          */
         public static final String X_TRACE_PARENT = "traceparent";

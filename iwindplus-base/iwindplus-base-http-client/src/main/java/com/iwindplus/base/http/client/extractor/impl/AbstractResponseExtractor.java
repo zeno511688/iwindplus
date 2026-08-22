@@ -25,6 +25,16 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class AbstractResponseExtractor<T> implements ResponseExtractor<T> {
 
     /**
+     * HTTP成功状态码起始值
+     */
+    private static final int HTTP_SUCCESS_STATUS_START = 200;
+
+    /**
+     * HTTP成功状态码结束值
+     */
+    private static final int HTTP_SUCCESS_STATUS_END = 299;
+
+    /**
      * 检查执行结果是否有错误.
      *
      * @param result 执行结果
@@ -32,6 +42,16 @@ public abstract class AbstractResponseExtractor<T> implements ResponseExtractor<
     protected void checkError(HttpExecuteResultDTO result) {
         if (result == null) {
             throw new BizException(BizCodeEnum.EMPTY_RESPONSE);
+        }
+
+        // 检查HTTP状态码
+        if (result.status() < HTTP_SUCCESS_STATUS_START || result.status() > HTTP_SUCCESS_STATUS_END) {
+            log.error("HTTP request failed with status: {}, body: {}, error: {}", 
+                result.status(), result.body(), result.error());
+            BizCodeEnum bizCodeEnum = result.status() >= 400 && result.status() < 500 
+                ? BizCodeEnum.CLIENT_ERROR : BizCodeEnum.SERVER_ERROR;
+            throw new BizException(bizCodeEnum, 
+                String.format("HTTP status: %d, error: %s", result.status(), result.error()));
         }
     }
 

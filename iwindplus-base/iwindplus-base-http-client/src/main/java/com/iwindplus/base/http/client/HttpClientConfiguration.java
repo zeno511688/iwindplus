@@ -123,19 +123,19 @@ public class HttpClientConfiguration {
     /**
      * 创建 OkHttpClientExecutor.
      *
-     * @param httpExecuteTemplate       httpExecuteTemplate
-     * @param responseExtractorRegistry responseExtractorRegistry
-     * @param okHttpClient              okHttpClient
+     * @param httpExecuteTemplate              httpExecuteTemplate
+     * @param responseExtractorStrategyFactory responseExtractorStrategyFactory
+     * @param okHttpClient                     okHttpClient
      * @return OkHttpClientExecutor
      */
     @Bean
     @ConditionalOnProperty(prefix = "http.client.ok", name = "enabled", havingValue = "true", matchIfMissing = true)
     public OkHttpClientExecutor okHttpClientExecutor(
         HttpExecuteTemplate httpExecuteTemplate,
-        ResponseExtractorStrategyFactory responseExtractorRegistry,
+        ResponseExtractorStrategyFactory responseExtractorStrategyFactory,
         @Autowired(required = false) OkHttpClient okHttpClient) {
         final OkHttpClientExecutor okHttpClientExecutor = new OkHttpClientExecutor(property
-            , httpExecuteTemplate, responseExtractorRegistry
+            , httpExecuteTemplate, responseExtractorStrategyFactory
             , httpClientTaskExecutor, okHttpClient);
         log.info("OkHttpClientExecutor={}", okHttpClientExecutor);
         return okHttpClientExecutor;

@@ -8,6 +8,7 @@
 package com.iwindplus.base.http.client.integration.domain.vo.address;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -35,6 +36,12 @@ public class AddressVO implements Serializable {
     private String ip;
 
     /**
+     * 国家.
+     */
+    @Schema(description = "国家")
+    private String nation;
+
+    /**
      * 省份.
      */
     @Schema(description = "省份")
@@ -45,4 +52,16 @@ public class AddressVO implements Serializable {
      */
     @Schema(description = "城市")
     private String city;
+
+    /**
+     * 经度.
+     */
+    @Schema(description = "经度")
+    private BigDecimal longitude;
+
+    /**
+     * 纬度.
+     */
+    @Schema(description = "纬度")
+    private BigDecimal latitude;
 }

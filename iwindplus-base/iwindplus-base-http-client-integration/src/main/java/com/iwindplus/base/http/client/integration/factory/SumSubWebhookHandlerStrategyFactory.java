@@ -9,7 +9,7 @@ package com.iwindplus.base.http.client.integration.factory;
 
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
-import com.iwindplus.base.http.client.integration.domain.dto.sumsub.SumSubWebhookDTO;
+import com.iwindplus.base.http.client.integration.domain.dto.kyc.sumsub.SumSubWebhookDTO;
 import com.iwindplus.base.http.client.integration.listener.SumSubWebhookListenerProcessor;
 import java.util.Map;
 import java.util.function.Consumer;

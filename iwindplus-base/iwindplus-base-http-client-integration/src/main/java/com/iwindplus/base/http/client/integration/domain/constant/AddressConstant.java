@@ -37,6 +37,21 @@ public final class AddressConstant {
     public static final String PARAM_AK = "ak";
 
     /**
+     * 请求参数-sk.
+     */
+    public static final String PARAM_SK = "sk";
+
+    /**
+     * 请求参数-sn（百度）.
+     */
+    public static final String PARAM_SN = "sn";
+
+    /**
+     * 请求参数-sig（腾讯）.
+     */
+    public static final String PARAM_SIG = "sig";
+
+    /**
      * 请求参数-key.
      */
     public static final String PARAM_KEY = "key";
@@ -57,9 +72,59 @@ public final class AddressConstant {
     public static final String FIELD_ADDRESS_DETAIL = "address_detail";
 
     /**
+     * JSON字段-city_code（百度地址详情）.
+     */
+    public static final String FIELD_CITY_CODE = "city_code";
+
+    /**
+     * JSON字段-street_number（百度地址详情）.
+     */
+    public static final String FIELD_STREET_NUMBER = "street_number";
+
+    /**
      * JSON字段-ad_info（腾讯区域信息）.
      */
     public static final String FIELD_AD_INFO = "ad_info";
+
+    /**
+     * JSON字段-ad_info（腾讯国家编码）.
+     */
+    public static final String FIELD_NATION_CODE = "nation_code";
+
+    /**
+     * JSON字段-adcode（高德城市编码）.
+     */
+    public static final String FIELD_AD_CODE = "adcode";
+
+    /**
+     * JSON字段-point（百度经纬度坐标）.
+     */
+    public static final String FIELD_POINT = "point";
+
+    /**
+     * JSON字段-x（经度）.
+     */
+    public static final String FIELD_X = "x";
+
+    /**
+     * JSON字段-y（纬度）.
+     */
+    public static final String FIELD_Y = "y";
+
+    /**
+     * JSON字段-lng（经度）.
+     */
+    public static final String FIELD_LNG = "lng";
+
+    /**
+     * JSON字段-lat（纬度）.
+     */
+    public static final String FIELD_LAT = "lat";
+
+    /**
+     * IP138数据数组-国家索引.
+     */
+    public static final int IP138_NATION_INDEX = 0;
 
     /**
      * IP138数据数组-省份索引.
@@ -87,9 +152,9 @@ public final class AddressConstant {
         public static final String PCONLINE_URL_STR = "https://whois.pconline.com.cn/ipJson.jsp";
 
         /**
-         * 高德云图的接口.
+         * 高德地图的接口.
          */
-        public static final String GAODEYUNTU_URL_STR = "http://iploc.market.alicloudapi.com/v3/ip";
+        public static final String GAODE_URL_STR = "https://restapi.amap.com/v3/ip";
 
         /**
          * ip138的接口（准确）.

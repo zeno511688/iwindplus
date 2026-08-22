@@ -8,7 +8,7 @@
 package com.iwindplus.base.http.client.integration.listener;
 
 import com.iwindplus.base.http.client.integration.annotation.SumSubWebhookListener;
-import com.iwindplus.base.http.client.integration.domain.dto.sumsub.SumSubWebhookDTO;
+import com.iwindplus.base.http.client.integration.domain.dto.kyc.sumsub.SumSubWebhookDTO;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
