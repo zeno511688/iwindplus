@@ -20,6 +20,7 @@ import com.iwindplus.base.domain.vo.FilePathVO;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
+import com.iwindplus.base.es.support.EsWrappers;
 import com.iwindplus.im.domain.dto.FriendChatMsgDTO;
 import com.iwindplus.im.domain.dto.FriendChatMsgSearchDTO;
 import com.iwindplus.im.domain.enums.ImCodeEnum;
@@ -112,8 +113,7 @@ public class FriendChatMsgServiceImpl extends EsBaseServiceImpl<FriendChatMsgDO>
 
     @Override
     public List<FriendChatMsgVO> listByUnSendSuccess(Long userId, Long orgId) {
-        final EsLambdaQueryWrapper<FriendChatMsgDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper
+        final EsLambdaQueryWrapper<FriendChatMsgDO> wrapper = EsWrappers.<FriendChatMsgDO>lambdaQuery()
             .eq(FriendChatMsgDO::getOrgId, orgId)
             .eq(FriendChatMsgDO::getReceiverId, userId)
             .ne(FriendChatMsgDO::getSendStatus, SendStatusEnum.SUCCESS);
@@ -158,8 +158,7 @@ public class FriendChatMsgServiceImpl extends EsBaseServiceImpl<FriendChatMsgDO>
         if (Objects.isNull(entity.getSendStatus())) {
             entity.setSendStatus(SendStatusEnum.SUCCESS);
         }
-        final EsLambdaQueryWrapper<FriendChatMsgDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper
+        final EsLambdaQueryWrapper<FriendChatMsgDO> wrapper = EsWrappers.<FriendChatMsgDO>lambdaQuery()
             .eq(FriendChatMsgDO::getOrgId, orgId)
             .or(w -> w
                 .eq(FriendChatMsgDO::getReceiverId, userId)

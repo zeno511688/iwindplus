@@ -18,6 +18,7 @@ import com.iwindplus.base.domain.vo.FilePathVO;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
+import com.iwindplus.base.es.support.EsWrappers;
 import com.iwindplus.im.domain.dto.AddFriendMsgDTO;
 import com.iwindplus.im.domain.dto.AddFriendMsgSearchDTO;
 import com.iwindplus.im.domain.enums.MsgStatusEnum;
@@ -134,8 +135,7 @@ public class AddFriendMsgServiceImpl extends EsBaseServiceImpl<AddFriendMsgDO> i
         if (Objects.isNull(entity.getSendStatus())) {
             entity.setSendStatus(SendStatusEnum.SUCCESS);
         }
-        final EsLambdaQueryWrapper<AddFriendMsgDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper
+        final EsLambdaQueryWrapper<AddFriendMsgDO> wrapper = EsWrappers.<AddFriendMsgDO>lambdaQuery()
             .eq(AddFriendMsgDO::getOrgId, orgId)
             .or(w -> w
                 .eq(AddFriendMsgDO::getReceiverId, userId)
@@ -156,8 +156,7 @@ public class AddFriendMsgServiceImpl extends EsBaseServiceImpl<AddFriendMsgDO> i
 
     @Override
     public List<AddFriendMsgVO> listByUnSendSuccess(Long userId, Long orgId) {
-        final EsLambdaQueryWrapper<AddFriendMsgDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper
+        final EsLambdaQueryWrapper<AddFriendMsgDO> wrapper = EsWrappers.<AddFriendMsgDO>lambdaQuery()
             .eq(AddFriendMsgDO::getOrgId, orgId)
             .eq(AddFriendMsgDO::getReceiverId, userId)
             .ne(AddFriendMsgDO::getSendStatus, SendStatusEnum.SUCCESS);

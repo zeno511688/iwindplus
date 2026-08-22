@@ -20,6 +20,7 @@ import com.iwindplus.base.domain.vo.FilePathVO;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
+import com.iwindplus.base.es.support.EsWrappers;
 import com.iwindplus.im.domain.dto.DirectMsgDTO;
 import com.iwindplus.im.domain.dto.DirectMsgSearchDTO;
 import com.iwindplus.im.domain.enums.MsgStatusEnum;
@@ -104,8 +105,7 @@ public class DirectMsgServiceImpl extends EsBaseServiceImpl<DirectMsgDO> impleme
 
     @Override
     public List<DirectMsgVO> listByUnSendSuccess(Long userId, Long orgId) {
-        final EsLambdaQueryWrapper<DirectMsgDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper
+        final EsLambdaQueryWrapper<DirectMsgDO> wrapper = EsWrappers.<DirectMsgDO>lambdaQuery()
             .eq(DirectMsgDO::getOrgId, orgId)
             .eq(DirectMsgDO::getReceiverId, userId)
             .ne(DirectMsgDO::getSendStatus, SendStatusEnum.SUCCESS);
@@ -149,8 +149,8 @@ public class DirectMsgServiceImpl extends EsBaseServiceImpl<DirectMsgDO> impleme
         if (Objects.isNull(entity.getMsgStatus())) {
             entity.setMsgStatus(MsgStatusEnum.UN_READ);
         }
-        final EsLambdaQueryWrapper<DirectMsgDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper.eq(DirectMsgDO::getOrgId, orgId)
+        final EsLambdaQueryWrapper<DirectMsgDO> wrapper = EsWrappers.<DirectMsgDO>lambdaQuery()
+            .eq(DirectMsgDO::getOrgId, orgId)
             .eq(DirectMsgDO::getMsgStatus, entity.getMsgStatus())
             .eq(DirectMsgDO::getSendStatus, entity.getSendStatus());
 
@@ -200,8 +200,7 @@ public class DirectMsgServiceImpl extends EsBaseServiceImpl<DirectMsgDO> impleme
      * @return Integer
      */
     private Integer getNextSeq(Long orgId, Long senderId) {
-        EsLambdaQueryWrapper<DirectMsgDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper
+        EsLambdaQueryWrapper<DirectMsgDO> wrapper = EsWrappers.<DirectMsgDO>lambdaQuery()
             .eq(DirectMsgDO::getOrgId, orgId)
             .eq(DirectMsgDO::getSenderId, senderId)
             .max(DirectMsgDO::getSeq)

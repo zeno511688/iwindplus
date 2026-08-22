@@ -18,6 +18,7 @@ import com.iwindplus.base.domain.vo.FilePathVO;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
+import com.iwindplus.base.es.support.EsWrappers;
 import com.iwindplus.im.domain.dto.GroupChatMsgDTO;
 import com.iwindplus.im.domain.dto.GroupChatMsgSearchDTO;
 import com.iwindplus.im.domain.enums.ImCodeEnum;
@@ -110,8 +111,7 @@ public class GroupChatMsgServiceImpl extends EsBaseServiceImpl<GroupChatMsgDO> i
         if (Objects.isNull(entity.getSendStatus())) {
             entity.setSendStatus(SendStatusEnum.SUCCESS);
         }
-        final EsLambdaQueryWrapper<GroupChatMsgDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper
+        final EsLambdaQueryWrapper<GroupChatMsgDO> wrapper = EsWrappers.<GroupChatMsgDO>lambdaQuery()
             .eq(GroupChatMsgDO::getOrgId, orgId)
             .eq(GroupChatMsgDO::getChatGroupId, entity.getChatGroupId())
             .eq(GroupChatMsgDO::getSendStatus, entity.getSendStatus());
@@ -155,9 +155,7 @@ public class GroupChatMsgServiceImpl extends EsBaseServiceImpl<GroupChatMsgDO> i
      * @return Integer
      */
     private Integer getNextSeq(Long orgId, Long chatGroupId) {
-        EsLambdaQueryWrapper<GroupChatMsgDO> wrapper = new EsLambdaQueryWrapper<>();
-
-        wrapper
+        EsLambdaQueryWrapper<GroupChatMsgDO> wrapper = EsWrappers.<GroupChatMsgDO>lambdaQuery()
             .eq(GroupChatMsgDO::getOrgId, orgId)
             .eq(GroupChatMsgDO::getChatGroupId, chatGroupId)
             .max(GroupChatMsgDO::getSeq)
