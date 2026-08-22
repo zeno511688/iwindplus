@@ -67,6 +67,14 @@ public interface AsyncCmdSubService {
     long countUnfinished(Long asyncCmdId);
 
     /**
+     * 通过异步命令主键获取未超时的子任务数量.
+     *
+     * @param asyncCmdId 异步命令主键
+     * @return long
+     */
+    long countNotTimeout(Long asyncCmdId);
+
+    /**
      * 通过异步命令主键和状态获取子任务列表（按排序号升序）.
      *
      * @param asyncCmdId 异步命令主键

@@ -7,7 +7,6 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
-import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdEditDTO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdExecuteResultVO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
@@ -47,14 +46,6 @@ public class AsyncCmdExecuteHandlerMain extends AbstractAsyncCmdExecuteHandler {
         }
 
         try {
-            // 执行业务前续期执行租约，业务耗时接近timeoutSeconds时降低被RESET_JOB误重置双跑的风险
-            this.getAsyncCmdService().edit(
-                AsyncCmdEditDTO.builder()
-                    .id(entity.getId())
-                    .expireTime(this.getAsyncCmdService().getNextExpireTime(System.currentTimeMillis()))
-                    .build()
-            );
-
             // 执行业务逻辑（无事务），由业务方显式返回执行结果
             final AsyncCmdExecuteResultVO result = handler.execute(entity);
 

@@ -9,7 +9,6 @@ package com.iwindplus.base.async.cmd.support.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import com.iwindplus.base.async.cmd.domain.constant.AsyncCmdConstant;
-import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdEditDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdExecuteResultEnum;
@@ -84,14 +83,6 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
                 return;
             }
 
-            //  主收尾业务前续期执行租约
-            this.getAsyncCmdService().edit(
-                AsyncCmdEditDTO.builder()
-                    .id(entity.getId())
-                    .expireTime(this.getAsyncCmdService().getNextExpireTime(System.currentTimeMillis()))
-                    .build()
-            );
-
             // 执行业务逻辑（无事务），由业务方显式返回执行结果
             final AsyncCmdExecuteResultVO result = handler.execute(entity);
 
@@ -110,7 +101,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         final List<AsyncCmdSubVO> subResults = this.executeSubTask(entity, subEntities, start, advanced);
 
         // 判断子任务是否在等异步调用的结果，不能变成失败，失败会占用重试次数
-        if (this.handleSubAsyncWait(entity, subEntities, start)) {
+        if (this.handleSubAsyncWait(entity, subEntities, start, advanced)) {
             return false;
         }
 
@@ -172,6 +163,9 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
 
             // 成功结果传递下一阶段
             successResults.addAll(results);
+
+            // 更新主任务进度
+            this.editTaskProgress(entity, start, advanced.get());
         }
 
         return successResults;
@@ -233,14 +227,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             return this.executeSubCallbackAsyncWait(entity, handler, subEntity, start, advanced);
         }
 
-        // 续期
-        this.getAsyncCmdService().edit(
-            AsyncCmdEditDTO.builder()
-                .id(entity.getId())
-                .expireTime(this.getAsyncCmdService().getNextExpireTime(System.currentTimeMillis()))
-                .build()
-        );
-
+        // 更新子任务状态为执行中。expireTime 仅用于异步等待截止时间，进入执行中时不续期
         final boolean status = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
             .id(subEntity.getId())
             .to(AsyncCmdStatusEnum.EXECUTE)
@@ -438,26 +425,59 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
     }
 
     /**
-     * 判断子任务是否在等异步调用的结果，将主任务设置为待执行.
+     * 判断子任务是否在等异步调用的结果，保持主任务为执行中状态，更新进度.
      * <p>不能变成失败，失败会占用重试次数</p>
      *
      * @param entity      主任务
      * @param subEntities 子任务列表
      * @param start       开始时间
-     * @return true=有子任务在异步等待中，主任务已转为待执行
+     * @param advanced    已完成子任务数
+     * @return true=有子任务在异步等待中
      */
-    private boolean handleSubAsyncWait(AsyncCmdVO entity, List<AsyncCmdSubVO> subEntities, long start) {
+    private boolean handleSubAsyncWait(AsyncCmdVO entity, List<AsyncCmdSubVO> subEntities, long start, AtomicInteger advanced) {
         if (!this.hasSubAsyncWait(subEntities)) {
             return false;
         }
-        // 将主任务设置为待执行，等待下一次执行
+        // 保持主任务为执行中状态，更新进度和耗时
         final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
-        if (!this.getAsyncCmdStateSupport().taskExecuteToBeExecute(entity, costTime)) {
-            log.warn("asyncCmd has asyncWait, id={}", entity.getId());
-
-            return false;
+        final int progress = this.calculateProgress(entity.getSubTaskCount(), advanced.get());
+        if (!this.getAsyncCmdStateSupport().editTaskProgress(entity, costTime, progress)) {
+            log.warn("asyncCmd update progress failed, id={}", entity.getId());
         }
+        log.info("asyncCmd has asyncWait, keep execute status, id={}, progress={}%", entity.getId(), progress);
         return true;
+    }
+
+    /**
+     * 计算主任务进度.
+     *
+     * @param totalSubTasks     子任务总数
+     * @param completedSubTasks 已完成子任务数
+     * @return 进度百分比（0-100）
+     */
+    private int calculateProgress(Integer totalSubTasks, int completedSubTasks) {
+        if (totalSubTasks == null || totalSubTasks <= 0) {
+            return 0;
+        }
+        return (int) ((completedSubTasks * 100.0) / totalSubTasks);
+    }
+
+    /**
+     * 更新主任务进度.
+     *
+     * @param entity         主任务
+     * @param start          开始时间
+     * @param completedCount 已完成子任务数
+     */
+    private void editTaskProgress(AsyncCmdVO entity, long start, int completedCount) {
+        final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+        final int progress = this.calculateProgress(entity.getSubTaskCount(), completedCount);
+        if (!this.getAsyncCmdStateSupport().editTaskProgress(entity, costTime, progress)) {
+            log.warn("asyncCmd update progress failed, id={}, progress={}%", entity.getId(), progress);
+        } else {
+            log.info("asyncCmd progress updated, id={}, progress={}%, completed={}/{}",
+                entity.getId(), progress, completedCount, entity.getSubTaskCount());
+        }
     }
 
     /**

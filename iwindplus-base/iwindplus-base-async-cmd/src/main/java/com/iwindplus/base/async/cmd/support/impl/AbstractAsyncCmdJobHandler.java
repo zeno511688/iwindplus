@@ -50,6 +50,16 @@ public abstract class AbstractAsyncCmdJobHandler implements AsyncCmdJobHandler {
      */
     protected abstract AsyncCmdShardSearchDTO buildJobSearchDTO();
 
+    /**
+     * 判断是否应该跳过该任务.
+     *
+     * @param entity 任务实体
+     * @return true=跳过，false=不跳过
+     */
+    protected boolean shouldSkip(AsyncCmdVO entity) {
+        return false;
+    }
+
     @Override
     public void execute(Integer shardIndex, Integer shardTotal) {
         final Integer size = this.asyncCmdService.getSize();

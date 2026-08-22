@@ -44,7 +44,23 @@ public class AsyncCmdJobHandlerRetry extends AbstractAsyncCmdJobHandler {
     @Override
     protected boolean doExecute(List<AsyncCmdVO> entityList) {
         int dispatched = 0;
+        int skipped = 0;
+        
         for (AsyncCmdVO entity : entityList) {
+            // 检查 WAITING 状态的任务是否真的超时
+            if (AsyncCmdStatusEnum.WAITING.equals(entity.getStatus())) {
+                // 如果未超时，跳过重试
+                if (entity.getExpireTime() != null && entity.getExpireTime() > System.currentTimeMillis()) {
+                    skipped++;
+                    log.debug("WAITING 状态任务未超时，跳过重试，id={}, expireTime={}", 
+                        entity.getId(), entity.getExpireTime());
+                    continue;
+                }
+                // 已超时，需要重试
+                log.info("WAITING 状态任务已超时，开始重试，id={}, expireTime={}", 
+                    entity.getId(), entity.getExpireTime());
+            }
+            
             if (!this.asyncCmdBizProcessor.execute(entity)) {
                 log.warn("重试任务投递被拒，共享池已满，已投递={}/{} id={}",
                     dispatched, entityList.size(), entity.getId());
@@ -52,6 +68,10 @@ public class AsyncCmdJobHandlerRetry extends AbstractAsyncCmdJobHandler {
                 return false;
             }
             dispatched++;
+        }
+        
+        if (skipped > 0) {
+            log.info("重试任务完成，dispatched={}, skipped={}", dispatched, skipped);
         }
         return true;
     }

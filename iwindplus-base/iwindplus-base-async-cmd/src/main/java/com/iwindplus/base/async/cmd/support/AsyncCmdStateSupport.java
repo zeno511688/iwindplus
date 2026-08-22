@@ -182,9 +182,7 @@ public record AsyncCmdStateSupport(
 
         final long now = System.currentTimeMillis();
         final Long nextRetryTime = this.getAsyncCmdSubRepository().getNextRetryTime(now);
-        final Long exist = entity.getExpireTime();
-        final Long expireTime = Objects.nonNull(exist) && exist > 0L
-            ? exist : this.getAsyncCmdSubRepository().getNextExpireTime(System.currentTimeMillis());
+        final Long expireTime = this.getAsyncCmdSubRepository().getNextExpireTime(now);
 
         final boolean result = this.transition(
             () -> asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
@@ -211,28 +209,29 @@ public record AsyncCmdStateSupport(
     }
 
     /**
-     * 子任务中主任务状态转为待执行，等待下一次执行
+     * 更新主任务进度和耗时，保持执行中状态.
      *
-     * @param entity   对象
-     * @param costTime 耗时
-     * @return
+     * @param entity   主任务对象
+     * @param costTime 累计耗时
+     * @param progress 进度百分比（0-100）
+     * @return boolean
      */
-    public boolean taskExecuteToBeExecute(AsyncCmdVO entity, Long costTime) {
-
-        final Long nextRetryTime = this.getAsyncCmdSubRepository().getNextRetryTime(System.currentTimeMillis());
+    public boolean editTaskProgress(AsyncCmdVO entity, Long costTime, Integer progress) {
+        final long expireTime = this.asyncCmdRepository.getNextExpireTime(System.currentTimeMillis());
 
         final boolean result = this.transition(
             () -> asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
                 .id(entity.getId())
                 .from(AsyncCmdStatusEnum.EXECUTE)
-                .to(AsyncCmdStatusEnum.TO_BE_EXECUTE)
+                .to(AsyncCmdStatusEnum.EXECUTE)
                 .costTime(costTime)
-                .nextRetryTime(nextRetryTime)
+                .progress(progress)
+                .expireTime(expireTime)
                 .build()),
             () -> {
-                this.syncStatus(entity, AsyncCmdStatusEnum.TO_BE_EXECUTE);
                 entity.setCostTime(costTime);
-                entity.setNextRetryTime(nextRetryTime);
+                entity.setProgress(progress);
+                entity.setExpireTime(expireTime);
             }
         );
 
@@ -408,9 +407,8 @@ public record AsyncCmdStateSupport(
         AsyncCmdSubTaskHandler handler,
         Long costTime) {
 
-        final Long exist = entity.getExpireTime();
-        final Long expireTime = Objects.nonNull(exist) && exist > 0L
-            ? exist : this.getAsyncCmdSubRepository().getNextExpireTime(System.currentTimeMillis());
+        // 每次重新进入异步等待都重新计算截止时间，避免失败重试后沿用已过期的旧时间。
+        final Long expireTime = this.getAsyncCmdSubRepository().getNextExpireTime(System.currentTimeMillis());
 
         final boolean result = this.transition(
             () -> asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()

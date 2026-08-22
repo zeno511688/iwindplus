@@ -75,6 +75,11 @@ public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
     }
 
     @Override
+    public long countNotTimeout(Long asyncCmdId) {
+        return this.asyncCmdSubRepository.countNotTimeout(asyncCmdId);
+    }
+
+    @Override
     public List<AsyncCmdSubVO> listByAsyncCmdIdAndStatus(Long asyncCmdId, List<AsyncCmdStatusEnum> statusList) {
         final List<AsyncCmdSubDO> list = this.asyncCmdSubRepository.listByAsyncCmdId(asyncCmdId,
             statusList, true);
