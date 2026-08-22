@@ -492,6 +492,39 @@ disruptor:
         resume-threshold: 0.5
         # 暂停比例
         pause-threshold: 0.1
+# 地址服务配置
+address:
+  # 是否启用地址服务
+  enabled: true
+  # 提供商配置列表
+  providers:
+    # 百度地图
+    baidu:
+      enabled: true
+      priority: 1
+      api-key: FFdlqXfexz0JOLmeTjhQqbOKPlteJLNJ
+      secret-key: PrqZ93mLlXMf2pq9VSUDl1Mx3CnyNexl
+    # 高德地图
+    gaode:
+      enabled: true
+      priority: 2
+      api-key: 67e33f0347b5fa1d5d01977fd603414a
+      secret-key: c9b50e9ccdca010f6ce08d69d94ce949
+    # 腾讯地图
+    tencent:
+      enabled: true
+      priority: 3
+      api-key: GJMBZ-FCDWN-AFWFA-SP6NA-2RGVV-SCFN2
+      secret-key: ECu7de2TC8Ty3qVYORQo6Mgp3p98kptd
+    # 138ip
+    ip138:
+      enabled: true
+      priority: 4
+      api-key: fdf360e49fc055d251e9ac1b4f5ae707
+    # 太平洋网络（免费）
+    pconline:
+      enabled: true
+      priority: 5
 xxl-job:
   enabled: true
   admin:

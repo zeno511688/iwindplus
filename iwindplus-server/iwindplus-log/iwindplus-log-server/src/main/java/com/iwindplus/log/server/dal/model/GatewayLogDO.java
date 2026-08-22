@@ -166,6 +166,13 @@ public class GatewayLogDO extends EsDbBaseDO {
     private String osName;
 
     /**
+     * 系统版本.
+     */
+    @Schema(description = "系统版本")
+    @Field(type = FieldType.Keyword)
+    private String osVersion;
+
+    /**
      * 浏览器名称.
      */
     @Schema(description = "浏览器名称")
@@ -173,11 +180,53 @@ public class GatewayLogDO extends EsDbBaseDO {
     private String browserName;
 
     /**
+     * 浏览器版本.
+     */
+    @Schema(description = "浏览器版本")
+    @Field(type = FieldType.Keyword)
+    private String browserVersion;
+
+    /**
+     * 设备号.
+     */
+    @Schema(description = "设备号")
+    @Field(type = FieldType.Keyword)
+    private String deviceNumber;
+
+    /**
+     * 设备版本.
+     */
+    @Schema(description = "设备版本")
+    @Field(type = FieldType.Keyword)
+    private String deviceVersion;
+
+    /**
+     * 设备指纹.
+     */
+    @Schema(description = "设备指纹")
+    @Field(type = FieldType.Keyword)
+    private String deviceFingerprint;
+
+    /**
      * 请求ip.
      */
     @Schema(description = "请求ip")
     @Field(type = FieldType.Keyword)
     private String ip;
+
+    /**
+     * 省份.
+     */
+    @Schema(description = "省份")
+    @Field(type = FieldType.Keyword)
+    private String province;
+
+    /**
+     * 城市.
+     */
+    @Schema(description = "城市")
+    @Field(type = FieldType.Keyword)
+    private String city;
 
     /**
      * 用户主键.

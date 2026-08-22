@@ -6,6 +6,9 @@ package com.iwindplus.auth.server.handler;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
+import cn.hutool.http.useragent.Browser;
+import cn.hutool.http.useragent.OS;
+import cn.hutool.http.useragent.Platform;
 import cn.hutool.http.useragent.UserAgent;
 import cn.hutool.http.useragent.UserAgentUtil;
 import com.iwindplus.auth.domain.constant.AuthConstant.GrantTypeBindCodeConstant;
@@ -31,7 +34,6 @@ import java.io.IOException;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.context.ApplicationEventPublisher;
@@ -147,7 +149,7 @@ public record CustomAuthenticationSuccessHandler(AuthProperty property
      * @param accessToken accessToken
      * @param moduleName  moduleName
      * @param moduleDesc  moduleDesc
-     * @return LoginLogDO
+     * @return LoginLogDTO
      */
     public static LoginLogDTO buildLoginLog(HttpServletRequest request, OAuth2AccessToken accessToken, String moduleName, String moduleDesc) {
         final UserBaseVO data = HttpsUtil.getUserInfo(accessToken.getTokenValue());
@@ -166,6 +168,9 @@ public record CustomAuthenticationSuccessHandler(AuthProperty property
             .requestId(request.getHeader(HeaderConstant.X_REQUESTED_ID))
             .bizTraceId(MDC.get(HeaderConstant.X_TRACE_ID))
             .ip(MDC.get(HeaderConstant.X_REAL_IP))
+            .deviceNumber(request.getHeader(HeaderConstant.X_DEVICE_NUMBER))
+            .deviceVersion(request.getHeader(HeaderConstant.X_DEVICE_VERSION))
+            .deviceFingerprint(request.getHeader(HeaderConstant.X_DEVICE_FINGERPRINT))
             .moduleName(moduleName)
             .moduleDesc(moduleDesc)
             .userId(userId)
@@ -186,11 +191,18 @@ public record CustomAuthenticationSuccessHandler(AuthProperty property
         }
 
         UserAgent userAgent = UserAgentUtil.parse(userAgentStr);
-        Optional.ofNullable(userAgent).ifPresent(agent ->
-            builder.platformName(agent.getPlatform().getName())
-                .osName(agent.getOs().getName())
-                .browserName(agent.getBrowser().getName())
-        );
+        if (Objects.isNull(userAgent)) {
+            return;
+        }
+        final Platform platform = userAgent.getPlatform();
+        final OS os = userAgent.getOs();
+        final Browser browser = userAgent.getBrowser();
+
+        builder.platformName(platform == null ? null : platform.getName());
+        builder.osName(os == null ? null : os.getName());
+        builder.osVersion(os == null ? null : os.getVersion(userAgentStr));
+        builder.browserName(browser == null ? null : browser.getName());
+        builder.browserVersion(browser == null ? null : browser.getVersion(userAgentStr));
     }
 
     private ResponseCookie buildTokenCookie(String name, AbstractOAuth2Token token) {

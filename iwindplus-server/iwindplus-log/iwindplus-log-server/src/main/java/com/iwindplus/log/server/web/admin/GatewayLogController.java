@@ -11,6 +11,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.iwindplus.base.domain.validation.SaveGroup;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.es.domain.dto.EsPageDTO;
+import com.iwindplus.base.http.client.integration.domain.vo.address.AddressVO;
+import com.iwindplus.base.http.client.integration.service.address.AddressService;
 import com.iwindplus.base.operate.domain.annotation.OperateValid;
 import com.iwindplus.base.redis.domain.annotation.RedisIdempotent;
 import com.iwindplus.base.web.controller.BaseController;
@@ -116,6 +118,14 @@ public class GatewayLogController extends BaseController {
     @GetMapping("getDetail")
     public ResultVO<GatewayLogExtendVO> getDetail(@RequestParam String id) {
         GatewayLogExtendVO data = this.gatewayLogService.getDetail(id);
+        return ResultVO.success(data);
+    }
+
+    private final AddressService addressService;
+
+    @GetMapping("getIp")
+    public ResultVO<AddressVO> getIp(@RequestParam String ip) {
+        AddressVO data = this.addressService.getAddress(ip).orElse(null);
         return ResultVO.success(data);
     }
 }

@@ -158,6 +158,13 @@ public class GatewayLogDTO extends DbBaseTwoDTO {
     private String osName;
 
     /**
+     * 系统版本.
+     */
+    @Schema(description = "系统版本")
+    @Length(max = 100, message = "{osVersion.length}", groups = {SaveGroup.class, EditGroup.class})
+    private String osVersion;
+
+    /**
      * 浏览器名称.
      */
     @Schema(description = "浏览器名称")
@@ -165,11 +172,53 @@ public class GatewayLogDTO extends DbBaseTwoDTO {
     private String browserName;
 
     /**
+     * 浏览器版本.
+     */
+    @Schema(description = "浏览器版本")
+    @Length(max = 100, message = "{browserVersion.length}", groups = {SaveGroup.class, EditGroup.class})
+    private String browserVersion;
+
+    /**
+     * 设备号.
+     */
+    @Schema(description = "设备号")
+    @Length(max = 100, message = "{deviceNumber.length}", groups = {SaveGroup.class, EditGroup.class})
+    private String deviceNumber;
+
+    /**
+     * 设备版本.
+     */
+    @Schema(description = "设备版本")
+    @Length(max = 100, message = "{deviceVersion.length}", groups = {SaveGroup.class, EditGroup.class})
+    private String deviceVersion;
+
+    /**
+     * 设备指纹.
+     */
+    @Schema(description = "设备指纹")
+    @Length(max = 100, message = "{deviceFingerprint.length}", groups = {SaveGroup.class, EditGroup.class})
+    private String deviceFingerprint;
+
+    /**
      * 请求ip.
      */
     @Schema(description = "请求ip")
     @Length(max = 100, message = "{ip.length}", groups = {SaveGroup.class, EditGroup.class})
     private String ip;
+
+    /**
+     * 省份.
+     */
+    @Schema(description = "省份")
+    @Length(max = 100, message = "{province.length}", groups = {SaveGroup.class, EditGroup.class})
+    private String province;
+
+    /**
+     * 城市.
+     */
+    @Schema(description = "城市")
+    @Length(max = 100, message = "{city.length}", groups = {SaveGroup.class, EditGroup.class})
+    private String city;
 
     /**
      * 用户主键.

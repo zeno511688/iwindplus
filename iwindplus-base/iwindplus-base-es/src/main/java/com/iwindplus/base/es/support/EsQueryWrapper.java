@@ -68,7 +68,7 @@ public class EsQueryWrapper {
     private String[] excludes;
 
     /**
-     * 精确匹配
+     * 精确匹配.
      */
     public EsQueryWrapper eq(String field, Object value) {
         if (value == null) {

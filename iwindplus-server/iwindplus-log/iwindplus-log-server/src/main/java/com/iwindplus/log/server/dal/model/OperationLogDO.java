@@ -160,6 +160,20 @@ public class OperationLogDO extends EsDbBaseDO {
     private String ip;
 
     /**
+     * 省份.
+     */
+    @Schema(description = "省份")
+    @Field(type = FieldType.Keyword)
+    private String province;
+
+    /**
+     * 城市.
+     */
+    @Schema(description = "城市")
+    @Field(type = FieldType.Keyword)
+    private String city;
+
+    /**
      * 用户主键.
      */
     @Schema(description = "用户主键")

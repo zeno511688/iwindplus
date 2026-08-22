@@ -17,6 +17,7 @@ import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
+import com.iwindplus.base.es.support.EsWrappers;
 import com.iwindplus.base.redis.service.RedissonService;
 import com.iwindplus.log.domain.dto.MailCaptchaLogDTO;
 import com.iwindplus.log.domain.dto.MailCaptchaLogSearchAfterDTO;
@@ -86,8 +87,8 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
     @CacheEvict(allEntries = true)
     @Override
     public boolean removeExpireData() {
-        final EsLambdaQueryWrapper<MailCaptchaLogDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper.lt(MailCaptchaLogDO::getExpireTime, System.currentTimeMillis());
+        final EsLambdaQueryWrapper<MailCaptchaLogDO> wrapper = EsWrappers.<MailCaptchaLogDO>lambdaQuery()
+            .lt(MailCaptchaLogDO::getExpireTime, System.currentTimeMillis());
         return super.remove(wrapper);
     }
 
@@ -137,8 +138,8 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
         final Long userId = entity.getUserId();
         final Long orgId = entity.getOrgId();
         final LocalDateTime now = LocalDateTime.now();
-        final EsLambdaQueryWrapper<MailCaptchaLogDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper.eq(MailCaptchaLogDO::getUserId, userId)
+        final EsLambdaQueryWrapper<MailCaptchaLogDO> wrapper = EsWrappers.<MailCaptchaLogDO>lambdaQuery()
+            .eq(MailCaptchaLogDO::getUserId, userId)
             .eq(MailCaptchaLogDO::getOrgId, orgId)
             .eq(MailCaptchaLogDO::getTplCode, entity.getTplCode())
             .gt(MailCaptchaLogDO::getExpireTime, System.currentTimeMillis())
@@ -152,8 +153,8 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
         if (Objects.nonNull(limitCountDay)) {
             long begin = toTimestamp(now.toLocalDate().atStartOfDay());
             long end = toTimestamp(now.toLocalDate().atTime(LocalTime.MAX));
-            final EsLambdaQueryWrapper<MailCaptchaLogDO> dayWrapper = new EsLambdaQueryWrapper<>();
-            dayWrapper.eq(MailCaptchaLogDO::getUserId, userId)
+            final EsLambdaQueryWrapper<MailCaptchaLogDO> dayWrapper = EsWrappers.<MailCaptchaLogDO>lambdaQuery()
+                .eq(MailCaptchaLogDO::getUserId, userId)
                 .eq(MailCaptchaLogDO::getOrgId, orgId)
                 .eq(MailCaptchaLogDO::getTplCode, entity.getTplCode())
                 .between(MailCaptchaLogDO::getCreatedTimestamp, begin, end);
@@ -166,8 +167,8 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
         final Integer limitCountHour = entity.getLimitCountHour();
         if (Objects.nonNull(limitCountHour)) {
             long begin = toTimestamp(now.minusHours(1));
-            final EsLambdaQueryWrapper<MailCaptchaLogDO> hourWrapper = new EsLambdaQueryWrapper<>();
-            hourWrapper.eq(MailCaptchaLogDO::getUserId, userId)
+            final EsLambdaQueryWrapper<MailCaptchaLogDO> hourWrapper = EsWrappers.<MailCaptchaLogDO>lambdaQuery()
+                .eq(MailCaptchaLogDO::getUserId, userId)
                 .eq(MailCaptchaLogDO::getOrgId, orgId)
                 .eq(MailCaptchaLogDO::getTplCode, entity.getTplCode())
                 .ge(MailCaptchaLogDO::getCreatedTimestamp, begin);
@@ -180,8 +181,8 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
         final Integer limitCountMinute = entity.getLimitCountMinute();
         if (Objects.nonNull(limitCountMinute)) {
             long begin = toTimestamp(now.minusMinutes(1));
-            final EsLambdaQueryWrapper<MailCaptchaLogDO> minuteWrapper = new EsLambdaQueryWrapper<>();
-            minuteWrapper.eq(MailCaptchaLogDO::getUserId, userId)
+            final EsLambdaQueryWrapper<MailCaptchaLogDO> minuteWrapper = EsWrappers.<MailCaptchaLogDO>lambdaQuery()
+                .eq(MailCaptchaLogDO::getUserId, userId)
                 .eq(MailCaptchaLogDO::getOrgId, orgId)
                 .eq(MailCaptchaLogDO::getTplCode, entity.getTplCode())
                 .ge(MailCaptchaLogDO::getCreatedTimestamp, begin);

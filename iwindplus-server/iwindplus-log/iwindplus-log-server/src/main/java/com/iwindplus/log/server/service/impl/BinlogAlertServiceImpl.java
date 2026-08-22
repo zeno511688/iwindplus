@@ -16,6 +16,7 @@ import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
+import com.iwindplus.base.es.support.EsWrappers;
 import com.iwindplus.log.domain.dto.BinlogAlertDTO;
 import com.iwindplus.log.domain.dto.BinlogAlertSearchAfterDTO;
 import com.iwindplus.log.domain.dto.BinlogAlertSearchDTO;
@@ -127,7 +128,7 @@ public class BinlogAlertServiceImpl extends EsBaseServiceImpl<BinlogAlertDO>
     }
 
     private EsLambdaQueryWrapper<BinlogAlertDO> buildPageWrapper(BinlogAlertSearchDTO entity) {
-        final EsLambdaQueryWrapper<BinlogAlertDO> wrapper = new EsLambdaQueryWrapper<>();
+        final EsLambdaQueryWrapper<BinlogAlertDO> wrapper = EsWrappers.lambdaQuery();
         if (Objects.nonNull(entity.getDataId())) {
             wrapper.eq(BinlogAlertDO::getDataId, entity.getDataId());
         }
@@ -141,7 +142,7 @@ public class BinlogAlertServiceImpl extends EsBaseServiceImpl<BinlogAlertDO>
     }
 
     private EsLambdaQueryWrapper<BinlogAlertDO> buildPageWrapper(BinlogAlertSearchAfterDTO entity) {
-        final EsLambdaQueryWrapper<BinlogAlertDO> wrapper = new EsLambdaQueryWrapper<>();
+        final EsLambdaQueryWrapper<BinlogAlertDO> wrapper = EsWrappers.lambdaQuery();
         if (Objects.nonNull(entity.getDataId())) {
             wrapper.eq(BinlogAlertDO::getDataId, entity.getDataId());
         }

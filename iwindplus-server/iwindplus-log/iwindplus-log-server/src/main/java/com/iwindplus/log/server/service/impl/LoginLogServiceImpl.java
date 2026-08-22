@@ -7,6 +7,7 @@ package com.iwindplus.log.server.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.http.useragent.Browser;
 import cn.hutool.http.useragent.OS;
@@ -24,7 +25,9 @@ import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
-import com.iwindplus.base.http.client.integration.service.AddressService;
+import com.iwindplus.base.es.support.EsWrappers;
+import com.iwindplus.base.http.client.integration.domain.vo.address.AddressVO;
+import com.iwindplus.base.http.client.integration.service.address.AddressService;
 import com.iwindplus.log.domain.dto.LoginLogDTO;
 import com.iwindplus.log.domain.dto.LoginLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.LoginLogSearchDTO;
@@ -36,6 +39,7 @@ import com.iwindplus.log.server.service.LoginLogService;
 import com.iwindplus.mgt.client.power.UserClient;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -75,7 +79,9 @@ public class LoginLogServiceImpl extends EsBaseServiceImpl<LoginLogDO>
         if (CharSequenceUtil.isBlank(entity.getBizTraceId())) {
             entity.setBizTraceId(MDC.get(HeaderConstant.X_TRACE_ID));
         }
-        this.buildSystemInfo(entity);
+        this.buildUserAgent(entity);
+        this.buildDevice(entity);
+        this.buildLocation(entity);
         final LoginLogDO model = BeanUtil.copyProperties(entity, LoginLogDO.class);
         super.save(model);
         entity.setId(model.getId());
@@ -93,7 +99,9 @@ public class LoginLogServiceImpl extends EsBaseServiceImpl<LoginLogDO>
                 if (CharSequenceUtil.isBlank(entity.getBizTraceId())) {
                     entity.setBizTraceId(MDC.get(HeaderConstant.X_TRACE_ID));
                 }
-                this.buildSystemInfo(entity);
+                this.buildUserAgent(entity);
+                this.buildDevice(entity);
+                this.buildLocation(entity);
             });
             super.saveBatch(BeanUtil.copyToList(entities, LoginLogDO.class));
         }
@@ -178,8 +186,8 @@ public class LoginLogServiceImpl extends EsBaseServiceImpl<LoginLogDO>
 
     @Override
     public LoginLogVO getLoginInfo(Long userId, Long orgId) {
-        final EsLambdaQueryWrapper<LoginLogDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper.eq(LoginLogDO::getOrgId, orgId)
+        final EsLambdaQueryWrapper<LoginLogDO> wrapper = EsWrappers.<LoginLogDO>lambdaQuery()
+            .eq(LoginLogDO::getOrgId, orgId)
             .eq(LoginLogDO::getUserId, userId)
             .eq(LoginLogDO::getModuleName, AuthModuleEnum.LOGIN.getValue())
             .orderByDesc(LoginLogDO::getModifiedTimestamp)
@@ -192,33 +200,116 @@ public class LoginLogServiceImpl extends EsBaseServiceImpl<LoginLogDO>
         return BeanUtil.copyProperties(data, LoginLogVO.class);
     }
 
-    private void buildSystemInfo(LoginLogDTO entity) {
-        if (CharSequenceUtil.isBlank(entity.getPlatformName())
-            && CharSequenceUtil.isBlank(entity.getOsName())
-            && CharSequenceUtil.isBlank(entity.getBrowserName())) {
-            final String userAgentStr = Optional.ofNullable(HeaderContextHolder.getContext())
-                .map(m -> m.get(HttpHeaders.USER_AGENT)).orElse(null);
-            if (CharSequenceUtil.isNotBlank(userAgentStr)) {
-                final UserAgent userAgent = UserAgentUtil.parse(userAgentStr);
-                entity.setPlatformName(Optional.ofNullable(userAgent).map(UserAgent::getPlatform).map(Platform::getName).orElse(null));
-                entity.setOsName(Optional.ofNullable(userAgent).map(UserAgent::getOs).map(OS::getName).orElse(null));
-                entity.setBrowserName(Optional.ofNullable(userAgent).map(UserAgent::getBrowser).map(Browser::getName).orElse(null));
+    private void buildUserAgent(LoginLogDTO entity) {
+        if (CharSequenceUtil.isNotBlank(entity.getPlatformName())
+            && CharSequenceUtil.isNotBlank(entity.getOsName())
+            && CharSequenceUtil.isNotBlank(entity.getOsVersion())
+            && CharSequenceUtil.isNotBlank(entity.getBrowserName())
+            && CharSequenceUtil.isNotBlank(entity.getBrowserVersion())) {
+            return;
+        }
+
+        final String userAgentStr = Optional.ofNullable(HeaderContextHolder.getContext())
+            .map(context -> context.get(HttpHeaders.USER_AGENT))
+            .orElse(null);
+        if (CharSequenceUtil.isBlank(userAgentStr)) {
+            return;
+        }
+
+        final UserAgent userAgent = UserAgentUtil.parse(userAgentStr);
+        if (Objects.isNull(userAgent)) {
+            return;
+        }
+
+        final Platform platform = userAgent.getPlatform();
+        if (CharSequenceUtil.isBlank(entity.getPlatformName()) && Objects.nonNull(platform)) {
+            entity.setPlatformName(platform.getName());
+        }
+
+        final OS os = userAgent.getOs();
+        if (Objects.nonNull(os)) {
+            if (CharSequenceUtil.isBlank(entity.getOsName())) {
+                entity.setOsName(os.getName());
+            }
+            if (CharSequenceUtil.isBlank(entity.getOsVersion())) {
+                entity.setOsVersion(os.getVersion(userAgentStr));
+            }
+        }
+
+        final Browser browser = userAgent.getBrowser();
+        if (Objects.nonNull(browser)) {
+            if (CharSequenceUtil.isBlank(entity.getBrowserName())) {
+                entity.setBrowserName(browser.getName());
+            }
+            if (CharSequenceUtil.isBlank(entity.getBrowserVersion())) {
+                entity.setBrowserVersion(browser.getVersion(userAgentStr));
             }
         }
     }
 
-    private void buildLocation(LoginLogExtendVO entity) {
-        if (CharSequenceUtil.isBlank(entity.getIp())) {
+    private void buildDevice(LoginLogDTO entity) {
+        if (CharSequenceUtil.isNotBlank(entity.getDeviceNumber())
+            && CharSequenceUtil.isNotBlank(entity.getDeviceVersion())
+            && CharSequenceUtil.isNotBlank(entity.getDeviceFingerprint())) {
             return;
         }
+
+        final Map<String, String> headerMap = HeaderContextHolder.getContext();
+        if (MapUtil.isEmpty(headerMap)) {
+            return;
+        }
+
+        entity.setDeviceNumber(headerMap.get(HeaderConstant.X_DEVICE_NUMBER));
+        entity.setDeviceVersion(headerMap.get(HeaderConstant.X_DEVICE_VERSION));
+        entity.setDeviceFingerprint(headerMap.get(HeaderConstant.X_DEVICE_FINGERPRINT));
+    }
+
+    private void buildLocation(LoginLogDTO entity) {
+        if (CharSequenceUtil.isNotBlank(entity.getProvince())
+            && CharSequenceUtil.isNotBlank(entity.getCity())) {
+            return;
+        }
+        this.findAddress(entity.getIp()).ifPresent(address -> {
+            entity.setProvince(address.getProvince());
+            entity.setCity(address.getCity());
+        });
+    }
+
+    private void buildLocation(LoginLogExtendVO entity) {
+        if (CharSequenceUtil.isNotBlank(entity.getProvince())
+            && CharSequenceUtil.isNotBlank(entity.getCity())) {
+            return;
+        }
+        this.findAddress(entity.getIp()).ifPresent(address -> {
+            entity.setProvince(address.getProvince());
+            entity.setCity(address.getCity());
+        });
+    }
+
+    private Optional<AddressVO> findAddress(String ip) {
+        if (CharSequenceUtil.isBlank(ip)) {
+            return Optional.empty();
+        }
         try {
-            this.addressService.getAddressByPconline(entity.getIp())
-                .ifPresent(address -> {
-                    entity.setProvince(address.getProvince());
-                    entity.setCity(address.getCity());
-                });
+            final EsLambdaQueryWrapper<LoginLogDO> wrapper = EsWrappers.<LoginLogDO>lambdaQuery()
+                .eq(LoginLogDO::getIp, ip)
+                .exists(LoginLogDO::getProvince)
+                .exists(LoginLogDO::getCity)
+                .limit(1);
+            final LoginLogDO cached = super.getOne(wrapper);
+            if (Objects.nonNull(cached)
+                && CharSequenceUtil.isNotBlank(cached.getProvince())
+                && CharSequenceUtil.isNotBlank(cached.getCity())) {
+                return Optional.of(AddressVO.builder()
+                    .ip(ip)
+                    .province(cached.getProvince())
+                    .city(cached.getCity())
+                    .build());
+            }
+            return this.addressService.getAddress(ip);
         } catch (Exception e) {
-            log.error("获取地址信息异常", e);
+            log.error("获取地址信息异常，ip={}", ip, e);
+            return Optional.empty();
         }
     }
 
@@ -259,7 +350,7 @@ public class LoginLogServiceImpl extends EsBaseServiceImpl<LoginLogDO>
     }
 
     private EsLambdaQueryWrapper<LoginLogDO> buildPageWrapper(LoginLogSearchDTO entity) {
-        final EsLambdaQueryWrapper<LoginLogDO> wrapper = new EsLambdaQueryWrapper<>();
+        final EsLambdaQueryWrapper<LoginLogDO> wrapper = EsWrappers.lambdaQuery();
         if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
             wrapper.eq(LoginLogDO::getRequestId, entity.getRequestId());
         }

@@ -233,6 +233,80 @@ public class EsLambdaQueryWrapper<T> extends EsQueryWrapper {
     }
 
     /**
+     * 查询指定 ID 列表.
+     *
+     * @param ids ID 列表
+     * @return 当前 Lambda 查询包装器
+     */
+    @Override
+    public EsLambdaQueryWrapper<T> ids(List<String> ids) {
+        super.ids(ids);
+        return this;
+    }
+
+    /**
+     * 设置 should 最小匹配数量.
+     *
+     * @param count 最小匹配数量
+     * @return 当前 Lambda 查询包装器
+     */
+    @Override
+    public EsLambdaQueryWrapper<T> minimumShouldMatch(int count) {
+        super.minimumShouldMatch(count);
+        return this;
+    }
+
+    /**
+     * 嵌套查询.
+     *
+     * @param path 嵌套路径
+     * @param wrapper 子查询包装器
+     * @return 当前 Lambda 查询包装器
+     */
+    @Override
+    public EsLambdaQueryWrapper<T> nested(String path, EsQueryWrapper wrapper) {
+        super.nested(path, wrapper);
+        return this;
+    }
+
+    /**
+     * 限制查询结果数量.
+     *
+     * @param size 结果数量
+     * @return 当前 Lambda 查询包装器
+     */
+    @Override
+    public EsLambdaQueryWrapper<T> limit(int size) {
+        super.limit(size);
+        return this;
+    }
+
+    /**
+     * 设置 search_after.
+     *
+     * @param values search_after 值
+     * @return 当前 Lambda 查询包装器
+     */
+    @Override
+    public EsLambdaQueryWrapper<T> searchAfter(List<Object> values) {
+        super.searchAfter(values);
+        return this;
+    }
+
+    /**
+     * 设置返回字段.
+     *
+     * @param includes 包含字段
+     * @param excludes 排除字段
+     * @return 当前 Lambda 查询包装器
+     */
+    @Override
+    public EsLambdaQueryWrapper<T> source(String[] includes, String[] excludes) {
+        super.source(includes, excludes);
+        return this;
+    }
+
+    /**
      * 最大值
      */
     public EsLambdaQueryWrapper<T> max(SFunction<T, ?> field) {

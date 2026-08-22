@@ -128,7 +128,7 @@ public class AuthProperty {
          * 是否启用记录刷新token日志.
          */
         @Builder.Default
-        private Boolean enabledRefreshToken = Boolean.TRUE;
+        private Boolean enabledRefreshToken = Boolean.FALSE;
 
         /**
          * 是否启用记录退出日志.

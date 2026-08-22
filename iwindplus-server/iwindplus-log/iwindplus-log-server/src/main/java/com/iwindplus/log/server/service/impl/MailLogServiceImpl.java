@@ -18,6 +18,7 @@ import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
+import com.iwindplus.base.es.support.EsWrappers;
 import com.iwindplus.log.domain.dto.MailLogDTO;
 import com.iwindplus.log.domain.dto.MailLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.MailLogSearchDTO;
@@ -160,7 +161,7 @@ public class MailLogServiceImpl extends EsBaseServiceImpl<MailLogDO>
     }
 
     private EsLambdaQueryWrapper<MailLogDO> buildPageWrapper(MailLogSearchDTO entity) {
-        final EsLambdaQueryWrapper<MailLogDO> wrapper = new EsLambdaQueryWrapper<>();
+        final EsLambdaQueryWrapper<MailLogDO> wrapper = EsWrappers.lambdaQuery();
         if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
             wrapper.eq(MailLogDO::getRequestId, entity.getRequestId());
         }
@@ -199,7 +200,7 @@ public class MailLogServiceImpl extends EsBaseServiceImpl<MailLogDO>
     }
 
     private EsLambdaQueryWrapper<MailLogDO> buildPageWrapper(MailLogSearchAfterDTO entity) {
-        final EsLambdaQueryWrapper<MailLogDO> wrapper = new EsLambdaQueryWrapper<>();
+        final EsLambdaQueryWrapper<MailLogDO> wrapper = EsWrappers.lambdaQuery();
         if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
             wrapper.eq(MailLogDO::getRequestId, entity.getRequestId());
         }

@@ -26,18 +26,6 @@ import lombok.experimental.SuperBuilder;
 public class GatewayLogExtendVO extends GatewayLogVO {
 
     /**
-     * 省份.
-     */
-    @Schema(description = "省份")
-    private String province;
-
-    /**
-     * 城市.
-     */
-    @Schema(description = "城市")
-    private String city;
-
-    /**
      * 工号
      */
     @Schema(description = "工号")

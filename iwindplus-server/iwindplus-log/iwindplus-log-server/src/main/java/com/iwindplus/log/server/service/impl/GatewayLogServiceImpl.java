@@ -6,6 +6,7 @@ package com.iwindplus.log.server.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.http.HtmlUtil;
 import cn.hutool.http.useragent.Browser;
@@ -25,13 +26,16 @@ import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
-import com.iwindplus.base.http.client.integration.service.AddressService;
+import com.iwindplus.base.es.support.EsWrappers;
+import com.iwindplus.base.http.client.integration.domain.vo.address.AddressVO;
+import com.iwindplus.base.http.client.integration.service.address.AddressService;
 import com.iwindplus.log.domain.dto.GatewayLogDTO;
 import com.iwindplus.log.domain.dto.GatewayLogSearchAfterDTO;
 import com.iwindplus.log.domain.dto.GatewayLogSearchDTO;
 import com.iwindplus.log.domain.vo.GatewayLogExtendVO;
 import com.iwindplus.log.domain.vo.GatewayLogPageVO;
 import com.iwindplus.log.server.dal.model.GatewayLogDO;
+import com.iwindplus.log.server.dal.model.LoginLogDO;
 import com.iwindplus.log.server.service.GatewayLogService;
 import com.iwindplus.mgt.client.power.UserClient;
 import com.iwindplus.mgt.domain.dto.power.UserBaseQueryDTO;
@@ -82,7 +86,9 @@ public class GatewayLogServiceImpl extends EsBaseServiceImpl<GatewayLogDO> imple
             if (CharSequenceUtil.isBlank(entity.getBizTraceId())) {
                 entity.setBizTraceId(MDC.get(HeaderConstant.X_TRACE_ID));
             }
-            this.buildSystemInfo(entity);
+            this.buildUserAgent(entity);
+            this.buildDevice(entity);
+            this.buildLocation(entity);
             if (CharSequenceUtil.isNotBlank(entity.getRequestParam())) {
                 String str = HtmlUtil.unescape(entity.getRequestParam());
                 entity.setRequestParam(str);
@@ -184,33 +190,117 @@ public class GatewayLogServiceImpl extends EsBaseServiceImpl<GatewayLogDO> imple
         return result;
     }
 
-    private void buildSystemInfo(GatewayLogDTO entity) {
-        if (CharSequenceUtil.isBlank(entity.getPlatformName())
-            && CharSequenceUtil.isBlank(entity.getOsName())
-            && CharSequenceUtil.isBlank(entity.getBrowserName())) {
-            final String userAgentStr = Optional.ofNullable(HeaderContextHolder.getContext())
-                .map(m -> m.get(HttpHeaders.USER_AGENT)).orElse(null);
-            if (CharSequenceUtil.isNotBlank(userAgentStr)) {
-                final UserAgent userAgent = UserAgentUtil.parse(userAgentStr);
-                entity.setPlatformName(Optional.ofNullable(userAgent).map(UserAgent::getPlatform).map(Platform::getName).orElse(null));
-                entity.setOsName(Optional.ofNullable(userAgent).map(UserAgent::getOs).map(OS::getName).orElse(null));
-                entity.setBrowserName(Optional.ofNullable(userAgent).map(UserAgent::getBrowser).map(Browser::getName).orElse(null));
+    private void buildUserAgent(GatewayLogDTO entity) {
+        if (CharSequenceUtil.isNotBlank(entity.getPlatformName())
+            && CharSequenceUtil.isNotBlank(entity.getOsName())
+            && CharSequenceUtil.isNotBlank(entity.getOsVersion())
+            && CharSequenceUtil.isNotBlank(entity.getBrowserName())
+            && CharSequenceUtil.isNotBlank(entity.getBrowserVersion())) {
+            return;
+        }
+
+        final String userAgentStr = Optional.ofNullable(HeaderContextHolder.getContext())
+            .map(context -> context.get(HttpHeaders.USER_AGENT))
+            .orElse(null);
+        if (CharSequenceUtil.isBlank(userAgentStr)) {
+            return;
+        }
+
+        final UserAgent userAgent = UserAgentUtil.parse(userAgentStr);
+        if (Objects.isNull(userAgent)) {
+            return;
+        }
+
+        final Platform platform = userAgent.getPlatform();
+        if (CharSequenceUtil.isBlank(entity.getPlatformName()) && Objects.nonNull(platform)) {
+            entity.setPlatformName(platform.getName());
+        }
+
+        final OS os = userAgent.getOs();
+        if (Objects.nonNull(os)) {
+            if (CharSequenceUtil.isBlank(entity.getOsName())) {
+                entity.setOsName(os.getName());
+            }
+            if (CharSequenceUtil.isBlank(entity.getOsVersion())) {
+                entity.setOsVersion(os.getVersion(userAgentStr));
+            }
+        }
+
+        final Browser browser = userAgent.getBrowser();
+        if (Objects.nonNull(browser)) {
+            if (CharSequenceUtil.isBlank(entity.getBrowserName())) {
+                entity.setBrowserName(browser.getName());
+            }
+            if (CharSequenceUtil.isBlank(entity.getBrowserVersion())) {
+                entity.setBrowserVersion(browser.getVersion(userAgentStr));
             }
         }
     }
 
-    private void buildLocation(GatewayLogExtendVO entity) {
-        if (CharSequenceUtil.isBlank(entity.getIp())) {
+    private void buildDevice(GatewayLogDTO entity) {
+        if (CharSequenceUtil.isNotBlank(entity.getDeviceNumber())
+            && CharSequenceUtil.isNotBlank(entity.getDeviceVersion())
+            && CharSequenceUtil.isNotBlank(entity.getDeviceFingerprint())) {
             return;
         }
+
+        final Map<String, String> headerMap = HeaderContextHolder.getContext();
+        if (MapUtil.isEmpty(headerMap)) {
+            return;
+        }
+
+        entity.setDeviceNumber(headerMap.get(HeaderConstant.X_DEVICE_NUMBER));
+        entity.setDeviceVersion(headerMap.get(HeaderConstant.X_DEVICE_VERSION));
+        entity.setDeviceFingerprint(headerMap.get(HeaderConstant.X_DEVICE_FINGERPRINT));
+    }
+
+    private void buildLocation(GatewayLogDTO entity) {
+        if (CharSequenceUtil.isNotBlank(entity.getProvince())
+            && CharSequenceUtil.isNotBlank(entity.getCity())) {
+            return;
+        }
+        this.findAddress(entity.getIp()).ifPresent(address -> {
+            entity.setProvince(address.getProvince());
+            entity.setCity(address.getCity());
+        });
+    }
+
+    private void buildLocation(GatewayLogExtendVO entity) {
+        if (CharSequenceUtil.isNotBlank(entity.getProvince())
+            && CharSequenceUtil.isNotBlank(entity.getCity())) {
+            return;
+        }
+        this.findAddress(entity.getIp()).ifPresent(address -> {
+            entity.setProvince(address.getProvince());
+            entity.setCity(address.getCity());
+        });
+    }
+
+    private Optional<AddressVO> findAddress(String ip) {
+        if (CharSequenceUtil.isBlank(ip)) {
+            return Optional.empty();
+        }
         try {
-            this.addressService.getAddressByPconline(entity.getIp())
-                .ifPresent(address -> {
-                    entity.setProvince(address.getProvince());
-                    entity.setCity(address.getCity());
-                });
+            final EsLambdaQueryWrapper<GatewayLogDO> wrapper = EsWrappers.<GatewayLogDO>lambdaQuery()
+                .eq(GatewayLogDO::getIp, ip)
+                .exists(GatewayLogDO::getProvince)
+                .exists(GatewayLogDO::getCity)
+                .limit(1);
+            final GatewayLogDO cached = super.getOne(wrapper);
+            if (Objects.nonNull(cached)
+                && CharSequenceUtil.isNotBlank(cached.getProvince())
+                && CharSequenceUtil.isNotBlank(cached.getCity())) {
+                return Optional.of(AddressVO.builder()
+                    .ip(ip)
+                    .province(cached.getProvince())
+                    .city(cached.getCity())
+                    .build());
+            }
+
+            return this.addressService.getAddress(ip);
         } catch (Exception e) {
-            log.error("获取地址信息异常", e);
+            log.error("获取地址信息异常，ip={}", ip, e);
+            return Optional.empty();
         }
     }
 
@@ -288,7 +378,7 @@ public class GatewayLogServiceImpl extends EsBaseServiceImpl<GatewayLogDO> imple
     }
 
     private EsLambdaQueryWrapper<GatewayLogDO> buildPageWrapper(GatewayLogSearchDTO entity) {
-        final EsLambdaQueryWrapper<GatewayLogDO> wrapper = new EsLambdaQueryWrapper<>();
+        final EsLambdaQueryWrapper<GatewayLogDO> wrapper = EsWrappers.lambdaQuery();
         if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
             wrapper.eq(GatewayLogDO::getRequestId, entity.getRequestId());
         }
@@ -327,7 +417,7 @@ public class GatewayLogServiceImpl extends EsBaseServiceImpl<GatewayLogDO> imple
     }
 
     private EsLambdaQueryWrapper<GatewayLogDO> buildPageWrapper(GatewayLogSearchAfterDTO entity) {
-        final EsLambdaQueryWrapper<GatewayLogDO> wrapper = new EsLambdaQueryWrapper<>();
+        final EsLambdaQueryWrapper<GatewayLogDO> wrapper = EsWrappers.lambdaQuery();
         if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
             wrapper.eq(GatewayLogDO::getRequestId, entity.getRequestId());
         }

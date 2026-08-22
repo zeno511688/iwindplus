@@ -63,16 +63,58 @@ public class LoginLogVO extends DbBaseTwoVO {
     private String osName;
 
     /**
+     * 系统版本.
+     */
+    @Schema(description = "系统版本")
+    private String osVersion;
+
+    /**
      * 浏览器名称.
      */
     @Schema(description = "浏览器名称")
     private String browserName;
 
     /**
+     * 浏览器版本.
+     */
+    @Schema(description = "浏览器版本")
+    private String browserVersion;
+
+    /**
+     * 设备号.
+     */
+    @Schema(description = "设备号")
+    private String deviceNumber;
+
+    /**
+     * 设备版本.
+     */
+    @Schema(description = "设备版本")
+    private String deviceVersion;
+
+    /**
+     * 设备指纹.
+     */
+    @Schema(description = "设备指纹")
+    private String deviceFingerprint;
+
+    /**
      * ip.
      */
     @Schema(description = "ip")
     private String ip;
+
+    /**
+     * 省份.
+     */
+    @Schema(description = "省份")
+    private String province;
+
+    /**
+     * 城市.
+     */
+    @Schema(description = "城市")
+    private String city;
 
     /**
      * 用户主键.

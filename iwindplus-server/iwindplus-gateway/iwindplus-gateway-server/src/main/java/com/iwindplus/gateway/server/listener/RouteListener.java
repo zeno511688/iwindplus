@@ -50,7 +50,7 @@ public class RouteListener {
     @Resource
     private NacosConfigManager nacosConfigManager;
 
-    @Resource
+    @Resource(name = "routeTaskExecutor")
     private DtpExecutor routeTaskExecutor;
 
     @Resource

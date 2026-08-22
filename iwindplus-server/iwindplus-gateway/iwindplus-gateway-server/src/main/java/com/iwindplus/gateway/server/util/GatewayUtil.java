@@ -9,6 +9,9 @@ import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.URLUtil;
 import cn.hutool.extra.spring.SpringUtil;
+import cn.hutool.http.useragent.Browser;
+import cn.hutool.http.useragent.OS;
+import cn.hutool.http.useragent.Platform;
 import cn.hutool.http.useragent.UserAgent;
 import cn.hutool.http.useragent.UserAgentUtil;
 import com.iwindplus.base.domain.constant.CommonConstant;
@@ -199,7 +202,8 @@ public class GatewayUtil {
 
         GatewayUtil.buildTargetServer(exchange, builder);
         GatewayUtil.buildUserInfo(builder, user);
-        GatewayUtil.buildUserAgent(builder, headers.getFirst(HttpHeaders.USER_AGENT));
+        GatewayUtil.buildUserAgent(builder, headers);
+        GatewayUtil.buildDeviceInfo(builder, headers);
 
         // 2. 真正需要 RequestBody 时才去“读一次”，并且一直在 Mono 里
         return ReactorUtil.getRequestBodyByAttr(exchange)
@@ -317,17 +321,31 @@ public class GatewayUtil {
             .modifiedId(user.getUserId());
     }
 
-    private static void buildUserAgent(GatewayLogDTOBuilder<?, ?> builder, String userAgentStr) {
+    private static void buildUserAgent(GatewayLogDTOBuilder<?, ?> builder, HttpHeaders headers) {
+        String userAgentStr = headers.getFirst(HttpHeaders.USER_AGENT);
         if (CharSequenceUtil.isBlank(userAgentStr)) {
             return;
         }
 
         UserAgent userAgent = UserAgentUtil.parse(userAgentStr);
-        Optional.ofNullable(userAgent).ifPresent(agent ->
-            builder.platformName(agent.getPlatform().getName())
-                .osName(agent.getOs().getName())
-                .browserName(agent.getBrowser().getName())
-        );
+        if (Objects.isNull(userAgent)) {
+            return;
+        }
+        final Platform platform = userAgent.getPlatform();
+        final OS os = userAgent.getOs();
+        final Browser browser = userAgent.getBrowser();
+
+        builder.platformName(platform == null ? null : platform.getName());
+        builder.osName(os == null ? null : os.getName());
+        builder.osVersion(os == null ? null : os.getVersion(userAgentStr));
+        builder.browserName(browser == null ? null : browser.getName());
+        builder.browserVersion(browser == null ? null : browser.getVersion(userAgentStr));
+    }
+
+    private static void buildDeviceInfo(GatewayLogDTOBuilder<?, ?> builder, HttpHeaders headers) {
+        builder.deviceNumber(headers.getFirst(HeaderConstant.X_DEVICE_NUMBER))
+            .deviceVersion(headers.getFirst(HeaderConstant.X_DEVICE_VERSION))
+            .deviceFingerprint(headers.getFirst(HeaderConstant.X_DEVICE_FINGERPRINT));
     }
 
     private static GatewayLogDTO buildRequestData(LogConfig cfg, GatewayLogDTOBuilder<?, ?> builder, ReactorRequestDTO data) {

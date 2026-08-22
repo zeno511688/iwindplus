@@ -9,7 +9,7 @@ import com.iwindplus.auth.domain.enums.AuthModuleEnum;
 import com.iwindplus.auth.domain.event.LoginLogEvent;
 import com.iwindplus.auth.server.config.property.AuthProperty;
 import com.iwindplus.auth.server.config.property.AuthProperty.LogConfig;
-import com.iwindplus.base.domain.constant.CommonConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.web.support.WebManager;
 import com.iwindplus.log.domain.dto.LoginLogDTO;
@@ -45,7 +45,7 @@ public record CustomLogoutHandler(OAuth2AuthorizationService authorizationServic
         if (CharSequenceUtil.isBlank(authHeader)) {
             return;
         }
-        String token = CharSequenceUtil.replace(authHeader, CommonConstant.HeaderConstant.X_BEARER_TYPE, "").trim();
+        String token = CharSequenceUtil.replace(authHeader, HeaderConstant.X_BEARER_TYPE, "").trim();
         OAuth2Authorization authorization = this.authorizationService.findByToken(token, OAuth2TokenType.ACCESS_TOKEN);
         if (Objects.isNull(authorization)) {
             return;

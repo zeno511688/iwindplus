@@ -18,6 +18,7 @@ import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.service.impl.EsBaseServiceImpl;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
+import com.iwindplus.base.es.support.EsWrappers;
 import com.iwindplus.base.redis.service.RedissonService;
 import com.iwindplus.log.domain.dto.SmsCaptchaLogDTO;
 import com.iwindplus.log.domain.dto.SmsCaptchaLogSearchAfterDTO;
@@ -90,9 +91,9 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
     @CacheEvict(allEntries = true)
     @Override
     public boolean removeExpireData() {
-        final EsLambdaQueryWrapper<SmsCaptchaLogDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper.lt(SmsCaptchaLogDO::getExpireTime, System.currentTimeMillis());
-        return super.remove(wrapper);
+        final EsLambdaQueryWrapper<SmsCaptchaLogDO> queryWrapper = EsWrappers.<SmsCaptchaLogDO>lambdaQuery()
+            .lt(SmsCaptchaLogDO::getExpireTime, System.currentTimeMillis());
+        return super.remove(queryWrapper);
     }
 
     @Override
@@ -141,8 +142,8 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
         final Long userId = entity.getUserId();
         final Long orgId = entity.getOrgId();
         final LocalDateTime now = LocalDateTime.now();
-        final EsLambdaQueryWrapper<SmsCaptchaLogDO> wrapper = new EsLambdaQueryWrapper<>();
-        wrapper.eq(SmsCaptchaLogDO::getUserId, userId)
+        final EsLambdaQueryWrapper<SmsCaptchaLogDO> wrapper = EsWrappers.<SmsCaptchaLogDO>lambdaQuery()
+            .eq(SmsCaptchaLogDO::getUserId, userId)
             .eq(SmsCaptchaLogDO::getOrgId, orgId)
             .eq(SmsCaptchaLogDO::getTplCode, entity.getTplCode())
             .gt(SmsCaptchaLogDO::getExpireTime, System.currentTimeMillis())
@@ -157,8 +158,8 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
         if (Objects.nonNull(limitCountDay)) {
             long begin = toTimestamp(now.toLocalDate().atStartOfDay());
             long end = toTimestamp(now.toLocalDate().atTime(LocalTime.MAX));
-            final EsLambdaQueryWrapper<SmsCaptchaLogDO> dayWrapper = new EsLambdaQueryWrapper<>();
-            dayWrapper.eq(SmsCaptchaLogDO::getUserId, userId)
+            final EsLambdaQueryWrapper<SmsCaptchaLogDO> dayWrapper = EsWrappers.<SmsCaptchaLogDO>lambdaQuery()
+                .eq(SmsCaptchaLogDO::getUserId, userId)
                 .eq(SmsCaptchaLogDO::getOrgId, orgId)
                 .eq(SmsCaptchaLogDO::getTplCode, entity.getTplCode())
                 .between(SmsCaptchaLogDO::getCreatedTimestamp, begin, end);
@@ -171,8 +172,8 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
         final Integer limitCountHour = entity.getLimitCountHour();
         if (Objects.nonNull(limitCountHour)) {
             long begin = toTimestamp(now.minusHours(1));
-            final EsLambdaQueryWrapper<SmsCaptchaLogDO> hourWrapper = new EsLambdaQueryWrapper<>();
-            hourWrapper.eq(SmsCaptchaLogDO::getUserId, userId)
+            final EsLambdaQueryWrapper<SmsCaptchaLogDO> hourWrapper = EsWrappers.<SmsCaptchaLogDO>lambdaQuery()
+                .eq(SmsCaptchaLogDO::getUserId, userId)
                 .eq(SmsCaptchaLogDO::getOrgId, orgId)
                 .eq(SmsCaptchaLogDO::getTplCode, entity.getTplCode())
                 .ge(SmsCaptchaLogDO::getCreatedTimestamp, begin);
@@ -185,8 +186,8 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
         final Integer limitCountMinute = entity.getLimitCountMinute();
         if (Objects.nonNull(limitCountMinute)) {
             long begin = toTimestamp(now.minusMinutes(1));
-            final EsLambdaQueryWrapper<SmsCaptchaLogDO> minuteWrapper = new EsLambdaQueryWrapper<>();
-            minuteWrapper.eq(SmsCaptchaLogDO::getUserId, userId)
+            final EsLambdaQueryWrapper<SmsCaptchaLogDO> minuteWrapper = EsWrappers.<SmsCaptchaLogDO>lambdaQuery()
+                .eq(SmsCaptchaLogDO::getUserId, userId)
                 .eq(SmsCaptchaLogDO::getOrgId, orgId)
                 .eq(SmsCaptchaLogDO::getTplCode, entity.getTplCode())
                 .ge(SmsCaptchaLogDO::getCreatedTimestamp, begin);
@@ -222,9 +223,8 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
 
     @Override
     public boolean validateByUserId(String tplCode, Long userId, Long orgId, String captcha) {
-        final EsLambdaQueryWrapper<SmsCaptchaLogDO> wrapper = new EsLambdaQueryWrapper<>();
-
-        wrapper.eq(SmsCaptchaLogDO::getUserId, userId)
+        final EsLambdaQueryWrapper<SmsCaptchaLogDO> wrapper = EsWrappers.<SmsCaptchaLogDO>lambdaQuery()
+            .eq(SmsCaptchaLogDO::getUserId, userId)
             .eq(SmsCaptchaLogDO::getOrgId, orgId)
             .eq(SmsCaptchaLogDO::getCaptcha, captcha.trim())
             .eq(SmsCaptchaLogDO::getTplCode, tplCode)
@@ -260,7 +260,7 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
     }
 
     private EsLambdaQueryWrapper<SmsCaptchaLogDO> buildPageWrapper(SmsCaptchaLogSearchDTO entity) {
-        final EsLambdaQueryWrapper<SmsCaptchaLogDO> wrapper = new EsLambdaQueryWrapper<>();
+        final EsLambdaQueryWrapper<SmsCaptchaLogDO> wrapper = EsWrappers.lambdaQuery();
         if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
             wrapper.eq(SmsCaptchaLogDO::getRequestId, entity.getRequestId());
         }
@@ -290,7 +290,7 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
     }
 
     private EsLambdaQueryWrapper<SmsCaptchaLogDO> buildPageWrapper(SmsCaptchaLogSearchAfterDTO entity) {
-        final EsLambdaQueryWrapper<SmsCaptchaLogDO> wrapper = new EsLambdaQueryWrapper<>();
+        final EsLambdaQueryWrapper<SmsCaptchaLogDO> wrapper = EsWrappers.lambdaQuery();
         if (CharSequenceUtil.isNotBlank(entity.getRequestId())) {
             wrapper.eq(SmsCaptchaLogDO::getRequestId, entity.getRequestId());
         }
