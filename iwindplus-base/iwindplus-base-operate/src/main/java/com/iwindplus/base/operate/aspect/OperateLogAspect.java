@@ -165,7 +165,7 @@ public class OperateLogAspect {
             .responseTime(DatesUtil.parseDate(endMillis, DatePattern.NORM_DATETIME_MS_PATTERN))
             .executeTime(endMillis - beginMillis)
             .bizTraceId(MDC.get(HeaderConstant.X_TRACE_ID))
-            .ip(MDC.get(HeaderConstant.X_REAL_IP))
+
             .userId(userId)
             .orgId(orgId)
             .createdBy(realName)
@@ -176,6 +176,7 @@ public class OperateLogAspect {
         final HttpServletRequest httpServletRequest = HttpsUtil.getHttpServletRequest();
         if (httpServletRequest != null) {
             param.setRequestId(httpServletRequest.getHeader(HeaderConstant.X_REQUESTED_ID));
+            param.setIp(httpServletRequest.getHeader(HeaderConstant.X_REAL_IP));
 
             if (CharSequenceUtil.isNotBlank(httpServletRequest.getContentType())
                 && httpServletRequest.getContentType().contains(MediaType.APPLICATION_JSON.toString())) {
