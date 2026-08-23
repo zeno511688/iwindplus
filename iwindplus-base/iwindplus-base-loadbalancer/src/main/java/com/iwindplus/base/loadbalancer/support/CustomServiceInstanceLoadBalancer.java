@@ -5,7 +5,7 @@
  *
  */
 
-package com.iwindplus.base.loadbalancer.strategy;
+package com.iwindplus.base.loadbalancer.support;
 
 import cn.hutool.core.collection.CollUtil;
 import com.alibaba.cloud.nacos.NacosDiscoveryProperties;
@@ -38,24 +38,19 @@ import reactor.core.publisher.Mono;
  * @since 2023/10/24 00:01
  */
 @Slf4j
-public class CustomVersionWeightLoadBalancer implements ReactorServiceInstanceLoadBalancer {
+public class CustomServiceInstanceLoadBalancer implements ReactorServiceInstanceLoadBalancer {
 
-    private ObjectProvider<ServiceInstanceListSupplier> serviceInstanceListSupplierProvider;
-    private String serviceId;
+    private final ObjectProvider<ServiceInstanceListSupplier> serviceInstanceListSupplierProvider;
+    private final String serviceId;
     private final AtomicInteger position;
-    private NacosDiscoveryProperties nacosDiscoveryProperties;
+    private final NacosDiscoveryProperties nacosDiscoveryProperties;
 
-    public CustomVersionWeightLoadBalancer(ObjectProvider<ServiceInstanceListSupplier> serviceInstanceListSupplierProvider, String serviceId
+    public CustomServiceInstanceLoadBalancer(ObjectProvider<ServiceInstanceListSupplier> serviceInstanceListSupplierProvider, String serviceId
         , NacosDiscoveryProperties nacosDiscoveryProperties) {
-        this(serviceInstanceListSupplierProvider, serviceId, ThreadLocalRandom.current().nextInt(1000));
-        this.nacosDiscoveryProperties = nacosDiscoveryProperties;
-    }
-
-    public CustomVersionWeightLoadBalancer(ObjectProvider<ServiceInstanceListSupplier> serviceInstanceListSupplierProvider, String serviceId,
-        int seedPosition) {
         this.serviceId = serviceId;
         this.serviceInstanceListSupplierProvider = serviceInstanceListSupplierProvider;
-        this.position = new AtomicInteger(seedPosition);
+        this.position = new AtomicInteger(ThreadLocalRandom.current().nextInt(1000));
+        this.nacosDiscoveryProperties = nacosDiscoveryProperties;
     }
 
     @Override
@@ -88,7 +83,7 @@ public class CustomVersionWeightLoadBalancer implements ReactorServiceInstanceLo
 
         HttpHeaders headers = clientRequest.getHeaders();
         // 先根据版本，然后根据权重筛选服务
-        instancesToChoose = NacosVersionWeightLoadBalancer.getServiceInstancesByVersion(instancesToChoose, headers, nacosDiscoveryProperties);
+        instancesToChoose = NacosServiceInstanceLoadBalancer.getServiceInstancesByVersion(instancesToChoose, headers, nacosDiscoveryProperties);
         // 权重（如果配置了权重，则只选中权重的实例）
         ServiceInstance instance = this.getServiceInstancesByWeight(instancesToChoose);
         return new DefaultResponse(instance);

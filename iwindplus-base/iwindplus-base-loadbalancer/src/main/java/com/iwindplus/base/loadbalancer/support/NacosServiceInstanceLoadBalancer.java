@@ -5,7 +5,7 @@
  *
  */
 
-package com.iwindplus.base.loadbalancer.strategy;
+package com.iwindplus.base.loadbalancer.support;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
@@ -41,13 +41,13 @@ import reactor.core.publisher.Mono;
  * @since 2023/10/27 22:50
  */
 @Slf4j
-public class NacosVersionWeightLoadBalancer implements ReactorServiceInstanceLoadBalancer {
+public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceLoadBalancer {
 
-    private ObjectProvider<ServiceInstanceListSupplier> serviceInstanceListSupplierProvider;
+    private final ObjectProvider<ServiceInstanceListSupplier> serviceInstanceListSupplierProvider;
     private final String serviceId;
-    private NacosDiscoveryProperties nacosDiscoveryProperties;
+    private final NacosDiscoveryProperties nacosDiscoveryProperties;
 
-    public NacosVersionWeightLoadBalancer(ObjectProvider<ServiceInstanceListSupplier> serviceInstanceListSupplierProvider, String serviceId
+    public NacosServiceInstanceLoadBalancer(ObjectProvider<ServiceInstanceListSupplier> serviceInstanceListSupplierProvider, String serviceId
         , NacosDiscoveryProperties nacosDiscoveryProperties) {
         this.serviceId = serviceId;
         this.serviceInstanceListSupplierProvider = serviceInstanceListSupplierProvider;
@@ -95,7 +95,7 @@ public class NacosVersionWeightLoadBalancer implements ReactorServiceInstanceLoa
         }
 
         HttpHeaders headers = clientRequest.getHeaders();
-        instancesToChoose = NacosVersionWeightLoadBalancer.getServiceInstancesByVersion(instancesToChoose, headers, nacosDiscoveryProperties);
+        instancesToChoose = NacosServiceInstanceLoadBalancer.getServiceInstancesByVersion(instancesToChoose, headers, nacosDiscoveryProperties);
         ServiceInstance instance = ExtendBalancer.getServiceInstancesByWeight(instancesToChoose);
         return new DefaultResponse(instance);
     }

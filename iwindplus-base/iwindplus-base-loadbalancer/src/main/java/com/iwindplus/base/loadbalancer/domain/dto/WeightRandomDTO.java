@@ -7,13 +7,12 @@
 
 package com.iwindplus.base.loadbalancer.domain.dto;
 
-import lombok.Data;
-import lombok.ToString;
-
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import lombok.Data;
+import lombok.ToString;
 
 /**
  * 加权随机算法.
@@ -89,8 +88,8 @@ public class WeightRandomDTO<T> {
         if (items.isEmpty()) {
             return null;
         }
-        SecureRandom secureRandom = new SecureRandom();
-        double random = secureRandom.nextDouble();
+        // 使用ThreadLocalRandom提高性能，避免每次创建SecureRandom实例
+        double random = ThreadLocalRandom.current().nextDouble();
         int index = Arrays.binarySearch(weights, random);
         if (index < 0) {
             index = -index - 1;
