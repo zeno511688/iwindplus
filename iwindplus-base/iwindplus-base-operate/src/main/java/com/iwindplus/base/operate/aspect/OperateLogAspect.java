@@ -165,7 +165,6 @@ public class OperateLogAspect {
             .responseTime(DatesUtil.parseDate(endMillis, DatePattern.NORM_DATETIME_MS_PATTERN))
             .executeTime(endMillis - beginMillis)
             .bizTraceId(MDC.get(HeaderConstant.X_TRACE_ID))
-
             .userId(userId)
             .orgId(orgId)
             .createdBy(realName)
