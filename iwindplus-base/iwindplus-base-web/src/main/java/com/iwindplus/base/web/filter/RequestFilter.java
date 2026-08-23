@@ -9,7 +9,6 @@ package com.iwindplus.base.web.filter;
 
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.extra.servlet.JakartaServletUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
@@ -103,7 +102,7 @@ public class RequestFilter extends OncePerRequestFilter {
 
     private void buildLanguage(Map<String, String> headers) {
         String language = headers.get(HttpHeaders.ACCEPT_LANGUAGE);
-        if (ObjectUtil.isEmpty(language)) {
+        if (CharSequenceUtil.isBlank(language)) {
             language = HttpsUtil.buildDefaultLanguage();
             headers.put(HttpHeaders.ACCEPT_LANGUAGE, language);
         }
@@ -116,6 +115,7 @@ public class RequestFilter extends OncePerRequestFilter {
             realIp = JakartaServletUtil.getClientIP(httpServletRequest);
             headers.put(HeaderConstant.X_REAL_IP, realIp);
         }
+        MDC.put(HeaderConstant.X_REAL_IP, realIp);
     }
 
     private void buildUserInfo(Map<String, String> headers) {
