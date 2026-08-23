@@ -113,10 +113,6 @@
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
-            <artifactId>iwindplus-base-mongo</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-websocket</artifactId>
         </dependency>
         <dependency>
