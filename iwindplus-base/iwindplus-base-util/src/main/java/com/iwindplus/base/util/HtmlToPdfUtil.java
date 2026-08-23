@@ -19,11 +19,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,7 +44,7 @@ public class HtmlToPdfUtil {
     /**
      * 允许的协议.
      */
-    private static final Set<String> ALLOWED_PROTOCOLS = new HashSet<>(Arrays.asList("https"));
+    private static final Set<String> ALLOWED_PROTOCOLS = new HashSet<>(List.of("https", "http"));
 
     /**
      * 连接超时时间（毫秒）.
@@ -165,19 +166,19 @@ public class HtmlToPdfUtil {
             InetAddress[] addresses = InetAddress.getAllByName(host);
             for (InetAddress addr : addresses) {
                 String ip = addr.getHostAddress();
-                
+
                 // 使用 Hutool 的 NetUtil.isInnerIP() 判断是否为内网IP
                 if (NetUtil.isInnerIP(ip)) {
                     log.warn("Private IP access blocked: {}", ip);
                     throw new BizException(BizCodeEnum.PRIVATE_IP_ACCESS_DENIED);
                 }
-                
+
                 // 检查是否为回环地址
                 if (addr.isLoopbackAddress()) {
                     log.warn("Loopback address access blocked: {}", ip);
                     throw new BizException(BizCodeEnum.LOOPBACK_ADDRESS_ACCESS_DENIED);
                 }
-                
+
                 // 检查是否为链路本地地址
                 if (addr.isLinkLocalAddress()) {
                     log.warn("Link-local address access blocked: {}", ip);
@@ -199,16 +200,16 @@ public class HtmlToPdfUtil {
      */
     private static InputStream createSafeConnection(String url) throws IOException {
         URL parsedUrl = new URL(url);
-        java.net.HttpURLConnection connection = (java.net.HttpURLConnection) parsedUrl.openConnection();
+        HttpURLConnection connection = (HttpURLConnection) parsedUrl.openConnection();
         connection.setConnectTimeout(CONNECT_TIMEOUT);
         connection.setReadTimeout(READ_TIMEOUT);
-        connection.setInstanceFollowRedirects(false); // 禁止自动重定向
-        
+        connection.setInstanceFollowRedirects(false);
+
         int responseCode = connection.getResponseCode();
-        if (responseCode != java.net.HttpURLConnection.HTTP_OK) {
+        if (responseCode != HttpURLConnection.HTTP_OK) {
             throw new IOException("HTTP response code: " + responseCode);
         }
-        
+
         return connection.getInputStream();
     }
 
