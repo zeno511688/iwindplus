@@ -34,8 +34,6 @@ filter:
     private-key: ${filter-crypto-private-key:}
     # 密钥
     key: ${filter-crypto-key:}
-    # 初始化向量
-    iv: ${filter-crypto-iv:}
 http:
   client:
     # 是否启用每次请求观察（客户端自带的）
@@ -66,8 +64,6 @@ response:
       private-key: ${response-body-crypto-private-key:}
       # 密钥
       key: ${response-body-crypto-key:}
-      # 初始化向量
-      iv: ${response-body-crypto-iv:}
 jackson:
   # 是否开启自定义jackson配置
   enabled: true
@@ -505,8 +501,6 @@ mybatis-plus:
       private-key: ${mybatis-field-crypto-private-key:}
       # 密钥
       key: ${mybatis-field-crypto-key:}
-      # 初始化向量
-      iv: ${mybatis-field-crypto-iv:}
 alert:
   # 飞书
   feishu:

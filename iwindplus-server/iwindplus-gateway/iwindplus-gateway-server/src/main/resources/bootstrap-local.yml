@@ -167,8 +167,6 @@ response:
       private-key: ${response-body-crypto-private-key:}
       # 密钥
       key: ${response-body-crypto-key:}
-      # 初始化向量
-      iv: ${response-body-crypto-iv:}
 filter:
   xss:
     # 是否开启xss过滤器，防止攻击
@@ -186,8 +184,6 @@ filter:
     private-key: ${filter-crypto-private-key:}
     # 密钥
     key: ${filter-crypto-key:}
-    # 初始化向量
-    iv: ${filter-crypto-iv:}
 http:
   client:
     api-protection:
