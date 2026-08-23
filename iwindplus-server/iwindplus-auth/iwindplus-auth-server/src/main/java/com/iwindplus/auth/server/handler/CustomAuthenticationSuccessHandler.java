@@ -167,7 +167,7 @@ public record CustomAuthenticationSuccessHandler(AuthProperty property
             .builder()
             .requestId(request.getHeader(HeaderConstant.X_REQUESTED_ID))
             .bizTraceId(MDC.get(HeaderConstant.X_TRACE_ID))
-            .ip(MDC.get(HeaderConstant.X_REAL_IP))
+            .ip(request.getHeader(HeaderConstant.X_REAL_IP))
             .deviceNumber(request.getHeader(HeaderConstant.X_DEVICE_NUMBER))
             .deviceVersion(request.getHeader(HeaderConstant.X_DEVICE_VERSION))
             .deviceFingerprint(request.getHeader(HeaderConstant.X_DEVICE_FINGERPRINT))

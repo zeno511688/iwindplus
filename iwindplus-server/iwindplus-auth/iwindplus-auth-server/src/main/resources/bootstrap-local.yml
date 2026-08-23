@@ -343,24 +343,6 @@ spring:
     enabled-remote: true
     # nacos分组名称
     group: I18N_GROUP
-  datasource:
-    # 数据库url
-    url: jdbc:mysql://127.0.0.1:3317/iwindplus-auth?useUnicode=true&autoReconnect=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
-    # 数据库用户名
-    username: root
-    # 数据库密码
-    password: njX@D*4ETsm3
-    # Hikari 连接池配置
-    hikari:
-      # 数据库连接超时时间
-      connectionTimeout: 30000
-      # 最小空闲连接数量
-      minimumIdle: 5
-      # 连接池最大连接数，默认是10
-      maximumPoolSize: 20
-      # 此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
-      maxLifetime: 1800000
-      connectionTestQuery: SELECT 1
   cache:
     redis:
       time-to-live: 0
@@ -457,43 +439,6 @@ logging:
     enabled-async: true
     address: 127.0.0.1:4560
   config: classpath:logback-spring.xml
-mybatis-plus:
-  type-aliases-package: com.iwindplus.**.model,com.iwindplus.**.domain
-  executor-type: REUSE
-  configuration:
-    use-column-label: true
-    call-setters-on-nulls: true
-    map-underscore-to-camel-case: true
-    cache-enabled: true
-  global-config:
-    banner: false
-    db-config:
-      id-type: ASSIGN_ID
-  field:
-    fill:
-      #  是否开启字段填充
-      enabled: true
-      # 是否开启插入严格模式
-      enabled-insert-strict: true
-    crypto:
-      # 是否开启
-      enabled: true
-      # 是否启用输入加密
-      enabled-input-encrypt: true
-      # 是否启用输入脱敏
-      enabled-input-sensitive: false
-      # 是否启用输出解密
-      enabled-output-decrypt: true
-      # 算法
-      algorithm: AES
-      # 公钥
-      # publicKey:
-      # 私钥
-      # privateKey:
-      # 密钥
-      # key:
-      # 初始化向量
-      # iv:
 alert:
   # 飞书
   feishu:

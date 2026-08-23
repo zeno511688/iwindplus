@@ -96,6 +96,10 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-vault-config</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-webflux</artifactId>
         </dependency>

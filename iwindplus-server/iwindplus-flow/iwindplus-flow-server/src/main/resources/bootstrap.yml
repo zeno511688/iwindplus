@@ -4,32 +4,36 @@ spring:
     allow-bean-definition-overriding: true
     banner-mode: off
   profiles:
-    active: local
+    active: ${profile-active:local}
   application:
     name: iwindplus-flow
   config:
     import:
+      # 本地公共默认配置，可不存在
+      - optional:classpath:application-common.yml
+      # Nacos：当前项目配置
       - optional:nacos:${spring.application.name}-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
+      # Vault：当前项目 Secret
+      - optional:vault:///${spring.profiles.active}/${spring.application.name}
 
   cloud:
     nacos:
-      server-addr: 127.0.0.1:8848
-      username: nacos
-      password: zjLGJX2gRNRT
+      server-addr: ${nacos.server-addr:127.0.0.1:8848}
+      username: ${nacos.username}
+      password: ${nacos.password}
       discovery:
         enabled: true
         server-addr: ${spring.cloud.nacos.server-addr}
         username: ${spring.cloud.nacos.username}
         password: ${spring.cloud.nacos.password}
-        namespace: iwindplus-${spring.profiles.active}
-        group: IWINDPLUS_GROUP
-        cluster-name: iwindplus-${spring.profiles.active}
+        namespace: ${nacos.namespace:iwindplus-${spring.profiles.active}}
+        group: ${nacos.group:IWINDPLUS_GROUP}
+        cluster-name: ${nacos.cluster-name:${spring.cloud.nacos.discovery.namespace}}
         watch:
-          enabled: true
+          enabled: ${nacos.watch-enabled:true}
         metadata:
           name: ${server.servlet.application-display-name:${spring.application.name}}
-          version: v1
-
+          version: ${nacos.app-vesion:v1}
       config:
         enabled: true
         server-addr: ${spring.cloud.nacos.server-addr}
@@ -38,3 +42,20 @@ spring:
         namespace: ${spring.cloud.nacos.discovery.namespace}
         group: ${spring.cloud.nacos.discovery.group}
         file-extension: yml
+        shared-configs:
+          # Vault 没有使用时的公共 Secret 兜底
+          - data-id: iwindplus-common-cipher.${spring.cloud.nacos.config.file-extension}
+            group: ${spring.cloud.nacos.discovery.group}
+            refresh: true
+          # Vault 没有使用时的当前项目 Secret 兜底
+          - data-id: ${spring.application.name}-${spring.profiles.active}-cipher.${spring.cloud.nacos.config.file-extension}
+            group: ${spring.cloud.nacos.discovery.group}
+            refresh: true
+    vault:
+      uri: ${vault.uri:http://127.0.0.1:18200}
+      authentication: TOKEN
+      token: ${vault.token}
+      kv:
+        enabled: true
+        backend: ${vault.backend:secret}
+        default-context: ${spring.profiles.active}/${spring.application.name}
