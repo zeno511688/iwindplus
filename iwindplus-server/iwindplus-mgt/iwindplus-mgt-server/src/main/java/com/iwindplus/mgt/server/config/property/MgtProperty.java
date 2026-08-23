@@ -99,8 +99,7 @@ public class MgtProperty {
         /**
          * 邮件模板编码.
          */
-        @Builder.Default
-        private String tplCode = "c3f67fd355dd6098156053f68285ba3e";
+        private String tplCode;
     }
 
     /**
