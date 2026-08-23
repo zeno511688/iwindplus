@@ -223,6 +223,12 @@ public class EsBaseServiceImpl<T extends EsDbBaseDO> implements EsBaseService<T>
         page.setRecords(list);
         page.setTotal(hits.getTotalHits());
 
+        // 计算总页数
+        if (page.getSize() != null && page.getSize() > 0) {
+            long pages = (hits.getTotalHits() + page.getSize() - 1) / page.getSize();
+            page.setPages(pages);
+        }
+
         if (!hits.isEmpty()) {
             SearchHit<T> last = hits.getSearchHits()
                 .get(hits.getSearchHits().size() - 1);

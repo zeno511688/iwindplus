@@ -44,6 +44,12 @@ public class EsPageDTO<T> implements Serializable {
     private Long total;
 
     /**
+     * 总页数.
+     */
+    @Schema(description = "总页数")
+    private Long pages;
+
+    /**
      * 记录.
      */
     @Schema(description = "记录")
