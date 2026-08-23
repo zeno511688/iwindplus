@@ -8,6 +8,7 @@
 package com.iwindplus.base.loadbalancer;
 
 import com.alibaba.cloud.nacos.NacosDiscoveryProperties;
+import com.iwindplus.base.loadbalancer.domain.property.LoadBalancerProperty;
 import com.iwindplus.base.loadbalancer.support.NacosServiceInstanceLoadBalancer;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +21,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
 /**
- * Nacos负载均衡器配置.
+ * Nacos负载均衡器配置（支持灰度发布）.
  *
  * @author zengdegui
  * @since 2023/10/24 23:02
@@ -32,6 +33,9 @@ public class NacosLoadBalancerConfiguration {
     @Resource
     private NacosDiscoveryProperties nacosDiscoveryProperties;
 
+    @Resource
+    private LoadBalancerProperty loadBalancerProperty;
+
     /**
      * Nacos负载均衡器.
      *
@@ -42,9 +46,26 @@ public class NacosLoadBalancerConfiguration {
     @Bean
     public ReactorLoadBalancer<ServiceInstance> nacosLoadBalancer(Environment environment, LoadBalancerClientFactory loadBalancerClientFactory) {
         String name = environment.getProperty(LoadBalancerClientFactory.PROPERTY_NAME);
-        NacosServiceInstanceLoadBalancer loadBalancer = new NacosServiceInstanceLoadBalancer(
-            loadBalancerClientFactory.getLazyProvider(name, ServiceInstanceListSupplier.class), name, this.nacosDiscoveryProperties);
-        log.info(NacosServiceInstanceLoadBalancer.class.getSimpleName() + " initialized for service: {}", name);
-        return loadBalancer;
+        
+        // 检查是否启用灰度发布
+        LoadBalancerProperty.GrayConfig grayConfig = this.loadBalancerProperty.getGray();
+        if (grayConfig.getEnabled() != null && grayConfig.getEnabled()) {
+            // 使用灰度发布负载均衡器
+            NacosServiceInstanceLoadBalancer loadBalancer = new NacosServiceInstanceLoadBalancer(
+                loadBalancerClientFactory.getLazyProvider(name, ServiceInstanceListSupplier.class), 
+                name, 
+                this.nacosDiscoveryProperties,
+                grayConfig);
+            log.info("NacosServiceInstanceLoadBalancer (with gray release) initialized for service: {}", name);
+            return loadBalancer;
+        } else {
+            // 使用普通负载均衡器
+            NacosServiceInstanceLoadBalancer loadBalancer = new NacosServiceInstanceLoadBalancer(
+                loadBalancerClientFactory.getLazyProvider(name, ServiceInstanceListSupplier.class), 
+                name, 
+                this.nacosDiscoveryProperties);
+            log.info("NacosServiceInstanceLoadBalancer initialized for service: {}", name);
+            return loadBalancer;
+        }
     }
 }

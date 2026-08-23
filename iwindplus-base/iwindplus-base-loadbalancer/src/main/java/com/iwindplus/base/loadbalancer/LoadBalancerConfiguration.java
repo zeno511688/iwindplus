@@ -24,22 +24,12 @@ import org.springframework.context.annotation.Configuration;
 public class LoadBalancerConfiguration {
 
     /**
-     * Nacos负载均衡自动配置.
+     * Nacos负载均衡自动配置（支持灰度发布）.
      */
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnProperty(prefix = "loadbalancer.nacos", name = "enabled", havingValue = "true", matchIfMissing = true)
     @LoadBalancerClients(defaultConfiguration = NacosLoadBalancerConfiguration.class)
     public static class NacosLoadBalancerAutoConfiguration {
-
-    }
-
-    /**
-     * 自定义负载均衡自动配置.
-     */
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnProperty(prefix = "loadbalancer.custom", name = "enabled", havingValue = "true")
-    @LoadBalancerClients(defaultConfiguration = CustomLoadBalancerConfiguration.class)
-    public static class CustomLoadBalancerAutoConfiguration {
 
     }
 }

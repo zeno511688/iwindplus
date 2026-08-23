@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.loadbalancer.domain.property;
 
+import java.util.List;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -28,9 +29,9 @@ public class LoadBalancerProperty {
     private NacosConfig nacos = new NacosConfig();
 
     /**
-     * 自定义负载均衡配置.
+     * 灰度发布配置.
      */
-    private CustomConfig custom = new CustomConfig();
+    private GrayConfig gray = new GrayConfig();
 
     @Data
     public static class NacosConfig {
@@ -42,11 +43,36 @@ public class LoadBalancerProperty {
     }
 
     @Data
-    public static class CustomConfig {
+    public static class GrayConfig {
 
         /**
-         * 是否启用自定义负载均衡，默认false.
+         * 是否启用灰度发布，默认false.
          */
         private Boolean enabled = false;
+
+        /**
+         * 用户ID请求头名称，默认X-User-Id.
+         */
+        private String userIdHeader = "X-User-Id";
+
+        /**
+         * 灰度版本请求头名称，默认X-Gray-Version.
+         */
+        private String grayVersionHeader = "X-Gray-Version";
+
+        /**
+         * 灰度百分比（0-100），默认10%.
+         */
+        private Integer percentage = 10;
+
+        /**
+         * 灰度用户ID白名单.
+         */
+        private List<String> userIdWhitelist;
+
+        /**
+         * 灰度版本，默认v2.
+         */
+        private String grayVersion = "v2";
     }
 }
