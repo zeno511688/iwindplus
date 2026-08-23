@@ -39,6 +39,7 @@ public class EsDbBaseDO implements Serializable {
     @Schema(description = "主键")
     @NotBlank(message = "{id.notEmpty}", groups = {EditGroup.class, OtherEditGroup.class})
     @Id
+    @Field(type = FieldType.Keyword)
     private String id;
 
     /**

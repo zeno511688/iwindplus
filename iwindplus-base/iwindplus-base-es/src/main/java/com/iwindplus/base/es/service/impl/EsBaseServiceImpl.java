@@ -208,8 +208,7 @@ public class EsBaseServiceImpl<T extends EsDbBaseDO> implements EsBaseService<T>
     @Override
     public EsPageDTO<T> pageByAfter(EsPageDTO<T> page, EsLambdaQueryWrapper<T> wrapper) {
         wrapQueryByDelete(wrapper);
-        wrapper.orderByDesc(T::getModifiedTimestamp)
-            .orderByDesc(T::getId);
+        wrapper.orderByDesc(T::getModifiedTimestamp);
 
         // 注入游标
         wrapper.searchAfter(page.getSearchAfter());
