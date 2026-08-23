@@ -31,7 +31,6 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.dromara.dynamictp.core.executor.DtpExecutor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -113,18 +112,35 @@ public class FileServiceImpl extends AbstractBaseServiceImpl implements FileServ
     @Override
     public boolean removeFiles(List<String> relativePaths) {
         String rootPath = this.getRootPath();
-        List<Path> pathList = relativePaths.stream()
-            .map(relativePath -> Paths.get(rootPath, relativePath))
-            .filter(path -> Files.exists(path))
-            .collect(Collectors.toList());
+        Path rootDir = Paths.get(rootPath).normalize().toAbsolutePath();
+
         try {
-            for (Path path : pathList) {
-                Files.delete(path);
+            for (String relativePath : relativePaths) {
+                // 规范化路径并检查是否在根目录下
+                Path targetPath = Paths.get(rootPath, relativePath).normalize().toAbsolutePath();
+
+                // 检查路径是否在根目录下，防止路径穿越
+                if (!targetPath.startsWith(rootDir)) {
+                    log.warn("Path traversal attempt detected: {}", relativePath);
+                    continue;
+                }
+
+                // 检查文件是否存在
+                if (!Files.exists(targetPath)) {
+                    continue;
+                }
+
+                // 检查是否为符号链接，防止符号链接绕过
+                if (Files.isSymbolicLink(targetPath)) {
+                    log.warn("Symbolic link detected, skipping: {}", relativePath);
+                    continue;
+                }
+
+                Files.delete(targetPath);
             }
             return true;
         } catch (IOException ex) {
             log.error(ExceptionConstant.IO_EXCEPTION, ex);
-
             throw new BizException(BizCodeEnum.FILE_DELETE_ERROR);
         }
     }

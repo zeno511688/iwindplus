@@ -65,10 +65,10 @@ public class BinlogEngineManager implements SmartLifecycle {
     @Resource
     private BinlogProcessHandler handler;
 
-    @Resource
+    @Resource(name = "binlogTaskExecutor")
     private DtpExecutor binlogTaskExecutor;
 
-    @Resource
+    @Resource(name = "binlogTaskScheduler")
     private ScheduledDtpExecutor binlogTaskScheduler;
 
     private final AtomicBoolean running = new AtomicBoolean(false);

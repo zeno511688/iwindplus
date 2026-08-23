@@ -9,6 +9,7 @@ package com.iwindplus.base.shiro;
 
 import at.pollux.thymeleaf.shiro.dialect.ShiroDialect;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.shiro.cache.ShiroRedisCacheManager;
 import com.iwindplus.base.shiro.cache.ShiroRedisSessionDAO;
 import com.iwindplus.base.shiro.domain.constant.ShiroConstant;
@@ -219,7 +220,10 @@ public class ShiroSessionConfiguration {
         cookieRememberMeManager.setCookie(rememberMeCookie);
         // rememberMe cookie加密的密钥 建议每个项目都不一样
         // 默认AES算法 密钥长度(128 256 512 位)
-        cookieRememberMeManager.setCipherKey(Base64.decode(this.property.getSession().getRememberCipherKey()));
+        String rememberCipherKey = this.property.getSession().getRememberCipherKey();
+        if (CharSequenceUtil.isNotBlank(rememberCipherKey)) {
+            cookieRememberMeManager.setCipherKey(Base64.decode(rememberCipherKey));
+        }
         log.info("CookieRememberMeManager={}", cookieRememberMeManager);
         return cookieRememberMeManager;
     }

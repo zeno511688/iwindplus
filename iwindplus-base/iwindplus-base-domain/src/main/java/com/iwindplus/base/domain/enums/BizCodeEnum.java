@@ -1070,6 +1070,31 @@ public enum BizCodeEnum implements CommonException {
     WECHAT_MP_GRANT_ERROR("wechat_mp_grant_error", "微信公众号授权授权失败"),
 
     /**
+     * 无效的URL.
+     */
+    INVALID_URL("invalid_url", "无效的URL"),
+
+    /**
+     * 无效的URL协议.
+     */
+    INVALID_URL_PROTOCOL("invalid_url_protocol", "无效的URL协议，仅支持HTTPS"),
+
+    /**
+     * 内网IP访问被拒绝.
+     */
+    PRIVATE_IP_ACCESS_DENIED("private_ip_access_denied", "内网IP访问被拒绝"),
+
+    /**
+     * 回环地址访问被拒绝.
+     */
+    LOOPBACK_ADDRESS_ACCESS_DENIED("loopback_address_access_denied", "回环地址访问被拒绝"),
+
+    /**
+     * 链路本地地址访问被拒绝.
+     */
+    LINK_LOCAL_ADDRESS_ACCESS_DENIED("link_local_address_access_denied", "链路本地地址访问被拒绝"),
+
+    /**
      * 无效的消息引擎.
      */
     INVALID_MESSAGE_ENGINE("invalid_message_engine", "无效的消息引擎"),

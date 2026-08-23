@@ -115,14 +115,12 @@ public class BinlogProperty {
         /**
          * 数据库用户名.
          */
-        @Builder.Default
-        private String username = "root";
+        private String username;
 
         /**
          * 数据库密码.
          */
-        @Builder.Default
-        private String password = "root";
+        private String password;
 
         /**
          * 包含的数据库（逗号分隔，支持通配符）.

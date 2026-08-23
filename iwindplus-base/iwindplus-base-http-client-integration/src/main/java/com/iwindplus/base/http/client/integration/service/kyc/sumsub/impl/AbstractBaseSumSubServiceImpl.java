@@ -21,6 +21,7 @@ import com.iwindplus.base.http.client.integration.factory.SumSubWebhookHandlerSt
 import com.iwindplus.base.http.client.integration.service.kyc.sumsub.SumSubBaseService;
 import com.iwindplus.base.util.JacksonUtil;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 import javax.crypto.Mac;
@@ -90,12 +91,20 @@ public abstract class AbstractBaseSumSubServiceImpl implements SumSubBaseService
                 SumSubConstant.ALGORITHM_HMAC_SHA256
             );
             mac.init(secretKeySpec);
-            byte[] hmacBytes = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
-            String expectedSignature = Hex.encodeHexString(hmacBytes);
-            boolean isValid = expectedSignature.equalsIgnoreCase(signature);
+            byte[] expectedHmacBytes = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            byte[] actualHmacBytes = Hex.decodeHex(signature);
+
+            // 使用常量时间比较，防止时间侧信道攻击
+            boolean isValid = MessageDigest.isEqual(expectedHmacBytes, actualHmacBytes);
 
             if (!isValid) {
-                log.warn("Signature verification failed: expected={}, actual={}", expectedSignature, signature);
+                // 日志中不输出完整签名，仅输出前后几位用于排查
+                String expectedSignature = Hex.encodeHexString(expectedHmacBytes);
+                log.warn("Signature verification failed: expected={}...{}, actual={}...{}",
+                    expectedSignature.substring(0, Math.min(8, expectedSignature.length())),
+                    expectedSignature.substring(Math.max(0, expectedSignature.length() - 8)),
+                    signature.substring(0, Math.min(8, signature.length())),
+                    signature.substring(Math.max(0, signature.length() - 8)));
             }
 
             return isValid;

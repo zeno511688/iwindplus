@@ -152,8 +152,7 @@ public class ShiroProperty {
         /**
          * 记住密码cookie加密密匙.
          */
-        @Builder.Default
-        private String rememberCipherKey = "3AvVhmFLUs0KTA3Kprsdag==";
+        private String rememberCipherKey;
 
         /**
          * 认证过滤器key.

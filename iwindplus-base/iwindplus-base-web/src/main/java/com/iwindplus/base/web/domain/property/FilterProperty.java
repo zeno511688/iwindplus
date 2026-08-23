@@ -146,19 +146,16 @@ public class FilterProperty {
         /**
          * 公钥.
          */
-        @Builder.Default
-        private String publicKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCYoIHICETSQ410kSJh6aDoH0LK83GgK+waBzwsvIvIii5cD1j/mosaEf6UM6eTrqgdkBcortYO7+G556l243WnJlLmVKvaF8hY5H+5ozYsDUaamrdnQDwansSt9+54ZzIyqbq/Hh38FPebWv0x5/rap4Zi2YWgKRg0Dg0ONiVrRwIDAQAB";
+        private String publicKey;
 
         /**
          * 私钥.
          */
-        @Builder.Default
-        private String privateKey = "MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAJiggcgIRNJDjXSRImHpoOgfQsrzcaAr7BoHPCy8i8iKLlwPWP+aixoR/pQzp5OuqB2QFyiu1g7v4bnnqXbjdacmUuZUq9oXyFjkf7mjNiwNRpqat2dAPBqexK337nhnMjKpur8eHfwU95ta/THn+tqnhmLZhaApGDQODQ42JWtHAgMBAAECgYAUegA/boCRNxfsyiXzPe1lBwCmite1Nf9UlKDpnZghXQyQNEzr6fd8lWpyxqVWZmnOoYzB3AcC9QLzNpXhSe34PFB0BJwgCK1v5GgVVxyUvkakjv/xojwRgEZlYl/HLtGOYdP8SFhcsdNf2OGOBg7YfSGLuFu0nhdYqLa7sempoQJBAM6COlPtPHQqtrm4MdOw4H24HnBrIkgjXdbB8BaGcB4lOrHYYl0jpPchEMrHBibFOEaCY2JVNwVGFiZq8DZUueECQQC9NIO76S3EiCxTZYURbSmWPfDxudtrX9w7F/Zi4RgIvdr47632ZqoIXPpjrpTulxVQX/5NwnS0bNDgnpjKZFonAkBjCwJ+jiGYdYP9vuHm7cY9hbjTog5nGs8+2PUVWJUdYC2ubmF+2kGcZTdwidPhdGVxK8gOuWASH3MwKcnbxPcBAkALakmwYqciPlz+Qxe+L2nc6KvKyb3VQplU72MsIAyFKn81mbBTN2p2yrVIolXV90OP79q18k98Ozx28NqjC17tAkEAjHikBAn25mtjAD6XDNw7I7/lUrm4SSD8nvSZk53ATqhPxAxradUjtTspXArq+PLFBaru6g08IJXqledTx8v+gA==";
+        private String privateKey;
 
         /**
          * 密钥.
          */
-        @Builder.Default
-        private String key = "Juwd0kEkcgsV2mrcmzxnB1PrQKhWDNho";
+        private String key;
     }
 }
