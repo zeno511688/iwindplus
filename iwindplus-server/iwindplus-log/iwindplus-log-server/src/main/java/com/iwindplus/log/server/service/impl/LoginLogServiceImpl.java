@@ -166,6 +166,7 @@ public class LoginLogServiceImpl extends EsBaseServiceImpl<LoginLogDO>
         return EsPageDTO.<LoginLogPageVO>builder()
             .size(resultPage.getSize())
             .total(resultPage.getTotal())
+            .pages(resultPage.getPages())
             .records(voList)
             .searchAfter(resultPage.getSearchAfter())
             .build();

@@ -145,6 +145,7 @@ public class MailLogServiceImpl extends EsBaseServiceImpl<MailLogDO>
         return EsPageDTO.<MailLogPageVO>builder()
             .size(resultPage.getSize())
             .total(resultPage.getTotal())
+            .pages(resultPage.getPages())
             .records(voList)
             .searchAfter(resultPage.getSearchAfter())
             .build();

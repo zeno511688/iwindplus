@@ -132,6 +132,7 @@ public class SmsCaptchaLogServiceImpl extends EsBaseServiceImpl<SmsCaptchaLogDO>
         return EsPageDTO.<SmsCaptchaLogPageVO>builder()
             .size(resultPage.getSize())
             .total(resultPage.getTotal())
+            .pages(resultPage.getPages())
             .records(voList)
             .searchAfter(resultPage.getSearchAfter())
             .build();

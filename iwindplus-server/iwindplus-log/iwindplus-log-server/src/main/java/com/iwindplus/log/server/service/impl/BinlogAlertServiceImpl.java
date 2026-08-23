@@ -112,6 +112,7 @@ public class BinlogAlertServiceImpl extends EsBaseServiceImpl<BinlogAlertDO>
         return EsPageDTO.<BinlogAlertPageVO>builder()
             .size(resultPage.getSize())
             .total(resultPage.getTotal())
+            .pages(resultPage.getPages())
             .records(voList)
             .searchAfter(resultPage.getSearchAfter())
             .build();

@@ -35,7 +35,6 @@ import com.iwindplus.log.domain.dto.GatewayLogSearchDTO;
 import com.iwindplus.log.domain.vo.GatewayLogExtendVO;
 import com.iwindplus.log.domain.vo.GatewayLogPageVO;
 import com.iwindplus.log.server.dal.model.GatewayLogDO;
-import com.iwindplus.log.server.dal.model.LoginLogDO;
 import com.iwindplus.log.server.service.GatewayLogService;
 import com.iwindplus.mgt.client.power.UserClient;
 import com.iwindplus.mgt.domain.dto.power.UserBaseQueryDTO;
@@ -172,6 +171,7 @@ public class GatewayLogServiceImpl extends EsBaseServiceImpl<GatewayLogDO> imple
         return EsPageDTO.<GatewayLogPageVO>builder()
             .size(resultPage.getSize())
             .total(resultPage.getTotal())
+            .pages(resultPage.getPages())
             .records(voList)
             .searchAfter(resultPage.getSearchAfter())
             .build();

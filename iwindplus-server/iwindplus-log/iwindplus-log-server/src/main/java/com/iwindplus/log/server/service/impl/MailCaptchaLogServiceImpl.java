@@ -128,6 +128,7 @@ public class MailCaptchaLogServiceImpl extends EsBaseServiceImpl<MailCaptchaLogD
         return EsPageDTO.<MailCaptchaLogPageVO>builder()
             .size(resultPage.getSize())
             .total(resultPage.getTotal())
+            .pages(resultPage.getPages())
             .records(voList)
             .searchAfter(resultPage.getSearchAfter())
             .build();

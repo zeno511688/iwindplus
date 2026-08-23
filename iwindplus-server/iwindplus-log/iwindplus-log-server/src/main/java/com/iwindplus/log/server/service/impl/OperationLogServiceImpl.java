@@ -162,6 +162,7 @@ public class OperationLogServiceImpl extends EsBaseServiceImpl<OperationLogDO>
         return EsPageDTO.<OperationLogPageVO>builder()
             .size(resultPage.getSize())
             .total(resultPage.getTotal())
+            .pages(resultPage.getPages())
             .records(voList)
             .searchAfter(resultPage.getSearchAfter())
             .build();
