@@ -44,8 +44,8 @@ http:
       # 是否开启API防护
       enabled: true
       enabled-remote: false
-      access-key: 555cb03355e1da059debe72b3e318c2c
-      secret-key: cd2o99YOb7hvx7enMk05YzmUSRXusGer
+      access-key: ${httpClient-apiProtection-access-key}
+      secret-key: ${httpClient-apiProtection-secret-key}
 global:
   error:
     # 是否开启全局异常捕获
@@ -189,7 +189,7 @@ dynamictp:
     - platform: lark
       platformId: 1
       urlKey: e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: 3XcRTx6zi3GqOgIAYZKhbb
+      secret: ${dynamictp-lark-secret}
       receivers: test1,test2
   globalExecutorProps:
     rejectedHandlerType: CallerRunsPolicy
@@ -362,7 +362,7 @@ spring:
       config: |
         singleServerConfig:
           address: redis://127.0.0.1:6379
-          password: 9&^7WR!#vnLs
+          password: ${redis-password}
           database: 6
           connectionMinimumIdleSize: 1
           connectionPoolSize: 2
@@ -443,12 +443,12 @@ alert:
   # 飞书
   feishu:
     app-id: cli_a92f34e733b81cd1
-    app-secret: 8W9QPBbekJdpE1mCdqRmkfyD5rJGqxiw
+    app-secret: ${alert-feishu-app-secret}
   log:
     enabled: true
     webhook:
       url: https://open.feishu.cn/open-apis/bot/v2/hook/e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: 3XcRTx6zi3GqOgIAYZKhbb
+      secret: ${alert-feishu-webhook-secret}
     stack:
       max-length: -1
       max-frames: -1

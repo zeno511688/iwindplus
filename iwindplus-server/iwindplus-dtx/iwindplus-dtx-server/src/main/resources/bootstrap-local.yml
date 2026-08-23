@@ -44,8 +44,8 @@ http:
       # 是否开启API防护
       enabled: true
       enabled-remote: false
-      access-key: 555cb03355e1da059debe72b3e318c2c
-      secret-key: cd2o99YOb7hvx7enMk05YzmUSRXusGer
+      access-key: ${httpClient-apiProtection-access-key}
+      secret-key: ${httpClient-apiProtection-secret-key}
 global:
   error:
     # 是否开启全局异常捕获
@@ -163,7 +163,7 @@ dynamictp:
     - platform: lark
       platformId: 1
       urlKey: e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: 3XcRTx6zi3GqOgIAYZKhbb
+      secret: ${dynamictp-lark-secret}
       receivers: test1,test2
   globalExecutorProps:
     rejectedHandlerType: CallerRunsPolicy
@@ -328,7 +328,7 @@ spring:
     # 数据库用户名
     username: root
     # 数据库密码
-    password: njX@D*4ETsm3
+    password: ${mysql-password}
     # Hikari 连接池配置
     hikari:
       # 数据库连接超时时间
@@ -344,7 +344,7 @@ xxl-job:
   enabled: true
   admin:
     addresses: http://127.0.0.1:9880/xxl-job-admin
-    access-token: c61909bdde7b5cbeb27adeeff43ac55c
+    access-token: ${xxl-job-access-token}
   executor:
     log-path: logs/job
     log-retention-days: 30
@@ -393,7 +393,7 @@ mybatis-plus:
       # 是否启用签名（数据防篡改用）
       enabled-sign: true
       # 密钥（数据防篡改用）
-      secret-key: mA35vYYKC45k
+      secret-key: ${mybatis-field-crypto-secret-key}
       # 算法
       algorithm: AES
       # 公钥
@@ -408,12 +408,12 @@ alert:
   # 飞书
   feishu:
     app-id: cli_a92f34e733b81cd1
-    app-secret: 8W9QPBbekJdpE1mCdqRmkfyD5rJGqxiw
+    app-secret: ${alert-feishu-app-secret}
   log:
     enabled: true
     webhook:
       url: https://open.feishu.cn/open-apis/bot/v2/hook/e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: 3XcRTx6zi3GqOgIAYZKhbb
+      secret: ${alert-feishu-webhook-secret}
     stack:
       max-length: -1
       max-frames: -1

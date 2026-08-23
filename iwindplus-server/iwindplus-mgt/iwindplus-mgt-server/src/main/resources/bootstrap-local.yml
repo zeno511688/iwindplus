@@ -48,8 +48,8 @@ http:
       # 是否开启API防护
       enabled: true
       enabled-remote: false
-      access-key: ${api.protection.access-key}
-      secret-key: ${api-protection.secret-key}
+      access-key: ${httpClient-apiProtection-access-key}
+      secret-key: ${httpClient-apiProtection-secret-key}
 global:
   error:
     # 是否开启全局异常捕获
@@ -222,7 +222,7 @@ dynamictp:
     - platform: lark
       platformId: 1
       urlKey: e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: ${dynamictp.lark.secret}
+      secret: ${dynamictp-lark-secret}
       receivers: test1,test2
   globalExecutorProps:
     rejectedHandlerType: CallerRunsPolicy
@@ -421,9 +421,9 @@ spring:
     # 数据库url
     url: jdbc:mysql://127.0.0.1:3317/iwindplus-mgt?useUnicode=true&autoReconnect=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
     # 数据库用户名
-    username: ${mysql.username}
+    username: ${mysql-username}
     # 数据库密码
-    password: ${mysql.password}
+    password: ${mysql-password}
     # Hikari 连接池配置
     hikari:
       # 数据库连接超时时间
@@ -454,7 +454,7 @@ spring:
       config: |
         singleServerConfig:
           address: redis://127.0.0.1:6379
-          password: ${redis.password}
+          password: ${redis-password}
           database: 6
           connectionMinimumIdleSize: 1
           connectionPoolSize: 2
@@ -558,8 +558,8 @@ rabbit:
     clusters:
       default:
         addresses: 127.0.0.1:5672
-        username: ${rabbit.default.username}
-        password: ${rabbit.default.password}
+        username: ${rabbit-default-username}
+        password: ${rabbit-default-password}
         virtual-host: /
         connection-timeout: 5000
         # 生产者配置
@@ -617,7 +617,7 @@ xxl-job:
   enabled: true
   admin:
     addresses: http://127.0.0.1:9880/xxl-job-admin
-    access-token: ${xxl-job.token}
+    access-token: ${xxl-job-access-token}
   executor:
     log-path: logs/job
     log-retention-days: 30
@@ -666,7 +666,7 @@ mybatis-plus:
       # 是否启用签名（数据防篡改用）
       enabled-sign: true
       # 密钥（数据防篡改用）
-      secret-key: ${field.crypto.secret-key}
+      secret-key: ${mybatis-field-crypto-secret-key}
       # 算法
       algorithm: AES
       # 公钥
@@ -681,12 +681,12 @@ alert:
   # 飞书
   feishu:
     app-id: cli_a92f34e733b81cd1
-    app-secret: ${feishu.app-secret}
+    app-secret: ${alert-feishu-app-secret}
   log:
     enabled: true
     webhook:
       url: https://open.feishu.cn/open-apis/bot/v2/hook/e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: ${feishu.webhook-secret}
+      secret: ${alert-feishu-webhook-secret}
     stack:
       max-length: -1
       max-frames: -1

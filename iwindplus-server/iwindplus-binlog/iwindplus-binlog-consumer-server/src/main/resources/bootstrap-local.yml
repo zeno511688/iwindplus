@@ -42,8 +42,8 @@ http:
       # 是否开启API防护
       enabled: true
       enabled-remote: false
-      access-key: 555cb03355e1da059debe72b3e318c2c
-      secret-key: cd2o99YOb7hvx7enMk05YzmUSRXusGer
+      access-key: ${httpClient-apiProtection-access-key}
+      secret-key: ${httpClient-apiProtection-secret-key}
 global:
   error:
     # 是否开启全局异常捕获
@@ -189,7 +189,7 @@ dynamictp:
     - platform: lark
       platformId: 1
       urlKey: e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: 3XcRTx6zi3GqOgIAYZKhbb
+      secret: ${dynamictp-lark-secret}
       receivers: test1,test2
   globalExecutorProps:
     rejectedHandlerType: CallerRunsPolicy
@@ -445,23 +445,23 @@ binlog:
       # 数据库名称
       iwindplus-mgt:
         # 密钥（验签用）
-        secret-key: mA35vYYKC45k
+        secret-key: ${binlog-db-iwindplus-mgt-secret-key}
         # 需要验签的表
         table-list:
           - user
     webhook:
       url: https://open.feishu.cn/open-apis/bot/v2/hook/20f6845c-7040-4c81-a409-77eba662316c
-      secret: dQ02hdstHIUlmybxPT9Kj
+      secret: ${binlog-webhook-secret}
 alert:
   # 飞书
   feishu:
     app-id: cli_a9b7d7e706f8dbd3
-    app-secret: SoymQVLbMVs6Vfjoturw2dv0cAsPx4Am
+    app-secret: ${alert-feishu-app-secret}
   log:
     enabled: true
     webhook:
       url: https://open.feishu.cn/open-apis/bot/v2/hook/e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: 3XcRTx6zi3GqOgIAYZKhbb
+      secret: ${alert-feishu-webhook-secret}
     stack:
       max-length: -1
       max-frames: -1

@@ -23,8 +23,8 @@ spring:
     group: I18N_GROUP
   security:
     user:
-      name: admin
-      password: T##uZV$EQ6UL
+      name: ${login-security-username}
+      password: ${login-security-password}
   boot:
     admin:
       ui:
@@ -42,7 +42,7 @@ spring:
     port: 465
     host: smtp.163.com
     username: zengdeguiu88@163.com
-    password: IPXLGUCTYMERUHDO
+    password: ${mail-password}
     default-encoding: UTF-8
     properties:
       mail:
