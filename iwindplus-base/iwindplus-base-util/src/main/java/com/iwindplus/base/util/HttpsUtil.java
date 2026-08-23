@@ -68,6 +68,7 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.context.request.RequestAttributes;
@@ -91,12 +92,13 @@ public class HttpsUtil extends HttpUtil {
      * @return String
      */
     public static String getRealIp(ServerWebExchange exchange) {
-        final String realIp = MDC.get(HeaderConstant.X_REAL_IP);
+        final ServerHttpRequest request = exchange.getRequest();
+        final String realIp = request.getHeaders().getFirst(HeaderConstant.X_REAL_IP);
         if (CharSequenceUtil.isNotBlank(realIp)) {
             return realIp;
         }
 
-        InetSocketAddress inetSocketAddress = exchange.getRequest().getRemoteAddress();
+        final InetSocketAddress inetSocketAddress = request.getRemoteAddress();
         return Optional.ofNullable(inetSocketAddress).map(InetSocketAddress::getAddress).map(InetAddress::getHostAddress)
             .orElse(null);
     }
@@ -108,7 +110,7 @@ public class HttpsUtil extends HttpUtil {
      * @return String
      */
     public static String getRealIp(HttpServletRequest request) {
-        final String realIp = MDC.get(HeaderConstant.X_REAL_IP);
+        final String realIp = request.getHeader(HeaderConstant.X_REAL_IP);
         if (CharSequenceUtil.isNotBlank(realIp)) {
             return realIp;
         }
