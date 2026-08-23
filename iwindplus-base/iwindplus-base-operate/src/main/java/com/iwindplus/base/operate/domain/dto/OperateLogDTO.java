@@ -118,10 +118,40 @@ public class OperateLogDTO implements Serializable {
     private String osName;
 
     /**
+     * 系统版本.
+     */
+    @Schema(description = "系统版本")
+    private String osVersion;
+
+    /**
      * 浏览器名称.
      */
     @Schema(description = "浏览器名称")
     private String browserName;
+
+    /**
+     * 浏览器版本.
+     */
+    @Schema(description = "浏览器版本")
+    private String browserVersion;
+
+    /**
+     * 设备号.
+     */
+    @Schema(description = "设备号")
+    private String deviceNumber;
+
+    /**
+     * 设备版本.
+     */
+    @Schema(description = "设备版本")
+    private String deviceVersion;
+
+    /**
+     * 设备指纹.
+     */
+    @Schema(description = "设备指纹")
+    private String deviceFingerprint;
 
     /**
      * 跟踪唯一标识.

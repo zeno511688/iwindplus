@@ -22,7 +22,6 @@ import cn.hutool.http.useragent.UserAgent;
 import cn.hutool.http.useragent.UserAgentUtil;
 import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
-import com.iwindplus.base.domain.context.HeaderContextHolder;
 import com.iwindplus.base.domain.context.UserContextHolder;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.domain.vo.UserBaseVO;
@@ -160,6 +159,7 @@ public class OperateLogAspect {
             .operateType(operateType)
             .operateName(operateName)
             .operateDesc(operateDesc)
+            .requestParam(this.buildRequestParam(argNames, args))
             .responseBody(this.buildResponseBody(result))
             .requestTime(DatesUtil.parseDate(beginMillis, DatePattern.NORM_DATETIME_MS_PATTERN))
             .responseTime(DatesUtil.parseDate(endMillis, DatePattern.NORM_DATETIME_MS_PATTERN))
@@ -182,11 +182,9 @@ public class OperateLogAspect {
                 String requestBody = this.buildRequestBody(args);
                 param.setRequestBody(requestBody);
             }
-        }
 
-        final String requestParam = this.buildRequestParam(argNames, args);
-        param.setRequestParam(requestParam);
-        this.buildSystemInfo(param);
+            this.buildUserAgent(param, httpServletRequest);
+        }
         return param;
     }
 
@@ -270,14 +268,36 @@ public class OperateLogAspect {
         return JacksonUtil.toJsonStr(result);
     }
 
-    private void buildSystemInfo(OperateLogDTO entity) {
-        final Map<String, String> context = HeaderContextHolder.getContext();
-        Optional.ofNullable(context).map(m -> m.get(HttpHeaders.USER_AGENT)).ifPresent(userAgentStr -> {
-            UserAgent userAgent = UserAgentUtil.parse(userAgentStr);
-            entity.setPlatformName(Optional.ofNullable(userAgent).map(UserAgent::getPlatform).map(Platform::getName).orElse(null));
-            entity.setOsName(Optional.ofNullable(userAgent).map(UserAgent::getOs).map(OS::getName).orElse(null));
-            entity.setBrowserName(Optional.ofNullable(userAgent).map(UserAgent::getBrowser).map(Browser::getName).orElse(null));
-        });
+    private void buildUserAgent(OperateLogDTO entity, HttpServletRequest request) {
+        final String userAgentStr = request.getHeader(HttpHeaders.USER_AGENT);
+        if (CharSequenceUtil.isBlank(userAgentStr)) {
+            return;
+        }
+
+        final UserAgent userAgent = UserAgentUtil.parse(userAgentStr);
+        if (Objects.isNull(userAgent)) {
+            return;
+        }
+
+        final Platform platform = userAgent.getPlatform();
+        if (Objects.nonNull(platform)) {
+            entity.setPlatformName(platform.getName());
+        }
+
+        final OS os = userAgent.getOs();
+        if (Objects.nonNull(os)) {
+            entity.setOsName(os.getName());
+            entity.setOsVersion(os.getVersion(userAgentStr));
+        }
+
+        final Browser browser = userAgent.getBrowser();
+        if (Objects.nonNull(browser)) {
+            entity.setBrowserName(browser.getName());
+            entity.setBrowserVersion(browser.getVersion(userAgentStr));
+        }
+        entity.setDeviceNumber(request.getHeader(HeaderConstant.X_DEVICE_NUMBER));
+        entity.setDeviceVersion(request.getHeader(HeaderConstant.X_DEVICE_VERSION));
+        entity.setDeviceFingerprint(request.getHeader(HeaderConstant.X_DEVICE_FINGERPRINT));
     }
 
     /**
