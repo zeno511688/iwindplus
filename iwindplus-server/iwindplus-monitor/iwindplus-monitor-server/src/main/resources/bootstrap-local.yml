@@ -19,16 +19,8 @@ spring:
     cache-duration: -1
     # 是否开启远程消息源
     enabled-remote: true
-    # 是否启用并发刷新
-    concurrentRefresh: true
-    # 语言集合，启动加载对应语言的国际化文件
-    languages:
-      - zh-CN
-      - en-US
     # nacos分组名称
     group: I18N_GROUP
-    # 国际化文件后缀
-    file-suffix: .properties
   security:
     user:
       name: admin
