@@ -99,7 +99,9 @@ public class HttpsUtil extends HttpUtil {
         }
 
         final InetSocketAddress inetSocketAddress = request.getRemoteAddress();
-        return Optional.ofNullable(inetSocketAddress).map(InetSocketAddress::getAddress).map(InetAddress::getHostAddress)
+        return Optional.ofNullable(inetSocketAddress)
+            .map(InetSocketAddress::getAddress)
+            .map(InetAddress::getHostAddress)
             .orElse(null);
     }
 
@@ -115,7 +117,7 @@ public class HttpsUtil extends HttpUtil {
             return realIp;
         }
 
-        return Optional.ofNullable(request).map(JakartaServletUtil::getClientIP).orElse(null);
+        return JakartaServletUtil.getClientIP(request);
     }
 
     /**
