@@ -213,7 +213,13 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
         final Integer shardTotal = entity.getShardTotal();
         if (Objects.nonNull(shardTotal) && shardTotal > 1) {
             final int shardIndex = Objects.isNull(entity.getShardIndex()) ? 0 : entity.getShardIndex();
-            queryWrapper.apply("MOD(id, {0}) = {1}", shardTotal, shardIndex);
+            // 使用范围分片，可以利用主键索引提升性能
+            // 每个分片处理 ID 范围为 [minId, maxId) 的数据
+            long minId = Objects.isNull(entity.getLastId()) ? 0L : entity.getLastId();
+            long shardMinId = minId + shardIndex * entity.getSize();
+            long shardMaxId = shardMinId + entity.getSize();
+            queryWrapper.ge(AsyncCmdDO::getId, shardMinId)
+                .lt(AsyncCmdDO::getId, shardMaxId);
         }
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(AsyncCmdDO::getStatus, entity.getStatus());

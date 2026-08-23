@@ -14,7 +14,6 @@ import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdJobHandler;
-import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import java.util.List;
 import java.util.Objects;
 import lombok.Getter;
@@ -78,7 +77,7 @@ public abstract class AbstractAsyncCmdJobHandler implements AsyncCmdJobHandler {
         long lastId = 0;
         int loop = 0;
         int total = 0;
-        while (loop < NumberConstant.NUMBER_ONE_HUNDRED) {
+        while (loop < this.property.getJob().getMaxLoopCount()) {
             if (Thread.currentThread().isInterrupted()) {
                 break;
             }

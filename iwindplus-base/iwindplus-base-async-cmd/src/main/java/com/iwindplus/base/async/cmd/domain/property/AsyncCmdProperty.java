@@ -151,6 +151,12 @@ public class AsyncCmdProperty {
          */
         @Builder.Default
         private Boolean enabled = Boolean.TRUE;
+
+        /**
+         * 定时任务单次执行最大循环次数.
+         */
+        @Builder.Default
+        private Integer maxLoopCount = 100;
     }
 
 

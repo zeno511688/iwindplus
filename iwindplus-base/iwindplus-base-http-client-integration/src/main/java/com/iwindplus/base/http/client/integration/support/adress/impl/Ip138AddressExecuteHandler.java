@@ -62,11 +62,11 @@ public class Ip138AddressExecuteHandler implements AddressExecuteHandler {
     }
 
     private Optional<AddressVO> doQueryAddress(String ip) {
-        String apiKey = this.config.getApiKey();
+        String secretKey = this.config.getSecretKey();
 
         // 构建请求头
         Map<String, String> headers = new HashMap<>(4);
-        headers.put(AddressConstant.PARAM_TOKEN, apiKey);
+        headers.put(AddressConstant.PARAM_TOKEN, secretKey);
 
         // 构建请求参数
         Map<String, String> queryParams = new HashMap<>(4);
