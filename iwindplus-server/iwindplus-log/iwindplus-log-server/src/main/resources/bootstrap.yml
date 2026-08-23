@@ -19,8 +19,8 @@ spring:
   cloud:
     nacos:
       server-addr: ${nacos.server-addr:127.0.0.1:8848}
-      username: ${nacos.username}
-      password: ${nacos.password}
+      username: ${nacos.username:}
+      password: ${nacos.password:}
       discovery:
         enabled: true
         server-addr: ${spring.cloud.nacos.server-addr}
@@ -54,7 +54,7 @@ spring:
     vault:
       uri: ${vault.uri:http://127.0.0.1:18200}
       authentication: TOKEN
-      token: ${vault.token}
+      token: ${vault.token:}
       kv:
         enabled: true
         backend: ${vault.backend:secret}

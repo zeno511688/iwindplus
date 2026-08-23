@@ -162,13 +162,13 @@ response:
       # 算法
       algorithm: RSA
       # 公钥
-      # publicKey:
+      public-key: ${response-body-crypto-public-key:}
       # 私钥
-      # privateKey:
+      private-key: ${response-body-crypto-private-key:}
       # 密钥
-      # key:
+      key: ${response-body-crypto-key:}
       # 初始化向量
-      # iv:
+      iv: ${response-body-crypto-iv:}
 filter:
   xss:
     # 是否开启xss过滤器，防止攻击
@@ -181,13 +181,13 @@ filter:
     # 算法
     algorithm: AES
     # 公钥
-    # publicKey:
+    public-key: ${filter-crypto-public-key:}
     # 私钥
-    # privateKey:
+    private-key: ${filter-crypto-private-key:}
     # 密钥
-    # key:
+    key: ${filter-crypto-key:}
     # 初始化向量
-    # iv:
+    iv: ${filter-crypto-iv:}
 http:
   client:
     api-protection:
@@ -705,5 +705,5 @@ knife4j:
         - iwindplus-monitor
     basic:
       enable: false
-      username: admin
-      password: TSRuZV$EQ6U*
+      username: ${knife4j-gateway-username:admin}
+      password: ${knife4j-gateway-password:}

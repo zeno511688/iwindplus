@@ -29,13 +29,13 @@ filter:
     # 算法
     algorithm: AES
     # 公钥
-    # publicKey:
+    public-key: ${filter-crypto-public-key:}
     # 私钥
-    # privateKey:
+    private-key: ${filter-crypto-private-key:}
     # 密钥
-    # key:
+    key: ${filter-crypto-key:}
     # 初始化向量
-    # iv:
+    iv: ${filter-crypto-iv:}
 http:
   client:
     api-protection:
@@ -57,13 +57,13 @@ response:
       # 算法
       algorithm: RSA
       # 公钥
-      # publicKey:
+      public-key: ${response-body-crypto-public-key:}
       # 私钥
-      # privateKey:
+      private-key: ${response-body-crypto-private-key:}
       # 密钥
-      # key:
+      key: ${response-body-crypto-key:}
       # 初始化向量
-      # iv:
+      iv: ${response-body-crypto-iv:}
 jackson:
   # 是否开启自定义jackson配置
   enabled: true
@@ -449,13 +449,13 @@ mybatis-plus:
       # 算法
       algorithm: AES
       # 公钥
-      # publicKey:
+      public-key: ${mybatis-field-crypto-public-key:}
       # 私钥
-      # privateKey:
+      private-key: ${mybatis-field-crypto-private-key:}
       # 密钥
-      # key:
+      key: ${mybatis-field-crypto-key:}
       # 初始化向量
-      # iv:
+      iv: ${mybatis-field-crypto-iv:}
 alert:
   # 飞书
   feishu:
