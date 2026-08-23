@@ -31,6 +31,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -81,6 +82,8 @@ public class RequestFilter extends OncePerRequestFilter {
             UserContextHolder.remove();
             HeaderContextHolder.remove();
             TccContextHolder.remove();
+
+            MDC.clear();
         }
     }
 
@@ -101,8 +104,10 @@ public class RequestFilter extends OncePerRequestFilter {
     private void buildLanguage(Map<String, String> headers) {
         String language = headers.get(HttpHeaders.ACCEPT_LANGUAGE);
         if (ObjectUtil.isEmpty(language)) {
-            headers.put(HttpHeaders.ACCEPT_LANGUAGE, HttpsUtil.buildDefaultLanguage());
+            language = HttpsUtil.buildDefaultLanguage();
+            headers.put(HttpHeaders.ACCEPT_LANGUAGE, language);
         }
+        MDC.put(HttpHeaders.ACCEPT_LANGUAGE, language);
     }
 
     private void buildRealIp(HttpServletRequest httpServletRequest, Map<String, String> headers) {
