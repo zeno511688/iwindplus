@@ -229,11 +229,15 @@ public class EsBaseServiceImpl<T extends EsDbBaseDO> implements EsBaseService<T>
             page.setPages(pages);
         }
 
-        if (!hits.isEmpty()) {
+        // 判断是否有下一页：返回记录数等于size时设置searchAfter
+        if (!hits.isEmpty() && list.size() == page.getSize()) {
             SearchHit<T> last = hits.getSearchHits()
                 .get(hits.getSearchHits().size() - 1);
 
             page.setSearchAfter(last.getSortValues());
+        } else {
+            // 最后一页，清空searchAfter
+            page.setSearchAfter(null);
         }
 
         return page;
