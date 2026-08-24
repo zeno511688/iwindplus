@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.loadbalancer.domain.property;
 
+import com.iwindplus.base.loadbalancer.domain.enums.GrayStrategyEnum;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -51,12 +52,18 @@ public class LoadBalancerProperty {
         private Boolean enabled = false;
 
         /**
-         * 灰度用户ID白名单.
+         * 灰度策略类型（whitelist: 白名单策略，percentage: 百分比策略）.
+         */
+        @Builder.Default
+        private GrayStrategyEnum strategy = GrayStrategyEnum.PERCENTAGE;
+
+        /**
+         * 灰度用户ID白名单（白名单策略时使用）.
          */
         private List<String> userIdWhitelist;
 
         /**
-         * 灰度百分比（0-100），默认10%.
+         * 灰度百分比（0-100），默认10%（百分比策略时使用）.
          */
         @Builder.Default
         private Integer percentage = 10;

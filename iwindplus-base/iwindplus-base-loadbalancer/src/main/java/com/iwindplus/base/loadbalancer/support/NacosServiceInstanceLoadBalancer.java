@@ -13,6 +13,9 @@ import com.alibaba.cloud.nacos.NacosDiscoveryProperties;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.core.Balancer;
 import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.MetadataConstant;
+import com.iwindplus.base.domain.enums.BaseEnum;
+import com.iwindplus.base.loadbalancer.domain.enums.GrayStrategyEnum;
 import com.iwindplus.base.loadbalancer.domain.enums.VersionTypeEnum;
 import com.iwindplus.base.loadbalancer.domain.property.LoadBalancerProperty;
 import com.iwindplus.base.loadbalancer.domain.property.LoadBalancerProperty.GrayConfig;
@@ -20,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ThreadLocalRandom;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.client.ServiceInstance;
@@ -108,90 +110,130 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
             }
         }
 
-        return this.getGrayInstanceResponse(instancesToChoose, request);
+        // 提取HTTP请求头（入口处统一处理）
+        HttpHeaders headers = null;
+        if (request.getContext() instanceof DefaultRequestContext requestContext
+            && requestContext.getClientRequest() instanceof RequestData clientRequest) {
+            headers = clientRequest.getHeaders();
+        }
+
+        // 判断是否使用灰度实例（入口处统一判断）
+        boolean useGrayInstance = false;
+        if (Boolean.TRUE.equals(this.loadBalancerProperty.getGray().getEnabled())) {
+            // 灰度模式开启
+            if (headers != null) {
+                // 有HTTP请求头，根据请求头判断
+                final GrayConfig cfg = this.loadBalancerProperty.getGray();
+                useGrayInstance = this.shouldUseGrayVersion(headers, cfg);
+            }
+        }
+
+        // 根据判断结果选择实例
+        if (useGrayInstance) {
+            // 使用灰度实例
+            return this.getGrayInstanceResponse(instancesToChoose);
+        } else {
+            // 根据请求头X-Version选择实例
+            return this.getVersionInstanceResponse(instancesToChoose, headers);
+        }
     }
 
     /**
-     * 灰度发布实例选择.
+     * 版本实例选择（非灰度模式）.
      * <p>
-     * 灰度策略：
-     * 1. 白名单用户：访问灰度实例（有gray-version元数据的实例）
-     * 2. 百分比用户：访问灰度实例（有gray-version元数据的实例）
-     * 3. 其他用户：访问正常实例（没有gray-version元数据的实例）
+     * 根据请求头 X-Version 选择实例，如果请求头中没有版本信息则使用STABLE版本实例.
      * </p>
      *
      * @param instances 实例列表
-     * @param request   请求
+     * @param headers   HTTP请求头
      * @return Response<ServiceInstance>
      */
-    private Response<ServiceInstance> getGrayInstanceResponse(List<ServiceInstance> instances, Request<?> request) {
-        if (!(request.getContext() instanceof DefaultRequestContext requestContext)) {
-            return new DefaultResponse(instances.get(ThreadLocalRandom.current().nextInt(instances.size())));
+    private Response<ServiceInstance> getVersionInstanceResponse(List<ServiceInstance> instances, HttpHeaders headers) {
+        // 从请求头中获取目标版本
+        final String targetVersion = headers != null ? headers.getFirst(HeaderConstant.X_VERSION) : VersionTypeEnum.STABLE.getValue();
+        final VersionTypeEnum targetVersionEnum = BaseEnum.fromValue(targetVersion, VersionTypeEnum.class);
+
+        return this.selectInstancesByVersion(instances, targetVersionEnum);
+    }
+
+    /**
+     * 灰度实例选择.
+     * <p>
+     * 选择灰度实例（version=gray的实例），如果不存在则降级使用所有实例.
+     * </p>
+     *
+     * @param instances 实例列表
+     * @return Response<ServiceInstance>
+     */
+    private Response<ServiceInstance> getGrayInstanceResponse(List<ServiceInstance> instances) {
+        return this.selectInstancesByVersion(instances, VersionTypeEnum.GRAY);
+    }
+
+    /**
+     * 根据版本选择实例（使用枚举）.
+     * <p>
+     * 根据指定版本筛选实例，如果不存在则降级使用所有实例.
+     * </p>
+     *
+     * @param instances   实例列表
+     * @param versionType 版本类型枚举
+     * @return Response<ServiceInstance>
+     */
+    private Response<ServiceInstance> selectInstancesByVersion(List<ServiceInstance> instances, VersionTypeEnum versionType) {
+        List<ServiceInstance> targetInstances = this.filterInstancesByVersion(instances, versionType.getValue());
+
+        if (CollUtil.isNotEmpty(targetInstances)) {
+            log.debug("Select instances by {} version, count: {}", versionType.getDesc(), targetInstances.size());
+            return this.selectInstanceByWeight(targetInstances);
         }
-        if (!(requestContext.getClientRequest() instanceof RequestData clientRequest)) {
-            return new DefaultResponse(instances.get(ThreadLocalRandom.current().nextInt(instances.size())));
+
+        // 目标版本实例不存在，降级使用所有实例
+        log.warn("No {} instances found, fallback to all instances", versionType.getDesc());
+        return this.selectInstanceByWeight(instances);
+    }
+
+    /**
+     * 根据权重随机选择实例.
+     *
+     * @param instances 实例列表
+     * @return Response<ServiceInstance>
+     */
+    private Response<ServiceInstance> selectInstanceByWeight(List<ServiceInstance> instances) {
+        if (CollUtil.isEmpty(instances)) {
+            log.warn("No instances available for selection");
+            return new EmptyResponse();
         }
 
-        HttpHeaders headers = clientRequest.getHeaders();
-
-        // 判断是否使用灰度版本
-        boolean useGrayVersion = this.shouldUseGrayVersion(headers);
-
-        List<ServiceInstance> targetInstances;
-        if (useGrayVersion) {
-            // 使用灰度实例
-            targetInstances = this.filterGrayInstances(instances);
-            if (CollUtil.isEmpty(targetInstances)) {
-                log.error("Gray instance not found, gray request rejected, instances={}",
-                    instances);
-
-                throw new IllegalStateException("No gray instances available");
-            }
-
-            log.debug("Gray load balancer selected {} gray instances",
-                targetInstances.size());
-        } else {
-            // 使用正常实例
-            targetInstances = this.filterNormalInstances(instances);
-            if (CollUtil.isEmpty(targetInstances)) {
-                log.error("Normal instance not found, normal request rejected, instances={}",
-                    instances);
-
-                throw new IllegalStateException("No normal instances available");
-            }
-        }
-
-        // 使用默认策略（权重随机）
-        ServiceInstance instance = ExtendBalancer.getServiceInstancesByWeight(targetInstances);
+        ServiceInstance instance = ExtendBalancer.getServiceInstancesByWeight(instances);
         return new DefaultResponse(instance);
     }
 
     /**
      * 获取灰度版本.
      * <p>
-     * 优先级：白名单 > 百分比
+     * 根据配置的灰度策略类型判断： - 白名单策略：用户ID在白名单中则使用灰度版本 - 百分比策略：根据用户ID哈希值按百分比分配灰度版本
      * </p>
      *
      * @param headers 请求头
+     * @param cfg     配置
      * @return true表示使用灰度版本，false表示不使用灰度
      */
-    private boolean shouldUseGrayVersion(HttpHeaders headers) {
-        final GrayConfig cfg = this.loadBalancerProperty.getGray();
-        if (Boolean.FALSE.equals(cfg.getEnabled())) {
+    private boolean shouldUseGrayVersion(HttpHeaders headers, GrayConfig cfg) {
+        final String userId = headers.getFirst(HeaderConstant.X_USER_ID);
+        if (CharSequenceUtil.isBlank(userId)) {
             return false;
         }
-        // 1. 检查白名单
-        final String userId = headers.getFirst(HeaderConstant.X_USER_ID);
-        if (CharSequenceUtil.isNotBlank(userId)) {
+
+        // 根据策略类型选择不同的判断方式
+        if (GrayStrategyEnum.WHITELIST.equals(cfg.getStrategy())) {
+            // 白名单策略
             List<String> whitelist = cfg.getUserIdWhitelist();
             if (CollUtil.isNotEmpty(whitelist) && whitelist.contains(userId)) {
                 log.debug("User {} in whitelist, use gray version", userId);
                 return true;
             }
-        }
-
-        // 2. 检查百分比
-        if (CharSequenceUtil.isNotBlank(userId)) {
+        } else if (GrayStrategyEnum.PERCENTAGE.equals(cfg.getStrategy())) {
+            // 百分比策略
             final Integer percentage = cfg.getPercentage();
             if (Objects.nonNull(percentage) && percentage > 0 && percentage <= 100) {
                 // 使用用户ID哈希值计算百分比
@@ -208,39 +250,21 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
     }
 
     /**
-     * 筛选灰度实例（version=gray的实例）.
+     * 筛选实例（根据请求版本）.
      *
-     * @param instances 所有实例
+     * @param instances      所有实例
+     * @param requestVersion 请求版本
      * @return 灰度实例列表
      */
-    private List<ServiceInstance> filterGrayInstances(List<ServiceInstance> instances) {
+    private List<ServiceInstance> filterInstancesByVersion(List<ServiceInstance> instances, String requestVersion) {
         return instances.stream()
             .filter(instance -> {
                 Map<String, String> metadata = instance.getMetadata();
                 if (metadata == null) {
                     return false;
                 }
-                String version = metadata.get(HeaderConstant.X_VERSION);
-                return VersionTypeEnum.GRAY.getValue().equals(version);
-            })
-            .toList();
-    }
-
-    /**
-     * 筛选非灰度实例.
-     *
-     * @param instances 所有实例
-     * @return 正常实例列表
-     */
-    private List<ServiceInstance> filterNormalInstances(List<ServiceInstance> instances) {
-        return instances.stream()
-            .filter(instance -> {
-                Map<String, String> metadata = instance.getMetadata();
-                if (metadata == null) {
-                    return false;
-                }
-                String version = metadata.get(HeaderConstant.X_VERSION);
-                return !VersionTypeEnum.GRAY.getValue().equals(version);
+                String version = metadata.get(MetadataConstant.VERSION);
+                return requestVersion.equals(version);
             })
             .toList();
     }
