@@ -8,7 +8,6 @@
 package com.iwindplus.base.loadbalancer;
 
 import com.iwindplus.base.loadbalancer.domain.property.LoadBalancerProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.loadbalancer.annotation.LoadBalancerClients;
 import org.springframework.context.annotation.Configuration;
@@ -27,7 +26,6 @@ public class LoadBalancerConfiguration {
      * Nacos负载均衡自动配置（支持灰度发布）.
      */
     @Configuration(proxyBeanMethods = false)
-    @ConditionalOnProperty(prefix = "loadbalancer.nacos", name = "enabled", havingValue = "true", matchIfMissing = true)
     @LoadBalancerClients(defaultConfiguration = NacosLoadBalancerConfiguration.class)
     public static class NacosLoadBalancerAutoConfiguration {
 

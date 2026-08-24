@@ -24,23 +24,9 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
 public class LoadBalancerProperty {
 
     /**
-     * Nacos负载均衡配置.
-     */
-    private NacosConfig nacos = new NacosConfig();
-
-    /**
      * 灰度发布配置.
      */
     private GrayConfig gray = new GrayConfig();
-
-    @Data
-    public static class NacosConfig {
-
-        /**
-         * 是否启用Nacos负载均衡，默认true.
-         */
-        private Boolean enabled = true;
-    }
 
     @Data
     public static class GrayConfig {
@@ -51,28 +37,13 @@ public class LoadBalancerProperty {
         private Boolean enabled = false;
 
         /**
-         * 用户ID请求头名称，默认X-User-Id.
-         */
-        private String userIdHeader = "X-User-Id";
-
-        /**
-         * 灰度版本请求头名称，默认X-Gray-Version.
-         */
-        private String grayVersionHeader = "X-Gray-Version";
-
-        /**
-         * 灰度百分比（0-100），默认10%.
-         */
-        private Integer percentage = 10;
-
-        /**
          * 灰度用户ID白名单.
          */
         private List<String> userIdWhitelist;
 
         /**
-         * 灰度版本，默认v2.
+         * 灰度百分比（0-100），默认10%.
          */
-        private String grayVersion = "v2";
+        private Integer percentage = 10;
     }
 }

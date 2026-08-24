@@ -13,7 +13,8 @@ import com.alibaba.cloud.nacos.NacosDiscoveryProperties;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.core.Balancer;
 import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
-import com.iwindplus.base.domain.constant.CommonConstant.MetadataConstant;
+import com.iwindplus.base.domain.enums.BaseEnum;
+import com.iwindplus.base.loadbalancer.domain.enums.VersionTypeEnum;
 import com.iwindplus.base.loadbalancer.domain.property.LoadBalancerProperty;
 import java.util.HashMap;
 import java.util.List;
@@ -86,7 +87,7 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
             log.warn("No servers available for service: " + this.serviceId);
             return new EmptyResponse();
         }
-        
+
         // 获取当前服务所在的集群名称
         List<ServiceInstance> instancesToChoose = instances;
         String currentClusterName = nacosDiscoveryProperties.getClusterName();
@@ -99,19 +100,18 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
                 instancesToChoose = sameClusterInstances;
             }
         }
-        
-        // 检查是否启用灰度发布
-        if (this.grayConfig != null && this.grayConfig.getEnabled() != null && this.grayConfig.getEnabled()) {
-            // 使用灰度发布策略
-            return this.getGrayInstanceResponse(instancesToChoose, request);
-        } else {
-            // 使用原有的版本+权重策略
-            return this.getVersionWeightInstanceResponse(instancesToChoose, request);
-        }
+
+        return this.getGrayInstanceResponse(instancesToChoose, request);
     }
 
     /**
      * 灰度发布实例选择.
+     * <p>
+     * 灰度策略：
+     * 1. 白名单用户：访问灰度实例（有gray-version元数据的实例）
+     * 2. 百分比用户：访问灰度实例（有gray-version元数据的实例）
+     * 3. 其他用户：访问正常实例（没有gray-version元数据的实例）
+     * </p>
      *
      * @param instances 实例列表
      * @param request   请求
@@ -126,57 +126,60 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
         }
 
         HttpHeaders headers = clientRequest.getHeaders();
-        
-        // 获取灰度版本
-        String grayVersion = this.getGrayVersion(headers);
-        if (CharSequenceUtil.isBlank(grayVersion)) {
-            // 没有灰度版本，使用默认策略
-            return this.getVersionWeightInstanceResponse(instances, request);
+
+        // 判断是否使用灰度版本
+        boolean useGrayVersion = this.shouldUseGrayVersion(headers);
+
+        List<ServiceInstance> targetInstances;
+        if (useGrayVersion) {
+            // 使用灰度实例（有gray-version元数据的实例）
+            targetInstances = this.filterGrayInstances(instances);
+            if (CollUtil.isEmpty(targetInstances)) {
+                log.warn("No gray instances found, fallback to normal instances");
+                targetInstances = this.filterNormalInstances(instances);
+            } else {
+                log.info("Gray load balancer selected {} gray instances", targetInstances.size());
+            }
+        } else {
+            // 使用正常实例（没有gray-version元数据的实例）
+            targetInstances = this.filterNormalInstances(instances);
+            if (CollUtil.isEmpty(targetInstances)) {
+                log.warn("No normal instances found, fallback to gray instances");
+                targetInstances = this.filterGrayInstances(instances);
+            }
         }
 
-        // 根据灰度版本过滤实例
-        List<ServiceInstance> filteredInstances = this.filterInstancesByVersion(instances, grayVersion);
-        if (CollUtil.isEmpty(filteredInstances)) {
-            log.warn("No instances found for gray version: {}, fallback to default instances", grayVersion);
-            return this.getVersionWeightInstanceResponse(instances, request);
+        if (CollUtil.isEmpty(targetInstances)) {
+            log.warn("No instances available");
+            targetInstances = instances;
         }
 
-        log.debug("Gray load balancer selected {} instances for version: {}", filteredInstances.size(), grayVersion);
-        
-        // 使用权重随机选择
-        ServiceInstance instance = ExtendBalancer.getServiceInstancesByWeight(filteredInstances);
+        // 使用默认策略（权重随机）
+        ServiceInstance instance = ExtendBalancer.getServiceInstancesByWeight(targetInstances);
         return new DefaultResponse(instance);
     }
 
     /**
      * 获取灰度版本.
      * <p>
-     * 优先级：白名单 > 请求头 > 百分比
+     * 优先级：白名单 > 百分比
      * </p>
      *
      * @param headers 请求头
-     * @return 灰度版本，null表示不使用灰度
+     * @return true表示使用灰度版本，false表示不使用灰度
      */
-    private String getGrayVersion(HttpHeaders headers) {
+    private boolean shouldUseGrayVersion(HttpHeaders headers) {
         // 1. 检查白名单
-        List<String> userIds = headers.get(this.grayConfig.getUserIdHeader());
-        String userId = CollectionUtils.isEmpty(userIds) ? null : userIds.get(0);
+        final String userId = headers.getFirst(HeaderConstant.X_USER_ID);
         if (CharSequenceUtil.isNotBlank(userId)) {
             List<String> whitelist = this.grayConfig.getUserIdWhitelist();
             if (!CollectionUtils.isEmpty(whitelist) && whitelist.contains(userId)) {
-                log.debug("User {} in whitelist, use gray version: {}", userId, this.grayConfig.getGrayVersion());
-                return this.grayConfig.getGrayVersion();
+                log.debug("User {} in whitelist, use gray version", userId);
+                return true;
             }
         }
 
-        // 2. 检查请求头
-        String grayVersion = headers.getFirst(this.grayConfig.getGrayVersionHeader());
-        if (CharSequenceUtil.isNotBlank(grayVersion)) {
-            log.debug("Gray version from header: {}", grayVersion);
-            return grayVersion;
-        }
-
-        // 3. 检查百分比
+        // 2. 检查百分比
         if (CharSequenceUtil.isNotBlank(userId)) {
             Integer percentage = this.grayConfig.getPercentage();
             if (percentage != null && percentage > 0 && percentage <= 100) {
@@ -184,72 +187,54 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
                 int hash = Math.abs(userId.hashCode());
                 int mod = hash % 100;
                 if (mod < percentage) {
-                    log.debug("User {} in percentage {}%, use gray version: {}", userId, percentage,
-                        this.grayConfig.getGrayVersion());
-                    return this.grayConfig.getGrayVersion();
+                    log.debug("User {} in percentage {}%, use gray version", userId, percentage);
+                    return true;
                 }
             }
         }
 
         // 不使用灰度
-        return null;
+        return false;
     }
 
     /**
-     * 根据版本过滤实例.
+     * 筛选灰度实例（version=gray的实例）.
      *
      * @param instances 所有实例
-     * @param version   目标版本
-     * @return 过滤后的实例列表
+     * @return 灰度实例列表
      */
-    private List<ServiceInstance> filterInstancesByVersion(List<ServiceInstance> instances, String version) {
+    private List<ServiceInstance> filterGrayInstances(List<ServiceInstance> instances) {
         return instances.stream()
             .filter(instance -> {
                 Map<String, String> metadata = instance.getMetadata();
                 if (metadata == null) {
                     return false;
                 }
-                String instanceVersion = metadata.get(MetadataConstant.VERSION);
-                return version.equals(instanceVersion);
+                // 检查version元数据是否为gray
+                String version = metadata.get(HeaderConstant.X_VERSION);
+                return VersionTypeEnum.GRAY.getValue().equals(version);
             })
             .toList();
     }
 
     /**
-     * 版本+权重实例选择.
+     * 筛选正常实例（version=stable的实例）.
      *
-     * @param instances 实例列表
-     * @param request   请求
-     * @return Response<ServiceInstance>
+     * @param instances 所有实例
+     * @return 正常实例列表
      */
-    private Response<ServiceInstance> getVersionWeightInstanceResponse(List<ServiceInstance> instances, Request<?> request) {
-        if (!(request.getContext() instanceof DefaultRequestContext requestContext)) {
-            return new DefaultResponse(instances.get(ThreadLocalRandom.current().nextInt(instances.size())));
-        }
-        if (!(requestContext.getClientRequest() instanceof RequestData clientRequest)) {
-            return new DefaultResponse(instances.get(ThreadLocalRandom.current().nextInt(instances.size())));
-        }
-
-        HttpHeaders headers = clientRequest.getHeaders();
-        List<ServiceInstance> instancesToChoose = NacosServiceInstanceLoadBalancer.getServiceInstancesByVersion(instances, headers, nacosDiscoveryProperties);
-        ServiceInstance instance = ExtendBalancer.getServiceInstancesByWeight(instancesToChoose);
-        return new DefaultResponse(instance);
-    }
-
-    static List<ServiceInstance> getServiceInstancesByVersion(List<ServiceInstance> instances,
-        HttpHeaders headers, NacosDiscoveryProperties nacosDiscoveryProperties) {
-        String headerVersion = headers.getFirst(HeaderConstant.X_VERSION);
-        String version = CharSequenceUtil.isNotBlank(headerVersion)
-            ? headerVersion : nacosDiscoveryProperties.getMetadata().get(MetadataConstant.VERSION);
-        log.info("负载均衡，灰度发布，{}={}", HeaderConstant.X_VERSION, version);
-        if (CharSequenceUtil.isNotBlank(version)) {
-            List<ServiceInstance> serviceInstances = instances.stream().filter(instance ->
-                version.equals(instance.getMetadata().get(MetadataConstant.VERSION))).toList();
-            if (CollUtil.isNotEmpty(serviceInstances)) {
-                instances = serviceInstances;
-            }
-        }
-        return instances;
+    private List<ServiceInstance> filterNormalInstances(List<ServiceInstance> instances) {
+        return instances.stream()
+            .filter(instance -> {
+                Map<String, String> metadata = instance.getMetadata();
+                if (metadata == null) {
+                    return false;
+                }
+                // 检查version元数据是否为stable
+                String version = metadata.get(HeaderConstant.X_VERSION);
+                return VersionTypeEnum.STABLE.getValue().equals(version);
+            })
+            .toList();
     }
 
     static class ExtendBalancer extends Balancer {
