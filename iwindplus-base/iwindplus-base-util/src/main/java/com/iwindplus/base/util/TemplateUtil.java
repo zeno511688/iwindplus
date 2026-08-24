@@ -14,13 +14,13 @@ import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.extra.template.Template;
 import cn.hutool.extra.template.engine.freemarker.FreemarkerEngine;
 import com.iwindplus.base.domain.constant.CommonConstant;
-import lombok.extern.slf4j.Slf4j;
-
+import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 模板变量替换工具类.
@@ -63,8 +63,8 @@ public class TemplateUtil {
         if (CollUtil.isEmpty(templateParams)) {
             return Collections.emptyMap();
         }
-        String[] templateParam = CharSequenceUtil.subBetweenAll(templateContent, CommonConstant.SymbolConstant.DOLLAR_AND_LEFT_CURLY_BRACKET,
-            CommonConstant.SymbolConstant.RIGHT_CURLY_BRACKET);
+        String[] templateParam = CharSequenceUtil.subBetweenAll(templateContent, SymbolConstant.DOLLAR_AND_LEFT_CURLY_BRACKET,
+            SymbolConstant.RIGHT_CURLY_BRACKET);
         if (ArrayUtil.isEmpty(templateParam)) {
             return Collections.emptyMap();
         }

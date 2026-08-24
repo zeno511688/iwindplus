@@ -9,6 +9,7 @@ package com.iwindplus.base.util;
 
 import cn.hutool.core.util.ArrayUtil;
 import com.iwindplus.base.domain.constant.CommonConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.SystemConstant;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -176,6 +177,7 @@ public class ExpressionUtil {
      * 批量解析 SpEL 表达式.
      * <p>
      * 使用相同的求值上下文批量解析多个 SpEL 表达式，提高解析效率。
+     * 只处理以 # 开头的表达式，其他当作普通字符串直接返回。
      * </p>
      *
      * @param context        求值上下文
@@ -188,13 +190,71 @@ public class ExpressionUtil {
         List<T> definitionKeyList = new ArrayList<>(definitionKeys.length);
         Arrays.stream(definitionKeys).forEach(definitionKey -> {
             try {
-                final T key = PARSER.parseExpression(definitionKey).getValue(context, clz);
-                definitionKeyList.add(key);
+                // 只处理以 # 开头的表达式，其他当作普通字符串
+                if (isExpression(definitionKey)) {
+                    final T key = PARSER.parseExpression(definitionKey).getValue(context, clz);
+                    definitionKeyList.add(key);
+                } else {
+                    // 非 # 开头，直接转换为指定类型返回
+                    definitionKeyList.add(convertToType(definitionKey, clz));
+                }
             } catch (Exception ex) {
                 log.error("SpEL expression parsing failed: {}", definitionKey, ex);
                 definitionKeyList.add(null);
             }
         });
         return definitionKeyList;
+    }
+
+    /**
+     * 判断是否是 SpEL 表达式.
+     * <p>
+     * 只有以 # 开头的字符串才被认为是 SpEL 表达式。
+     * </p>
+     *
+     * @param expression 待判断的字符串
+     * @return true 表示是 SpEL 表达式，false 表示是普通字符串
+     */
+    private static boolean isExpression(String expression) {
+        return expression != null && expression.startsWith(SymbolConstant.WELL_NO) && expression.length() > 1;
+    }
+
+    /**
+     * 将字符串转换为指定类型.
+     * <p>
+     * 支持常见类型的转换：String、Integer、Long、Boolean 等。
+     * </p>
+     *
+     * @param value 字符串值
+     * @param clz   目标类型
+     * @param <T>   类型泛型
+     * @return 转换后的值，如果转换失败则返回 null
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T convertToType(String value, Class<T> clz) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            if (clz == String.class) {
+                return (T) value;
+            } else if (clz == Integer.class || clz == int.class) {
+                return (T) Integer.valueOf(value);
+            } else if (clz == Long.class || clz == long.class) {
+                return (T) Long.valueOf(value);
+            } else if (clz == Boolean.class || clz == boolean.class) {
+                return (T) Boolean.valueOf(value);
+            } else if (clz == Double.class || clz == double.class) {
+                return (T) Double.valueOf(value);
+            } else if (clz == Float.class || clz == float.class) {
+                return (T) Float.valueOf(value);
+            } else {
+                log.warn("Unsupported type conversion: {} -> {}", value, clz.getName());
+                return null;
+            }
+        } catch (Exception ex) {
+            log.error("Type conversion failed: {} -> {}", value, clz.getName(), ex);
+            return null;
+        }
     }
 }
