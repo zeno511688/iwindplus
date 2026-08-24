@@ -22,13 +22,9 @@ import java.util.function.ToDoubleFunction;
  * @author zengdegui
  * @since 2026/07/25 10:21
  */
-public class MonitorTemplateImpl implements MonitorTemplate {
+public record MonitorTemplateImpl(MeterRegistry meterRegistry) implements MonitorTemplate {
 
-    private final MeterRegistry meterRegistry;
-
-    public MonitorTemplateImpl(MeterRegistry meterRegistry) {
-        this.meterRegistry = meterRegistry;
-    }
+    private static final double[] TIMER_PERCENTILES = {0.5, 0.95, 0.99};
 
     @Override
     public Counter counter(String name, Tags tags) {
@@ -41,11 +37,7 @@ public class MonitorTemplateImpl implements MonitorTemplate {
     public Timer getTimer(String name, Tags tags) {
         return Timer.builder(name)
             .tags(tags)
-            .publishPercentiles(
-                0.5,
-                0.95,
-                0.99
-            )
+            .publishPercentiles(TIMER_PERCENTILES)
             .register(meterRegistry);
     }
 
