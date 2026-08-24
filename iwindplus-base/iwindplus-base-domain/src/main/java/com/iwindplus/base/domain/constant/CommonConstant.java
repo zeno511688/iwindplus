@@ -933,6 +933,21 @@ public final class CommonConstant {
         public static final String EXCLAMATION_MARK = "!";
 
         /**
+         * 单引号.
+         */
+        public static final String SINGLE_QUOTE = "'";
+
+        /**
+         * 双引号.
+         */
+        public static final String DOUBLE_QUOTE = "\"";
+
+        /**
+         * 反引号.
+         */
+        public static final String BACK_QUOTE = "`";
+
+        /**
          * 斜杠星号.
          */
         public static final String SLASH_ASTERISK = "/*";
