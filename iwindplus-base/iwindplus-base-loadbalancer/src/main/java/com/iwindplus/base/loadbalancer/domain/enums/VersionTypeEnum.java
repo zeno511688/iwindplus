@@ -8,7 +8,6 @@
 package com.iwindplus.base.loadbalancer.domain.enums;
 
 import com.iwindplus.base.domain.enums.BaseEnum;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
