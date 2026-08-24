@@ -33,6 +33,7 @@ public class LoadBalancerProperty {
     /**
      * 监控配置.
      */
+    @Builder.Default
     @NestedConfigurationProperty
     private MonitorConfig monitor = new MonitorConfig();
 
