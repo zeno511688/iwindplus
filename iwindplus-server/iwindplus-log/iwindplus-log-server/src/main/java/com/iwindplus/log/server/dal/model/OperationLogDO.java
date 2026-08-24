@@ -128,22 +128,57 @@ public class OperationLogDO extends EsDbBaseDO {
      * 平台名称.
      */
     @Schema(description = "平台名称")
-    @Field(type = FieldType.Text, index = false)
+    @Field(type = FieldType.Keyword)
     private String platformName;
 
     /**
      * 系统名称.
      */
     @Schema(description = "系统名称")
-    @Field(type = FieldType.Text, index = false)
+    @Field(type = FieldType.Keyword)
     private String osName;
+
+    /**
+     * 系统版本.
+     */
+    @Schema(description = "系统版本")
+    @Field(type = FieldType.Keyword)
+    private String osVersion;
 
     /**
      * 浏览器名称.
      */
     @Schema(description = "浏览器名称")
-    @Field(type = FieldType.Text, index = false)
+    @Field(type = FieldType.Keyword)
     private String browserName;
+
+    /**
+     * 浏览器版本.
+     */
+    @Schema(description = "浏览器版本")
+    @Field(type = FieldType.Keyword)
+    private String browserVersion;
+
+    /**
+     * 设备号.
+     */
+    @Schema(description = "设备号")
+    @Field(type = FieldType.Keyword)
+    private String deviceNumber;
+
+    /**
+     * 设备版本.
+     */
+    @Schema(description = "设备版本")
+    @Field(type = FieldType.Keyword)
+    private String deviceVersion;
+
+    /**
+     * 设备指纹.
+     */
+    @Schema(description = "设备指纹")
+    @Field(type = FieldType.Keyword)
+    private String deviceFingerprint;
 
     /**
      * 跟踪唯一标识.
