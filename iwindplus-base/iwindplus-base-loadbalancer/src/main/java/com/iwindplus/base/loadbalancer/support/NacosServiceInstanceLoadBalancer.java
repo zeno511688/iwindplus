@@ -7,6 +7,19 @@
 
 package com.iwindplus.base.loadbalancer.support;
 
+import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.DEFAULT_WEIGHT;
+import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.HEADER_VERSION_DESC_PREFIX;
+import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.INSTANCE_COUNT_METRIC;
+import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.OUTCOME_EMPTY;
+import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.OUTCOME_SUCCESS;
+import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.PERCENTAGE_BASE;
+import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.SELECTION_OBSERVATION;
+import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.TAG_OUTCOME;
+import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.TAG_ROUTE;
+import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.TAG_SERVICE;
+import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.TAG_VERSION;
+import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.VERSION_NONE;
+
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.alibaba.cloud.nacos.NacosDiscoveryProperties;
@@ -19,7 +32,7 @@ import com.iwindplus.base.loadbalancer.domain.enums.NacosMetadataKeyEnum;
 import com.iwindplus.base.loadbalancer.domain.enums.VersionTypeEnum;
 import com.iwindplus.base.loadbalancer.domain.property.LoadBalancerProperty;
 import com.iwindplus.base.loadbalancer.domain.property.LoadBalancerProperty.GrayConfig;
-import com.iwindplus.base.monitor.support.MonitorTemplate;
+import com.iwindplus.base.monitor.executor.MonitorExecutor;
 import io.micrometer.core.instrument.Tags;
 import java.util.HashMap;
 import java.util.List;
@@ -57,16 +70,16 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
     private final String serviceId;
     private final NacosDiscoveryProperties nacosDiscoveryProperties;
     private final LoadBalancerProperty loadBalancerProperty;
-    private final MonitorTemplate monitorTemplate;
+    private final MonitorExecutor monitorExecutor;
     private final Map<String, AtomicInteger> versionInstanceCounts = new ConcurrentHashMap<>();
 
     public NacosServiceInstanceLoadBalancer(ObjectProvider<ServiceInstanceListSupplier> serviceInstanceListSupplierProvider, String serviceId
-        , NacosDiscoveryProperties nacosDiscoveryProperties, LoadBalancerProperty loadBalancerProperty, MonitorTemplate monitorTemplate) {
+        , NacosDiscoveryProperties nacosDiscoveryProperties, LoadBalancerProperty loadBalancerProperty, MonitorExecutor monitorExecutor) {
         this.serviceId = serviceId;
         this.serviceInstanceListSupplierProvider = serviceInstanceListSupplierProvider;
         this.nacosDiscoveryProperties = nacosDiscoveryProperties;
         this.loadBalancerProperty = loadBalancerProperty;
-        this.monitorTemplate = monitorTemplate;
+        this.monitorExecutor = monitorExecutor;
     }
 
     @Override
@@ -88,7 +101,22 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
         this.recordVersionInstanceCounts(instances);
         if (CollUtil.isEmpty(instances)) {
             log.warn("No servers available for service: " + this.serviceId);
-            this.incrementMetric("loadbalancer.selection.errors", Tags.of("service", this.serviceId, "version", "none"));
+            if (this.isMonitorEnabled()) {
+                try {
+                    return this.monitorExecutor.observation().execute(SELECTION_OBSERVATION, observation -> {
+                        observation.lowCardinalityKeyValue(TAG_SERVICE, this.serviceId);
+                        observation.lowCardinalityKeyValue(TAG_VERSION, VERSION_NONE);
+                        observation.lowCardinalityKeyValue(TAG_OUTCOME, OUTCOME_EMPTY);
+                        throw new NoAvailableInstanceException(this.serviceId);
+                    });
+                } catch (NoAvailableInstanceException e) {
+                    return new EmptyResponse();
+                } catch (RuntimeException e) {
+                    throw e;
+                } catch (Throwable e) {
+                    throw new IllegalStateException("Load balancer observation execution failed", e);
+                }
+            }
             return new EmptyResponse();
         }
 
@@ -126,23 +154,26 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
         final String selectedVersion = useGrayInstance ? VersionTypeEnum.GRAY.getValue()
             : (headers != null && CharSequenceUtil.isNotBlank(headers.getFirst(HeaderConstant.X_VERSION))
                 ? headers.getFirst(HeaderConstant.X_VERSION) : VersionTypeEnum.STABLE.getValue());
-        final Tags metricTags = Tags.of("service", this.serviceId, "version", selectedVersion);
         final List<ServiceInstance> selectedInstances = instancesToChoose;
         final HttpHeaders requestHeaders = headers;
         final boolean grayInstance = useGrayInstance;
         if (this.isMonitorEnabled()) {
-            return this.monitorTemplate.timer("loadbalancer.selection.time", metricTags, () -> {
-                this.incrementMetric("loadbalancer.selection.count", metricTags);
-                this.incrementMetric("loadbalancer.user.distribution", Tags.of("service", this.serviceId,
-                    "route", selectedVersion));
-                Response<ServiceInstance> response = grayInstance
-                    ? this.getGrayInstanceResponse(selectedInstances)
-                    : this.getVersionInstanceResponse(selectedInstances, requestHeaders);
-                if (!response.hasServer()) {
-                    this.incrementMetric("loadbalancer.selection.errors", metricTags);
-                }
-                return response;
-            });
+            try {
+                return this.monitorExecutor.observation().execute(SELECTION_OBSERVATION, observation -> {
+                    observation.lowCardinalityKeyValue(TAG_SERVICE, this.serviceId);
+                    observation.lowCardinalityKeyValue(TAG_VERSION, selectedVersion);
+                    observation.lowCardinalityKeyValue(TAG_ROUTE, selectedVersion);
+                    Response<ServiceInstance> response = grayInstance
+                        ? this.getGrayInstanceResponse(selectedInstances)
+                        : this.getVersionInstanceResponse(selectedInstances, requestHeaders);
+                    observation.lowCardinalityKeyValue(TAG_OUTCOME, response.hasServer() ? OUTCOME_SUCCESS : OUTCOME_EMPTY);
+                    return response;
+                });
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Throwable e) {
+                throw new IllegalStateException("Load balancer observation execution failed", e);
+            }
         }
         return grayInstance
             ? this.getGrayInstanceResponse(selectedInstances)
@@ -150,7 +181,7 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
     }
 
     private boolean isMonitorEnabled() {
-        return this.monitorTemplate != null
+        return this.monitorExecutor != null
             && this.loadBalancerProperty.getMonitor() != null
             && Boolean.TRUE.equals(this.loadBalancerProperty.getMonitor().getEnabled());
     }
@@ -159,24 +190,23 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
         if (!this.isMonitorEnabled() || CollUtil.isEmpty(instances)) {
             return;
         }
-        Map<String, Long> counts = instances.stream()
-            .map(instance -> Optional.ofNullable(instance.getMetadata())
+        Map<String, Integer> counts = new HashMap<>();
+        for (ServiceInstance instance : instances) {
+            String version = Optional.ofNullable(instance.getMetadata())
                 .map(metadata -> metadata.get(MetadataConstant.VERSION))
-                .orElse(VersionTypeEnum.STABLE.getValue()))
-            .collect(java.util.stream.Collectors.groupingBy(version -> version, java.util.stream.Collectors.counting()));
-        this.versionInstanceCounts.forEach((version, value) -> value.set(counts.getOrDefault(version, 0L).intValue()));
-        counts.forEach((version, count) -> {
-            AtomicInteger value = this.versionInstanceCounts.computeIfAbsent(version, key -> new AtomicInteger());
-            value.set(count.intValue());
-            this.monitorTemplate.gauge("loadbalancer.instances", Tags.of("service", this.serviceId, "version", version),
-                value, AtomicInteger::get);
-        });
-    }
-
-    private void incrementMetric(String name, Tags tags) {
-        if (this.isMonitorEnabled()) {
-            this.monitorTemplate.increment(name, tags);
+                .orElse(VersionTypeEnum.STABLE.getValue());
+            counts.merge(version, 1, Integer::sum);
         }
+        this.versionInstanceCounts.forEach((version, value) -> value.set(counts.getOrDefault(version, 0)));
+        counts.forEach((version, count) -> {
+            AtomicInteger value = this.versionInstanceCounts.computeIfAbsent(version, key -> {
+                AtomicInteger gaugeValue = new AtomicInteger();
+                this.monitorExecutor.monitor().gauge(INSTANCE_COUNT_METRIC,
+                    Tags.of(TAG_SERVICE, this.serviceId, TAG_VERSION, key), gaugeValue, AtomicInteger::get);
+                return gaugeValue;
+            });
+            value.set(count);
+        });
     }
 
     /**
@@ -195,7 +225,7 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
         if (CharSequenceUtil.isBlank(targetVersion)) {
             return this.selectInstancesByVersion(instances, VersionTypeEnum.STABLE.getValue(), VersionTypeEnum.STABLE.getDesc());
         }
-        return this.selectInstancesByVersion(instances, targetVersion, "header " + targetVersion);
+        return this.selectInstancesByVersion(instances, targetVersion, HEADER_VERSION_DESC_PREFIX + targetVersion);
     }
 
     /**
@@ -279,10 +309,9 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
         } else if (GrayStrategyEnum.PERCENTAGE.equals(cfg.getStrategy())) {
             // 百分比策略
             final Integer percentage = cfg.getPercentage();
-            if (Objects.nonNull(percentage) && percentage > 0 && percentage <= 100) {
+            if (Objects.nonNull(percentage) && percentage > 0 && percentage <= PERCENTAGE_BASE) {
                 // 使用用户ID哈希值计算百分比
-                int hash = Math.abs(userId.hashCode());
-                int mod = hash % 100;
+                int mod = Math.floorMod(userId.hashCode(), PERCENTAGE_BASE);
                 if (mod < percentage) {
                     log.debug("User {} in percentage {}%, use gray version", userId, percentage);
                     return true;
@@ -309,6 +338,13 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
             .toList();
     }
 
+    private static final class NoAvailableInstanceException extends RuntimeException {
+
+        private NoAvailableInstanceException(String serviceId) {
+            super("No instances available for service: " + serviceId);
+        }
+    }
+
     static class ExtendBalancer extends Balancer {
 
         public static ServiceInstance getServiceInstancesByWeight(List<ServiceInstance> instances) {
@@ -319,7 +355,7 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
                 instance.setIp(serviceInstance.getHost());
                 instance.setPort(serviceInstance.getPort());
                 final String weightStr = metadata.get(NacosMetadataKeyEnum.WEIGHT.getValue());
-                instance.setWeight(CharSequenceUtil.isNotBlank(weightStr) ? Double.parseDouble(weightStr) : 1.0D);
+                instance.setWeight(CharSequenceUtil.isNotBlank(weightStr) ? Double.parseDouble(weightStr) : DEFAULT_WEIGHT);
                 instance.setHealthy(Boolean.parseBoolean(metadata.get(NacosMetadataKeyEnum.HEALTHY.getValue())));
                 instanceMap.put(instance, serviceInstance);
                 return instance;

@@ -327,19 +327,17 @@ loadbalancer:
     enabled: true
 ```
 
-开启后，负载均衡器负责记录实例选择阶段的指标，指标统一包含以下低基数标签：
+开启后，负载均衡器使用 `ObservationExecutor` 管理实例选择的生命周期，指标统一包含以下低基数标签：
 
 - `service`：目标服务名
 - `version`：目标版本（如 `gray`、`stable`、`v1`）
-- `route`：用户路由结果
+- `route`：路由版本
+- `outcome`：`success` 或 `empty`
 
-| 指标 | 类型 | 说明 |
+| 观测项 | 类型 | 说明 |
 |------|------|------|
-| `loadbalancer.selection.count` | Counter | 实例选择次数，可按 `version=gray` 统计灰度版本请求量 |
-| `loadbalancer.selection.time` | Timer | 实例选择耗时，可查看灰度版本选择延迟及百分位数 |
-| `loadbalancer.selection.errors` | Counter | 无实例或版本选择失败次数 |
+| `loadbalancer.selection` | Observation | 实例选择耗时，并由 ObservationRegistry 生成对应的 Timer/Tracing 数据 |
 | `loadbalancer.instances` | Gauge | 当前服务各版本的实例数量 |
-| `loadbalancer.user.distribution` | Counter | 用户路由结果分布，按版本统计 |
 
 应用需要引入监控模块：
 
@@ -350,12 +348,13 @@ loadbalancer:
 </dependency>
 ```
 
-当 `loadbalancer.monitor.enabled=false` 或未配置时，不注册和更新负载均衡监控指标，不影响原有负载均衡功能。
+当 `loadbalancer.monitor.enabled=false` 或未配置时，不创建实例选择 Observation，也不注册或更新版本实例 Gauge，不影响原有负载均衡功能。
 
 **重要说明**：
 
-- 负载均衡器只能感知实例选择结果，不能直接感知下游业务 HTTP 响应，因此 `loadbalancer.selection.errors` 不是业务错误率。
-- 灰度版本业务错误率和业务响应时间应在网关或服务 HTTP 入口通过 Micrometer/Observation 采集，并按 `version` 维度统计。
+- `ObservationExecutor` 会自动记录实例选择耗时，并在执行过程抛出异常时标记 Observation 错误。
+- 负载均衡器只能感知实例选择结果，不能直接感知下游业务 HTTP 响应，因此实例选择 Observation 不是业务错误率。
+- 灰度版本请求量、业务错误率和业务响应时间应在网关或服务 HTTP 入口通过 Micrometer/Observation 采集，并按 `version` 维度统计。
 - 不建议把完整用户 ID 放进指标标签，否则会产生高基数时间序列。用户分布应按灰度结果、策略或用户分组统计。
 
 ### 4. 全链路灰度
@@ -409,7 +408,6 @@ A: 灰度模式下，无灰度标记的用户可以通过请求头 `X-Version` �
 | `VersionTypeEnum` | 版本类型枚举（gray、stable） |
 | `NacosMetadataKeyEnum` | Nacos元数据键枚举 |
 | `LoadBalancerProperty` | 负载均衡配置属性 |
-| `WeightRandomDTO` | 权重随机算法DTO |
 
 ### 负载均衡流程
 
