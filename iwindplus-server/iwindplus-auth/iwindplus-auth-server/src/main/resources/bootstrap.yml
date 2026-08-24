@@ -43,12 +43,8 @@ spring:
         group: ${spring.cloud.nacos.discovery.group}
         file-extension: yml
         shared-configs:
-          # Vault 没有使用时的公共 Secret 兜底
-          - data-id: iwindplus-common-cipher.${spring.cloud.nacos.config.file-extension}
-            group: ${spring.cloud.nacos.discovery.group}
-            refresh: true
-          # Vault 没有使用时的当前项目 Secret 兜底
-          - data-id: ${spring.application.name}-${spring.profiles.active}-cipher.${spring.cloud.nacos.config.file-extension}
+          # 公共配置（包含负载均衡、加密等）
+          - data-id: iwindplus-common.${spring.cloud.nacos.config.file-extension}
             group: ${spring.cloud.nacos.discovery.group}
             refresh: true
     vault:
