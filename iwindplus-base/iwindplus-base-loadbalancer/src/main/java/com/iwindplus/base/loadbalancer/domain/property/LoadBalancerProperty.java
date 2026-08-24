@@ -8,9 +8,13 @@
 package com.iwindplus.base.loadbalancer.domain.property;
 
 import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
  * 负载均衡配置属性.
@@ -19,21 +23,31 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
  * @since 2023/10/24 23:02
  */
 @Data
-@RefreshScope
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
 @ConfigurationProperties(prefix = "loadbalancer")
 public class LoadBalancerProperty {
 
     /**
      * 灰度发布配置.
      */
+    @NestedConfigurationProperty
     private GrayConfig gray = new GrayConfig();
 
+    /**
+     * 灰度发布配置.
+     */
     @Data
+    @SuperBuilder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class GrayConfig {
 
         /**
-         * 是否启用灰度发布，默认false.
+         * 是否开启.
          */
+        @Builder.Default
         private Boolean enabled = false;
 
         /**
@@ -44,6 +58,7 @@ public class LoadBalancerProperty {
         /**
          * 灰度百分比（0-100），默认10%.
          */
+        @Builder.Default
         private Integer percentage = 10;
     }
 }
