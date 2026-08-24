@@ -46,26 +46,12 @@ public class NacosLoadBalancerConfiguration {
     @Bean
     public ReactorLoadBalancer<ServiceInstance> nacosLoadBalancer(Environment environment, LoadBalancerClientFactory loadBalancerClientFactory) {
         String name = environment.getProperty(LoadBalancerClientFactory.PROPERTY_NAME);
-        
-        // 检查是否启用灰度发布
-        LoadBalancerProperty.GrayConfig grayConfig = this.loadBalancerProperty.getGray();
-        if (grayConfig.getEnabled() != null && grayConfig.getEnabled()) {
-            // 使用灰度发布负载均衡器
-            NacosServiceInstanceLoadBalancer loadBalancer = new NacosServiceInstanceLoadBalancer(
-                loadBalancerClientFactory.getLazyProvider(name, ServiceInstanceListSupplier.class), 
-                name, 
-                this.nacosDiscoveryProperties,
-                grayConfig);
-            log.info("NacosServiceInstanceLoadBalancer (with gray release) initialized for service: {}", name);
-            return loadBalancer;
-        } else {
-            // 使用普通负载均衡器
-            NacosServiceInstanceLoadBalancer loadBalancer = new NacosServiceInstanceLoadBalancer(
-                loadBalancerClientFactory.getLazyProvider(name, ServiceInstanceListSupplier.class), 
-                name, 
-                this.nacosDiscoveryProperties);
-            log.info("NacosServiceInstanceLoadBalancer initialized for service: {}", name);
-            return loadBalancer;
-        }
+        NacosServiceInstanceLoadBalancer loadBalancer = new NacosServiceInstanceLoadBalancer(
+            loadBalancerClientFactory.getLazyProvider(name, ServiceInstanceListSupplier.class),
+            name,
+            this.nacosDiscoveryProperties,
+            this.loadBalancerProperty);
+        log.info("NacosServiceInstanceLoadBalancer (with gray release) initialized for service: {}", name);
+        return loadBalancer;
     }
 }

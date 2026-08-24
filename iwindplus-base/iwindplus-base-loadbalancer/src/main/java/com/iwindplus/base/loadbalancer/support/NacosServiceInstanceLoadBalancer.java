@@ -9,14 +9,13 @@ package com.iwindplus.base.loadbalancer.support;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.core.util.ObjectUtil;
 import com.alibaba.cloud.nacos.NacosDiscoveryProperties;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.core.Balancer;
 import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
-import com.iwindplus.base.domain.enums.BaseEnum;
 import com.iwindplus.base.loadbalancer.domain.enums.VersionTypeEnum;
 import com.iwindplus.base.loadbalancer.domain.property.LoadBalancerProperty;
+import com.iwindplus.base.loadbalancer.domain.property.LoadBalancerProperty.GrayConfig;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +35,6 @@ import org.springframework.cloud.loadbalancer.core.ReactorServiceInstanceLoadBal
 import org.springframework.cloud.loadbalancer.core.SelectedInstanceCallback;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 import org.springframework.http.HttpHeaders;
-import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Mono;
 
 /**
@@ -48,25 +46,32 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceLoadBalancer {
 
+    /**
+     * Nacos集群元数据键.
+     */
+    private static final String NACOS_CLUSTER_KEY = "nacos.cluster";
+
+    /**
+     * Nacos权重元数据键.
+     */
+    private static final String NACOS_WEIGHT_KEY = "nacos.weight";
+
+    /**
+     * Nacos健康状态元数据键.
+     */
+    private static final String NACOS_HEALTHY_KEY = "nacos.healthy";
+
     private final ObjectProvider<ServiceInstanceListSupplier> serviceInstanceListSupplierProvider;
     private final String serviceId;
     private final NacosDiscoveryProperties nacosDiscoveryProperties;
-    private final LoadBalancerProperty.GrayConfig grayConfig;
+    private final LoadBalancerProperty loadBalancerProperty;
 
     public NacosServiceInstanceLoadBalancer(ObjectProvider<ServiceInstanceListSupplier> serviceInstanceListSupplierProvider, String serviceId
-        , NacosDiscoveryProperties nacosDiscoveryProperties) {
+        , NacosDiscoveryProperties nacosDiscoveryProperties, LoadBalancerProperty loadBalancerProperty) {
         this.serviceId = serviceId;
         this.serviceInstanceListSupplierProvider = serviceInstanceListSupplierProvider;
         this.nacosDiscoveryProperties = nacosDiscoveryProperties;
-        this.grayConfig = null;
-    }
-
-    public NacosServiceInstanceLoadBalancer(ObjectProvider<ServiceInstanceListSupplier> serviceInstanceListSupplierProvider, String serviceId
-        , NacosDiscoveryProperties nacosDiscoveryProperties, LoadBalancerProperty.GrayConfig grayConfig) {
-        this.serviceId = serviceId;
-        this.serviceInstanceListSupplierProvider = serviceInstanceListSupplierProvider;
-        this.nacosDiscoveryProperties = nacosDiscoveryProperties;
-        this.grayConfig = grayConfig;
+        this.loadBalancerProperty = loadBalancerProperty;
     }
 
     @Override
@@ -97,7 +102,7 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
             log.warn("A cross-cluster call occurs，name = {}, clusterName = {}, instance = {}", this.serviceId, currentClusterName, instances);
         } else {
             List<ServiceInstance> sameClusterInstances = instances.stream().filter(instance ->
-                CharSequenceUtil.equals(instance.getMetadata().get("nacos.cluster"), currentClusterName)).toList();
+                CharSequenceUtil.equals(instance.getMetadata().get(NACOS_CLUSTER_KEY), currentClusterName)).toList();
             if (CollUtil.isNotEmpty(sameClusterInstances)) {
                 instancesToChoose = sameClusterInstances;
             }
@@ -171,10 +176,14 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
      * @return true表示使用灰度版本，false表示不使用灰度
      */
     private boolean shouldUseGrayVersion(HttpHeaders headers) {
+        final GrayConfig cfg = this.loadBalancerProperty.getGray();
+        if (Boolean.FALSE.equals(cfg.getEnabled())) {
+            return false;
+        }
         // 1. 检查白名单
         final String userId = headers.getFirst(HeaderConstant.X_USER_ID);
         if (CharSequenceUtil.isNotBlank(userId)) {
-            List<String> whitelist = this.grayConfig.getUserIdWhitelist();
+            List<String> whitelist = cfg.getUserIdWhitelist();
             if (CollUtil.isNotEmpty(whitelist) && whitelist.contains(userId)) {
                 log.debug("User {} in whitelist, use gray version", userId);
                 return true;
@@ -183,7 +192,7 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
 
         // 2. 检查百分比
         if (CharSequenceUtil.isNotBlank(userId)) {
-            final Integer percentage = this.grayConfig.getPercentage();
+            final Integer percentage = cfg.getPercentage();
             if (Objects.nonNull(percentage) && percentage > 0 && percentage <= 100) {
                 // 使用用户ID哈希值计算百分比
                 int hash = Math.abs(userId.hashCode());
@@ -245,9 +254,9 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
                 Instance instance = new Instance();
                 instance.setIp(serviceInstance.getHost());
                 instance.setPort(serviceInstance.getPort());
-                final String weightStr = metadata.get("nacos.weight");
+                final String weightStr = metadata.get(NACOS_WEIGHT_KEY);
                 instance.setWeight(CharSequenceUtil.isNotBlank(weightStr) ? Double.parseDouble(weightStr) : 1.0D);
-                instance.setHealthy(Boolean.parseBoolean(metadata.get("nacos.healthy")));
+                instance.setHealthy(Boolean.parseBoolean(metadata.get(NACOS_HEALTHY_KEY)));
                 instanceMap.put(instance, serviceInstance);
                 return instance;
             }).toList();
