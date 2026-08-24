@@ -39,6 +39,7 @@ public class LoadBalancerProperty {
     /**
      * 灰度发布配置.
      */
+    @Builder.Default
     @NestedConfigurationProperty
     private GrayConfig gray = new GrayConfig();
 
