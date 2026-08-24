@@ -10,8 +10,10 @@ package com.iwindplus.base.loadbalancer;
 import com.alibaba.cloud.nacos.NacosDiscoveryProperties;
 import com.iwindplus.base.loadbalancer.domain.property.LoadBalancerProperty;
 import com.iwindplus.base.loadbalancer.support.NacosServiceInstanceLoadBalancer;
+import com.iwindplus.base.monitor.support.MonitorTemplate;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.loadbalancer.core.ReactorLoadBalancer;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
@@ -36,6 +38,9 @@ public class NacosLoadBalancerConfiguration {
     @Resource
     private LoadBalancerProperty loadBalancerProperty;
 
+    @Resource
+    private ObjectProvider<MonitorTemplate> monitorTemplateProvider;
+
     /**
      * Nacos负载均衡器.
      *
@@ -50,7 +55,8 @@ public class NacosLoadBalancerConfiguration {
             loadBalancerClientFactory.getLazyProvider(name, ServiceInstanceListSupplier.class),
             name,
             this.nacosDiscoveryProperties,
-            this.loadBalancerProperty);
+            this.loadBalancerProperty,
+            this.monitorTemplateProvider.getIfAvailable());
         log.info("NacosServiceInstanceLoadBalancer (with gray release) initialized for service: {}", name);
         return loadBalancer;
     }

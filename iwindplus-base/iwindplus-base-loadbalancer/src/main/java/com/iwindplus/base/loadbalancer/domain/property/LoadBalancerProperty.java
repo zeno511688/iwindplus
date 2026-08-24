@@ -31,10 +31,32 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 public class LoadBalancerProperty {
 
     /**
+     * 监控配置.
+     */
+    @NestedConfigurationProperty
+    private MonitorConfig monitor = new MonitorConfig();
+
+    /**
      * 灰度发布配置.
      */
     @NestedConfigurationProperty
     private GrayConfig gray = new GrayConfig();
+
+    /**
+     * 监控配置.
+     */
+    @Data
+    @SuperBuilder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MonitorConfig {
+
+        /**
+         * 是否开启负载均衡监控指标.
+         */
+        @Builder.Default
+        private Boolean enabled = false;
+    }
 
     /**
      * 灰度发布配置.

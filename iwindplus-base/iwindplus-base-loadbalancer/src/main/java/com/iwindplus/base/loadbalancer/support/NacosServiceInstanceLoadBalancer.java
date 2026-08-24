@@ -19,11 +19,15 @@ import com.iwindplus.base.loadbalancer.domain.enums.NacosMetadataKeyEnum;
 import com.iwindplus.base.loadbalancer.domain.enums.VersionTypeEnum;
 import com.iwindplus.base.loadbalancer.domain.property.LoadBalancerProperty;
 import com.iwindplus.base.loadbalancer.domain.property.LoadBalancerProperty.GrayConfig;
+import com.iwindplus.base.monitor.support.MonitorTemplate;
+import io.micrometer.core.instrument.Tags;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.client.ServiceInstance;
@@ -53,13 +57,16 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
     private final String serviceId;
     private final NacosDiscoveryProperties nacosDiscoveryProperties;
     private final LoadBalancerProperty loadBalancerProperty;
+    private final MonitorTemplate monitorTemplate;
+    private final Map<String, AtomicInteger> versionInstanceCounts = new ConcurrentHashMap<>();
 
     public NacosServiceInstanceLoadBalancer(ObjectProvider<ServiceInstanceListSupplier> serviceInstanceListSupplierProvider, String serviceId
-        , NacosDiscoveryProperties nacosDiscoveryProperties, LoadBalancerProperty loadBalancerProperty) {
+        , NacosDiscoveryProperties nacosDiscoveryProperties, LoadBalancerProperty loadBalancerProperty, MonitorTemplate monitorTemplate) {
         this.serviceId = serviceId;
         this.serviceInstanceListSupplierProvider = serviceInstanceListSupplierProvider;
         this.nacosDiscoveryProperties = nacosDiscoveryProperties;
         this.loadBalancerProperty = loadBalancerProperty;
+        this.monitorTemplate = monitorTemplate;
     }
 
     @Override
@@ -78,8 +85,10 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
     }
 
     private Response<ServiceInstance> getInstanceResponse(List<ServiceInstance> instances, Request<?> request) {
+        this.recordVersionInstanceCounts(instances);
         if (CollUtil.isEmpty(instances)) {
             log.warn("No servers available for service: " + this.serviceId);
+            this.incrementMetric("loadbalancer.selection.errors", Tags.of("service", this.serviceId, "version", "none"));
             return new EmptyResponse();
         }
 
@@ -109,22 +118,64 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
 
         // 判断是否使用灰度实例（入口处统一判断）
         boolean useGrayInstance = false;
-        if (Boolean.TRUE.equals(this.loadBalancerProperty.getGray().getEnabled())) {
-            // 灰度模式开启
-            if (headers != null) {
-                // 有HTTP请求头，根据请求头判断
-                final GrayConfig cfg = this.loadBalancerProperty.getGray();
-                useGrayInstance = this.shouldUseGrayVersion(headers, cfg);
-            }
+        if (Boolean.TRUE.equals(this.loadBalancerProperty.getGray().getEnabled()) && headers != null) {
+            final GrayConfig cfg = this.loadBalancerProperty.getGray();
+            useGrayInstance = this.shouldUseGrayVersion(headers, cfg);
         }
 
-        // 根据判断结果选择实例
-        if (useGrayInstance) {
-            // 使用灰度实例
-            return this.getGrayInstanceResponse(instancesToChoose);
-        } else {
-            // 根据请求头X-Version选择实例
-            return this.getVersionInstanceResponse(instancesToChoose, headers);
+        final String selectedVersion = useGrayInstance ? VersionTypeEnum.GRAY.getValue()
+            : (headers != null && CharSequenceUtil.isNotBlank(headers.getFirst(HeaderConstant.X_VERSION))
+                ? headers.getFirst(HeaderConstant.X_VERSION) : VersionTypeEnum.STABLE.getValue());
+        final Tags metricTags = Tags.of("service", this.serviceId, "version", selectedVersion);
+        final List<ServiceInstance> selectedInstances = instancesToChoose;
+        final HttpHeaders requestHeaders = headers;
+        final boolean grayInstance = useGrayInstance;
+        if (this.isMonitorEnabled()) {
+            return this.monitorTemplate.timer("loadbalancer.selection.time", metricTags, () -> {
+                this.incrementMetric("loadbalancer.selection.count", metricTags);
+                this.incrementMetric("loadbalancer.user.distribution", Tags.of("service", this.serviceId,
+                    "route", selectedVersion));
+                Response<ServiceInstance> response = grayInstance
+                    ? this.getGrayInstanceResponse(selectedInstances)
+                    : this.getVersionInstanceResponse(selectedInstances, requestHeaders);
+                if (!response.hasServer()) {
+                    this.incrementMetric("loadbalancer.selection.errors", metricTags);
+                }
+                return response;
+            });
+        }
+        return grayInstance
+            ? this.getGrayInstanceResponse(selectedInstances)
+            : this.getVersionInstanceResponse(selectedInstances, requestHeaders);
+    }
+
+    private boolean isMonitorEnabled() {
+        return this.monitorTemplate != null
+            && this.loadBalancerProperty.getMonitor() != null
+            && Boolean.TRUE.equals(this.loadBalancerProperty.getMonitor().getEnabled());
+    }
+
+    private void recordVersionInstanceCounts(List<ServiceInstance> instances) {
+        if (!this.isMonitorEnabled() || CollUtil.isEmpty(instances)) {
+            return;
+        }
+        Map<String, Long> counts = instances.stream()
+            .map(instance -> Optional.ofNullable(instance.getMetadata())
+                .map(metadata -> metadata.get(MetadataConstant.VERSION))
+                .orElse(VersionTypeEnum.STABLE.getValue()))
+            .collect(java.util.stream.Collectors.groupingBy(version -> version, java.util.stream.Collectors.counting()));
+        this.versionInstanceCounts.forEach((version, value) -> value.set(counts.getOrDefault(version, 0L).intValue()));
+        counts.forEach((version, count) -> {
+            AtomicInteger value = this.versionInstanceCounts.computeIfAbsent(version, key -> new AtomicInteger());
+            value.set(count.intValue());
+            this.monitorTemplate.gauge("loadbalancer.instances", Tags.of("service", this.serviceId, "version", version),
+                value, AtomicInteger::get);
+        });
+    }
+
+    private void incrementMetric(String name, Tags tags) {
+        if (this.isMonitorEnabled()) {
+            this.monitorTemplate.increment(name, tags);
         }
     }
 
