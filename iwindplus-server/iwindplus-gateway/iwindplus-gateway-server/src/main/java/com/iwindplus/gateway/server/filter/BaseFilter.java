@@ -53,6 +53,7 @@ public class BaseFilter extends BaseGatewayFilter {
         final BaseConfig cfg = property.getBase();
 
         final Set<String> headersToRemove = Set.of(
+            HeaderConstant.X_USER_ID,
             HeaderConstant.X_USER_INFO,
             HeaderConstant.X_FORWARDED_FOR,
             HeaderConstant.X_TRACE_PARENT,

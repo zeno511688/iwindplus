@@ -333,12 +333,17 @@ public final class CommonConstant {
         public static final String X_REAL_IP = "X-Real-Ip";
 
         /**
+         * 用户主键.
+         */
+        public static final String X_USER_ID = "X-User-Id";
+
+        /**
          * 用户信息.
          */
         public static final String X_USER_INFO = "X-User-Info";
 
         /**
-         * 灰度发布版本号.
+         * 版本（gray代表灰度，stable代表稳定）.
          */
         public static final String X_VERSION = "X-Version";
 

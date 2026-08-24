@@ -173,6 +173,7 @@ public class AuthFilter extends BaseGatewayFilter {
 
         ServerHttpRequest newReq = exchange.getRequest()
             .mutate()
+            .header(HeaderConstant.X_USER_ID, user.getUserId().toString())
             .header(HeaderConstant.X_USER_INFO, encrypted)
             .build();
 
