@@ -14,8 +14,8 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.core.Balancer;
 import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.MetadataConstant;
-import com.iwindplus.base.domain.enums.BaseEnum;
 import com.iwindplus.base.loadbalancer.domain.enums.GrayStrategyEnum;
+import com.iwindplus.base.loadbalancer.domain.enums.NacosMetadataKeyEnum;
 import com.iwindplus.base.loadbalancer.domain.enums.VersionTypeEnum;
 import com.iwindplus.base.loadbalancer.domain.property.LoadBalancerProperty;
 import com.iwindplus.base.loadbalancer.domain.property.LoadBalancerProperty.GrayConfig;
@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.client.ServiceInstance;
@@ -47,21 +48,6 @@ import reactor.core.publisher.Mono;
  */
 @Slf4j
 public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceLoadBalancer {
-
-    /**
-     * Nacos集群元数据键.
-     */
-    private static final String NACOS_CLUSTER_KEY = "nacos.cluster";
-
-    /**
-     * Nacos权重元数据键.
-     */
-    private static final String NACOS_WEIGHT_KEY = "nacos.weight";
-
-    /**
-     * Nacos健康状态元数据键.
-     */
-    private static final String NACOS_HEALTHY_KEY = "nacos.healthy";
 
     private final ObjectProvider<ServiceInstanceListSupplier> serviceInstanceListSupplierProvider;
     private final String serviceId;
@@ -99,12 +85,16 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
 
         // 获取当前服务所在的集群名称
         List<ServiceInstance> instancesToChoose = instances;
-        String currentClusterName = nacosDiscoveryProperties.getClusterName();
+        String currentClusterName = this.nacosDiscoveryProperties.getClusterName();
         if (CharSequenceUtil.isBlank(currentClusterName)) {
-            log.warn("A cross-cluster call occurs，name = {}, clusterName = {}, instance = {}", this.serviceId, currentClusterName, instances);
+            log.debug("Cross-cluster call for service: {}, clusterName: {}", this.serviceId, currentClusterName);
         } else {
-            List<ServiceInstance> sameClusterInstances = instances.stream().filter(instance ->
-                CharSequenceUtil.equals(instance.getMetadata().get(NACOS_CLUSTER_KEY), currentClusterName)).toList();
+            List<ServiceInstance> sameClusterInstances = instances.stream()
+                .filter(instance -> Optional.ofNullable(instance.getMetadata())
+                    .map(metadata -> metadata.get(MetadataConstant.VERSION))
+                    .filter(version -> currentClusterName.equals(version))
+                    .isPresent())
+                .toList();
             if (CollUtil.isNotEmpty(sameClusterInstances)) {
                 instancesToChoose = sameClusterInstances;
             }
@@ -150,10 +140,11 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
      */
     private Response<ServiceInstance> getVersionInstanceResponse(List<ServiceInstance> instances, HttpHeaders headers) {
         // 从请求头中获取目标版本
-        final String targetVersion = headers != null ? headers.getFirst(HeaderConstant.X_VERSION) : VersionTypeEnum.STABLE.getValue();
-        final VersionTypeEnum targetVersionEnum = BaseEnum.fromValue(targetVersion, VersionTypeEnum.class);
-
-        return this.selectInstancesByVersion(instances, targetVersionEnum);
+        final String targetVersion = headers != null ? headers.getFirst(HeaderConstant.X_VERSION) : null;
+        if (CharSequenceUtil.isBlank(targetVersion)) {
+            return this.selectInstancesByVersion(instances, VersionTypeEnum.STABLE.getValue(), VersionTypeEnum.STABLE.getDesc());
+        }
+        return this.selectInstancesByVersion(instances, targetVersion, "header " + targetVersion);
     }
 
     /**
@@ -166,29 +157,31 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
      * @return Response<ServiceInstance>
      */
     private Response<ServiceInstance> getGrayInstanceResponse(List<ServiceInstance> instances) {
-        return this.selectInstancesByVersion(instances, VersionTypeEnum.GRAY);
+        return this.selectInstancesByVersion(instances, VersionTypeEnum.GRAY.getValue(), VersionTypeEnum.GRAY.getDesc());
     }
 
     /**
-     * 根据版本选择实例（使用枚举）.
+     * 根据版本选择实例（使用字符串版本）.
      * <p>
      * 根据指定版本筛选实例，如果不存在则降级使用所有实例.
      * </p>
      *
-     * @param instances   实例列表
-     * @param versionType 版本类型枚举
+     * @param instances     实例列表
+     * @param targetVersion 目标版本
+     * @param versionDesc   版本描述（用于日志）
      * @return Response<ServiceInstance>
      */
-    private Response<ServiceInstance> selectInstancesByVersion(List<ServiceInstance> instances, VersionTypeEnum versionType) {
-        List<ServiceInstance> targetInstances = this.filterInstancesByVersion(instances, versionType.getValue());
+    private Response<ServiceInstance> selectInstancesByVersion(List<ServiceInstance> instances, String targetVersion, String versionDesc) {
+        // 根据版本筛选实例
+        List<ServiceInstance> targetInstances = this.filterInstancesByVersion(instances, targetVersion);
 
         if (CollUtil.isNotEmpty(targetInstances)) {
-            log.debug("Select instances by {} version, count: {}", versionType.getDesc(), targetInstances.size());
+            log.debug("Select instances by {} version, count: {}", versionDesc, targetInstances.size());
             return this.selectInstanceByWeight(targetInstances);
         }
 
         // 目标版本实例不存在，降级使用所有实例
-        log.warn("No {} instances found, fallback to all instances", versionType.getDesc());
+        log.warn("No {} instances found, fallback to all instances", versionDesc);
         return this.selectInstanceByWeight(instances);
     }
 
@@ -252,20 +245,16 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
     /**
      * 筛选实例（根据请求版本）.
      *
-     * @param instances      所有实例
-     * @param requestVersion 请求版本
+     * @param instances     所有实例
+     * @param targetVersion 目标版本
      * @return 灰度实例列表
      */
-    private List<ServiceInstance> filterInstancesByVersion(List<ServiceInstance> instances, String requestVersion) {
+    private List<ServiceInstance> filterInstancesByVersion(List<ServiceInstance> instances, String targetVersion) {
         return instances.stream()
-            .filter(instance -> {
-                Map<String, String> metadata = instance.getMetadata();
-                if (metadata == null) {
-                    return false;
-                }
-                String version = metadata.get(MetadataConstant.VERSION);
-                return requestVersion.equals(version);
-            })
+            .filter(instance -> Optional.ofNullable(instance.getMetadata())
+                .map(metadata -> metadata.get(MetadataConstant.VERSION))
+                .filter(version -> targetVersion.equals(version))
+                .isPresent())
             .toList();
     }
 
@@ -278,9 +267,9 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
                 Instance instance = new Instance();
                 instance.setIp(serviceInstance.getHost());
                 instance.setPort(serviceInstance.getPort());
-                final String weightStr = metadata.get(NACOS_WEIGHT_KEY);
+                final String weightStr = metadata.get(NacosMetadataKeyEnum.WEIGHT.getValue());
                 instance.setWeight(CharSequenceUtil.isNotBlank(weightStr) ? Double.parseDouble(weightStr) : 1.0D);
-                instance.setHealthy(Boolean.parseBoolean(metadata.get(NACOS_HEALTHY_KEY)));
+                instance.setHealthy(Boolean.parseBoolean(metadata.get(NacosMetadataKeyEnum.HEALTHY.getValue())));
                 instanceMap.put(instance, serviceInstance);
                 return instance;
             }).toList();
