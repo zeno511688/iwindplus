@@ -10,6 +10,8 @@ package com.iwindplus.base.monitor;
 import cn.hutool.extra.spring.SpringUtil;
 import com.iwindplus.base.domain.constant.CommonConstant.ObservationConstant;
 import com.iwindplus.base.monitor.domain.property.MonitorProperty;
+import com.iwindplus.base.monitor.executor.MonitorExecutor;
+import com.iwindplus.base.monitor.executor.impl.MonitorExecutorImpl;
 import com.iwindplus.base.monitor.support.MonitorTemplate;
 import com.iwindplus.base.monitor.support.ObservationContextPathResolver;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
@@ -115,5 +117,26 @@ public class MonitorConfiguration {
         final MonitorTemplate monitorTemplate = new MonitorTemplateImpl(provider.getObject());
         log.info("MonitorTemplate={}", monitorTemplate);
         return monitorTemplate;
+    }
+
+    /**
+     * 创建可观测性统一门面.
+     *
+     * @param monitorTemplate 指标模板
+     * @param observationExecutor Observation 执行器
+     * @param traceContextPropagator Trace 上下文传播器
+     * @return MonitorExecutor
+     */
+    @Bean
+    public MonitorExecutor monitorExecutor(
+        MonitorTemplate monitorTemplate,
+        ObservationExecutor observationExecutor,
+        TraceContextPropagator traceContextPropagator) {
+        final MonitorExecutor monitorExecutor = new MonitorExecutorImpl(
+            monitorTemplate,
+            observationExecutor,
+            traceContextPropagator);
+        log.info("MonitorExecutor={}", monitorExecutor);
+        return monitorExecutor;
     }
 }
