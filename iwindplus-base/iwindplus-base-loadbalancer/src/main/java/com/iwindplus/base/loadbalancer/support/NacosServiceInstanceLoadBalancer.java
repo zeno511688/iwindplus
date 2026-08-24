@@ -102,20 +102,7 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
         if (CollUtil.isEmpty(instances)) {
             log.warn("No servers available for service: " + this.serviceId);
             if (this.isMonitorEnabled()) {
-                try {
-                    return this.monitorExecutor.observation().execute(SELECTION_OBSERVATION, observation -> {
-                        observation.lowCardinalityKeyValue(TAG_SERVICE, this.serviceId);
-                        observation.lowCardinalityKeyValue(TAG_VERSION, VERSION_NONE);
-                        observation.lowCardinalityKeyValue(TAG_OUTCOME, OUTCOME_EMPTY);
-                        throw new NoAvailableInstanceException(this.serviceId);
-                    });
-                } catch (NoAvailableInstanceException e) {
-                    return new EmptyResponse();
-                } catch (RuntimeException e) {
-                    throw e;
-                } catch (Throwable e) {
-                    throw new IllegalStateException("Load balancer observation execution failed", e);
-                }
+                return getServiceInstanceResponse();
             }
             return new EmptyResponse();
         }
@@ -158,55 +145,11 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
         final HttpHeaders requestHeaders = headers;
         final boolean grayInstance = useGrayInstance;
         if (this.isMonitorEnabled()) {
-            try {
-                return this.monitorExecutor.observation().execute(SELECTION_OBSERVATION, observation -> {
-                    observation.lowCardinalityKeyValue(TAG_SERVICE, this.serviceId);
-                    observation.lowCardinalityKeyValue(TAG_VERSION, selectedVersion);
-                    observation.lowCardinalityKeyValue(TAG_ROUTE, selectedVersion);
-                    Response<ServiceInstance> response = grayInstance
-                        ? this.getGrayInstanceResponse(selectedInstances)
-                        : this.getVersionInstanceResponse(selectedInstances, requestHeaders);
-                    observation.lowCardinalityKeyValue(TAG_OUTCOME, response.hasServer() ? OUTCOME_SUCCESS : OUTCOME_EMPTY);
-                    return response;
-                });
-            } catch (RuntimeException e) {
-                throw e;
-            } catch (Throwable e) {
-                throw new IllegalStateException("Load balancer observation execution failed", e);
-            }
+            return getServiceInstanceResponse(selectedVersion, selectedInstances, requestHeaders, grayInstance);
         }
         return grayInstance
             ? this.getGrayInstanceResponse(selectedInstances)
             : this.getVersionInstanceResponse(selectedInstances, requestHeaders);
-    }
-
-    private boolean isMonitorEnabled() {
-        return this.monitorExecutor != null
-            && this.loadBalancerProperty.getMonitor() != null
-            && Boolean.TRUE.equals(this.loadBalancerProperty.getMonitor().getEnabled());
-    }
-
-    private void recordVersionInstanceCounts(List<ServiceInstance> instances) {
-        if (!this.isMonitorEnabled() || CollUtil.isEmpty(instances)) {
-            return;
-        }
-        Map<String, Integer> counts = new HashMap<>();
-        for (ServiceInstance instance : instances) {
-            String version = Optional.ofNullable(instance.getMetadata())
-                .map(metadata -> metadata.get(MetadataConstant.VERSION))
-                .orElse(VersionTypeEnum.STABLE.getValue());
-            counts.merge(version, 1, Integer::sum);
-        }
-        this.versionInstanceCounts.forEach((version, value) -> value.set(counts.getOrDefault(version, 0)));
-        counts.forEach((version, count) -> {
-            AtomicInteger value = this.versionInstanceCounts.computeIfAbsent(version, key -> {
-                AtomicInteger gaugeValue = new AtomicInteger();
-                this.monitorExecutor.monitor().gauge(INSTANCE_COUNT_METRIC,
-                    Tags.of(TAG_SERVICE, this.serviceId, TAG_VERSION, key), gaugeValue, AtomicInteger::get);
-                return gaugeValue;
-            });
-            value.set(count);
-        });
     }
 
     /**
@@ -363,5 +306,71 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
             Instance instance = getHostByRandomWeight(instanceList);
             return instanceMap.get(instance);
         }
+    }
+
+    private boolean isMonitorEnabled() {
+        return this.monitorExecutor != null
+            && this.loadBalancerProperty.getMonitor() != null
+            && Boolean.TRUE.equals(this.loadBalancerProperty.getMonitor().getEnabled());
+    }
+
+    private Response<ServiceInstance> getServiceInstanceResponse(String selectedVersion, List<ServiceInstance> selectedInstances,
+        HttpHeaders requestHeaders, boolean grayInstance) {
+        try {
+            return this.monitorExecutor.observation().execute(SELECTION_OBSERVATION, observation -> {
+                observation.lowCardinalityKeyValue(TAG_SERVICE, this.serviceId);
+                observation.lowCardinalityKeyValue(TAG_VERSION, selectedVersion);
+                observation.lowCardinalityKeyValue(TAG_ROUTE, selectedVersion);
+                Response<ServiceInstance> response = grayInstance
+                    ? this.getGrayInstanceResponse(selectedInstances)
+                    : this.getVersionInstanceResponse(selectedInstances, requestHeaders);
+                observation.lowCardinalityKeyValue(TAG_OUTCOME, response.hasServer() ? OUTCOME_SUCCESS : OUTCOME_EMPTY);
+                return response;
+            });
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new IllegalStateException("Load balancer observation execution failed", e);
+        }
+    }
+
+    private Response<ServiceInstance> getServiceInstanceResponse() {
+        try {
+            return this.monitorExecutor.observation().execute(SELECTION_OBSERVATION, observation -> {
+                observation.lowCardinalityKeyValue(TAG_SERVICE, this.serviceId);
+                observation.lowCardinalityKeyValue(TAG_VERSION, VERSION_NONE);
+                observation.lowCardinalityKeyValue(TAG_OUTCOME, OUTCOME_EMPTY);
+                throw new NoAvailableInstanceException(this.serviceId);
+            });
+        } catch (NoAvailableInstanceException e) {
+            return new EmptyResponse();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new IllegalStateException("Load balancer observation execution failed", e);
+        }
+    }
+
+    private void recordVersionInstanceCounts(List<ServiceInstance> instances) {
+        if (!this.isMonitorEnabled() || CollUtil.isEmpty(instances)) {
+            return;
+        }
+        Map<String, Integer> counts = new HashMap<>(16);
+        for (ServiceInstance instance : instances) {
+            String version = Optional.ofNullable(instance.getMetadata())
+                .map(metadata -> metadata.get(MetadataConstant.VERSION))
+                .orElse(VersionTypeEnum.STABLE.getValue());
+            counts.merge(version, 1, Integer::sum);
+        }
+        this.versionInstanceCounts.forEach((version, value) -> value.set(counts.getOrDefault(version, 0)));
+        counts.forEach((version, count) -> {
+            AtomicInteger value = this.versionInstanceCounts.computeIfAbsent(version, key -> {
+                AtomicInteger gaugeValue = new AtomicInteger();
+                this.monitorExecutor.monitor().gauge(INSTANCE_COUNT_METRIC,
+                    Tags.of(TAG_SERVICE, this.serviceId, TAG_VERSION, key), gaugeValue, AtomicInteger::get);
+                return gaugeValue;
+            });
+            value.set(count);
+        });
     }
 }
