@@ -109,6 +109,9 @@ public record DefaultHttpExecuteTemplateImpl(
 
             updateContext(context, result, null);
 
+            // 打印响应日志（用于调试第三方接口）
+            logResponse(client, method, url, result, start);
+
             if (result != null && result.error() != null) {
                 exceptionProcess(client, method, url, result.error(), start);
             }
@@ -139,6 +142,8 @@ public record DefaultHttpExecuteTemplateImpl(
                     exceptionProcess(client, method, url, ex, start);
                 } else {
                     updateContext(context, result, null);
+                    // 打印响应日志（用于调试第三方接口）
+                    logResponse(client, method, url, result, start);
                     if (result != null && result.error() != null) {
                         exceptionProcess(client, method, url, result.error(), start);
                     }
@@ -270,5 +275,45 @@ public record DefaultHttpExecuteTemplateImpl(
         log.error("{} {} {} -> (cost={}ms) ERROR={}",
             client, method, url, cost, error
         );
+    }
+
+    /**
+     * 打印响应日志（用于调试第三方接口返回）.
+     *
+     * @param client 客户端名称
+     * @param method 请求方法
+     * @param url    请求URL
+     * @param result 执行结果
+     * @param start  开始时间（纳秒）
+     */
+    private void logResponse(
+        String client,
+        String method,
+        String url,
+        HttpExecuteResultDTO result,
+        long start) {
+
+        // 未启用响应日志打印，直接返回
+        if (Boolean.FALSE.equals(property.getEnabledResponseLog())) {
+            return;
+        }
+
+        // 结果为空，不打印
+        if (result == null) {
+            return;
+        }
+
+        final long cost = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+        final int status = result.status();
+        final String body = result.body();
+
+        // 打印所有响应内容（方便排查第三方返回状态码和业务错误）
+        if (body != null && !body.isEmpty()) {
+            log.info("{} {} {} -> (cost={}ms) STATUS={} RESPONSE={}",
+                client, method, url, cost, status, body);
+        } else {
+            log.info("{} {} {} -> (cost={}ms) STATUS={} RESPONSE=<empty>",
+                client, method, url, cost, status);
+        }
     }
 }

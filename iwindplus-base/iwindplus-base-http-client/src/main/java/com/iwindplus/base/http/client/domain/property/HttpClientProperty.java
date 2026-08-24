@@ -59,6 +59,12 @@ public class HttpClientProperty {
     private Boolean enabledObservationCustom = Boolean.FALSE;
 
     /**
+     * 是否启用响应日志打印（用于调试第三方接口返回）.
+     */
+    @Builder.Default
+    private Boolean enabledResponseLog = Boolean.FALSE;
+
+    /**
      * 默认客户端
      */
     @Builder.Default
