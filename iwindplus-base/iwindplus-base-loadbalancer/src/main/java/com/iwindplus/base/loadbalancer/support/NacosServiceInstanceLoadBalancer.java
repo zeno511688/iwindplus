@@ -9,6 +9,7 @@ package com.iwindplus.base.loadbalancer.support;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
+import cn.hutool.core.util.ObjectUtil;
 import com.alibaba.cloud.nacos.NacosDiscoveryProperties;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.core.Balancer;
@@ -19,6 +20,7 @@ import com.iwindplus.base.loadbalancer.domain.property.LoadBalancerProperty;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -132,26 +134,26 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
 
         List<ServiceInstance> targetInstances;
         if (useGrayVersion) {
-            // 使用灰度实例（有gray-version元数据的实例）
+            // 使用灰度实例
             targetInstances = this.filterGrayInstances(instances);
             if (CollUtil.isEmpty(targetInstances)) {
-                log.warn("No gray instances found, fallback to normal instances");
-                targetInstances = this.filterNormalInstances(instances);
-            } else {
-                log.info("Gray load balancer selected {} gray instances", targetInstances.size());
+                log.error("Gray instance not found, gray request rejected, instances={}",
+                    instances);
+
+                throw new IllegalStateException("No gray instances available");
             }
+
+            log.debug("Gray load balancer selected {} gray instances",
+                targetInstances.size());
         } else {
-            // 使用正常实例（没有gray-version元数据的实例）
+            // 使用正常实例
             targetInstances = this.filterNormalInstances(instances);
             if (CollUtil.isEmpty(targetInstances)) {
-                log.warn("No normal instances found, fallback to gray instances");
-                targetInstances = this.filterGrayInstances(instances);
-            }
-        }
+                log.error("Normal instance not found, normal request rejected, instances={}",
+                    instances);
 
-        if (CollUtil.isEmpty(targetInstances)) {
-            log.warn("No instances available");
-            targetInstances = instances;
+                throw new IllegalStateException("No normal instances available");
+            }
         }
 
         // 使用默认策略（权重随机）
@@ -173,7 +175,7 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
         final String userId = headers.getFirst(HeaderConstant.X_USER_ID);
         if (CharSequenceUtil.isNotBlank(userId)) {
             List<String> whitelist = this.grayConfig.getUserIdWhitelist();
-            if (!CollectionUtils.isEmpty(whitelist) && whitelist.contains(userId)) {
+            if (CollUtil.isNotEmpty(whitelist) && whitelist.contains(userId)) {
                 log.debug("User {} in whitelist, use gray version", userId);
                 return true;
             }
@@ -181,8 +183,8 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
 
         // 2. 检查百分比
         if (CharSequenceUtil.isNotBlank(userId)) {
-            Integer percentage = this.grayConfig.getPercentage();
-            if (percentage != null && percentage > 0 && percentage <= 100) {
+            final Integer percentage = this.grayConfig.getPercentage();
+            if (Objects.nonNull(percentage) && percentage > 0 && percentage <= 100) {
                 // 使用用户ID哈希值计算百分比
                 int hash = Math.abs(userId.hashCode());
                 int mod = hash % 100;
@@ -193,7 +195,6 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
             }
         }
 
-        // 不使用灰度
         return false;
     }
 
@@ -210,7 +211,6 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
                 if (metadata == null) {
                     return false;
                 }
-                // 检查version元数据是否为gray
                 String version = metadata.get(HeaderConstant.X_VERSION);
                 return VersionTypeEnum.GRAY.getValue().equals(version);
             })
@@ -218,7 +218,7 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
     }
 
     /**
-     * 筛选正常实例（version=stable的实例）.
+     * 筛选非灰度实例.
      *
      * @param instances 所有实例
      * @return 正常实例列表
@@ -230,9 +230,8 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
                 if (metadata == null) {
                     return false;
                 }
-                // 检查version元数据是否为stable
                 String version = metadata.get(HeaderConstant.X_VERSION);
-                return VersionTypeEnum.STABLE.getValue().equals(version);
+                return !VersionTypeEnum.GRAY.getValue().equals(version);
             })
             .toList();
     }
