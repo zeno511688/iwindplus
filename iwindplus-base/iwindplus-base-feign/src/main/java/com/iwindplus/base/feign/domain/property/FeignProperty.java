@@ -43,7 +43,7 @@ public class FeignProperty {
     private FeignErrorConfig error = new FeignErrorConfig();
 
     /**
-     * Feign AOP降级配置
+     * feign 默认回退配置.
      */
     @Builder.Default
     @NestedConfigurationProperty
@@ -88,7 +88,10 @@ public class FeignProperty {
     }
 
     /**
-     * AOP降级开关
+     * feign 默认回退配置.
+     *
+     * @author zengdegui
+     * @since 2026/8/25
      */
     @Data
     @SuperBuilder
@@ -97,9 +100,10 @@ public class FeignProperty {
     public static class FeignFallbackConfig {
 
         /**
-         * 是否启用全局AOP降级
+         * 是否为未声明 fallback 的 Feign 客户端启用默认回退.
          */
         @Builder.Default
-        private Boolean enabled = Boolean.FALSE;
+        private Boolean enabled = Boolean.TRUE;
     }
+
 }
