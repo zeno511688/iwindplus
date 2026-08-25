@@ -138,9 +138,10 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
             useGrayInstance = this.shouldUseGrayVersion(headers, cfg);
         }
 
-        final String selectedVersion = useGrayInstance ? VersionTypeEnum.GRAY.getValue()
-            : (headers != null && CharSequenceUtil.isNotBlank(headers.getFirst(HeaderConstant.X_VERSION))
-                ? headers.getFirst(HeaderConstant.X_VERSION) : VersionTypeEnum.STABLE.getValue());
+        final String version = headers == null ? null : headers.getFirst(HeaderConstant.X_VERSION);
+        final String selectedVersion = useGrayInstance
+            ? VersionTypeEnum.GRAY.getValue()
+            : CharSequenceUtil.isNotBlank(version) ? version : VersionTypeEnum.STABLE.getValue();
         final List<ServiceInstance> selectedInstances = instancesToChoose;
         final HttpHeaders requestHeaders = headers;
         final boolean grayInstance = useGrayInstance;
