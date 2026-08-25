@@ -53,7 +53,6 @@ public class AsyncCmdJobHandlerReset extends AbstractAsyncCmdJobHandler {
     protected boolean doExecute(List<AsyncCmdVO> entityList) {
         final RetryConfig retryConfig = super.getProperty().getRetry();
         final boolean unlimited = Boolean.TRUE.equals(retryConfig.getEnabledUnlimitedRetry());
-        final int maxAttempts = retryConfig.getMaxAttempts();
 
         if (entityList.isEmpty()) {
             return true;
@@ -72,7 +71,7 @@ public class AsyncCmdJobHandlerReset extends AbstractAsyncCmdJobHandler {
                     continue;
                 }
 
-                boolean exceed = !unlimited && entity.getRetryCount() > maxAttempts;
+                boolean exceed = !unlimited && entity.getRetryCount() > entity.getMaxAttempts();
                 AsyncCmdStatusEnum status = exceed
                     ? AsyncCmdStatusEnum.DISCARD
                     : AsyncCmdStatusEnum.TO_BE_EXECUTE;

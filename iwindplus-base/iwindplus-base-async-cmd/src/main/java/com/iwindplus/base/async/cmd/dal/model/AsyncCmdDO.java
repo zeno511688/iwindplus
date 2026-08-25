@@ -117,6 +117,12 @@ public class AsyncCmdDO extends DbBaseDO {
     private Integer retryCount;
 
     /**
+     * 最大重试次数（任务提交时根据配置快照写入）.
+     */
+    @Schema(description = "最大重试次数（任务提交时根据配置快照写入）")
+    private Integer maxAttempts;
+
+    /**
      * 错误信息.
      */
     @Schema(description = "错误信息")

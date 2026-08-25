@@ -24,6 +24,7 @@ CREATE TABLE `async_cmd`
     `execute_name`       varchar(100)     NOT NULL DEFAULT '' COMMENT '执行器名称',
     `expire_time`        bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '过期时间',
     `retry_count`        int unsigned     NOT NULL DEFAULT 0 COMMENT '重试次数',
+    `max_attempts`       int unsigned     NOT NULL DEFAULT 0 COMMENT '最大重试次数（任务提交时的配置快照）',
     `next_retry_time`    bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '下次重试时间',
     `param`              text             NOT NULL DEFAULT '' COMMENT '参数',
     `result`             text             NOT NULL DEFAULT '' COMMENT '结果',

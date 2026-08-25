@@ -77,6 +77,12 @@ public class AsyncCmdVO extends AsyncCmdBaseVO {
     private Integer retryCount;
 
     /**
+     * 最大重试次数（任务提交时的配置快照）.
+     */
+    @Schema(description = "最大重试次数（任务提交时的配置快照）")
+    private Integer maxAttempts;
+
+    /**
      * 错误信息.
      */
     @Schema(description = "错误信息")

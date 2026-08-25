@@ -118,6 +118,12 @@ public class AsyncCmdDTO extends DbVersionBaseDTO {
     private Integer retryCount;
 
     /**
+     * 最大重试次数（任务提交时由系统配置决定）.
+     */
+    @Schema(description = "最大重试次数（任务提交时由系统配置决定）")
+    private Integer maxAttempts;
+
+    /**
      * 错误信息.
      */
     @Schema(description = "错误信息")

@@ -212,6 +212,7 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
         entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
         entity.setDispatchMode(DispatchModeEnum.ASYNC);
         entity.setEnv(SpringUtil.getActiveProfile());
+        entity.setMaxAttempts(this.property.getRetry().getMaxAttempts());
         entity.setExpireTime(this.getNextExpireTime(System.currentTimeMillis()));
         entity.setNextRetryTime(System.currentTimeMillis());
         if (CharSequenceUtil.isBlank(entity.getBizNumber())) {
