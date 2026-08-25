@@ -8,6 +8,7 @@
 package com.iwindplus.base.feign.fallback;
 
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.base.feign.exception.FeignBusinessException;
 import feign.FeignException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -46,8 +47,8 @@ public class DefaultFeignFallbackFactory<T> implements FallbackFactory<T> {
     public DefaultFeignFallbackFactory() {
         final DefaultFeignFallbackContextHolder.DefaultFeignFallbackContext context =
             DefaultFeignFallbackContextHolder.getContext();
-        this.clientName = context.clientName();
-        this.targetType = (Class<T>) context.targetType();
+        this.clientName = context.getClientName();
+        this.targetType = (Class<T>) context.getTargetType();
     }
 
     @Override
@@ -75,6 +76,9 @@ public class DefaultFeignFallbackFactory<T> implements FallbackFactory<T> {
             }
             log.warn("Feign client fallback triggered, client={}, method={}.", this.clientName,
                 method.getName(), this.cause);
+            if (this.cause instanceof FeignBusinessException businessException) {
+                throw businessException;
+            }
             final BizException exception = new BizException(HttpStatus.SERVICE_UNAVAILABLE);
             if (this.cause != null && !(this.cause instanceof FeignException)) {
                 exception.initCause(this.cause);

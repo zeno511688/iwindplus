@@ -8,10 +8,6 @@
 package com.iwindplus.base.feign.domain.constant;
 
 import com.iwindplus.base.domain.constant.CommonConstant;
-import feign.FeignException;
-import feign.RetryableException;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
-import java.util.List;
 
 /**
  * 常数.
@@ -26,11 +22,12 @@ public final class FeignConstant {
     }
 
     /**
-     * 可预期的Feign异常（用于降级场景）
+     * 默认错误响应体最大读取字节数.
      */
-    public static final List<Class<? extends Throwable>> EXPECTED_EXCEPTIONS = List.of(
-        RetryableException.class,
-        CallNotPermittedException.class,
-        FeignException.class
-    );
+    public static final int DEFAULT_MAX_RESPONSE_BODY_SIZE = 16 * 1024;
+
+    /**
+     * 错误响应体读取缓冲区大小.
+     */
+    public static final int RESPONSE_BODY_BUFFER_SIZE = 1024;
 }

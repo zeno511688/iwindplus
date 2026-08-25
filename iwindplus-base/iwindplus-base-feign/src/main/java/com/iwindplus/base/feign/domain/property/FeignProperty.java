@@ -7,6 +7,8 @@
 
 package com.iwindplus.base.feign.domain.property;
 
+import com.iwindplus.base.feign.domain.constant.FeignConstant;
+import com.iwindplus.base.feign.domain.enums.FeignErrorResponseFormatEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -85,6 +87,30 @@ public class FeignProperty {
          */
         @Builder.Default
         private Boolean enabled = Boolean.TRUE;
+
+        /**
+         * 错误响应格式.
+         */
+        @Builder.Default
+        private FeignErrorResponseFormatEnum responseFormat = FeignErrorResponseFormatEnum.RESULT_VO;
+
+        /**
+         * 错误响应体最大读取字节数.
+         */
+        @Builder.Default
+        private Integer maxResponseBodySize = FeignConstant.DEFAULT_MAX_RESPONSE_BODY_SIZE;
+
+        /**
+         * 是否把完整错误响应体放入异常信息.
+         */
+        @Builder.Default
+        private Boolean includeResponseBodyInException = Boolean.FALSE;
+
+        /**
+         * 是否保留 Feign 可重试异常.
+         */
+        @Builder.Default
+        private Boolean preserveRetryableException = Boolean.TRUE;
     }
 
     /**

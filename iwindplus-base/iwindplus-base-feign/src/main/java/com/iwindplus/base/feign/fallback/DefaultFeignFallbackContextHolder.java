@@ -7,6 +7,8 @@
 
 package com.iwindplus.base.feign.fallback;
 
+import lombok.Getter;
+
 /**
  * 默认 Feign 回退上下文持有器.
  *
@@ -55,11 +57,30 @@ public final class DefaultFeignFallbackContextHolder {
 
     /**
      * 默认 Feign 回退上下文.
-     *
-     * @param clientName 客户端名称
-     * @param targetType 客户端接口类型
      */
-    public record DefaultFeignFallbackContext(String clientName, Class<?> targetType) {
+    @Getter
+    public static final class DefaultFeignFallbackContext {
+
+        /**
+         * 客户端名称.
+         */
+        private final String clientName;
+
+        /**
+         * 客户端接口类型.
+         */
+        private final Class<?> targetType;
+
+        /**
+         * 创建默认 Feign 回退上下文.
+         *
+         * @param clientName 客户端名称
+         * @param targetType 客户端接口类型
+         */
+        public DefaultFeignFallbackContext(String clientName, Class<?> targetType) {
+            this.clientName = clientName;
+            this.targetType = targetType;
+        }
     }
 
 }
