@@ -82,6 +82,11 @@ public class AlertLogAppender extends AppenderBase<ILoggingEvent> {
             return;
         }
 
+        // 检查是否启用（支持动态刷新）
+        if (!Boolean.TRUE.equals(property.getEnabled())) {
+            return;
+        }
+
         if (!event.getLevel().equals(Level.ERROR)) {
             return;
         }
