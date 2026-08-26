@@ -55,15 +55,15 @@ public class GlobalErrorHandler implements WebExceptionHandler {
             httpStatusCode = HttpStatus.OK;
             result = ResultVO.error(exception);
 
-            log.warn("自定义异常捕获, realIp={}, uri={}, className={}，status={}，code={}, message={}"
-                , realIp, uri, className, httpStatusCode, result.getBizCode(), getMessage(result));
+            log.warn("自定义异常捕获, realIp={}, uri={}, className={}，status={}，code={}, message={}, bizMessageParams={}"
+                , realIp, uri, className, httpStatusCode, result.getBizCode(), exception.getBizMessage(), exception.getBizMessageParams());
         } else if (ex instanceof ResponseStatusException exception) {
             final HttpStatus httpStatus = HttpStatus.valueOf(exception.getStatusCode().value());
             httpStatusCode = httpStatus;
             result = ResultVO.error(httpStatus);
 
             log.error("响应状态异常捕获, realIp={}, uri={}, className={}，status={}，code={}，message={}"
-                , realIp, uri, className, httpStatusCode, result.getBizCode(), getMessage(result), ex);
+                , realIp, uri, className, httpStatusCode, result.getBizCode(), exception.getMessage(), ex);
         } else {
             final ResponseEntity<ResultVO<Object>> exception = ExceptionUtil.getException(ex, className);
             httpStatusCode = exception.getStatusCode();
@@ -71,10 +71,10 @@ public class GlobalErrorHandler implements WebExceptionHandler {
 
             if (serverErrorFlag(httpStatusCode)) {
                 log.error("兜底异常捕获, realIp={}, uri={}, className={}，status={}，code={}, message={}"
-                    , realIp, uri, className, httpStatusCode, result.getBizCode(), getMessage(result), ex);
+                    , realIp, uri, className, httpStatusCode, result.getBizCode(), ex.getMessage(), ex);
             } else {
                 log.warn("兜底异常捕获, realIp={}, uri={}, className={}，status={}，code={}, message={}"
-                    , realIp, uri, className, httpStatusCode, result.getBizCode(), getMessage(result), ex);
+                    , realIp, uri, className, httpStatusCode, result.getBizCode(), ex.getMessage(), ex);
             }
         }
 
@@ -84,9 +84,5 @@ public class GlobalErrorHandler implements WebExceptionHandler {
 
     private boolean serverErrorFlag(HttpStatusCode statusCode) {
         return HttpStatus.INTERNAL_SERVER_ERROR.value() <= statusCode.value();
-    }
-
-    private String getMessage(ResultVO<Object> result) {
-        return ResultVO.message(result.getBizCode(), result.getBizMessageParams(), result.getBizMessage(), null);
     }
 }

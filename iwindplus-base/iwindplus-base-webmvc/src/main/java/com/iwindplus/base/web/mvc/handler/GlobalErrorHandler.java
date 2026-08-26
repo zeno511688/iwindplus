@@ -58,18 +58,18 @@ public class GlobalErrorHandler {
             httpStatusCode = HttpStatus.OK;
             result = ResultVO.error(exception);
 
-            log.warn("自定义异常捕获, realIp={}, uri={}, className={}，status={}，code={}, message={}"
-                , realIp, uri, className, httpStatusCode, result.getBizCode(), getMessage(result));
+            log.warn("自定义异常捕获, realIp={}, uri={}, className={}，status={}，code={}, message={}, bizMessageParams={}"
+                , realIp, uri, className, httpStatusCode, result.getBizCode(), exception.getBizMessage(), exception.getBizMessageParams());
         } else {
             final ResponseEntity<ResultVO<Object>> exception = ExceptionUtil.getException(ex, className);
             httpStatusCode = exception.getStatusCode();
             result = exception.getBody();
             if (serverErrorFlag(httpStatusCode)) {
                 log.error("兜底异常捕获, realIp={}, uri={}, className={}，status={}，code={}, message={}"
-                    , realIp, uri, className, httpStatusCode, result.getBizCode(), getMessage(result), ex);
+                    , realIp, uri, className, httpStatusCode, result.getBizCode(), ex.getMessage(), ex);
             } else {
                 log.warn("兜底异常捕获, realIp={}, uri={}, className={}，status={}，code={}, message={}"
-                    , realIp, uri, className, httpStatusCode, result.getBizCode(), getMessage(result), ex);
+                    , realIp, uri, className, httpStatusCode, result.getBizCode(), ex.getMessage(), ex);
             }
         }
 
@@ -79,9 +79,5 @@ public class GlobalErrorHandler {
 
     private boolean serverErrorFlag(HttpStatusCode statusCode) {
         return HttpStatus.INTERNAL_SERVER_ERROR.value() <= statusCode.value();
-    }
-
-    private String getMessage(ResultVO<Object> result) {
-        return ResultVO.message(result.getBizCode(), result.getBizMessageParams(), result.getBizMessage(), null);
     }
 }
