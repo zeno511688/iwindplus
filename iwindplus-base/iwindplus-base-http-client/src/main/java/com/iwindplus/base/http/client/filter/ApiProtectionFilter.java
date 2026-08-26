@@ -8,7 +8,6 @@
 package com.iwindplus.base.http.client.filter;
 
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.extra.spring.SpringUtil;
 import com.iwindplus.base.domain.constant.CommonConstant.ApiSignConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
@@ -24,6 +23,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -34,14 +34,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * @since 2020/4/19
  */
 @Slf4j
+@RequiredArgsConstructor
 public class ApiProtectionFilter extends OncePerRequestFilter {
 
-    private ApiProtectionProvider apiProtectionProvider;
-
-    @Override
-    protected void initFilterBean() throws ServletException {
-        this.apiProtectionProvider = SpringUtil.getBean(ApiProtectionProvider.class);
-    }
+    private final ApiProtectionProvider apiProtectionProvider;
 
     @Override
     protected void doFilterInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, FilterChain filterChain)

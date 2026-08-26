@@ -208,14 +208,14 @@ public class HttpClientConfiguration {
     /**
      * 创建 ApiProtectionFilter.
      *
+     * @param apiProtectionProvider API防护提供者
      * @return FilterRegistrationBean<ApiProtectionFilter>
      */
-    @ConditionalOnProperty(prefix = "http.client.api-protection", name = "enabled", havingValue = "true", matchIfMissing = true)
     @Bean("apiProtectionFilter")
-    public FilterRegistrationBean<ApiProtectionFilter> apiProtectionFilter() {
+    public FilterRegistrationBean<ApiProtectionFilter> apiProtectionFilter(ApiProtectionProvider apiProtectionProvider) {
         final String beanName = StrUtil.lowerFirst(ApiProtectionFilter.class.getSimpleName());
         final FilterRegistrationBean<ApiProtectionFilter> registrationBean = new FilterRegistrationBean<>();
-        registrationBean.setFilter(new ApiProtectionFilter());
+        registrationBean.setFilter(new ApiProtectionFilter(apiProtectionProvider));
         registrationBean.addUrlPatterns(SymbolConstant.SLASH_ASTERISK);
         registrationBean.setBeanName(beanName);
         registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 2);
