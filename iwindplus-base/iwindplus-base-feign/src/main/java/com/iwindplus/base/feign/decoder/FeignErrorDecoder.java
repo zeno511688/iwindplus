@@ -62,25 +62,26 @@ public class FeignErrorDecoder extends ErrorDecoder.Default {
         }
         final int status = response.status();
         final RemoteError remoteError = parseRemoteError(cachedResponse.body(), config.getResponseFormat());
-        final String message = errorMessage(remoteError, defaultException, status);
+        String message = errorMessage(remoteError, defaultException, status);
         final String responseBody = Boolean.TRUE.equals(config.getIncludeResponseBodyInException())
             ? cachedResponse.body() : null;
+        message = ResultVO.message(remoteError.bizCode(), remoteError.bizMessageParams(), message, null);
         log.warn("Feign request failed, method={}, status={}, message={}, responseBodyTruncated={}",
             methodKey, status, message, cachedResponse.truncated());
         if (status == HttpStatus.UNAUTHORIZED.value() || status == HttpStatus.FORBIDDEN.value()) {
-            return new FeignAuthenticationException(remoteError.bizCode(), message, defaultException,
-                methodKey, status, responseBody);
+            return new FeignAuthenticationException(remoteError.bizCode(), message, remoteError.bizMessageParams(),
+                defaultException, methodKey, status, responseBody);
         }
         if (status == HttpStatus.TOO_MANY_REQUESTS.value()) {
-            return new FeignRateLimitException(remoteError.bizCode(), message, defaultException,
-                methodKey, status, responseBody);
+            return new FeignRateLimitException(remoteError.bizCode(), message, remoteError.bizMessageParams(),
+                defaultException, methodKey, status, responseBody);
         }
         if (isBusinessStatus(status)) {
-            return new FeignBusinessException(remoteError.bizCode(), message, defaultException,
-                methodKey, status, responseBody);
+            return new FeignBusinessException(remoteError.bizCode(), message, remoteError.bizMessageParams(),
+                defaultException, methodKey, status, responseBody);
         }
-        return new FeignTechnicalException(technicalBizCode(status), message, defaultException,
-            methodKey, status, responseBody, isRetryableStatus(status));
+        return new FeignTechnicalException(technicalBizCode(status), message, remoteError.bizMessageParams(),
+            defaultException, methodKey, status, responseBody, isRetryableStatus(status));
     }
 
     private CachedResponse cacheResponse(Response response, int maxSize) {
@@ -88,8 +89,8 @@ public class FeignErrorDecoder extends ErrorDecoder.Default {
             return new CachedResponse(response, null, false);
         }
         try (InputStream inputStream = response.body().asInputStream();
-             ByteArrayOutputStream outputStream = new ByteArrayOutputStream(
-                 Math.min(maxSize, FeignConstant.RESPONSE_BODY_BUFFER_SIZE))) {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream(
+                Math.min(maxSize, FeignConstant.RESPONSE_BODY_BUFFER_SIZE))) {
             final byte[] buffer = new byte[FeignConstant.RESPONSE_BODY_BUFFER_SIZE];
             int total = 0;
             boolean truncated = false;
@@ -123,7 +124,7 @@ public class FeignErrorDecoder extends ErrorDecoder.Default {
             final ResultVO<Object> result = JacksonUtil.parseObject(responseBody, new TypeReference<>() {
             });
             if (result != null && StringUtils.hasText(result.getBizCode())) {
-                return new RemoteError(result.getBizCode(), result.getBizMessage());
+                return new RemoteError(result.getBizCode(), result.getBizMessage(), result.getBizMessageParams());
             }
         } catch (RuntimeException exception) {
             log.error("Feign ResultVO error response parse failed.", exception);
@@ -173,12 +174,13 @@ public class FeignErrorDecoder extends ErrorDecoder.Default {
     }
 
     private record CachedResponse(Response response, String body, boolean truncated) {
+
     }
 
-    private record RemoteError(String bizCode, String bizMessage) {
+    private record RemoteError(String bizCode, String bizMessage, Object[] bizMessageParams) {
 
         private static RemoteError empty() {
-            return new RemoteError(BizCodeEnum.RPC_ERROR.getBizCode(), null);
+            return new RemoteError(BizCodeEnum.RPC_ERROR.getBizCode(), null, null);
         }
     }
 }

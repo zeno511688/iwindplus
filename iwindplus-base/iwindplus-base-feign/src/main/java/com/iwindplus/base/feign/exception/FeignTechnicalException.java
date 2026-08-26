@@ -20,18 +20,19 @@ public class FeignTechnicalException extends FeignRemoteException {
     /**
      * 构造技术类远程异常.
      *
-     * @param bizCode      技术错误编码
-     * @param message      异常消息
-     * @param cause        原始异常
-     * @param methodKey    Feign 方法标识
-     * @param status       HTTP 状态码
-     * @param responseBody 错误响应体摘要
-     * @param retryable    是否建议重试
+     * @param bizCode          技术错误编码
+     * @param message          异常消息
+     * @param bizMessageParams 业务消息参数
+     * @param cause            原始异常
+     * @param methodKey        Feign 方法标识
+     * @param status           HTTP 状态码
+     * @param responseBody     错误响应体摘要
+     * @param retryable        是否建议重试
      */
     public FeignTechnicalException(
-        String bizCode, String message, Throwable cause, String methodKey, int status,
+        String bizCode, String message, Object[] bizMessageParams, Throwable cause, String methodKey, int status,
         String responseBody, boolean retryable) {
-        super(bizCode, message, cause, methodKey, status, responseBody, retryable);
+        super(bizCode, message, bizMessageParams, cause, methodKey, status, responseBody, retryable);
     }
 
 }
