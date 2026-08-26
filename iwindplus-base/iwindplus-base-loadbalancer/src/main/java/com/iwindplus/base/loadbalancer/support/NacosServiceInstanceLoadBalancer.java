@@ -8,7 +8,6 @@
 package com.iwindplus.base.loadbalancer.support;
 
 import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.DEFAULT_WEIGHT;
-import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.HEADER_VERSION_DESC_PREFIX;
 import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.INSTANCE_COUNT_METRIC;
 import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.OUTCOME_EMPTY;
 import static com.iwindplus.base.loadbalancer.domain.constant.LoadbalancerConstant.OUTCOME_SUCCESS;
@@ -167,9 +166,9 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
         // 从请求头中获取目标版本
         final String targetVersion = headers != null ? headers.getFirst(HeaderConstant.X_VERSION) : null;
         if (CharSequenceUtil.isBlank(targetVersion)) {
-            return this.selectInstancesByVersion(instances, VersionTypeEnum.STABLE.getValue(), VersionTypeEnum.STABLE.getDesc());
+            return this.selectInstancesByVersion(instances, VersionTypeEnum.STABLE.getValue());
         }
-        return this.selectInstancesByVersion(instances, targetVersion, HEADER_VERSION_DESC_PREFIX + targetVersion);
+        return this.selectInstancesByVersion(instances, targetVersion);
     }
 
     /**
@@ -182,7 +181,7 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
      * @return Response<ServiceInstance>
      */
     private Response<ServiceInstance> getGrayInstanceResponse(List<ServiceInstance> instances) {
-        return this.selectInstancesByVersion(instances, VersionTypeEnum.GRAY.getValue(), VersionTypeEnum.GRAY.getDesc());
+        return this.selectInstancesByVersion(instances, VersionTypeEnum.GRAY.getValue());
     }
 
     /**
@@ -193,20 +192,19 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
      *
      * @param instances     实例列表
      * @param targetVersion 目标版本
-     * @param versionDesc   版本描述（用于日志）
      * @return Response<ServiceInstance>
      */
-    private Response<ServiceInstance> selectInstancesByVersion(List<ServiceInstance> instances, String targetVersion, String versionDesc) {
+    private Response<ServiceInstance> selectInstancesByVersion(List<ServiceInstance> instances, String targetVersion) {
         // 根据版本筛选实例
         List<ServiceInstance> targetInstances = this.filterInstancesByVersion(instances, targetVersion);
 
         if (CollUtil.isNotEmpty(targetInstances)) {
-            log.debug("Select instances by {} version, count: {}", versionDesc, targetInstances.size());
+            log.debug("Select instances by {} version, count: {}", targetVersion, targetInstances.size());
             return this.selectInstanceByWeight(targetInstances);
         }
 
         // 目标版本实例不存在，降级使用所有实例
-        log.warn("No {} instances found, fallback to all instances", versionDesc);
+        log.warn("No {} instances found, fallback to all instances", targetVersion);
         return this.selectInstanceByWeight(instances);
     }
 

@@ -68,11 +68,6 @@ public final class LoadbalancerConstant {
     public static final String VERSION_NONE = "none";
 
     /**
-     * 请求头版本描述前缀.
-     */
-    public static final String HEADER_VERSION_DESC_PREFIX = "header ";
-
-    /**
      * 百分比计算基数.
      */
     public static final int PERCENTAGE_BASE = NumberConstant.NUMBER_ONE_HUNDRED;
