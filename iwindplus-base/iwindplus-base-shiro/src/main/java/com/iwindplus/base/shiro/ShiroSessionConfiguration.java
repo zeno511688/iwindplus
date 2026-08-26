@@ -224,6 +224,7 @@ public class ShiroSessionConfiguration {
         if (CharSequenceUtil.isNotBlank(rememberCipherKey)) {
             cookieRememberMeManager.setCipherKey(Base64.decode(rememberCipherKey));
         }
+
         log.info("CookieRememberMeManager={}", cookieRememberMeManager);
         return cookieRememberMeManager;
     }

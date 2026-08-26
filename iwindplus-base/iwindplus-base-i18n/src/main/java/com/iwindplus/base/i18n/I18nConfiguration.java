@@ -35,7 +35,7 @@ import org.springframework.context.annotation.Primary;
 @ConditionalOnBean(NacosConfigManager.class)
 public class I18nConfiguration {
 
-    @Resource
+    @Resource(name = "i18nTaskExecutor")
     private DtpExecutor i18nTaskExecutor;
 
     @Resource
