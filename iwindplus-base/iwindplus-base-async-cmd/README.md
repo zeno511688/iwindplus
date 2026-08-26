@@ -165,7 +165,7 @@ public class OrderExportTaskHandler implements AsyncCmdTaskHandler {
 | `failed()` | `FAILED` | 执行失败，进入重试流程 |
 | `waiting()` | `WAITING` | 等待外部回调或后续查询 |
 
-需要保存业务结果时，可以使用带 `Map` 参数的 `success/failed/waiting`，或调用返回对象的 `setResultData(data)`。业务异常也会按模块配置截取后保存。
+需要保存业务结果时，可以使用带 `Map` 参数的 `success/failed/waiting`，或调用返回对象的 `setResultData(data)`。业务异常也会按模块配置保存。
 
 ## 4. 提交单任务
 
