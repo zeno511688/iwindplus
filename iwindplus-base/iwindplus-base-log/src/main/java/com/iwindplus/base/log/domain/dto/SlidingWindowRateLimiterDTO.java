@@ -56,10 +56,18 @@ public class SlidingWindowRateLimiterDTO implements Serializable {
         if (windowMillis <= 0) {
             throw new IllegalArgumentException("windowMillis must > 0");
         }
+        if (windowMillis < bucketCount) {
+            throw new IllegalArgumentException(
+                String.format("windowMillis must >= bucketCount, current: windowMillis=%d, bucketCount=%d",
+                    windowMillis, bucketCount));
+        }
 
         this.bucketCount = bucketCount;
         this.windowMillis = windowMillis;
-        this.bucketMillis = windowMillis / bucketCount;
+        
+        // 计算桶大小，确保至少为 1，防止除零
+        long calculatedBucketMillis = windowMillis / bucketCount;
+        this.bucketMillis = calculatedBucketMillis == 0 ? 1L : calculatedBucketMillis;
 
         this.buckets = new Bucket[bucketCount];
         for (int i = 0; i < bucketCount; i++) {
@@ -71,7 +79,8 @@ public class SlidingWindowRateLimiterDTO implements Serializable {
      * 递增并返回当前滑动窗口总请求数
      */
     public int incrementAndGet(long now) {
-        long bucketIndex = (now / bucketMillis) % bucketCount;
+        // 修复：使用 Math.floorMod 避免负数索引
+        long bucketIndex = Math.floorMod(now / bucketMillis, bucketCount);
         Bucket bucket = buckets[(int) bucketIndex];
 
         long bucketStart = now - (now % bucketMillis);
@@ -88,16 +97,22 @@ public class SlidingWindowRateLimiterDTO implements Serializable {
      */
     private int sumValidBuckets(long now) {
         long minTime = now - windowMillis;
-        int total = 0;
+        long total = 0;
 
         for (Bucket bucket : buckets) {
             long start = bucket.startTime.get();
             if (start >= minTime) {
-                total += bucket.count.intValue();
+                // 修复：使用 longValue() 避免截断
+                total += bucket.count.longValue();
             }
         }
 
-        return total;
+        // 防止溢出
+        if (total > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+
+        return (int) total;
     }
 
     /**

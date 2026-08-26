@@ -104,6 +104,12 @@ public class AlertLogProperty {
 
     /**
      * 限流相关属性.
+     * 
+     * <p>使用令牌桶算法：
+     * <ul>
+     *   <li>capacity = maxRequests（桶容量）</li>
+     *   <li>rate = maxRequests / windowSeconds（每秒生成的令牌数）</li>
+     * </ul>
      *
      * @author zengdegui
      * @since 2020/4/24
@@ -115,31 +121,33 @@ public class AlertLogProperty {
     public static class RateLimitCfg {
 
         /**
-         * 桶数量
-         */
-        @Builder.Default
-        private Integer bucketCount = 10;
-
-        /**
-         * 时间窗口（秒）
+         * 时间窗口（秒）.
+         * 
+         * <p>用于计算令牌生成速率：rate = maxRequests / windowSeconds
          */
         @Builder.Default
         private Long windowSeconds = 60L;
 
         /**
-         * 静默时间（秒）
+         * 静默时间（秒）.
+         * 
+         * <p>超过限流后进入静默期，静默期内不再发送告警
          */
         @Builder.Default
         private Long silenceSeconds = 300L;
 
         /**
-         * 最大请求数
+         * 最大请求数（桶容量）.
+         * 
+         * <p>在时间窗口内允许的最大告警次数
          */
         @Builder.Default
         private Integer maxRequests = 10;
 
         /**
-         * 缓存大小
+         * 缓存大小.
+         * 
+         * <p>限流键的最大缓存数量
          */
         @Builder.Default
         private Integer cacheSize = 1000;

@@ -20,7 +20,7 @@ import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.log.domain.property.AlertLogProperty;
 import com.iwindplus.base.log.domain.property.AlertLogProperty.WebhookCfg;
-import com.iwindplus.base.log.ratelimit.PreciseRateLimitManager;
+import com.iwindplus.base.log.ratelimit.TokenBucketRateLimitManager;
 import com.iwindplus.base.util.HttpsUtil;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -43,7 +43,7 @@ public class AlertLogAppender extends AppenderBase<ILoggingEvent> {
         DateTimeFormatter.ofPattern(DatePattern.NORM_DATETIME_PATTERN)
             .withZone(ZoneId.systemDefault());
 
-    private final PreciseRateLimitManager rateLimitManager;
+    private final TokenBucketRateLimitManager rateLimitManager;
     private final AlertLogProperty property;
     private final AlertExecutorStrategyFactory alertExecutorStrategyFactory;
     private final String cachedProfile;
@@ -60,11 +60,16 @@ public class AlertLogAppender extends AppenderBase<ILoggingEvent> {
         this.cachedProfile = profiles.length > 0 ? String.join(",", profiles) : "default";
         this.cachedAppName = environment.getProperty("spring.application.name", "unknown");
 
-        this.rateLimitManager = new PreciseRateLimitManager(
-            property.getRateLimit().getBucketCount(),
-            property.getRateLimit().getWindowSeconds(),
-            property.getRateLimit().getSilenceSeconds(),
-            property.getRateLimit().getMaxRequests(),
+        // 使用令牌桶限流器
+        // capacity = maxRequests（桶容量）
+        // rate = maxRequests / windowSeconds（每秒生成的令牌数）
+        long capacity = property.getRateLimit().getMaxRequests();
+        long rate = capacity / property.getRateLimit().getWindowSeconds();
+
+        this.rateLimitManager = new TokenBucketRateLimitManager(
+            capacity,
+            rate,
+            property.getRateLimit().getSilenceSeconds() * 1000,
             property.getRateLimit().getCacheSize()
         );
 
