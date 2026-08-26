@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
@@ -62,6 +63,9 @@ public class RequestFilter extends OncePerRequestFilter {
         }
 
         try {
+            // 设置请求标识
+            this.buildRequestedId(headers);
+
             // 设置国际化语言
             this.buildLanguage(headers);
 
@@ -98,6 +102,15 @@ public class RequestFilter extends OncePerRequestFilter {
         if (CharSequenceUtil.isBlank(responseCharacterEncoding)) {
             httpServletResponse.setCharacterEncoding(charsetName);
         }
+    }
+
+    private void buildRequestedId(Map<String, String> headers) {
+        String requestedId = headers.get(HeaderConstant.X_REQUESTED_ID);
+        if (CharSequenceUtil.isBlank(requestedId)) {
+            requestedId = UUID.randomUUID().toString();
+            headers.put(HeaderConstant.X_REQUESTED_ID, requestedId);
+        }
+        MDC.put(HeaderConstant.X_REQUESTED_ID, requestedId);
     }
 
     private void buildLanguage(Map<String, String> headers) {

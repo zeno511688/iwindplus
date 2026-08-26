@@ -5,6 +5,7 @@ package com.iwindplus.gateway.server.filter;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
+import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.util.HttpsUtil;
 import com.iwindplus.base.util.JacksonUtil;
@@ -60,7 +61,8 @@ public class LogFilter extends BaseGatewayFilter {
         }
 
         // 采样率
-        return !HttpsUtil.checkSampleRateInRange(cfg.getSampleRate());
+        String requestId = exchange.getRequest().getHeaders().getFirst(HeaderConstant.X_REQUESTED_ID);
+        return !HttpsUtil.checkSampleRateInRange(cfg.getSampleRate(), requestId);
     }
 
     @Override
