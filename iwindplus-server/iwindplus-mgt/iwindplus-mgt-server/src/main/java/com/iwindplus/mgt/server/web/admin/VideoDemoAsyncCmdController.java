@@ -5,7 +5,7 @@
  *
  */
 
-package com.iwindplus.mgt.server.web.admin.system;
+package com.iwindplus.mgt.server.web.admin;
 
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubmitVO;
 import com.iwindplus.base.domain.vo.ResultVO;

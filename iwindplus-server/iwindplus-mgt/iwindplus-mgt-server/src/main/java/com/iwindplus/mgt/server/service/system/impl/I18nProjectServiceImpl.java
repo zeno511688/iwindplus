@@ -12,6 +12,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.google.common.collect.ImmutableMap;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdExtDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubmitVO;
 import com.iwindplus.base.async.cmd.executor.AsyncCmdExecutor;
@@ -337,6 +338,7 @@ public class I18nProjectServiceImpl implements I18nProjectService {
             .param(ImmutableMap.of("fileName", fileName, "content", content))
             .executorClass(I18nMsgPushTaskHandler.class)
             .remark("国际化消息推送数据至Nacos")
+            .ext(AsyncCmdExtDTO.builder().enabledSuccessDelete(Boolean.TRUE).build())
             .build();
         final AsyncCmdSubmitVO submit = this.asyncCmdExecutor.submit(build);
         log.info("Push i18n data to nacos, fileName: {}, result: {}", fileName, submit);
@@ -351,6 +353,7 @@ public class I18nProjectServiceImpl implements I18nProjectService {
             .param(ImmutableMap.of("fileName", fileName))
             .executorClass(I18nMsgRemoveTaskHandler.class)
             .remark("删除Nacos国际化消息数据")
+            .ext(AsyncCmdExtDTO.builder().enabledSuccessDelete(Boolean.TRUE).build())
             .build();
         this.asyncCmdExecutor.submit(build);
         return true;

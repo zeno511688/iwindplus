@@ -179,10 +179,11 @@ public class AsyncCmdServiceImpl implements AsyncCmdService {
             data = this.getDetailByBizKeyAndType(entity.getBizKey(), entity.getBizType());
         }
 
-        if (Objects.nonNull(data)) {
+        if (Objects.nonNull(data) && Boolean.TRUE.equals(data.getNeedDisplay())) {
             final AsyncCmdGroupVO result = BeanUtil.copyProperties(data, AsyncCmdGroupVO.class);
 
-            final List<AsyncCmdSubDO> subList = this.asyncCmdSubRepository.listByAsyncCmdId(data.getId(), null, false);
+            final List<AsyncCmdSubDO> subList = this.asyncCmdSubRepository.listByAsyncCmdId(
+                data.getId(), null, Boolean.FALSE, Boolean.TRUE);
             if (CollUtil.isNotEmpty(subList)) {
                 final List<AsyncCmdSubBaseVO> subTasks = BeanUtil.copyToList(subList, AsyncCmdSubBaseVO.class);
                 result.setSubTasks(subTasks);

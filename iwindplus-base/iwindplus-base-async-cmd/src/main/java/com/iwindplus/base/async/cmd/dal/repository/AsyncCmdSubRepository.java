@@ -181,8 +181,7 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
     }
 
     /**
-     * 通过异步命令主键获取仍在有效执行或等待的子任务数量.
-     * EXECUTE 状态按最近更新时间和执行超时时间判断，WAITING 状态按异步等待截止时间判断。
+     * 通过异步命令主键获取仍在有效执行或等待的子任务数量. EXECUTE 状态按最近更新时间和执行超时时间判断，WAITING 状态按异步等待截止时间判断。
      *
      * @param asyncCmdId 异步命令主键
      * @return long
@@ -212,12 +211,30 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
      * @return List<AsyncCmdSubDO>
      */
     public List<AsyncCmdSubDO> listByAsyncCmdId(Long asyncCmdId, List<AsyncCmdStatusEnum> statusList, Boolean showTextField) {
+        return this.listByAsyncCmdId(asyncCmdId, statusList, showTextField, null);
+    }
+
+    /**
+     * 通过异步命令主键获取子任务列表，并支持按展示标识过滤.
+     *
+     * @param asyncCmdId    异步命令主键
+     * @param statusList    状态列表
+     * @param showTextField 是否获取text字段
+     * @param needDisplay   是否只获取需要展示的子任务
+     * @return List<AsyncCmdSubDO>
+     */
+    public List<AsyncCmdSubDO> listByAsyncCmdId(
+        Long asyncCmdId, List<AsyncCmdStatusEnum> statusList,
+        Boolean showTextField, Boolean needDisplay) {
         final LambdaQueryWrapper<AsyncCmdSubDO> queryWrapper = Wrappers.<AsyncCmdSubDO>lambdaQuery()
             .eq(AsyncCmdSubDO::getAsyncCmdId, asyncCmdId)
             .orderByAsc(AsyncCmdSubDO::getSeq)
             .orderByAsc(AsyncCmdSubDO::getId);
         if (CollUtil.isNotEmpty(statusList)) {
             queryWrapper.in(AsyncCmdSubDO::getStatus, statusList);
+        }
+        if (Objects.nonNull(needDisplay)) {
+            queryWrapper.eq(AsyncCmdSubDO::getNeedDisplay, needDisplay);
         }
 
         if (Boolean.FALSE.equals(showTextField)) {

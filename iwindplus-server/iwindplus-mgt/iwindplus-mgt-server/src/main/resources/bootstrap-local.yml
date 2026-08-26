@@ -176,10 +176,16 @@ resilience4j:
         minimumNumberOfCalls: 5
         # 自动从打开状态过渡到半开状态
         automaticTransitionFromOpenToHalfOpenEnabled: true
-        # 仅以下异常计入失败
+        # 仅 Feign 技术类异常计入失败；业务、认证、限流异常不触发熔断
         record-exceptions:
+          - com.iwindplus.base.feign.exception.FeignTechnicalException
+          - feign.RetryableException
           - java.io.IOException
           - java.util.concurrent.TimeoutException
+        ignore-exceptions:
+          - com.iwindplus.base.feign.exception.FeignBusinessException
+          - com.iwindplus.base.feign.exception.FeignAuthenticationException
+          - com.iwindplus.base.feign.exception.FeignRateLimitException
     # 留空即可，全部走 default
     instances: {}
   timelimiter:

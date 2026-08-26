@@ -82,7 +82,7 @@ public class AsyncCmdSubServiceImpl implements AsyncCmdSubService {
     @Override
     public List<AsyncCmdSubVO> listByAsyncCmdIdAndStatus(Long asyncCmdId, List<AsyncCmdStatusEnum> statusList) {
         final List<AsyncCmdSubDO> list = this.asyncCmdSubRepository.listByAsyncCmdId(asyncCmdId,
-            statusList, true);
+            statusList, Boolean.TRUE);
         if (CollUtil.isEmpty(list)) {
             return CollUtil.newArrayList();
         }

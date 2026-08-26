@@ -9,8 +9,10 @@ package com.iwindplus.mgt.server.service.asynccmd.video;
 
 import cn.hutool.core.util.IdUtil;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdCallbackDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdExtDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGroupSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubCallbackDTO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubExtDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdCallbackResultEnum;
@@ -55,6 +57,8 @@ public class VideoDemoAsyncCmdService {
             .bizName("视频合成").bizKey("VIDEO").bizType("VIDEO_MERGE")
             .executorClass(VideoDemoMergeTaskHandler.class)
             .needDisplay(true)
+            .param(Map.of("videoId", videoId))
+            .ext(AsyncCmdExtDTO.builder().maxAttempts(10).extra(Map.of("videoId", videoId)).build())
             .subTasks(List.of(
                 // seq=1 本地任务（与seq=2同stage=1，批内并发）
                 AsyncCmdSubSubmitDTO.builder()
@@ -62,6 +66,7 @@ public class VideoDemoAsyncCmdService {
                     .seq(1).stage(1)
                     .executorClass(VideoDemoPrepareSubHandler.class)
                     .param(Map.of("videoId", videoId))
+                    .ext(AsyncCmdSubExtDTO.builder().extra(Map.of("videoId", videoId)).build())
                     .build(),
                 // seq=2 调第三方，提交后等回调
                 AsyncCmdSubSubmitDTO.builder()
