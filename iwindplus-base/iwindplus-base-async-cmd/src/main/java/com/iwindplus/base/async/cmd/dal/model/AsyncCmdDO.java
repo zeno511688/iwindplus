@@ -150,4 +150,10 @@ public class AsyncCmdDO extends DbBaseDO {
      */
     @Schema(description = "进度比例（0-100）")
     private Integer progress;
+
+    /**
+     * 扩展字段（JSON格式）.
+     */
+    @Schema(description = "扩展字段（JSON格式）")
+    private String ext;
 }
