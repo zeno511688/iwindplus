@@ -101,7 +101,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         final List<AsyncCmdSubVO> subResults = this.executeSubTask(entity, subEntities, start, advanced);
 
         // 判断子任务是否在等异步调用的结果，不能变成失败，失败会占用重试次数
-        if (this.handleSubAsyncWait(entity, subEntities, start, advanced)) {
+        if (this.handleSubAsyncWait(entity, subEntities, start)) {
             return false;
         }
 
@@ -164,8 +164,8 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
             // 成功结果传递下一阶段
             successResults.addAll(results);
 
-            // 更新主任务进度
-            this.editTaskProgress(entity, start, advanced.get());
+            // 更新主任务进度，以数据库中的成功子任务总数为准
+            this.editTaskProgress(entity, start);
         }
 
         return successResults;
@@ -431,21 +431,35 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
      * @param entity      主任务
      * @param subEntities 子任务列表
      * @param start       开始时间
-     * @param advanced    已完成子任务数
      * @return true=有子任务在异步等待中
      */
-    private boolean handleSubAsyncWait(AsyncCmdVO entity, List<AsyncCmdSubVO> subEntities, long start, AtomicInteger advanced) {
+    private boolean handleSubAsyncWait(AsyncCmdVO entity, List<AsyncCmdSubVO> subEntities, long start) {
         if (!this.hasSubAsyncWait(subEntities)) {
             return false;
         }
         // 保持主任务为执行中状态，更新进度和耗时
         final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
-        final int progress = this.calculateProgress(entity.getSubTaskCount(), advanced.get());
+        final int completedCount = this.getCompletedCount(entity);
+        final int progress = this.calculateProgress(entity.getSubTaskCount(), completedCount);
         if (!this.getAsyncCmdStateSupport().editTaskProgress(entity, costTime, progress)) {
             log.warn("asyncCmd update progress failed, id={}", entity.getId());
         }
         log.info("asyncCmd has asyncWait, keep execute status, id={}, progress={}%", entity.getId(), progress);
         return true;
+    }
+
+    /**
+     * 获取已成功的子任务总数，避免本轮无新增完成任务时进度回退.
+     *
+     * @param entity 主任务
+     * @return 已成功子任务数
+     */
+    private int getCompletedCount(AsyncCmdVO entity) {
+        if (entity.getSubTaskCount() == null || entity.getSubTaskCount() <= 0) {
+            return 0;
+        }
+        final long unfinishedCount = this.asyncCmdSubService.countUnfinished(entity.getId());
+        return Math.max(0, entity.getSubTaskCount() - (int) unfinishedCount);
     }
 
     /**
@@ -467,10 +481,10 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
      *
      * @param entity         主任务
      * @param start          开始时间
-     * @param completedCount 已完成子任务数
      */
-    private void editTaskProgress(AsyncCmdVO entity, long start, int completedCount) {
+    private void editTaskProgress(AsyncCmdVO entity, long start) {
         final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
+        final int completedCount = this.getCompletedCount(entity);
         final int progress = this.calculateProgress(entity.getSubTaskCount(), completedCount);
         if (!this.getAsyncCmdStateSupport().editTaskProgress(entity, costTime, progress)) {
             log.warn("asyncCmd update progress failed, id={}, progress={}%", entity.getId(), progress);
