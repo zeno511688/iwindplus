@@ -40,8 +40,19 @@ public class DtxJob {
         final long beginMillis = System.currentTimeMillis();
         final String start = DatesUtil.parseDate(beginMillis, DatePattern.NORM_DATETIME_MS_PATTERN);
 
-        final int shardIndex = Math.max(XxlJobHelper.getShardIndex(), 0);
-        final int shardTotal = Math.max(XxlJobHelper.getShardTotal(), 1);
+        // 获取分片参数，并进行边界校验
+        int shardIndex = XxlJobHelper.getShardIndex();
+        int shardTotal = XxlJobHelper.getShardTotal();
+
+        // 边界校验：确保分片参数合法
+        if (shardTotal < 1) {
+            shardTotal = 1;
+        }
+        if (shardIndex < 0 || shardIndex >= shardTotal) {
+            log.warn("分片索引异常，shardIndex={}, shardTotal={}，已自动修正为0", shardIndex, shardTotal);
+            shardIndex = 0;
+        }
+
         final String jobParam = XxlJobHelper.getJobParam();
 
         XxlJobHelper.log("分布式事务任务，参数={}，开始时间={}，分片索引={}, 分片总数={}", jobParam, start, shardIndex, shardTotal);
