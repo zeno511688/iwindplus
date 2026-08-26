@@ -16,7 +16,6 @@ import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdTaskHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
-import com.iwindplus.base.async.cmd.service.AsyncCmdSubService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import java.util.List;
 import java.util.Objects;
@@ -32,16 +31,13 @@ import lombok.extern.slf4j.Slf4j;
 public class AsyncCmdJobHandlerReset extends AbstractAsyncCmdJobHandler {
 
     private final AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory;
-    private final AsyncCmdSubService asyncCmdSubService;
 
     public AsyncCmdJobHandlerReset(
         AsyncCmdProperty property,
         AsyncCmdService asyncCmdService,
-        AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory,
-        AsyncCmdSubService asyncCmdSubService) {
+        AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory) {
         super(property, asyncCmdService);
         this.asyncCmdTaskHandlerStrategyFactory = asyncCmdTaskHandlerStrategyFactory;
-        this.asyncCmdSubService = asyncCmdSubService;
     }
 
     @Override
@@ -135,22 +131,9 @@ public class AsyncCmdJobHandlerReset extends AbstractAsyncCmdJobHandler {
 
     @Override
     protected boolean shouldSkip(AsyncCmdVO entity) {
-        // 单任务：主任务 expireTime 已到期即可进入重置。
-        if (entity.getSubTaskCount() == null || entity.getSubTaskCount() <= 0) {
-            return false;
-        }
-
-        // 组任务只在仍有未超时的 EXECUTE/WAITING 子任务时跳过。
-        // 已卡死或异步等待已超时的子任务不能阻塞主任务收敛。
-        final long activeSubTaskCount = this.asyncCmdSubService.countNotTimeout(entity.getId());
-        if (activeSubTaskCount > 0) {
-            log.info("组任务仍有有效子任务，跳过重置，id={}, activeSubTaskCount={}, progress={}%",
-                entity.getId(), activeSubTaskCount, entity.getProgress());
-            return true;
-        }
-
-        log.info("组任务没有有效子任务，需要重置主任务，id={}, status={}",
-            entity.getId(), entity.getStatus());
-        return false;
+        // 查询后再次校验状态，避免任务已被其他线程处理时重复重置。
+        // 主任务已过期时，不受子任务 WAITING/EXECUTE 状态影响。
+        final AsyncCmdStatusEnum status = entity.getStatus();
+        return !AsyncCmdStatusEnum.getRestStatus().contains(status);
     }
 }

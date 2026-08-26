@@ -318,17 +318,15 @@ public class AsyncCmdConfiguration {
      * @param property                           property
      * @param asyncCmdService                    asyncCmdService
      * @param asyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory
-     * @param asyncCmdSubService                 asyncCmdSubService
      * @return AsyncCmdJobHandlerReset
      */
     @Bean
     public AsyncCmdJobHandlerReset asyncCmdJobHandlerReset(
         AsyncCmdProperty property,
         AsyncCmdService asyncCmdService,
-        AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory,
-        AsyncCmdSubService asyncCmdSubService) {
+        AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory) {
         AsyncCmdJobHandlerReset asyncCmdJobHandlerReset = new AsyncCmdJobHandlerReset(
-            property, asyncCmdService, asyncCmdTaskHandlerStrategyFactory, asyncCmdSubService);
+            property, asyncCmdService, asyncCmdTaskHandlerStrategyFactory);
         return asyncCmdJobHandlerReset;
     }
 

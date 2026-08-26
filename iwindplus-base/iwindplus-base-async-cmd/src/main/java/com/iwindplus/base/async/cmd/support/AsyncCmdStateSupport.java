@@ -342,11 +342,13 @@ public record AsyncCmdStateSupport(
                 .from(AsyncCmdStatusEnum.EXECUTE)
                 .to(AsyncCmdStatusEnum.SUCCESS)
                 .costTime(costTime)
+                .progress(NumberConstant.NUMBER_ONE_HUNDRED)
                 .result(entity.getResult())
                 .build()),
             () -> {
                 this.syncStatus(entity, AsyncCmdStatusEnum.SUCCESS);
                 entity.setCostTime(costTime);
+                entity.setProgress(NumberConstant.NUMBER_ONE_HUNDRED);
             }
         );
 
