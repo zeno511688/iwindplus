@@ -32,12 +32,11 @@ import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubmitVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.executor.AsyncCmdExecutor;
-import com.iwindplus.base.async.cmd.factory.AsyncCmdDispatchHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdSubTaskHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdTaskHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.service.AsyncCmdSubService;
-import com.iwindplus.base.async.cmd.support.AsyncCmdDispatchHandler;
+import com.iwindplus.base.async.cmd.support.AsyncCmdBizProcessor;
 import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
@@ -67,7 +66,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
 
     private final AsyncCmdService asyncCmdService;
     private final AsyncCmdSubService asyncCmdSubService;
-    private final AsyncCmdDispatchHandlerStrategyFactory asyncCmdDispatchHandlerStrategyFactory;
+    private final AsyncCmdBizProcessor asyncCmdBizProcessor;
     private final AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory;
     private final AsyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory;
 
@@ -200,10 +199,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
     }
 
     private void dispatch(AsyncCmdVO entity) {
-        final AsyncCmdDispatchHandler dispatchHandler = this.asyncCmdDispatchHandlerStrategyFactory
-            .getDispatchHandler(entity.getDispatchMode());
-
-        dispatchHandler.execute(entity);
+        this.asyncCmdBizProcessor.execute(entity);
     }
 
     /**

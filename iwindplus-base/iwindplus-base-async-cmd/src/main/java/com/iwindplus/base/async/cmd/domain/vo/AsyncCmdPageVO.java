@@ -8,7 +8,6 @@
 package com.iwindplus.base.async.cmd.domain.vo;
 
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
-import com.iwindplus.base.async.cmd.domain.enums.DispatchModeEnum;
 import com.iwindplus.base.domain.vo.DbVersionBaseVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
@@ -61,12 +60,6 @@ public class AsyncCmdPageVO extends DbVersionBaseVO {
      */
     @Schema(description = "业务流水号")
     private String bizNumber;
-
-    /**
-     * 调度模式（ASYNC：异步，CENTER：调度中心，UNKNOWN：未知）.
-     */
-    @Schema(description = "调度模式（ASYNC：异步，CENTER：调度中心，UNKNOWN：未知）")
-    private DispatchModeEnum dispatchMode;
 
     /**
      * 执行器名称.

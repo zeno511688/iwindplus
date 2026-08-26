@@ -14,7 +14,6 @@ import com.iwindplus.base.async.cmd.domain.constant.AsyncCmdConstant;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.executor.AsyncCmdExecutor;
 import com.iwindplus.base.async.cmd.executor.impl.AsyncCmdExecutorImpl;
-import com.iwindplus.base.async.cmd.factory.AsyncCmdDispatchHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdJobHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdSubTaskHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdTaskHandlerStrategyFactory;
@@ -24,14 +23,11 @@ import com.iwindplus.base.async.cmd.service.AsyncCmdSubService;
 import com.iwindplus.base.async.cmd.service.impl.AsyncCmdServiceImpl;
 import com.iwindplus.base.async.cmd.service.impl.AsyncCmdSubServiceImpl;
 import com.iwindplus.base.async.cmd.support.AsyncCmdBizProcessor;
-import com.iwindplus.base.async.cmd.support.AsyncCmdDispatchHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdExecuteHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdJobHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdStateSupport;
 import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
-import com.iwindplus.base.async.cmd.support.impl.AsyncCmdDispatchHandlerAsync;
-import com.iwindplus.base.async.cmd.support.impl.AsyncCmdDispatchHandlerCenter;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdExecuteHandlerGroup;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdExecuteHandlerMain;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdJobHandlerReset;
@@ -77,22 +73,22 @@ public class AsyncCmdConfiguration {
     /**
      * 创建 AsyncCmdExecutor.
      *
-     * @param asyncCmdService                        asyncCmdService
-     * @param asyncCmdSubService                     asyncCmdSubService
-     * @param asyncCmdDispatchHandlerStrategyFactory asyncCmdDispatchHandlerStrategyFactory
-     * @param asyncCmdTaskHandlerStrategyFactory     asyncCmdTaskHandlerStrategyFactory
-     * @param asyncCmdSubTaskHandlerStrategyFactory  asyncCmdSubTaskHandlerStrategyFactory
+     * @param asyncCmdService                       asyncCmdService
+     * @param asyncCmdSubService                    asyncCmdSubService
+     * @param asyncCmdBizProcessor                  asyncCmdBizProcessor
+     * @param asyncCmdTaskHandlerStrategyFactory    asyncCmdTaskHandlerStrategyFactory
+     * @param asyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory
      * @return AsyncCmdExecutor
      */
     @Bean
     public AsyncCmdExecutor asyncCmdExecutor(
         AsyncCmdService asyncCmdService,
         AsyncCmdSubService asyncCmdSubService,
-        AsyncCmdDispatchHandlerStrategyFactory asyncCmdDispatchHandlerStrategyFactory,
+        AsyncCmdBizProcessor asyncCmdBizProcessor,
         AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory,
         AsyncCmdSubTaskHandlerStrategyFactory asyncCmdSubTaskHandlerStrategyFactory) {
         AsyncCmdExecutor asyncCmdExecutor = new AsyncCmdExecutorImpl(
-            asyncCmdService, asyncCmdSubService, asyncCmdDispatchHandlerStrategyFactory,
+            asyncCmdService, asyncCmdSubService, asyncCmdBizProcessor,
             asyncCmdTaskHandlerStrategyFactory, asyncCmdSubTaskHandlerStrategyFactory);
         log.info("AsyncCmdExecutor={}", asyncCmdExecutor);
         return asyncCmdExecutor;
@@ -178,20 +174,6 @@ public class AsyncCmdConfiguration {
     }
 
     /**
-     * 创建 AsyncCmdDispatchHandlerStrategyFactory.
-     *
-     * @param executorProvider 执行器提供者
-     * @return AsyncCmdDispatchHandlerStrategyFactory
-     */
-    @Bean
-    public AsyncCmdDispatchHandlerStrategyFactory asyncCmdDispatchHandlerStrategyFactory(
-        ObjectProvider<AsyncCmdDispatchHandler> executorProvider) {
-        AsyncCmdDispatchHandlerStrategyFactory asyncCmdDispatchHandlerStrategyFactory = new AsyncCmdDispatchHandlerStrategyFactory(executorProvider);
-        log.info("AsyncCmdDispatchHandlerStrategyFactory={}", asyncCmdDispatchHandlerStrategyFactory);
-        return asyncCmdDispatchHandlerStrategyFactory;
-    }
-
-    /**
      * 创建 AsyncCmdTaskHandlerStrategyFactory.
      *
      * @param executorProvider 执行器提供者
@@ -257,7 +239,6 @@ public class AsyncCmdConfiguration {
     public AsyncCmdExecuteHandlerMain asyncCmdExecuteHandlerMain(
         AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactor,
         AsyncCmdStateSupport asyncCmdStateSupport,
-        AsyncCmdRepository asyncCmdRepository,
         AsyncCmdService asyncCmdService) {
         AsyncCmdExecuteHandlerMain asyncCmdExecuteHandlerMain = new AsyncCmdExecuteHandlerMain(
             asyncCmdTaskHandlerStrategyFactor, asyncCmdStateSupport, asyncCmdService);
@@ -311,40 +292,6 @@ public class AsyncCmdConfiguration {
             property, asyncCmdService, asyncCmdSubService, asyncCmdStateSupport,
             asyncCmdExecuteHandlerMain, asyncCmdExecuteHandlerGroup, asyncCmdTaskExecutor);
         return asyncCmdBizProcessor;
-    }
-
-    /**
-     * 创建 AsyncCmdDispatchHandlerAsync.
-     *
-     * @param property             property
-     * @param asyncCmdService      asyncCmdService
-     * @param asyncCmdBizProcessor asyncCmdBizProcessor
-     * @return AsyncCmdDispatchHandlerAsync
-     */
-    @Bean
-    public AsyncCmdDispatchHandlerAsync asyncCmdDispatchHandlerAsync(
-        AsyncCmdProperty property,
-        AsyncCmdService asyncCmdService,
-        AsyncCmdBizProcessor asyncCmdBizProcessor) {
-        AsyncCmdDispatchHandlerAsync asyncCmdDispatchHandlerAsync = new AsyncCmdDispatchHandlerAsync(
-            property, asyncCmdService, asyncCmdBizProcessor);
-        return asyncCmdDispatchHandlerAsync;
-    }
-
-    /**
-     * 创建 AsyncCmdDispatchHandlerCenter.
-     *
-     * @param property        property
-     * @param asyncCmdService asyncCmdService
-     * @return AsyncCmdDispatchHandlerCenter
-     */
-    @Bean
-    public AsyncCmdDispatchHandlerCenter asyncCmdDispatchHandlerCenter(
-        AsyncCmdProperty property,
-        AsyncCmdService asyncCmdService) {
-        AsyncCmdDispatchHandlerCenter asyncCmdDispatchHandlerCenter = new AsyncCmdDispatchHandlerCenter(
-            property, asyncCmdService);
-        return asyncCmdDispatchHandlerCenter;
     }
 
     /**

@@ -8,7 +8,7 @@
 package com.iwindplus.base.async.cmd.domain.vo;
 
 import cn.hutool.core.collection.CollUtil;
-import com.iwindplus.base.async.cmd.domain.enums.DispatchModeEnum;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdExtDTO;
 import com.iwindplus.base.util.JacksonUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -33,12 +33,6 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AsyncCmdVO extends AsyncCmdBaseVO {
-
-    /**
-     * 调度模式（ASYNC：异步，CENTER：调度中心，UNKNOWN：未知）.
-     */
-    @Schema(description = "调度模式（ASYNC：异步，CENTER：调度中心，UNKNOWN：未知）")
-    private DispatchModeEnum dispatchMode;
 
     /**
      * 执行器名称.
@@ -99,6 +93,12 @@ public class AsyncCmdVO extends AsyncCmdBaseVO {
      */
     @Schema(description = "是否需要显示")
     private Boolean needDisplay;
+
+    /**
+     * 扩展字段（JSON格式）.
+     */
+    @Schema(description = "扩展字段（JSON格式）")
+    private String ext;
 
     /**
      * 子任务列表.
@@ -195,5 +195,17 @@ public class AsyncCmdVO extends AsyncCmdBaseVO {
             .findFirst()
             .map(subTask -> subTask.getResultData(clazz))
             .orElse(null);
+    }
+
+    /**
+     * 获取扩展配置.
+     *
+     * @return AsyncCmdExtDTO
+     */
+    public AsyncCmdExtDTO getExtConfig() {
+        if (ext == null) {
+            return null;
+        }
+        return JacksonUtil.parseObject(ext, AsyncCmdExtDTO.class);
     }
 }

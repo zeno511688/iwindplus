@@ -8,7 +8,6 @@
 package com.iwindplus.base.async.cmd.domain.dto;
 
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
-import com.iwindplus.base.async.cmd.domain.enums.DispatchModeEnum;
 import com.iwindplus.base.domain.dto.DbVersionBaseDTO;
 import com.iwindplus.base.domain.validation.EditGroup;
 import com.iwindplus.base.domain.validation.SaveGroup;
@@ -79,12 +78,6 @@ public class AsyncCmdDTO extends DbVersionBaseDTO {
     private String bizNumber;
 
     /**
-     * 调度模式（ASYNC：异步，CENTER：调度中心，UNKNOWN：未知）.
-     */
-    @Schema(description = "调度模式（ASYNC：异步，CENTER：调度中心，UNKNOWN：未知）")
-    private DispatchModeEnum dispatchMode;
-
-    /**
      * 执行器名称.
      */
     @Schema(description = "执行器名称")
@@ -118,9 +111,9 @@ public class AsyncCmdDTO extends DbVersionBaseDTO {
     private Integer retryCount;
 
     /**
-     * 最大重试次数（任务提交时由系统配置决定）.
+     * 最大重试次数.
      */
-    @Schema(description = "最大重试次数（任务提交时由系统配置决定）")
+    @Schema(description = "最大重试次数")
     private Integer maxAttempts;
 
     /**
@@ -158,4 +151,10 @@ public class AsyncCmdDTO extends DbVersionBaseDTO {
      */
     @Schema(description = "进度比例（0-100）")
     private Integer progress;
+
+    /**
+     * 扩展字段（JSON格式）.
+     */
+    @Schema(description = "扩展字段（JSON格式）")
+    private String ext;
 }

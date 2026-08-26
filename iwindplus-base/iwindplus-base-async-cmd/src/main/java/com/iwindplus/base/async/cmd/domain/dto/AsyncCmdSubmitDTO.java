@@ -62,6 +62,12 @@ public class AsyncCmdSubmitDTO extends AsyncCmdSubmitBaseDTO {
     private Boolean needDisplay;
 
     /**
+     * 成功后是否删除（可选，默认使用系统配置）.
+     */
+    @Schema(description = "成功后是否删除（默认使用系统配置）")
+    private Boolean enabledSuccessDelete;
+
+    /**
      * 设置参数.
      *
      * @param data 数据

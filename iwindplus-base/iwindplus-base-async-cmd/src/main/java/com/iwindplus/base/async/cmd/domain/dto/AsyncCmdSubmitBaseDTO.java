@@ -50,4 +50,10 @@ public class AsyncCmdSubmitBaseDTO implements Serializable {
      */
     @Schema(description = "业务流水号")
     private String bizNumber;
+
+    /**
+     * 最大重试次数（可选）.
+     */
+    @Schema(description = "最大重试次数")
+    private Integer maxAttempts;
 }

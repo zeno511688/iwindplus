@@ -21,12 +21,12 @@ import com.iwindplus.base.async.cmd.dal.mapper.AsyncCmdSubMapper;
 import com.iwindplus.base.async.cmd.dal.model.AsyncCmdDO;
 import com.iwindplus.base.async.cmd.dal.model.AsyncCmdDO.AsyncCmdDOBuilder;
 import com.iwindplus.base.async.cmd.dal.model.AsyncCmdSubDO;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdExtDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdGrouSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSaveDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubSaveDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
-import com.iwindplus.base.async.cmd.domain.enums.DispatchModeEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubVO;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
@@ -210,9 +210,10 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
 
     private AsyncCmdDO buildAsyncCmd(AsyncCmdSaveDTO entity) {
         entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
-        entity.setDispatchMode(DispatchModeEnum.ASYNC);
         entity.setEnv(SpringUtil.getActiveProfile());
-        entity.setMaxAttempts(this.property.getRetry().getMaxAttempts());
+        if (entity.getMaxAttempts() == null) {
+            entity.setMaxAttempts(this.property.getRetry().getMaxAttempts());
+        }
         entity.setExpireTime(this.getNextExpireTime(System.currentTimeMillis()));
         entity.setNextRetryTime(System.currentTimeMillis());
         if (CharSequenceUtil.isBlank(entity.getBizNumber())) {
@@ -220,6 +221,15 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
         }
         if (MapUtil.isEmpty(entity.getParam())) {
             entity.setParam(MapUtil.newHashMap());
+        }
+
+        // 构建扩展配置
+        AsyncCmdExtDTO extDTO = new AsyncCmdExtDTO();
+        // 如果提交时指定了 enabledSuccessDelete，使用提交的值；否则使用系统配置
+        if (entity.getEnabledSuccessDelete() != null) {
+            extDTO.setEnabledSuccessDelete(entity.getEnabledSuccessDelete());
+        } else {
+            extDTO.setEnabledSuccessDelete(this.property.getEnabledSuccessDelete());
         }
         return BeanUtil.copyProperties(entity, AsyncCmdDO.class);
     }

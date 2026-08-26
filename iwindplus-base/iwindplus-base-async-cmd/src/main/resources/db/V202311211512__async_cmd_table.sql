@@ -20,7 +20,6 @@ CREATE TABLE `async_cmd`
     `biz_key`            varchar(50)      NOT NULL DEFAULT '' COMMENT '业务key，例如 ORDER',
     `biz_type`           varchar(50)      NOT NULL DEFAULT '' COMMENT '业务类型，例如 ORDER_CREATE',
     `biz_number`         varchar(50)      NOT NULL DEFAULT '' COMMENT '业务流水号，例如订单号',
-    `dispatch_mode`      int unsigned     NOT NULL DEFAULT 0 COMMENT '调度模式（0：异步，1：调度中心，2：未知）',
     `execute_name`       varchar(100)     NOT NULL DEFAULT '' COMMENT '执行器名称',
     `expire_time`        bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '过期时间',
     `retry_count`        int unsigned     NOT NULL DEFAULT 0 COMMENT '重试次数',
@@ -34,6 +33,7 @@ CREATE TABLE `async_cmd`
     `need_callback`      tinyint unsigned NOT NULL DEFAULT 0 COMMENT '是否需要异步回调结果（0：否，1：是）',
     `need_display`       tinyint unsigned NOT NULL DEFAULT 1 COMMENT '是否需要显示（0：否，1：是）',
     `progress`           int unsigned     NOT NULL DEFAULT 0 COMMENT '进度比例（0-100）',
+    `ext`                text             NOT NULL DEFAULT '' COMMENT '扩展字段（JSON格式）',
     PRIMARY KEY (`id`),
     KEY `idx_env_biz_number` (`env`, `biz_number`) COMMENT '复合索引（环境, 业务流水号）',
     KEY `idx_env_biz_key_biz_type` (`env`, `biz_key`, `biz_type`) COMMENT '复合索引（环境，业务key，业务类型）'
