@@ -13,12 +13,14 @@ import com.iwindplus.base.web.domain.property.FilterProperty;
 import com.iwindplus.base.web.filter.RequestFilter;
 import com.iwindplus.base.web.filter.XssFilter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
+import org.springframework.web.multipart.MultipartResolver;
 
 /**
  * 过滤器配置.
@@ -35,14 +37,17 @@ public class FilterConfiguration {
     /**
      * 创建 XssFilter.
      *
+     * @param property 过滤器属性
+     * @param multipartResolver multipart解析器
      * @return FilterRegistrationBean<XssFilter>
      */
     @ConditionalOnProperty(prefix = "filter.xss", name = "enabled", havingValue = "true", matchIfMissing = true)
     @Bean("xssFilter")
-    public FilterRegistrationBean<XssFilter> xssFilter() {
-        final String beanName = StrUtil.lowerFirst(XssFilter.class.getSimpleName());
+    public FilterRegistrationBean<XssFilter> xssFilter(FilterProperty property, 
+            @Autowired(required = false) MultipartResolver multipartResolver) {
+        String beanName = StrUtil.lowerFirst(XssFilter.class.getSimpleName());
         FilterRegistrationBean<XssFilter> registrationBean = new FilterRegistrationBean<>();
-        registrationBean.setFilter(new XssFilter());
+        registrationBean.setFilter(new XssFilter(property, multipartResolver));
         registrationBean.addUrlPatterns(SymbolConstant.SLASH_ASTERISK);
         registrationBean.setBeanName(beanName);
         registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
@@ -53,14 +58,15 @@ public class FilterConfiguration {
     /**
      * 创建 RequestFilter.
      *
+     * @param property 过滤器属性
      * @return FilterRegistrationBean<RequestFilter>
      */
     @ConditionalOnProperty(prefix = "filter.request", name = "enabled", havingValue = "true", matchIfMissing = true)
     @Bean("requestFilter")
-    public FilterRegistrationBean<RequestFilter> requestFilter() {
-        final String beanName = StrUtil.lowerFirst(RequestFilter.class.getSimpleName());
-        final FilterRegistrationBean<RequestFilter> registrationBean = new FilterRegistrationBean<>();
-        registrationBean.setFilter(new RequestFilter());
+    public FilterRegistrationBean<RequestFilter> requestFilter(FilterProperty property) {
+        String beanName = StrUtil.lowerFirst(RequestFilter.class.getSimpleName());
+        FilterRegistrationBean<RequestFilter> registrationBean = new FilterRegistrationBean<>();
+        registrationBean.setFilter(new RequestFilter(property));
         registrationBean.addUrlPatterns(SymbolConstant.SLASH_ASTERISK);
         registrationBean.setBeanName(beanName);
         registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);

@@ -89,10 +89,5 @@ public class ResponseBodyProperty {
          * 密钥.
          */
         private String key;
-
-        /**
-         * 初始化向量.
-         */
-        private String iv;
     }
 }

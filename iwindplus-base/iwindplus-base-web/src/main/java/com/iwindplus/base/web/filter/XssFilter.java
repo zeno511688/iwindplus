@@ -7,16 +7,14 @@
 
 package com.iwindplus.base.web.filter;
 
-import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.extra.spring.SpringUtil;
 import com.iwindplus.base.web.domain.property.FilterProperty;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -30,38 +28,38 @@ import org.springframework.web.multipart.MultipartResolver;
  * @since 2020/4/19
  */
 @Slf4j
+@RequiredArgsConstructor
 public class XssFilter extends OncePerRequestFilter {
 
-    private FilterProperty property;
-    private MultipartResolver multipartResolver;
+    private final FilterProperty property;
+    private final MultipartResolver multipartResolver;
 
     @Override
-    protected void initFilterBean() throws ServletException {
-        this.property = SpringUtil.getBean(FilterProperty.class);
-        this.multipartResolver = SpringUtil.getBean(MultipartResolver.class);
-    }
-
-    @Override
-    protected void doFilterInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
         throws ServletException, IOException {
-        final String charsetName = StandardCharsets.UTF_8.name();
-        httpServletRequest.setCharacterEncoding(charsetName);
-        httpServletResponse.setCharacterEncoding(charsetName);
-        final String contentType = httpServletRequest.getContentType();
-        MultipartHttpServletRequest multipartHttpServletRequest = null;
-        if (CharSequenceUtil.isNotBlank(contentType) && contentType.contains(MediaType.MULTIPART_FORM_DATA_VALUE)) {
-            multipartHttpServletRequest = this.multipartResolver.resolveMultipart(httpServletRequest);
-            multipartHttpServletRequest.setCharacterEncoding(Charset.defaultCharset().name());
-            httpServletRequest = multipartHttpServletRequest;
-        }
+        request.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
-        XssHttpServletRequestWrapper xssRequest = new XssHttpServletRequestWrapper(httpServletRequest, this.property);
+        MultipartHttpServletRequest multipartRequest = resolveMultipartRequest(request);
+        HttpServletRequest wrappedRequest = multipartRequest != null ? multipartRequest : request;
+
+        XssHttpServletRequestWrapper xssRequest = new XssHttpServletRequestWrapper(wrappedRequest, this.property);
         try {
-            filterChain.doFilter(xssRequest, httpServletResponse);
+            filterChain.doFilter(xssRequest, response);
         } finally {
-            if (multipartHttpServletRequest != null) {
-                this.multipartResolver.cleanupMultipart(multipartHttpServletRequest);
+            if (multipartRequest != null) {
+                this.multipartResolver.cleanupMultipart(multipartRequest);
             }
         }
+    }
+
+    private MultipartHttpServletRequest resolveMultipartRequest(HttpServletRequest request) throws IOException {
+        String contentType = request.getContentType();
+        if (contentType != null && contentType.contains(MediaType.MULTIPART_FORM_DATA_VALUE)) {
+            MultipartHttpServletRequest multipartRequest = this.multipartResolver.resolveMultipart(request);
+            multipartRequest.setCharacterEncoding(StandardCharsets.UTF_8.name());
+            return multipartRequest;
+        }
+        return null;
     }
 }
