@@ -64,7 +64,11 @@ public class AlertLogAppender extends AppenderBase<ILoggingEvent> {
         // capacity = maxRequests（桶容量）
         // rate = maxRequests / windowSeconds（每秒生成的令牌数）
         long capacity = property.getRateLimit().getMaxRequests();
-        long rate = capacity / property.getRateLimit().getWindowSeconds();
+        long windowSeconds = property.getRateLimit().getWindowSeconds();
+        
+        // 计算令牌生成速率（每秒生成的令牌数）
+        // 使用浮点数计算，向上取整，确保至少为 1
+        long rate = Math.max(1L, (long) Math.ceil((double) capacity / windowSeconds));
 
         this.rateLimitManager = new TokenBucketRateLimitManager(
             capacity,
