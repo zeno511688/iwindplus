@@ -111,12 +111,6 @@ public class AsyncCmdDTO extends DbVersionBaseDTO {
     private Integer retryCount;
 
     /**
-     * 最大重试次数.
-     */
-    @Schema(description = "最大重试次数")
-    private Integer maxAttempts;
-
-    /**
      * 错误信息.
      */
     @Schema(description = "错误信息")
@@ -153,8 +147,8 @@ public class AsyncCmdDTO extends DbVersionBaseDTO {
     private Integer progress;
 
     /**
-     * 扩展字段（JSON格式）.
+     * 扩展对象.
      */
-    @Schema(description = "扩展字段（JSON格式）")
-    private String ext;
+    @Schema(description = "扩展对象")
+    private AsyncCmdExtDTO ext;
 }

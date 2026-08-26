@@ -8,7 +8,6 @@
 package com.iwindplus.base.async.cmd.domain.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -25,12 +24,6 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @NoArgsConstructor
-@AllArgsConstructor
 public class AsyncCmdSaveDTO extends AsyncCmdDTO {
 
-    /**
-     * 成功后是否删除（可选，默认使用系统配置）.
-     */
-    @Schema(description = "成功后是否删除（默认使用系统配置）")
-    private Boolean enabledSuccessDelete;
 }

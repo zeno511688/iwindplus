@@ -7,12 +7,12 @@
 
 package com.iwindplus.base.async.cmd.support.impl;
 
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdExtDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdShardSearchDTO;
 import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdStatusEditDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdJobEnum;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
-import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty.RetryConfig;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.factory.AsyncCmdTaskHandlerStrategyFactory;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
@@ -51,9 +51,6 @@ public class AsyncCmdJobHandlerReset extends AbstractAsyncCmdJobHandler {
 
     @Override
     protected boolean doExecute(List<AsyncCmdVO> entityList) {
-        final RetryConfig retryConfig = super.getProperty().getRetry();
-        final boolean unlimited = Boolean.TRUE.equals(retryConfig.getEnabledUnlimitedRetry());
-
         if (entityList.isEmpty()) {
             return true;
         }
@@ -71,7 +68,8 @@ public class AsyncCmdJobHandlerReset extends AbstractAsyncCmdJobHandler {
                     continue;
                 }
 
-                boolean exceed = !unlimited && entity.getRetryCount() > entity.getMaxAttempts();
+                final AsyncCmdExtDTO ext = entity.getExt();
+                boolean exceed = !ext.getEnabledUnlimitedRetry() && entity.getRetryCount() > ext.getMaxAttempts();
                 AsyncCmdStatusEnum status = exceed
                     ? AsyncCmdStatusEnum.DISCARD
                     : AsyncCmdStatusEnum.TO_BE_EXECUTE;

@@ -16,35 +16,17 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
- * 异步命令扩展配置.
+ * 异步命令子任务扩展配置.
  *
  * @author zengdegui
  * @since 2025/1/1
  */
-@Schema(description = "异步命令扩展配置")
+@Schema(description = "异步命令子任务扩展配置")
 @Data
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AsyncCmdExtDTO implements Serializable {
-
-    /**
-     * 最大重试次数（可选）.
-     */
-    @Schema(description = "最大重试次数")
-    private Integer maxAttempts;
-
-    /**
-     * 是否启用无限重试.
-     */
-    @Schema(description = "是否启用无限重试")
-    private Boolean enabledUnlimitedRetry;
-
-    /**
-     * 成功后是否删除.
-     */
-    @Schema(description = "成功后是否删除")
-    private Boolean enabledSuccessDelete;
+public class AsyncCmdSubExtDTO implements Serializable {
 
     /**
      * 扩展字段（用于存储其他自定义配置）.

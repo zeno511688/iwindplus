@@ -71,12 +71,6 @@ public class AsyncCmdVO extends AsyncCmdBaseVO {
     private Integer retryCount;
 
     /**
-     * 最大重试次数（任务提交时的配置快照）.
-     */
-    @Schema(description = "最大重试次数（任务提交时的配置快照）")
-    private Integer maxAttempts;
-
-    /**
      * 错误信息.
      */
     @Schema(description = "错误信息")
@@ -95,10 +89,10 @@ public class AsyncCmdVO extends AsyncCmdBaseVO {
     private Boolean needDisplay;
 
     /**
-     * 扩展字段（JSON格式）.
+     * 扩展对象.
      */
-    @Schema(description = "扩展字段（JSON格式）")
-    private String ext;
+    @Schema(description = "扩展对象")
+    private AsyncCmdExtDTO ext;
 
     /**
      * 子任务列表.
@@ -195,17 +189,5 @@ public class AsyncCmdVO extends AsyncCmdBaseVO {
             .findFirst()
             .map(subTask -> subTask.getResultData(clazz))
             .orElse(null);
-    }
-
-    /**
-     * 获取扩展配置.
-     *
-     * @return AsyncCmdExtDTO
-     */
-    public AsyncCmdExtDTO getExtConfig() {
-        if (ext == null) {
-            return null;
-        }
-        return JacksonUtil.parseObject(ext, AsyncCmdExtDTO.class);
     }
 }

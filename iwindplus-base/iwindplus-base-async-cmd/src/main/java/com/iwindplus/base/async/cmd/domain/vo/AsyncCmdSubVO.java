@@ -9,6 +9,7 @@ package com.iwindplus.base.async.cmd.domain.vo;
 
 import cn.hutool.core.collection.CollUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubExtDTO;
 import com.iwindplus.base.util.JacksonUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -75,6 +76,12 @@ public class AsyncCmdSubVO extends AsyncCmdSubBaseVO {
      */
     @Schema(description = "是否需要显示")
     private Boolean needDisplay;
+
+    /**
+     * 扩展对象.
+     */
+    @Schema(description = "扩展对象")
+    private AsyncCmdSubExtDTO ext;
 
     /**
      * 异步命令主键.

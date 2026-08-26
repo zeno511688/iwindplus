@@ -37,22 +37,10 @@ public class AsyncCmdGroupSubmitDTO extends AsyncCmdSubmitBaseDTO {
     private Class<? extends AsyncCmdTaskHandler> executorClass;
 
     /**
-     * 备注（可选）.
+     * 扩展对象.
      */
-    @Schema(description = "备注")
-    private String remark;
-
-    /**
-     * 是否需要回调（可选）.
-     */
-    @Schema(description = "是否需要回调")
-    private Boolean needCallback;
-
-    /**
-     * 是否需要显示（可选，查进度时用）.
-     */
-    @Schema(description = "是否需要显示")
-    private Boolean needDisplay;
+    @Schema(description = "扩展对象")
+    private AsyncCmdExtDTO ext;
 
     /**
      * 子任务列表（必填）.

@@ -137,6 +137,12 @@ public class AsyncCmdSubDTO extends DbVersionBaseDTO {
     private Boolean needDisplay;
 
     /**
+     * 扩展对象.
+     */
+    @Schema(description = "扩展对象")
+    private AsyncCmdSubExtDTO ext;
+
+    /**
      * 异步命令主键.
      */
     @Schema(description = "异步命令主键")

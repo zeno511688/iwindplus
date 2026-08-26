@@ -20,7 +20,6 @@ import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.service.AsyncCmdSubService;
 import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.util.DatesUtil;
-import com.iwindplus.base.util.JacksonUtil;
 import com.iwindplus.base.util.TransactionUtil;
 import java.util.Objects;
 import java.util.Optional;
@@ -105,9 +104,9 @@ public record AsyncCmdStateSupport(
                 this.syncStatus(entity, AsyncCmdStatusEnum.SUCCESS);
                 entity.setCostTime(costTime);
                 entity.setProgress(NumberConstant.NUMBER_ONE_HUNDRED);
-                // 从扩展字段解析 enabledSuccessDelete，如果未设置则使用全局配置
-                final Boolean enabledSuccessDelete = this.getEnabledSuccessDelete(entity);
-                if (Boolean.TRUE.equals(enabledSuccessDelete)) {
+                // 是否删除数据
+                final AsyncCmdExtDTO extData = entity.getExt();
+                if (Objects.nonNull(extData) && Boolean.TRUE.equals(extData.getEnabledSuccessDelete())) {
                     asyncCmdService.removeById(entity.getId(), true);
                 }
             }
@@ -571,26 +570,5 @@ public record AsyncCmdStateSupport(
         return Boolean.TRUE.equals(property.getEnabledExceptionCapture())
             ? StringUtils.abbreviate(stack, property.getExceptionCaptureLength())
             : stack;
-    }
-
-    /**
-     * 从扩展字段获取成功后是否删除配置
-     *
-     * @param entity 异步命令实体
-     * @return Boolean
-     */
-    private Boolean getEnabledSuccessDelete(AsyncCmdVO entity) {
-        if (StringUtils.isNotBlank(entity.getExt())) {
-            try {
-                AsyncCmdExtDTO extDTO = JacksonUtil.parseObject(entity.getExt(), AsyncCmdExtDTO.class);
-                if (extDTO != null && extDTO.getEnabledSuccessDelete() != null) {
-                    return extDTO.getEnabledSuccessDelete();
-                }
-            } catch (Exception e) {
-                log.warn("Failed to parse ext field for async cmd [{}]: {}", entity.getId(), e.getMessage());
-            }
-        }
-        // 如果扩展字段未设置或解析失败，使用全局配置
-        return this.property.getEnabledSuccessDelete();
     }
 }

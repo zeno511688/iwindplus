@@ -10,6 +10,7 @@ package com.iwindplus.base.async.cmd.dal.model;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdExtDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.mybatis.domain.DbBaseDO;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -110,12 +111,6 @@ public class AsyncCmdDO extends DbBaseDO {
     private Integer retryCount;
 
     /**
-     * 最大重试次数（任务提交时根据配置快照写入）.
-     */
-    @Schema(description = "最大重试次数（任务提交时根据配置快照写入）")
-    private Integer maxAttempts;
-
-    /**
      * 错误信息.
      */
     @Schema(description = "错误信息")
@@ -152,8 +147,9 @@ public class AsyncCmdDO extends DbBaseDO {
     private Integer progress;
 
     /**
-     * 扩展字段（JSON格式）.
+     * 扩展对象.
      */
-    @Schema(description = "扩展字段（JSON格式）")
-    private String ext;
+    @Schema(description = "扩展对象")
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private AsyncCmdExtDTO ext;
 }

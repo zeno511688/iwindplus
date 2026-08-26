@@ -211,9 +211,6 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
     private AsyncCmdDO buildAsyncCmd(AsyncCmdSaveDTO entity) {
         entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
         entity.setEnv(SpringUtil.getActiveProfile());
-        if (entity.getMaxAttempts() == null) {
-            entity.setMaxAttempts(this.property.getRetry().getMaxAttempts());
-        }
         entity.setExpireTime(this.getNextExpireTime(System.currentTimeMillis()));
         entity.setNextRetryTime(System.currentTimeMillis());
         if (CharSequenceUtil.isBlank(entity.getBizNumber())) {
@@ -223,14 +220,20 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
             entity.setParam(MapUtil.newHashMap());
         }
 
-        // 构建扩展配置
-        AsyncCmdExtDTO extDTO = new AsyncCmdExtDTO();
-        // 如果提交时指定了 enabledSuccessDelete，使用提交的值；否则使用系统配置
-        if (entity.getEnabledSuccessDelete() != null) {
-            extDTO.setEnabledSuccessDelete(entity.getEnabledSuccessDelete());
-        } else {
-            extDTO.setEnabledSuccessDelete(this.property.getEnabledSuccessDelete());
+        // 构建扩展配置，提交方未设置的字段使用系统配置
+        final AsyncCmdExtDTO ext = Objects.isNull(entity.getExt())
+            ? AsyncCmdExtDTO.builder().build() : entity.getExt();
+        if (Objects.isNull(ext.getMaxAttempts())) {
+            ext.setMaxAttempts(this.property.getRetry().getMaxAttempts());
         }
+        if (Objects.isNull(ext.getEnabledUnlimitedRetry())) {
+            ext.setEnabledUnlimitedRetry(this.property.getRetry().getEnabledUnlimitedRetry());
+        }
+        if (Objects.isNull(ext.getEnabledSuccessDelete())) {
+            ext.setEnabledSuccessDelete(this.property.getEnabledSuccessDelete());
+        }
+        entity.setExt(ext);
+
         return BeanUtil.copyProperties(entity, AsyncCmdDO.class);
     }
 

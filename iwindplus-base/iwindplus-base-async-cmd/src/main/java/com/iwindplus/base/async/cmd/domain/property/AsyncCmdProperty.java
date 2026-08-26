@@ -38,7 +38,7 @@ public class AsyncCmdProperty {
      * 是否开启成功后删除数据.
      */
     @Builder.Default
-    private Boolean enabledSuccessDelete = true;
+    private Boolean enabledSuccessDelete = false;
 
     /**
      * 是否开启异常信息截取.
@@ -122,7 +122,7 @@ public class AsyncCmdProperty {
         private Boolean enabledUnlimitedRetry = Boolean.FALSE;
 
         /**
-         * 最大重试次数（提交任务未设置时生效）.
+         * 最大重试次数.
          */
         @Builder.Default
         private Integer maxAttempts = 30;

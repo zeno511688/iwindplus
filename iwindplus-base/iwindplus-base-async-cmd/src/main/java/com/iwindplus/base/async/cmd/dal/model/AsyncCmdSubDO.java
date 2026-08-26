@@ -10,6 +10,7 @@ package com.iwindplus.base.async.cmd.dal.model;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubExtDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.mybatis.domain.DbBaseDO;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -141,6 +142,13 @@ public class AsyncCmdSubDO extends DbBaseDO {
      */
     @Schema(description = "进度比例（0-100）")
     private Integer progress;
+
+    /**
+     * 扩展对象.
+     */
+    @Schema(description = "扩展对象")
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private AsyncCmdSubExtDTO ext;
 
     /**
      * 异步命令主键.

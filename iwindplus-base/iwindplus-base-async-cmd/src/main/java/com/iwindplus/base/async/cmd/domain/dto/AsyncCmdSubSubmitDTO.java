@@ -8,9 +8,7 @@
 package com.iwindplus.base.async.cmd.domain.dto;
 
 import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
-import com.iwindplus.base.util.JacksonUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -32,12 +30,6 @@ import lombok.experimental.SuperBuilder;
 public class AsyncCmdSubSubmitDTO extends AsyncCmdSubmitBaseDTO {
 
     /**
-     * 参数（可选）.
-     */
-    @Schema(description = "参数")
-    private Map<String, Object> param;
-
-    /**
      * 执行器类（必填）.
      */
     @Schema(description = "执行器类")
@@ -56,46 +48,8 @@ public class AsyncCmdSubSubmitDTO extends AsyncCmdSubmitBaseDTO {
     private Integer stage;
 
     /**
-     * 备注（可选）.
+     * 扩展对象.
      */
-    @Schema(description = "备注")
-    private String remark;
-
-    /**
-     * 是否需要回调.
-     */
-    @Schema(description = "是否需要回调")
-    private Boolean needCallback;
-
-    /**
-     * 是否需要显示（查进度时用）.
-     */
-    @Schema(description = "是否需要显示")
-    private Boolean needDisplay;
-
-    /**
-     * 设置参数.
-     *
-     * @param data 数据
-     * @param <T>  泛型
-     */
-    public <T> void setData(T data) {
-        this.param = JacksonUtil.parseMap(JacksonUtil.toJsonStr(data));
-    }
-
-    /**
-     * 获取参数并转换为指定类型.
-     *
-     * @param clazz 目标类型
-     * @param <T>   泛型
-     * @return T
-     */
-    public <T> T getData(Class<T> clazz) {
-        if (param == null) {
-            return null;
-        }
-        // 使用 JSON 序列化/反序列化转换
-        String json = JacksonUtil.toJsonStr(param);
-        return JacksonUtil.parseObject(json, clazz);
-    }
+    @Schema(description = "扩展对象")
+    private AsyncCmdSubExtDTO ext;
 }
