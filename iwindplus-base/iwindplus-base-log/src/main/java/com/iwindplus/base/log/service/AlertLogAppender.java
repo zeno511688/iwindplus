@@ -26,6 +26,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.slf4j.MDC;
@@ -100,8 +101,9 @@ public class AlertLogAppender extends AppenderBase<ILoggingEvent> {
             return;
         }
 
-        // 采样检查（避免后续计算）
-        if (!HttpsUtil.checkSampleRateInRange(property.getSampleRate())) {
+        // 使用日志事件携带的 request 标识进行稳定采样
+        String sampleKey = getSampleKey(event);
+        if (!HttpsUtil.checkSampleRateInRange(property.getSampleRate(), sampleKey)) {
             return;
         }
 
@@ -116,6 +118,15 @@ public class AlertLogAppender extends AppenderBase<ILoggingEvent> {
         }
 
         sendAlert(event);
+    }
+
+    private String getSampleKey(ILoggingEvent event) {
+        final Map<String, String> eventMdc = event.getMDCPropertyMap();
+        String sampleKey = eventMdc.get(HeaderConstant.X_REQUESTED_ID);
+        if (sampleKey != null) {
+            return sampleKey;
+        }
+        return null;
     }
 
     private String buildRateLimitKey(ILoggingEvent event) {

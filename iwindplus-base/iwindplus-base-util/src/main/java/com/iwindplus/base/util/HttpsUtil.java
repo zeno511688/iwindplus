@@ -587,20 +587,29 @@ public class HttpsUtil extends HttpUtil {
     }
 
     /**
-     * 根据采样率判断是否在范围内.
+     * 根据采样率和标识进行稳定采样。
+     *
+     * <p>标识相同的请求在同一采样率下始终得到相同结果；标识为空时回退为随机采样。
      *
      * @param sampleRate 采样率 (1-100)
-     * @return boolean
+     * @param sampleKey 请求或链路唯一标识（可选）
+     * @return true-通过，false-过滤
      */
-    public static boolean checkSampleRateInRange(Integer sampleRate) {
+    public static boolean checkSampleRateInRange(Integer sampleRate, String sampleKey) {
         if (sampleRate == null || sampleRate >= 100) {
             return true;
         }
         if (sampleRate <= 0) {
             return false;
         }
-        // 每个线程独立实例，无竞争
-        return ThreadLocalRandom.current().nextInt(100) < sampleRate;
+
+        if (CharSequenceUtil.isBlank(sampleKey)) {
+            return ThreadLocalRandom.current().nextInt(100) < sampleRate;
+        }
+
+        // 使用非负哈希值映射到 [0, 99]，保证同一标识结果稳定
+        int bucket = Math.floorMod(sampleKey.hashCode(), 100);
+        return bucket < sampleRate;
     }
 
     /**
