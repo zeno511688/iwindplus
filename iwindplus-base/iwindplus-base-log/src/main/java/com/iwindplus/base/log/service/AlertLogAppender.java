@@ -168,6 +168,7 @@ public class AlertLogAppender extends AppenderBase<ILoggingEvent> {
                     : "N/A"
             ).append('\n')
             .append("Time：").append(DATE_FORMATTER.format(event.getInstant())).append('\n')
+            .append("TimeStamp：").append(event.getTimeStamp()).append('\n')
             .append("Level: ").append(event.getLevel()).append("\n")
             .append("TraceId: ").append(MDC.get(HeaderConstant.X_TRACE_ID)).append("\n")
             .append("Logger: ").append(event.getLoggerName()).append("\n")
