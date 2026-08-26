@@ -14,20 +14,15 @@ import com.iwindplus.base.log.domain.property.AlertLogProperty;
 import com.iwindplus.base.log.service.AlertLogAppender;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
-import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 
 /**
- * 告警日志配置. 自动注册 AlertLogAppender 到 Logback，无需 XML 配置.
- * 支持动态刷新配置，无需重启服务即可启用/禁用告警日志.
+ * 告警日志配置.
  *
  * @author zengdegui
  * @since 2025/11/23 21:15
@@ -36,7 +31,6 @@ import org.springframework.core.env.Environment;
 @Configuration
 @EnableConfigurationProperties(AlertLogProperty.class)
 @RequiredArgsConstructor
-@RefreshScope
 public class AlertLogConfiguration {
 
     /**
@@ -72,51 +66,13 @@ public class AlertLogConfiguration {
             );
             appender.setContext(context);
             appender.setName(APPENDER_NAME);
+            appender.start();
 
-            // 根据配置决定是否启动
-            if (Boolean.TRUE.equals(property.getEnabled())) {
-                appender.start();
-                rootLogger.addAppender(appender);
-                log.info("AlertLogAppender registered and started successfully");
-            } else {
-                log.info("AlertLogAppender created but not started (disabled)");
-            }
+            rootLogger.addAppender(appender);
+            log.info("AlertLogAppender registered and started successfully");
 
         } catch (Exception e) {
             log.error("Failed to register AlertLogAppender", e);
-        }
-    }
-
-    /**
-     * 监听配置变更事件，动态启用/禁用告警日志.
-     *
-     * @param event 环境变更事件
-     */
-    @EventListener(EnvironmentChangeEvent.class)
-    public void onEnvironmentChange(EnvironmentChangeEvent event) {
-        Set<String> changedKeys = event.getKeys();
-        if (changedKeys.contains(ALERT_LOG_ENABLED)) {
-            Boolean newEnabled = property.getEnabled();
-            log.info("Alert log enabled changed to: {}", newEnabled);
-
-            if (appender != null) {
-                LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-                Logger rootLogger = context.getLogger(Logger.ROOT_LOGGER_NAME);
-
-                if (Boolean.TRUE.equals(newEnabled)) {
-                    if (!appender.isStarted()) {
-                        appender.start();
-                        rootLogger.addAppender(appender);
-                        log.info("AlertLogAppender started dynamically");
-                    }
-                } else {
-                    if (appender.isStarted()) {
-                        rootLogger.detachAppender(appender);
-                        appender.stop();
-                        log.info("AlertLogAppender stopped dynamically");
-                    }
-                }
-            }
         }
     }
 
