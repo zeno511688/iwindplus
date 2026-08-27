@@ -40,9 +40,9 @@ import lombok.experimental.SuperBuilder;
 public class AsyncCmdSubDO extends DbBaseDO {
 
     /**
-     * 状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，ASYNC_WAIT：异步等待，SUCCESS：成功，FAILED：失败）.
+     * 状态（PENDING：待执行，EXECUTE：执行，WAITING：等待中，SUCCESS：成功，FAILED：失败）.
      */
-    @Schema(description = "状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，ASYNC_WAIT：异步等待，SUCCESS：成功，FAILED：失败）")
+    @Schema(description = "状态（PENDING：待执行，EXECUTE：执行，WAITING：等待中，SUCCESS：成功，FAILED：失败）")
     private AsyncCmdStatusEnum status;
 
     /**

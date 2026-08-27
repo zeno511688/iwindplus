@@ -343,13 +343,13 @@ asyncCmdExecutor.removeByBizNumber("ORDER-0001");
 ## 9. 状态流转
 
 ```text
-TO_BE_EXECUTE ──► EXECUTE ──► SUCCESS
-       ▲             │
-       │             ├──► WAITING ──► SUCCESS
-       │             │                 └──► FAILED
-       │             └──► FAILED
-       │
-       └──── retry ◄──── DISCARD（达到最大重试次数）
+PENDING ──► EXECUTE ──► SUCCESS
+    ▲             │
+    │             ├──► WAITING ──► SUCCESS
+    │             │                 └──► FAILED
+    │             └──► FAILED
+    │
+    └──── retry ◄──── DISCARD（达到最大重试次数）
 ```
 
 ### 使用注意

@@ -61,13 +61,13 @@ public record AsyncCmdStateSupport(
      * @param entity 命令对象
      * @return boolean
      */
-    public boolean taskToBeExecuteToExecute(AsyncCmdVO entity) {
+    public boolean taskPendingToExecute(AsyncCmdVO entity) {
         final long expireTime = this.asyncCmdRepository.getNextExpireTime(System.currentTimeMillis());
 
         return this.transition(
             () -> asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
                 .id(entity.getId())
-                .from(AsyncCmdStatusEnum.TO_BE_EXECUTE)
+                .from(AsyncCmdStatusEnum.PENDING)
                 .to(AsyncCmdStatusEnum.EXECUTE)
                 .expireTime(expireTime)
                 .build()),
@@ -84,14 +84,14 @@ public record AsyncCmdStateSupport(
      * @param entity 命令对象
      * @return boolean
      */
-    public boolean taskExecuteToBeExecute(AsyncCmdVO entity) {
+    public boolean taskExecuteToPending(AsyncCmdVO entity) {
         return this.transition(
             () -> asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
                 .id(entity.getId())
                 .from(AsyncCmdStatusEnum.EXECUTE)
-                .to(AsyncCmdStatusEnum.TO_BE_EXECUTE)
+                .to(AsyncCmdStatusEnum.PENDING)
                 .build()),
-            () -> this.syncStatus(entity, AsyncCmdStatusEnum.TO_BE_EXECUTE)
+            () -> this.syncStatus(entity, AsyncCmdStatusEnum.PENDING)
         );
     }
 

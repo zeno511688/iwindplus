@@ -85,8 +85,8 @@ public record AsyncCmdBizProcessor(
 
         // 待执行状态或失败重试状态，先抢占为执行中
         final AsyncCmdStatusEnum status = entity.getStatus();
-        if (AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(status)) {
-            if (!asyncCmdStateSupport.taskToBeExecuteToExecute(entity)) {
+        if (AsyncCmdStatusEnum.PENDING.equals(status)) {
+            if (!asyncCmdStateSupport.taskPendingToExecute(entity)) {
                 log.info("asyncCmd already handled. id={}", entity.getId());
                 return;
             }
@@ -130,7 +130,7 @@ public record AsyncCmdBizProcessor(
 
     private boolean needProcessStatus(AsyncCmdVO entity) {
         AsyncCmdStatusEnum status = entity.getStatus();
-        return AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(status)
+        return AsyncCmdStatusEnum.PENDING.equals(status)
             || AsyncCmdStatusEnum.WAITING.equals(status)
             || AsyncCmdStatusEnum.FAILED.equals(status);
     }

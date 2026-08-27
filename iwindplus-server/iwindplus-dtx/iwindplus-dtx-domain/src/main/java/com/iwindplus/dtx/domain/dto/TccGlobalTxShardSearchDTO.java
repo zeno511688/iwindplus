@@ -54,9 +54,9 @@ public class TccGlobalTxShardSearchDTO implements Serializable {
     private Long lastId;
 
     /**
-     * 状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，ASYNC_WAIT：异步等待，SUCCESS：成功，FAILED：失败，DISCARD：丢弃）.
+     * 状态（TRYING：Try尝试中，CONFIRMING：Confirm处理中，CONFIRM_SUCCESS：Confirm成功，CONFIRM_FAIL：Confirm失败，CANCELING：Cancel处理中，CANCEL_SUCCESS：Cancel成功，CANCEL_FAIL：Cancel失败）.
      */
-    @Schema(description = "状态（TO_BE_EXECUTE：待执行，EXECUTE：执行，ASYNC_WAIT：异步等待，SUCCESS：成功，FAILED：失败，DISCARD：丢弃）")
+    @Schema(description = "状态（TRYING：Try尝试中，CONFIRMING：Confirm处理中，CONFIRM_SUCCESS：Confirm成功，CONFIRM_FAIL：Confirm失败，CANCELING：Cancel处理中，CANCEL_SUCCESS：Cancel成功，CANCEL_FAIL：Cancel失败）")
     private GlobalTxStatusEnum status;
 
     /**

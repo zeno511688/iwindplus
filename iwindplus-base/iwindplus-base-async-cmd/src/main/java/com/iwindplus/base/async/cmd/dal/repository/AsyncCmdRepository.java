@@ -209,7 +209,7 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
     }
 
     private AsyncCmdDO buildAsyncCmd(AsyncCmdSaveDTO entity) {
-        entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
+        entity.setStatus(AsyncCmdStatusEnum.PENDING);
         entity.setEnv(SpringUtil.getActiveProfile());
         entity.setExpireTime(this.getNextExpireTime(System.currentTimeMillis()));
         entity.setNextRetryTime(System.currentTimeMillis());

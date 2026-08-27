@@ -328,7 +328,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
         final boolean status = this.asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
             .id(entity.getId())
             .from(from)
-            .to(AsyncCmdStatusEnum.TO_BE_EXECUTE)
+            .to(AsyncCmdStatusEnum.PENDING)
             .retryCount(0)
             .nextRetryTime(System.currentTimeMillis())
             .build());
@@ -338,7 +338,7 @@ public class AsyncCmdExecutorImpl implements AsyncCmdExecutor {
             return;
         }
 
-        entity.setStatus(AsyncCmdStatusEnum.TO_BE_EXECUTE);
+        entity.setStatus(AsyncCmdStatusEnum.PENDING);
         entity.setRetryCount(0);
         // 立即驱动主任务执行
         this.dispatch(entity);

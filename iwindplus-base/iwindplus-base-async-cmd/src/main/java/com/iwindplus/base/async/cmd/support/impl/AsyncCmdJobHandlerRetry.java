@@ -97,7 +97,7 @@ public class AsyncCmdJobHandlerRetry extends AbstractAsyncCmdJobHandler {
                 return true;
             }
 
-            if (this.asyncCmdStateSupport.taskExecuteToBeExecute(entity)) {
+            if (this.asyncCmdStateSupport.taskExecuteToPending(entity)) {
                 return false;
             }
 
