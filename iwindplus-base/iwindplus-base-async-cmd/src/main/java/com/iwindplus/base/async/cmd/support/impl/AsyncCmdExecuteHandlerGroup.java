@@ -441,7 +441,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
         final int completedCount = this.getCompletedCount(entity);
         final int progress = this.calculateProgress(entity.getSubTaskCount(), completedCount);
-        if (!this.getAsyncCmdStateSupport().editTaskProgress(entity, costTime, progress)) {
+        if (!this.getAsyncCmdStateSupport().taskProgress(entity, costTime, progress)) {
             log.warn("asyncCmd update progress failed, id={}", entity.getId());
         }
         log.info("asyncCmd has asyncWait, keep execute status, id={}, progress={}%", entity.getId(), progress);
@@ -486,7 +486,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
         final int completedCount = this.getCompletedCount(entity);
         final int progress = this.calculateProgress(entity.getSubTaskCount(), completedCount);
-        if (!this.getAsyncCmdStateSupport().editTaskProgress(entity, costTime, progress)) {
+        if (!this.getAsyncCmdStateSupport().taskProgress(entity, costTime, progress)) {
             log.warn("asyncCmd update progress failed, id={}, progress={}%", entity.getId(), progress);
         } else {
             log.info("asyncCmd progress updated, id={}, progress={}%, completed={}/{}",

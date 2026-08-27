@@ -79,6 +79,64 @@ public record AsyncCmdStateSupport(
     }
 
     /**
+     * 执行中的任务恢复为待执行.
+     *
+     * @param entity 命令对象
+     * @return boolean
+     */
+    public boolean taskExecuteToBeExecute(AsyncCmdVO entity) {
+        return this.transition(
+            () -> asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                .id(entity.getId())
+                .from(AsyncCmdStatusEnum.EXECUTE)
+                .to(AsyncCmdStatusEnum.TO_BE_EXECUTE)
+                .build()),
+            () -> this.syncStatus(entity, AsyncCmdStatusEnum.TO_BE_EXECUTE)
+        );
+    }
+
+    /**
+     * 失败任务重新进入执行状态.
+     *
+     * @param entity 命令对象
+     * @return boolean
+     */
+    public boolean taskFailedToExecute(AsyncCmdVO entity) {
+        final long now = System.currentTimeMillis();
+        final long expireTime = this.asyncCmdRepository.getNextExpireTime(now);
+
+        return this.transition(
+            () -> asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                .id(entity.getId())
+                .from(AsyncCmdStatusEnum.FAILED)
+                .to(AsyncCmdStatusEnum.EXECUTE)
+                .expireTime(expireTime)
+                .build()),
+            () -> {
+                this.syncStatus(entity, AsyncCmdStatusEnum.EXECUTE);
+                entity.setExpireTime(expireTime);
+            }
+        );
+    }
+
+    /**
+     * 失败任务达到最大重试次数后丢弃.
+     *
+     * @param entity 命令对象
+     * @return boolean
+     */
+    public boolean taskDiscard(AsyncCmdVO entity) {
+        return this.transition(
+            () -> asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
+                .id(entity.getId())
+                .from(AsyncCmdStatusEnum.FAILED)
+                .to(AsyncCmdStatusEnum.DISCARD)
+                .build()),
+            () -> this.syncStatus(entity, AsyncCmdStatusEnum.DISCARD)
+        );
+    }
+
+    /**
      * 任务执行成功
      *
      * @param entity   对象
@@ -219,7 +277,7 @@ public record AsyncCmdStateSupport(
      * @param progress 进度百分比（0-100）
      * @return boolean
      */
-    public boolean editTaskProgress(AsyncCmdVO entity, Long costTime, Integer progress) {
+    public boolean taskProgress(AsyncCmdVO entity, Long costTime, Integer progress) {
         final long expireTime = this.asyncCmdRepository.getNextExpireTime(System.currentTimeMillis());
 
         final boolean result = this.transition(

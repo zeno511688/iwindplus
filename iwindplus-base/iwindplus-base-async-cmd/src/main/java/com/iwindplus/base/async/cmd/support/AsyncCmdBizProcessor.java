@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.async.cmd.support;
 
+import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdExtDTO;
 import com.iwindplus.base.async.cmd.domain.enums.AsyncCmdStatusEnum;
 import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
@@ -77,15 +78,27 @@ public record AsyncCmdBizProcessor(
             return;
         }
 
-        // 只有待执行/异步等待状态才处理
+        // 只有待执行/失败重试/异步等待状态才处理
         if (!needProcessStatus(entity)) {
             return;
         }
 
-        // 待执行状态
-        if (AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(entity.getStatus())) {
-            boolean locked = asyncCmdStateSupport.taskToBeExecuteToExecute(entity);
-            if (!locked) {
+        // 待执行状态或失败重试状态，先抢占为执行中
+        final AsyncCmdStatusEnum status = entity.getStatus();
+        if (AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(status)) {
+            if (!asyncCmdStateSupport.taskToBeExecuteToExecute(entity)) {
+                log.info("asyncCmd already handled. id={}", entity.getId());
+                return;
+            }
+        } else if (AsyncCmdStatusEnum.FAILED.equals(status)) {
+            if (this.reachMaxAttempts(entity)) {
+                if (asyncCmdStateSupport.taskDiscard(entity)) {
+                    log.info("asyncCmd retry count reached max attempts, discard. id={}, retryCount={}, maxAttempts={}",
+                        entity.getId(), entity.getRetryCount(), entity.getExt().getMaxAttempts());
+                }
+                return;
+            }
+            if (!asyncCmdStateSupport.taskFailedToExecute(entity)) {
                 log.info("asyncCmd already handled. id={}", entity.getId());
                 return;
             }
@@ -118,7 +131,18 @@ public record AsyncCmdBizProcessor(
     private boolean needProcessStatus(AsyncCmdVO entity) {
         AsyncCmdStatusEnum status = entity.getStatus();
         return AsyncCmdStatusEnum.TO_BE_EXECUTE.equals(status)
-            || AsyncCmdStatusEnum.WAITING.equals(status);
+            || AsyncCmdStatusEnum.WAITING.equals(status)
+            || AsyncCmdStatusEnum.FAILED.equals(status);
+    }
+
+    private boolean reachMaxAttempts(AsyncCmdVO entity) {
+        final AsyncCmdExtDTO ext = entity.getExt();
+        if (ext == null || Boolean.TRUE.equals(ext.getEnabledUnlimitedRetry())) {
+            return false;
+        }
+        final int retryCount = Optional.ofNullable(entity.getRetryCount()).orElse(0);
+        final int maxAttempts = Optional.ofNullable(ext.getMaxAttempts()).orElse(0);
+        return retryCount >= maxAttempts;
     }
 
     /**

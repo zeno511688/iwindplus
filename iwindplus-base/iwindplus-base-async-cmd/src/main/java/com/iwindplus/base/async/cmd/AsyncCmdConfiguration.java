@@ -24,13 +24,11 @@ import com.iwindplus.base.async.cmd.service.impl.AsyncCmdServiceImpl;
 import com.iwindplus.base.async.cmd.service.impl.AsyncCmdSubServiceImpl;
 import com.iwindplus.base.async.cmd.support.AsyncCmdBizProcessor;
 import com.iwindplus.base.async.cmd.support.AsyncCmdExecuteHandler;
-import com.iwindplus.base.async.cmd.support.AsyncCmdJobHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdStateSupport;
 import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdExecuteHandlerGroup;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdExecuteHandlerMain;
-import com.iwindplus.base.async.cmd.support.impl.AsyncCmdJobHandlerReset;
 import com.iwindplus.base.async.cmd.support.impl.AsyncCmdJobHandlerRetry;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
@@ -160,20 +158,6 @@ public class AsyncCmdConfiguration {
     }
 
     /**
-     * 创建 AsyncCmdJobHandlerStrategyFactory.
-     *
-     * @param executorProvider 执行器提供者
-     * @return AsyncCmdJobHandlerStrategyFactory
-     */
-    @Bean
-    public AsyncCmdJobHandlerStrategyFactory asyncCmdJobHandlerStrategyFactory(
-        ObjectProvider<AsyncCmdJobHandler> executorProvider) {
-        AsyncCmdJobHandlerStrategyFactory asyncCmdJobHandlerStrategyFactory = new AsyncCmdJobHandlerStrategyFactory(executorProvider);
-        log.info("AsyncCmdJobHandlerStrategyFactory={}", asyncCmdJobHandlerStrategyFactory);
-        return asyncCmdJobHandlerStrategyFactory;
-    }
-
-    /**
      * 创建 AsyncCmdTaskHandlerStrategyFactory.
      *
      * @param executorProvider 执行器提供者
@@ -300,34 +284,18 @@ public class AsyncCmdConfiguration {
      * @param property             property
      * @param asyncCmdService      asyncCmdService
      * @param asyncCmdBizProcessor asyncCmdBizProcessor
+     * @param asyncCmdStateSupport asyncCmdStateSupport
      * @return AsyncCmdJobHandlerRetry
      */
     @Bean
     public AsyncCmdJobHandlerRetry asyncCmdJobHandlerRetry(
         AsyncCmdProperty property,
         AsyncCmdService asyncCmdService,
-        AsyncCmdBizProcessor asyncCmdBizProcessor) {
+        AsyncCmdBizProcessor asyncCmdBizProcessor,
+        AsyncCmdStateSupport asyncCmdStateSupport) {
         AsyncCmdJobHandlerRetry asyncCmdJobHandlerRetry = new AsyncCmdJobHandlerRetry(
-            property, asyncCmdService, asyncCmdBizProcessor);
+            property, asyncCmdService, asyncCmdBizProcessor, asyncCmdStateSupport);
         return asyncCmdJobHandlerRetry;
-    }
-
-    /**
-     * 创建 AsyncCmdJobHandlerReset.
-     *
-     * @param property                           property
-     * @param asyncCmdService                    asyncCmdService
-     * @param asyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory
-     * @return AsyncCmdJobHandlerReset
-     */
-    @Bean
-    public AsyncCmdJobHandlerReset asyncCmdJobHandlerReset(
-        AsyncCmdProperty property,
-        AsyncCmdService asyncCmdService,
-        AsyncCmdTaskHandlerStrategyFactory asyncCmdTaskHandlerStrategyFactory) {
-        AsyncCmdJobHandlerReset asyncCmdJobHandlerReset = new AsyncCmdJobHandlerReset(
-            property, asyncCmdService, asyncCmdTaskHandlerStrategyFactory);
-        return asyncCmdJobHandlerReset;
     }
 
     /**

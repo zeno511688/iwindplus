@@ -14,11 +14,12 @@ import com.iwindplus.base.async.cmd.domain.property.AsyncCmdProperty;
 import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdVO;
 import com.iwindplus.base.async.cmd.service.AsyncCmdService;
 import com.iwindplus.base.async.cmd.support.AsyncCmdBizProcessor;
+import com.iwindplus.base.async.cmd.support.AsyncCmdStateSupport;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 异步命令重试job助手策略实现类.
+ * 异步命令定时任务处理器.
  *
  * @author zengdegui
  * @since 2025/11/29 23:12
@@ -27,13 +28,16 @@ import lombok.extern.slf4j.Slf4j;
 public class AsyncCmdJobHandlerRetry extends AbstractAsyncCmdJobHandler {
 
     private final AsyncCmdBizProcessor asyncCmdBizProcessor;
+    private final AsyncCmdStateSupport asyncCmdStateSupport;
 
     public AsyncCmdJobHandlerRetry(
         AsyncCmdProperty property,
         AsyncCmdService asyncCmdService,
-        AsyncCmdBizProcessor asyncCmdBizProcessor) {
+        AsyncCmdBizProcessor asyncCmdBizProcessor,
+        AsyncCmdStateSupport asyncCmdStateSupport) {
         super(property, asyncCmdService);
         this.asyncCmdBizProcessor = asyncCmdBizProcessor;
+        this.asyncCmdStateSupport = asyncCmdStateSupport;
     }
 
     @Override
@@ -69,29 +73,38 @@ public class AsyncCmdJobHandlerRetry extends AbstractAsyncCmdJobHandler {
 
     @Override
     protected AsyncCmdShardSearchDTO buildJobSearchDTO() {
-        // 查询状态为待执行
+        // 查询所有未完成任务，具体是否到调度时间在 shouldSkip 中按状态判断。
         return AsyncCmdShardSearchDTO.builder()
-            .statusList(AsyncCmdStatusEnum.getRetryStatus())
-            .nextRetryTime(System.currentTimeMillis())
+            .statusList(AsyncCmdStatusEnum.getUnfinishedStatus())
             .build();
     }
 
     @Override
     protected boolean shouldSkip(AsyncCmdVO entity) {
-        if (!AsyncCmdStatusEnum.WAITING.equals(entity.getStatus())) {
-            return false;
-        }
-
-        final Long expireTime = entity.getExpireTime();
+        final AsyncCmdStatusEnum status = entity.getStatus();
         final long currentTime = System.currentTimeMillis();
-        if (expireTime != null && expireTime > currentTime) {
-            log.debug("WAITING 状态任务未超时，跳过重试，id={}, expireTime={}",
-                entity.getId(), expireTime);
+
+        if (AsyncCmdStatusEnum.EXECUTE.equals(status)) {
+            final Long expireTime = entity.getExpireTime();
+            if (expireTime == null || expireTime > currentTime) {
+                return true;
+            }
+
+            if (this.asyncCmdStateSupport.taskExecuteToBeExecute(entity)) {
+                return false;
+            }
+
+            log.debug("任务已被其他实例处理，跳过重新调度，id={}", entity.getId());
             return true;
         }
 
-        log.info("WAITING 状态任务已超时，开始重试，id={}, expireTime={}",
-            entity.getId(), expireTime);
+        final Long nextRetryTime = entity.getNextRetryTime();
+        if (nextRetryTime != null && nextRetryTime > currentTime) {
+            log.debug("任务尚未到重试时间，跳过调度，id={}, status={}, nextRetryTime={}",
+                entity.getId(), status, nextRetryTime);
+            return true;
+        }
+
         return false;
     }
 

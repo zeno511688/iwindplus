@@ -64,16 +64,4 @@ public class AsyncCmdShardSearchDTO implements Serializable {
      */
     @Schema(description = "状态列表")
     private List<AsyncCmdStatusEnum> statusList;
-
-    /**
-     * 过期时间.
-     */
-    @Schema(description = "过期时间")
-    private Long expireTime;
-
-    /**
-     * 下一次重试时间.
-     */
-    @Schema(description = "下一次重试时间")
-    private Long nextRetryTime;
 }

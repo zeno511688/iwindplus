@@ -66,24 +66,6 @@ public enum AsyncCmdStatusEnum implements BaseEnum<Integer> {
     private final String desc;
 
     /**
-     * 获取需要重置的
-     *
-     * @return List<AsyncCmdStatusEnum>
-     */
-    public static List<AsyncCmdStatusEnum> getRestStatus() {
-        return List.of(AsyncCmdStatusEnum.EXECUTE, AsyncCmdStatusEnum.FAILED);
-    }
-
-    /**
-     * 获取需要重试的
-     *
-     * @return List<AsyncCmdStatusEnum>
-     */
-    public static List<AsyncCmdStatusEnum> getRetryStatus() {
-        return List.of(AsyncCmdStatusEnum.TO_BE_EXECUTE, AsyncCmdStatusEnum.WAITING);
-    }
-
-    /**
      * 获取未完成状态
      *
      * @return List<AsyncCmdStatusEnum>
