@@ -89,21 +89,18 @@ public abstract class AbstractAsyncCmdJobHandler implements AsyncCmdJobHandler {
                 break;
             }
 
+            final boolean result = proxy.doExecute(list);
+            if (!result) {
+                log.warn("【{}】执行失败，提前结束本轮捞取，已处理={}", this.support(), total);
+
+                break;
+            }
+
             // 更新游标
             lastId = list.get(list.size() - 1).getId();
             loop++;
             total += list.size();
-
-            if (!proxy.doExecute(list)) {
-                log.warn("【{}】下游已经包含，提前结束本躺捞取，已处理={}", this.support(), total);
-
-                break;
-            }
         }
-
-        log.info("【{}】执行完成，分片={}/{} 轮次={}, 共处理【{}】条数据",
-            this.support(), shardIndex, shardTotal,
-            loop, total);
     }
 
 }

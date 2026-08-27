@@ -49,6 +49,8 @@ public class AsyncCmdJobHandlerRetry extends AbstractAsyncCmdJobHandler {
     protected boolean doExecute(List<AsyncCmdVO> entityList) {
         int dispatched = 0;
         int skipped = 0;
+        int failed = 0;
+        boolean poolFull = false;
 
         for (AsyncCmdVO entity : entityList) {
             if (this.shouldSkip(entity)) {
@@ -57,18 +59,23 @@ public class AsyncCmdJobHandlerRetry extends AbstractAsyncCmdJobHandler {
             }
 
             if (!this.asyncCmdBizProcessor.execute(entity)) {
+                failed++;
+
                 log.warn("重试任务投递被拒，共享池已满，已投递={}/{} id={}",
                     dispatched, entityList.size(), entity.getId());
 
-                return false;
+                poolFull = true;
+                break;
             }
             dispatched++;
         }
 
-        if (skipped > 0) {
-            log.info("重试任务完成，dispatched={}, skipped={}", dispatched, skipped);
+        if (dispatched > 0 || skipped > 0 || failed > 0) {
+            log.info("重试任务完成，调度成功的={}, 跳过的={}, 失败的={}", dispatched, skipped, failed);
         }
-        return true;
+
+        // 共享池满时返回true，避免execute方法提前结束整个捞取过程
+        return poolFull || dispatched > 0;
     }
 
     @Override

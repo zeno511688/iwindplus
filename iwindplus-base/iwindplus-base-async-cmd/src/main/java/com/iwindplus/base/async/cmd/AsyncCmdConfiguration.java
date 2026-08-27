@@ -24,6 +24,7 @@ import com.iwindplus.base.async.cmd.service.impl.AsyncCmdServiceImpl;
 import com.iwindplus.base.async.cmd.service.impl.AsyncCmdSubServiceImpl;
 import com.iwindplus.base.async.cmd.support.AsyncCmdBizProcessor;
 import com.iwindplus.base.async.cmd.support.AsyncCmdExecuteHandler;
+import com.iwindplus.base.async.cmd.support.AsyncCmdJobHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdStateSupport;
 import com.iwindplus.base.async.cmd.support.AsyncCmdSubTaskHandler;
 import com.iwindplus.base.async.cmd.support.AsyncCmdTaskHandler;
@@ -296,6 +297,20 @@ public class AsyncCmdConfiguration {
         AsyncCmdJobHandlerRetry asyncCmdJobHandlerRetry = new AsyncCmdJobHandlerRetry(
             property, asyncCmdService, asyncCmdBizProcessor, asyncCmdStateSupport);
         return asyncCmdJobHandlerRetry;
+    }
+
+    /**
+     * 创建 AsyncCmdJobHandlerStrategyFactory.
+     *
+     * @param executorProvider 执行器提供者
+     * @return AsyncCmdJobHandlerStrategyFactory
+     */
+    @Bean
+    public AsyncCmdJobHandlerStrategyFactory asyncCmdJobHandlerStrategyFactory(
+        ObjectProvider<AsyncCmdJobHandler> executorProvider) {
+        AsyncCmdJobHandlerStrategyFactory asyncCmdJobHandlerStrategyFactory = new AsyncCmdJobHandlerStrategyFactory(executorProvider);
+        log.info("AsyncCmdJobHandlerStrategyFactory={}", asyncCmdJobHandlerStrategyFactory);
+        return asyncCmdJobHandlerStrategyFactory;
     }
 
     /**

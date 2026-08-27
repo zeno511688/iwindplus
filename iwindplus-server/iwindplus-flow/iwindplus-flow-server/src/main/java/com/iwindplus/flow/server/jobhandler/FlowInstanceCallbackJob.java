@@ -50,7 +50,7 @@ public class FlowInstanceCallbackJob {
         // 获取分片参数，并进行边界校验
         int shardIndex = XxlJobHelper.getShardIndex();
         int shardTotal = XxlJobHelper.getShardTotal();
-
+        
         // 边界校验：确保分片参数合法
         if (shardTotal < 1) {
             shardTotal = 1;
@@ -59,7 +59,7 @@ public class FlowInstanceCallbackJob {
             log.warn("分片索引异常，shardIndex={}, shardTotal={}，已自动修正为0", shardIndex, shardTotal);
             shardIndex = 0;
         }
-
+        
         final String jobParam = XxlJobHelper.getJobParam();
 
         XxlJobHelper.log("流程实例回调重试任务，参数={}，开始时间={}，分片索引={}, 分片总数={}", jobParam, start, shardIndex, shardTotal);
@@ -112,11 +112,6 @@ public class FlowInstanceCallbackJob {
                 break;
             }
 
-            // 更新游标
-            lastId = list.get(list.size() - 1).getId();
-            loop++;
-            total += list.size();
-
             for (FlowInstanceCallbackDO callback : list) {
                 try {
                     boolean result = this.flowInstanceCallbackService.executeCallback(callback);
@@ -130,6 +125,11 @@ public class FlowInstanceCallbackJob {
                     log.error("流程实例回调处理异常 callbackId={}", callback.getId(), e);
                 }
             }
+
+            // 更新游标
+            lastId = list.get(list.size() - 1).getId();
+            loop++;
+            total += list.size();
         }
 
         log.info("流程实例回调重试任务，分片={}/{} 轮次={}, 共处理【{}】条数据，成功={}, 失败={}",
