@@ -16,6 +16,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
+import com.iwindplus.base.document.util.EasyExcelUtil;
 import com.iwindplus.base.domain.constant.CommonConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.DbConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
@@ -24,9 +25,8 @@ import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.enums.OssTypeEnum;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.base.domain.vo.ExcelImportResultVO;
 import com.iwindplus.base.domain.vo.UserBaseVO;
-import com.iwindplus.base.excel.EasyExcelUtil;
-import com.iwindplus.base.excel.listener.EasyExcelListener;
 import com.iwindplus.base.oss.service.FileService;
 import com.iwindplus.base.util.ExcelsUtil;
 import com.iwindplus.setup.domain.constant.SetupConstant.RedisCacheConstant;
@@ -305,7 +305,7 @@ public class OssConfigServiceImpl implements OssConfigService {
     @CacheEvict(allEntries = true)
     @Override
     public void importByTemplate(MultipartFile file, UserBaseVO userInfo, HttpServletResponse response) {
-        EasyExcelListener<OssConfigImportDTO> importResult;
+        ExcelImportResultVO<OssConfigImportDTO> importResult;
         try {
             importResult = EasyExcelUtil.importExcel(file.getInputStream(), this.validator, null, OssConfigImportDTO.class,
                 new OssConfigImportVerifyHandler(this.ossConfigRepository, userInfo), 2);

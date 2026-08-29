@@ -194,7 +194,7 @@ public class AsyncCmdSubRepository extends CrudRepository<AsyncCmdSubMapper, Asy
             .eq(AsyncCmdSubDO::getAsyncCmdId, asyncCmdId)
             .and(wrapper -> wrapper
                 .and(executeWrapper -> executeWrapper
-                    .eq(AsyncCmdSubDO::getStatus, AsyncCmdStatusEnum.EXECUTE)
+                    .eq(AsyncCmdSubDO::getStatus, AsyncCmdStatusEnum.EXECUTING)
                     .gt(AsyncCmdSubDO::getModifiedTimestamp, executeExpireTime))
                 .or(waitingWrapper -> waitingWrapper
                     .eq(AsyncCmdSubDO::getStatus, AsyncCmdStatusEnum.WAITING)

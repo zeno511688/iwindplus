@@ -37,9 +37,9 @@ import org.hibernate.validator.constraints.Length;
 public class AsyncCmdDTO extends DbVersionBaseDTO {
 
     /**
-     * 状态（PENDING：待执行，EXECUTE：执行，WAITING：等待中，SUCCESS：成功，FAILED：失败，DISCARD：丢弃）.
+     * 状态（PENDING：待执行，EXECUTING：执行中，WAITING：等待中，SUCCESS：成功，FAILED：失败，DISCARD：丢弃）.
      */
-    @Schema(description = "状态（PENDING：待执行，EXECUTE：执行，WAITING：等待中，SUCCESS：成功，FAILED：失败，DISCARD：丢弃）")
+    @Schema(description = "状态（PENDING：待执行，EXECUTING：执行中，WAITING：等待中，SUCCESS：成功，FAILED：失败，DISCARD：丢弃）")
     private AsyncCmdStatusEnum status;
 
     /**
@@ -75,6 +75,7 @@ public class AsyncCmdDTO extends DbVersionBaseDTO {
      * 业务流水号.
      */
     @Schema(description = "业务流水号")
+    @Length(max = 100, message = "{bizNumber.length}", groups = {SaveGroup.class, EditGroup.class})
     private String bizNumber;
 
     /**

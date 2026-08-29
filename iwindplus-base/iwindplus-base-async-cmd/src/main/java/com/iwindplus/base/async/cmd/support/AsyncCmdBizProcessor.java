@@ -86,7 +86,7 @@ public record AsyncCmdBizProcessor(
         // 待执行状态或失败重试状态，先抢占为执行中
         final AsyncCmdStatusEnum status = entity.getStatus();
         if (AsyncCmdStatusEnum.PENDING.equals(status)) {
-            if (!asyncCmdStateSupport.taskPendingToExecute(entity)) {
+            if (!asyncCmdStateSupport.taskPendingToExecuting(entity)) {
                 log.info("asyncCmd already handled. id={}", entity.getId());
                 return;
             }
@@ -112,8 +112,8 @@ public record AsyncCmdBizProcessor(
         } catch (Exception ex) {
             log.error("asyncCmd execute failed. id={}", entity.getId(), ex);
 
-            // 兜底主任务卡在执行中只能等重置状态
-            if (AsyncCmdStatusEnum.EXECUTE.equals(entity.getStatus())) {
+            // 兜底主任务卡在执行中等重试
+            if (AsyncCmdStatusEnum.EXECUTING.equals(entity.getStatus())) {
                 final long costTime = Optional.ofNullable(entity.getCostTime()).orElse(0L) + System.currentTimeMillis() - start;
                 this.asyncCmdStateSupport.taskFail(entity, null, costTime, ex, false);
                 return;

@@ -48,14 +48,14 @@ public interface AsyncCmdExecutor {
     boolean callback(AsyncCmdCallbackDTO entity);
 
     /**
-     * 通过主键人工触发重试.
+     * 通过主键人工触发重试（只支持废弃的数据）.
      *
      * @param id 主键
      */
     void retryById(Long id);
 
     /**
-     * 通过业务流水号人工触发重试.
+     * 通过业务流水号人工触发重试（只支持废弃的数据）.
      *
      * @param bizNumber 业务流水号
      */

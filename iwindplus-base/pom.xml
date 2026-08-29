@@ -127,7 +127,7 @@
     <modules>
         <module>iwindplus-base-async-cmd</module>
         <module>iwindplus-base-domain</module>
-        <module>iwindplus-base-excel</module>
+        <module>iwindplus-base-document</module>
         <module>iwindplus-base-http-client</module>
         <module>iwindplus-base-http-client-integration</module>
         <module>iwindplus-base-kafka</module>
@@ -698,7 +698,7 @@
             </dependency>
             <dependency>
                 <groupId>com.iwindplus.base</groupId>
-                <artifactId>iwindplus-base-excel</artifactId>
+                <artifactId>iwindplus-base-document</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

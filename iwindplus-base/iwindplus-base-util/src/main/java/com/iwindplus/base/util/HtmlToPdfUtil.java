@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
@@ -84,9 +85,10 @@ public class HtmlToPdfUtil {
      */
     public static void toPdfByUrl(String url, String fileName, HttpServletResponse response) {
         validateUrl(url);
-        try (InputStream inputStream = createSafeConnection(url)) {
-            FilesUtil.setHttpServletResponse(fileName, response);
-            HtmlConverter.convertToPdf(inputStream, response.getOutputStream());
+        FilesUtil.setHttpServletResponse(fileName, response);
+        try (InputStream inputStream = createSafeConnection(url);
+            OutputStream out = response.getOutputStream()) {
+            HtmlConverter.convertToPdf(inputStream, out);
         } catch (IOException ex) {
             log.error(ExceptionConstant.IO_EXCEPTION, ex);
             throw new BizException(BizCodeEnum.URL_TO_PDF_DOWNLOAD_ERROR);
@@ -118,9 +120,9 @@ public class HtmlToPdfUtil {
      * @return Pattern
      */
     public static void toPdfByHtml(String htmlContent, String fileName, HttpServletResponse response) {
-        try {
-            FilesUtil.setHttpServletResponse(fileName, response);
-            HtmlConverter.convertToPdf(htmlContent, response.getOutputStream());
+        FilesUtil.setHttpServletResponse(fileName, response);
+        try (OutputStream out = response.getOutputStream()) {
+            HtmlConverter.convertToPdf(htmlContent, out);
         } catch (IOException ex) {
             log.error(ExceptionConstant.IO_EXCEPTION, ex);
             throw new BizException(BizCodeEnum.HTML_TO_PDF_DOWNLOAD_ERROR);

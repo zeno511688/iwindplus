@@ -149,7 +149,7 @@
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
-            <artifactId>iwindplus-base-excel</artifactId>
+            <artifactId>iwindplus-base-document</artifactId>
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>

@@ -230,7 +230,7 @@ public class AsyncCmdExecuteHandlerGroup extends AbstractAsyncCmdExecuteHandler 
         // 更新子任务状态为执行中。expireTime 仅用于异步等待截止时间，进入执行中时不续期
         final boolean status = asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
             .id(subEntity.getId())
-            .to(AsyncCmdStatusEnum.EXECUTE)
+            .to(AsyncCmdStatusEnum.EXECUTING)
             .build());
         if (!status) {
             log.warn("asyncCmd subTask execute failed, id={} asyncCmdId={} seq={}",

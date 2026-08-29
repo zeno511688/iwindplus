@@ -1006,6 +1006,11 @@ public enum BizCodeEnum implements CommonException {
     EXCEL_IMPORT_ERROR("excel_import_error", "excel文件导入失败，请检查文件是否包含（'#'，'='）等开头的特殊表达式字符"),
 
     /**
+     * excel文件导出失败.
+     */
+    EXCEL_EXPORT_ERROR("excel_export_error", "excel文件导出失败"),
+
+    /**
      * excel模板错误，请选择正确的模板.
      */
     EXCEL_TEMPLATE_ERROR("excel_template_error", "excel模板错误，请选择正确的模板"),

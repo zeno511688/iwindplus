@@ -104,8 +104,7 @@ public class AsyncCmdConfiguration {
     public AsyncCmdRepository asyncCmdRepository(
         AsyncCmdProperty property,
         AsyncCmdSubMapper asyncCmdSubMapper) {
-        AsyncCmdRepository asyncCmdRepository = new AsyncCmdRepository(property, asyncCmdSubMapper);
-        return asyncCmdRepository;
+        return new AsyncCmdRepository(property, asyncCmdSubMapper);
     }
 
     /**
@@ -117,9 +116,7 @@ public class AsyncCmdConfiguration {
     @Bean
     public AsyncCmdSubRepository asyncCmdSubRepository(
         AsyncCmdProperty property) {
-        AsyncCmdSubRepository asyncCmdSubRepository = new AsyncCmdSubRepository(property);
-        log.info("AsyncCmdSubRepository={}", asyncCmdSubRepository);
-        return asyncCmdSubRepository;
+        return new AsyncCmdSubRepository(property);
     }
 
     /**

@@ -26,7 +26,7 @@
 | `iwindplus-base-wechat` / `iwindplus-base-ocr` | 微信生态和 OCR 能力 |
 | `iwindplus-base-shiro` / `iwindplus-base-operate` | 权限、安全操作校验和操作日志 |
 | `iwindplus-base-i18n` | 国际化资源和动态更新 |
-| `iwindplus-base-excel` / `iwindplus-base-pdf` | Excel、PDF 等文件处理 |
+| `iwindplus-base-document` | 文档处理，支持 Excel、PDF、Docx 等多种格式的导入导出 |
 | `iwindplus-base-swagger` | API 文档和接口定义查询 |
 | `iwindplus-base-snail-job` / `iwindplus-base-xxl-job` | 任务调度集成 |
 

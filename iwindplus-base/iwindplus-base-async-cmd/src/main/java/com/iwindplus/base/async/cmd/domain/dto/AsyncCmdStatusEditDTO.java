@@ -89,4 +89,10 @@ public class AsyncCmdStatusEditDTO {
      */
     @Schema(description = "进度比例（0-100）")
     private Integer progress;
+
+    /**
+     * 扩展对象.
+     */
+    @Schema(description = "扩展对象")
+    private AsyncCmdExtDTO ext;
 }

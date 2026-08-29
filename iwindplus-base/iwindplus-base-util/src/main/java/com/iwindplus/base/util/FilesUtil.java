@@ -151,18 +151,13 @@ public class FilesUtil extends FileUtil {
      * @param response    响应（必填）
      */
     public static void downloadFile(InputStream inputStream, String fileName, HttpServletResponse response) {
-        try {
-            setHttpServletResponse(fileName, response);
-
-            OutputStream out = response.getOutputStream();
-            FileCopyUtils.copy(inputStream, out);
-
-            out.flush();
-            response.flushBuffer();
+        setHttpServletResponse(fileName, response);
+        try (InputStream in = inputStream;
+             OutputStream out = response.getOutputStream()) {
+            FileCopyUtils.copy(in, out);
         } catch (IOException ex) {
             log.error(ExceptionConstant.IO_EXCEPTION, ex);
-        } finally {
-            FilesUtil.closeInputStream(inputStream);
+            throw new RuntimeException("文件下载失败", ex);
         }
     }
 

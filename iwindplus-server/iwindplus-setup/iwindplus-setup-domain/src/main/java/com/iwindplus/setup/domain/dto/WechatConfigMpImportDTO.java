@@ -7,7 +7,7 @@ package com.iwindplus.setup.domain.dto;
 import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.alibaba.excel.annotation.write.style.ColumnWidth;
-import com.iwindplus.base.domain.dto.ExcelImportResultDTO;
+import com.iwindplus.base.domain.vo.ExcelImportResultBaseVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -29,7 +29,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @ExcelIgnoreUnannotated
-public class WechatConfigMpImportDTO extends ExcelImportResultDTO {
+public class WechatConfigMpImportDTO extends ExcelImportResultBaseVO {
 
     /**
      * 名称.

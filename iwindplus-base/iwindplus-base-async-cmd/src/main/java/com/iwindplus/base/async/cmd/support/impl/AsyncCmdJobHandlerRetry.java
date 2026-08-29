@@ -91,13 +91,13 @@ public class AsyncCmdJobHandlerRetry extends AbstractAsyncCmdJobHandler {
         final AsyncCmdStatusEnum status = entity.getStatus();
         final long currentTime = System.currentTimeMillis();
 
-        if (AsyncCmdStatusEnum.EXECUTE.equals(status)) {
+        if (AsyncCmdStatusEnum.EXECUTING.equals(status)) {
             final Long expireTime = entity.getExpireTime();
             if (expireTime == null || expireTime > currentTime) {
                 return true;
             }
 
-            if (this.asyncCmdStateSupport.taskExecuteToPending(entity)) {
+            if (this.asyncCmdStateSupport.taskExecutingToPending(entity)) {
                 return false;
             }
 

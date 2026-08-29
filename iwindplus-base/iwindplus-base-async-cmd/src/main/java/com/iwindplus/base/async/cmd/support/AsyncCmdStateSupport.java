@@ -61,18 +61,18 @@ public record AsyncCmdStateSupport(
      * @param entity 命令对象
      * @return boolean
      */
-    public boolean taskPendingToExecute(AsyncCmdVO entity) {
+    public boolean taskPendingToExecuting(AsyncCmdVO entity) {
         final long expireTime = this.asyncCmdRepository.getNextExpireTime(System.currentTimeMillis());
 
         return this.transition(
             () -> asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
                 .id(entity.getId())
                 .from(AsyncCmdStatusEnum.PENDING)
-                .to(AsyncCmdStatusEnum.EXECUTE)
+                .to(AsyncCmdStatusEnum.EXECUTING)
                 .expireTime(expireTime)
                 .build()),
             () -> {
-                this.syncStatus(entity, AsyncCmdStatusEnum.EXECUTE);
+                this.syncStatus(entity, AsyncCmdStatusEnum.EXECUTING);
                 entity.setExpireTime(expireTime);
             }
         );
@@ -84,11 +84,11 @@ public record AsyncCmdStateSupport(
      * @param entity 命令对象
      * @return boolean
      */
-    public boolean taskExecuteToPending(AsyncCmdVO entity) {
+    public boolean taskExecutingToPending(AsyncCmdVO entity) {
         return this.transition(
             () -> asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
                 .id(entity.getId())
-                .from(AsyncCmdStatusEnum.EXECUTE)
+                .from(AsyncCmdStatusEnum.EXECUTING)
                 .to(AsyncCmdStatusEnum.PENDING)
                 .build()),
             () -> this.syncStatus(entity, AsyncCmdStatusEnum.PENDING)
@@ -109,11 +109,11 @@ public record AsyncCmdStateSupport(
             () -> asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
                 .id(entity.getId())
                 .from(AsyncCmdStatusEnum.FAILED)
-                .to(AsyncCmdStatusEnum.EXECUTE)
+                .to(AsyncCmdStatusEnum.EXECUTING)
                 .expireTime(expireTime)
                 .build()),
             () -> {
-                this.syncStatus(entity, AsyncCmdStatusEnum.EXECUTE);
+                this.syncStatus(entity, AsyncCmdStatusEnum.EXECUTING);
                 entity.setExpireTime(expireTime);
             }
         );
@@ -152,7 +152,7 @@ public record AsyncCmdStateSupport(
         final boolean result = this.transition(
             () -> asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
                 .id(entity.getId())
-                .from(AsyncCmdStatusEnum.EXECUTE)
+                .from(AsyncCmdStatusEnum.EXECUTING)
                 .to(AsyncCmdStatusEnum.SUCCESS)
                 .costTime(costTime)
                 .progress(NumberConstant.NUMBER_ONE_HUNDRED)
@@ -203,7 +203,7 @@ public record AsyncCmdStateSupport(
         final boolean result = this.transition(
             () -> this.asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
                 .id(entity.getId())
-                .from(AsyncCmdStatusEnum.EXECUTE)
+                .from(AsyncCmdStatusEnum.EXECUTING)
                 .to(AsyncCmdStatusEnum.FAILED)
                 .costTime(costTime)
                 .errorMsg(stack)
@@ -248,7 +248,7 @@ public record AsyncCmdStateSupport(
         final boolean result = this.transition(
             () -> asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
                 .id(entity.getId())
-                .from(AsyncCmdStatusEnum.EXECUTE)
+                .from(AsyncCmdStatusEnum.EXECUTING)
                 .to(AsyncCmdStatusEnum.WAITING)
                 .costTime(costTime)
                 .nextRetryTime(nextRetryTime)
@@ -283,8 +283,8 @@ public record AsyncCmdStateSupport(
         final boolean result = this.transition(
             () -> asyncCmdService.editStatusById(AsyncCmdStatusEditDTO.builder()
                 .id(entity.getId())
-                .from(AsyncCmdStatusEnum.EXECUTE)
-                .to(AsyncCmdStatusEnum.EXECUTE)
+                .from(AsyncCmdStatusEnum.EXECUTING)
+                .to(AsyncCmdStatusEnum.EXECUTING)
                 .costTime(costTime)
                 .progress(progress)
                 .expireTime(expireTime)
@@ -397,7 +397,7 @@ public record AsyncCmdStateSupport(
         final boolean result = this.transition(
             () -> asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
                 .id(entity.getId())
-                .from(AsyncCmdStatusEnum.EXECUTE)
+                .from(AsyncCmdStatusEnum.EXECUTING)
                 .to(AsyncCmdStatusEnum.SUCCESS)
                 .costTime(costTime)
                 .progress(NumberConstant.NUMBER_ONE_HUNDRED)
@@ -437,7 +437,7 @@ public record AsyncCmdStateSupport(
         final boolean result = this.transition(
             () -> this.asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
                 .id(entity.getId())
-                .from(AsyncCmdStatusEnum.EXECUTE)
+                .from(AsyncCmdStatusEnum.EXECUTING)
                 .to(AsyncCmdStatusEnum.FAILED)
                 .costTime(costTime)
                 .errorMsg(stack)
@@ -476,7 +476,7 @@ public record AsyncCmdStateSupport(
         final boolean result = this.transition(
             () -> asyncCmdSubService.editStatusById(AsyncCmdStatusEditDTO.builder()
                 .id(entity.getId())
-                .from(AsyncCmdStatusEnum.EXECUTE)
+                .from(AsyncCmdStatusEnum.EXECUTING)
                 .to(AsyncCmdStatusEnum.WAITING)
                 .costTime(costTime)
                 .result(entity.getResult())

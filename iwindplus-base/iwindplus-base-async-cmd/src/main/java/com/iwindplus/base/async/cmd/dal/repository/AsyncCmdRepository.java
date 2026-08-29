@@ -198,6 +198,9 @@ public class AsyncCmdRepository extends CrudRepository<AsyncCmdMapper, AsyncCmdD
         if (entity.getProgress() != null) {
             builder.progress(entity.getProgress());
         }
+        if (entity.getExt() != null) {
+            builder.ext(entity.getExt());
+        }
 
         final LambdaUpdateWrapper<AsyncCmdDO> updateWrapper = Wrappers.<AsyncCmdDO>lambdaUpdate()
             .eq(AsyncCmdDO::getId, entity.getId());

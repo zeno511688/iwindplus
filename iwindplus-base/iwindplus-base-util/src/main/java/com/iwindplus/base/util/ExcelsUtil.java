@@ -244,14 +244,11 @@ public class ExcelsUtil extends ExcelUtil {
         if (Objects.isNull(fileType)) {
             throw new BizException(BizCodeEnum.EXCEL_FORMAT_ERROR);
         }
-        try {
-            FilesUtil.setHttpServletResponse(fileName, response);
-            response.setContentType(fileType.getContentType());
-            OutputStream out = response.getOutputStream();
 
+        FilesUtil.setHttpServletResponse(fileName, response);
+        response.setContentType(fileType.getContentType());
+        try (OutputStream out = response.getOutputStream()) {
             workbook.write(out);
-            out.flush();
-            response.flushBuffer();
         } catch (IOException ex) {
             log.error(ExceptionConstant.IO_EXCEPTION, ex);
         } finally {

@@ -343,7 +343,7 @@ asyncCmdExecutor.removeByBizNumber("ORDER-0001");
 ## 9. 状态流转
 
 ```text
-PENDING ──► EXECUTE ──► SUCCESS
+PENDING ──► EXECUTING ──► SUCCESS
     ▲             │
     │             ├──► WAITING ──► SUCCESS
     │             │                 └──► FAILED
