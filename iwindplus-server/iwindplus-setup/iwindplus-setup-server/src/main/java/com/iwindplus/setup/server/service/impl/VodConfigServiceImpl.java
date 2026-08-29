@@ -16,7 +16,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
-import com.iwindplus.base.document.util.EasyExcelUtil;
 import com.iwindplus.base.domain.constant.CommonConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.DbConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
@@ -301,7 +300,7 @@ public class VodConfigServiceImpl implements VodConfigService {
     public void importByTemplate(MultipartFile file, UserBaseVO userInfo, HttpServletResponse response) {
         ExcelImportResultVO<VodConfigImportDTO> importResult;
         try {
-            importResult = EasyExcelUtil.importExcel(file.getInputStream(), this.validator, null, VodConfigImportDTO.class,
+            importResult = ExcelsUtil.importExcel(file.getInputStream(), this.validator, null, VodConfigImportDTO.class,
                 new VodConfigImportVerifyHandler(this.vodConfigRepository, userInfo), 2);
         } catch (IOException ex) {
             log.error(ExceptionConstant.EXCEPTION, ex);
@@ -314,7 +313,7 @@ public class VodConfigServiceImpl implements VodConfigService {
         if (CollUtil.isNotEmpty(failList)) {
             final String sourceFileName = file.getOriginalFilename();
             String fileName = ExcelsUtil.getExcelErrorFile(sourceFileName);
-            EasyExcelUtil.exportExcel(response, failList, VodConfigImportDTO.class, fileName, null);
+            ExcelsUtil.exportExcel(response, failList, VodConfigImportDTO.class, fileName, null);
         } else {
             // 正确的数据处理
             this.saveRightData(importResult.getRightList(), userInfo);

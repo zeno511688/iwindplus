@@ -5,13 +5,16 @@
  *
  */
 
-package com.iwindplus.base.document.handler;
+package com.iwindplus.base.util.support;
 
 import cn.hutool.core.text.CharSequenceUtil;
 import com.alibaba.excel.write.handler.RowWriteHandler;
 import com.alibaba.excel.write.metadata.holder.WriteSheetHolder;
 import com.alibaba.excel.write.metadata.holder.WriteTableHolder;
+import com.iwindplus.base.domain.constant.CommonConstant.ExcelConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.domain.vo.ExcelImportResultBaseVO;
+import java.util.List;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
@@ -19,8 +22,6 @@ import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
-
-import java.util.List;
 
 /**
  * 错误数据处理器（错误追加到最后一列）.
@@ -51,11 +52,7 @@ public class EasyExcelErrorRowWriteHandler<T extends ExcelImportResultBaseVO> im
             if (field != null && CharSequenceUtil.isNotBlank(field.getErrorMsg())) {
                 Workbook workbook = writeSheetHolder.getSheet().getWorkbook();
                 CellStyle cellStyle = workbook.createCellStyle();
-                Font font = workbook.createFont();
-                font.setColor(IndexedColors.RED.getIndex());
-                font.setFontName("宋体");
-                font.setFontHeightInPoints((short) 12);
-                font.setBold(false);
+                Font font = buildFont(workbook);
                 cellStyle.setFont(font);
                 cellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
                 // 在末尾追加错误信息字段
@@ -64,5 +61,14 @@ public class EasyExcelErrorRowWriteHandler<T extends ExcelImportResultBaseVO> im
                 cell.setCellValue(field.getErrorMsg());
             }
         }
+    }
+
+    private Font buildFont(Workbook workbook) {
+        Font font = workbook.createFont();
+        font.setColor(IndexedColors.RED.getIndex());
+        font.setFontName(ExcelConstant.DEFAULT_FONT_NAME);
+        font.setFontHeightInPoints((short) NumberConstant.NUMBER_TWELVE);
+        font.setBold(false);
+        return font;
     }
 }

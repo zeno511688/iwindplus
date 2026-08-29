@@ -9,6 +9,7 @@ package com.iwindplus.base.document.support;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.document.domain.vo.ExportTaskVO;
+import com.iwindplus.base.domain.constant.CommonConstant.ExcelConstant;
 import com.iwindplus.base.domain.dto.DbPageDTO;
 
 /**
@@ -50,7 +51,7 @@ public interface ExportTaskHandler<Q extends DbPageDTO, V> {
      * @return Sheet名称
      */
     default String getSheetName() {
-        return "Sheet1";
+        return ExcelConstant.DEFAULT_SHEET_NAME;
     }
 
     /**

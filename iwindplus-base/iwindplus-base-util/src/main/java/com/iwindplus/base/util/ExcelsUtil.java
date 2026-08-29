@@ -16,13 +16,26 @@ import cn.hutool.core.io.file.FileNameUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.PrimitiveArrayUtil;
 import cn.hutool.poi.excel.ExcelUtil;
+import com.alibaba.excel.EasyExcelFactory;
 import com.alibaba.excel.annotation.ExcelProperty;
-import com.iwindplus.base.domain.constant.CommonConstant;
+import com.alibaba.excel.write.builder.ExcelWriterBuilder;
+import com.alibaba.excel.write.metadata.style.WriteCellStyle;
+import com.alibaba.excel.write.metadata.style.WriteFont;
+import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
+import com.iwindplus.base.domain.constant.CommonConstant.ExcelConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.base.domain.vo.ExcelImportResultBaseVO;
+import com.iwindplus.base.domain.vo.ExcelImportResultVO;
 import com.iwindplus.base.util.domain.enums.FileTypeEnum;
+import com.iwindplus.base.util.support.EasyExcelErrorRowWriteHandler;
+import com.iwindplus.base.util.support.EasyExcelImportVerifyHandler;
+import com.iwindplus.base.util.support.EasyExcelListener;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Validator;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,9 +55,13 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.usermodel.DataValidationConstraint;
 import org.apache.poi.ss.usermodel.DataValidationHelper;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.ss.util.CellRangeAddressList;
@@ -59,6 +76,125 @@ import org.springframework.web.multipart.MultipartFile;
  */
 @Slf4j
 public class ExcelsUtil extends ExcelUtil {
+
+    /**
+     * excel导入.
+     *
+     * @param inputStream   导入文件（必填）
+     * @param pojoClass     反射类（可选，校验表头时用）
+     * @param verifyHandler 自定义校验接口（可选）
+     * @param headRowNumber 表头开始行（默认为：1）
+     * @param <T>           泛型
+     * @return ExcelImportResult
+     */
+    public static <T extends ExcelImportResultBaseVO> ExcelImportResultVO<T> importExcel(
+        InputStream inputStream,
+        Class<?> pojoClass,
+        EasyExcelImportVerifyHandler<T> verifyHandler,
+        Integer headRowNumber) {
+        return importExcel(inputStream, null, null, pojoClass, verifyHandler, headRowNumber);
+    }
+
+    /**
+     * excel导入.
+     *
+     * @param inputStream   导入文件（必填）
+     * @param validator     验证器（可选）
+     * @param groups        校验分组（可选）
+     * @param pojoClass     反射类（可选，校验表头时用）
+     * @param verifyHandler 自定义校验接口（可选）
+     * @param headRowNumber 表头开始行（默认为：1）
+     * @param <T>           泛型
+     * @return ExcelImportResult
+     */
+    public static <T extends ExcelImportResultBaseVO> ExcelImportResultVO<T> importExcel(
+        InputStream inputStream,
+        Validator validator,
+        Class<?>[] groups,
+        Class<?> pojoClass,
+        EasyExcelImportVerifyHandler<T> verifyHandler,
+        Integer headRowNumber) {
+        try {
+            EasyExcelListener<T> easyExcelListener = new EasyExcelListener<>(validator, groups, pojoClass, verifyHandler);
+            EasyExcelFactory.read(inputStream, pojoClass, easyExcelListener)
+                .sheet()
+                .headRowNumber(Optional.ofNullable(headRowNumber).orElse(1))
+                .doRead();
+
+            return ExcelImportResultVO.<T>builder()
+                .list(easyExcelListener.getList())
+                .rightList(easyExcelListener.getRightList())
+                .failList(easyExcelListener.getFailList())
+                .build();
+        } catch (Exception ex) {
+            log.error(ExceptionConstant.EXCEPTION, ex);
+
+            throw new BizException(BizCodeEnum.EXCEL_IMPORT_ERROR);
+        }
+    }
+
+    /**
+     * excel导出.
+     *
+     * @param response                    响应
+     * @param data                        导出的数据
+     * @param pojoClass                   导出的对象类型
+     * @param fileName                    文件名
+     * @param horizontalCellStyleStrategy 样式策略
+     * @param <T>                         泛型
+     */
+    public static <T extends ExcelImportResultBaseVO> void exportExcel(
+        HttpServletResponse response,
+        List<T> data,
+        Class<?> pojoClass,
+        String fileName,
+        HorizontalCellStyleStrategy horizontalCellStyleStrategy) {
+        String sheetName = FileUtil.mainName(fileName);
+        exportExcel(response, data, pojoClass, fileName, sheetName, horizontalCellStyleStrategy);
+    }
+
+    /**
+     * excel导出.
+     *
+     * @param response                    响应
+     * @param data                        导出的数据
+     * @param pojoClass                   导出的对象类型
+     * @param fileName                    文件名
+     * @param sheetName                   sheet名
+     * @param horizontalCellStyleStrategy 样式策略
+     * @param <T>                         泛型
+     */
+    public static <T extends ExcelImportResultBaseVO> void exportExcel(
+        HttpServletResponse response,
+        List<T> data,
+        Class<?> pojoClass,
+        String fileName,
+        String sheetName,
+        HorizontalCellStyleStrategy horizontalCellStyleStrategy) {
+        FileTypeEnum fileType = FileTypeEnum.fromType(FileUtil.getSuffix(fileName));
+        if (Objects.isNull(fileType)) {
+            throw new BizException(BizCodeEnum.EXCEL_FORMAT_ERROR);
+        }
+        try (OutputStream out = response.getOutputStream()) {
+            FilesUtil.setHttpServletResponse(fileName, response);
+            response.setContentType(fileType.getContentType());
+
+            ExcelWriterBuilder write = EasyExcelFactory.write(out, pojoClass);
+            List<String> errorMsgList = data.stream().map(ExcelImportResultBaseVO::getErrorMsg).filter(Objects::nonNull).toList();
+            if (CollUtil.isNotEmpty(errorMsgList)) {
+                // 处理校验后的错误信息
+                write.registerWriteHandler(new EasyExcelErrorRowWriteHandler<>(data));
+            }
+            if (Objects.isNull(horizontalCellStyleStrategy)) {
+                horizontalCellStyleStrategy = buildHorizontalCellStyleStrategy();
+            }
+            write.registerWriteHandler(horizontalCellStyleStrategy).sheet(sheetName).doWrite(data);
+        } catch (IOException ex) {
+            log.error(ExceptionConstant.IO_EXCEPTION, ex);
+
+            throw new BizException(BizCodeEnum.EXCEL_EXPORT_ERROR);
+        }
+    }
 
     /**
      * 校验excel文件格式和表头是否正确（正确返回表头列个数）.
@@ -77,7 +213,7 @@ public class ExcelsUtil extends ExcelUtil {
                 return checkHeader(inputStream, pojoClass, rowNum);
             }
 
-            return CommonConstant.NumberConstant.NUMBER_ZERO;
+            return 0;
         });
     }
 
@@ -126,7 +262,7 @@ public class ExcelsUtil extends ExcelUtil {
         List<String> excelList = new ArrayList<>(10);
         try (Workbook workbook = WorkbookFactory.create(inputStream);) {
             Sheet sheet = workbook.getSheetAt(0);
-            Row row = sheet.getRow(Optional.ofNullable(rowNum).orElse(CommonConstant.NumberConstant.NUMBER_ZERO));
+            Row row = sheet.getRow(Optional.ofNullable(rowNum).orElse(0));
             if (Objects.nonNull(row)) {
                 for (int ii = 0; ii < row.getPhysicalNumberOfCells(); ii++) {
                     parseRow(excelList, ii, row);
@@ -177,14 +313,14 @@ public class ExcelsUtil extends ExcelUtil {
             Collections.sort(options);
         }
         firstRow = Optional.ofNullable(firstRow).orElse(0);
-        lastRow = Optional.ofNullable(lastRow).orElse(CommonConstant.NumberConstant.NUMBER_NINE_HUNDRED_AND_NINETY_NINE);
+        lastRow = Optional.ofNullable(lastRow).orElse(NumberConstant.NUMBER_NINE_HUNDRED_AND_NINETY_NINE);
         final Sheet hiddenSheet = getHiddenSheet(workbook);
         String sheetName = hiddenSheet.getSheetName();
         for (int ii = 0; ii < options.size(); ii++) {
             Row row = hiddenSheet.createRow(ii);
             row.createCell(0).setCellValue(options.get(ii));
         }
-        String formula = new StringBuilder(sheetName).append("!$A$1:$A$").append(options.size()).toString();
+        String formula = new StringBuilder(sheetName).append(ExcelConstant.FORMULA_COLUMN_A_PREFIX).append(options.size()).toString();
         createName(workbook, sheetName, formula);
         Sheet targetSheet = workbook.getSheetAt(0);
         addValidationData(targetSheet, sheetName, firstRow, lastRow, column);
@@ -203,7 +339,7 @@ public class ExcelsUtil extends ExcelUtil {
     public static void dropDownOption(Workbook workbook, Map<String, List<String>> options, char parentColumn, char childColumn, Integer firstRow,
         Integer lastRow) {
         firstRow = Optional.ofNullable(firstRow).orElse(0);
-        lastRow = Optional.ofNullable(lastRow).orElse(CommonConstant.NumberConstant.NUMBER_NINE_HUNDRED_AND_NINETY_NINE);
+        lastRow = Optional.ofNullable(lastRow).orElse(NumberConstant.NUMBER_NINE_HUNDRED_AND_NINETY_NINE);
         final Sheet hiddenSheet = getHiddenSheet(workbook);
         String sheetName = hiddenSheet.getSheetName();
         int rowId = 0;
@@ -219,16 +355,17 @@ public class ExcelsUtil extends ExcelUtil {
                 }
                 // 添加名称管理器，1表示b列,从b列开始往后，都是子级
                 String range = getRange(1, rowId, children.size());
-                String formula = new StringBuilder(sheetName).append("!").append(range).toString();
+                String formula = new StringBuilder(sheetName).append(SymbolConstant.EXCLAMATION_MARK).append(range).toString();
                 createName(workbook, parent, formula);
             }
         }
         Sheet targetSheet = workbook.getSheetAt(0);
-        String parentFormula = new StringBuilder(sheetName).append("!$A$1:$A$").append(options.size()).toString();
+        String parentFormula = new StringBuilder(sheetName).append(ExcelConstant.FORMULA_COLUMN_A_PREFIX).append(options.size()).toString();
         createName(workbook, sheetName, parentFormula);
         addValidationData(targetSheet, sheetName, firstRow, lastRow, parentColumn);
 
-        String childFormula = new StringBuilder("INDIRECT($").append(parentColumn).append(firstRow + 1).append(")").toString();
+        String childFormula = new StringBuilder(ExcelConstant.FORMULA_INDIRECT_PREFIX).append(parentColumn).append(firstRow + 1)
+            .append(SymbolConstant.RIGHT_BRACKET).toString();
         addValidationData(targetSheet, childFormula, firstRow, lastRow, childColumn);
     }
 
@@ -295,9 +432,9 @@ public class ExcelsUtil extends ExcelUtil {
      */
     public static String getExcelErrorFile(String sourceFileName) {
         String dateStr = DateUtil.format(LocalDateTime.now(), DatePattern.PURE_DATETIME_PATTERN);
-        String fileName = new StringBuilder("error_").append(FileNameUtil.mainName(sourceFileName))
-            .append(CommonConstant.SymbolConstant.UNDERLINE).append(dateStr)
-            .append(CommonConstant.SymbolConstant.POINT)
+        String fileName = new StringBuilder(ExcelConstant.ERROR_FILE_PREFIX).append(FileNameUtil.mainName(sourceFileName))
+            .append(SymbolConstant.UNDERLINE).append(dateStr)
+            .append(SymbolConstant.POINT)
             .append(FileNameUtil.getSuffix(sourceFileName)).toString();
         log.info("错误文件名={}", fileName);
         return fileName;
@@ -322,33 +459,35 @@ public class ExcelsUtil extends ExcelUtil {
     }
 
     private static String getRange(int offset, int rowId, int colCount) {
-        char start = (char) ('A' + offset);
-        if (colCount <= CommonConstant.NumberConstant.NUMBER_TWENTY_FIVE) {
+        char start = (char) (ExcelConstant.COLUMN_START_LETTER + offset);
+        if (colCount <= NumberConstant.NUMBER_TWENTY_FIVE) {
             char end = (char) (start + colCount - 1);
-            return "$" + start + "$" + rowId + ":$" + end + "$" + rowId;
+            return SymbolConstant.DOLLAR + start + SymbolConstant.DOLLAR + rowId + SymbolConstant.COLON + SymbolConstant.DOLLAR + end
+                + SymbolConstant.DOLLAR + rowId;
         } else {
-            char endPrefix = 'A';
+            char endPrefix = ExcelConstant.COLUMN_START_LETTER;
             char endSuffix;
-            int tmp = colCount - 25;
-            if ((tmp) / CommonConstant.NumberConstant.NUMBER_TWENTY_SIX == 0 || colCount == CommonConstant.NumberConstant.NUMBER_FIFTY_ONE) {
+            int tmp = colCount - NumberConstant.NUMBER_TWENTY_FIVE;
+            if ((tmp) / ExcelConstant.ALPHABET_LENGTH == 0 || colCount == NumberConstant.NUMBER_FIFTY_ONE) {
                 // 26-51之间，包括边界（仅两次字母表计算）
-                if ((tmp) % CommonConstant.NumberConstant.NUMBER_TWENTY_SIX == 0) {
+                if ((tmp) % ExcelConstant.ALPHABET_LENGTH == 0) {
                     // 边界值
-                    endSuffix = (char) ('A' + 25);
+                    endSuffix = (char) (ExcelConstant.COLUMN_START_LETTER + NumberConstant.NUMBER_TWENTY_FIVE);
                 } else {
-                    endSuffix = (char) ('A' + (tmp) % 26 - 1);
+                    endSuffix = (char) (ExcelConstant.COLUMN_START_LETTER + (tmp) % NumberConstant.NUMBER_TWENTY_FIVE);
                 }
             } else {
                 // 51以上
-                if ((tmp) % CommonConstant.NumberConstant.NUMBER_TWENTY_SIX == 0) {
-                    endSuffix = (char) ('A' + 25);
-                    endPrefix = (char) (endPrefix + (tmp) / 26 - 1);
+                if ((tmp) % ExcelConstant.ALPHABET_LENGTH == 0) {
+                    endSuffix = (char) (ExcelConstant.COLUMN_START_LETTER + NumberConstant.NUMBER_TWENTY_FIVE);
+                    endPrefix = (char) (endPrefix + (tmp) / NumberConstant.NUMBER_TWENTY_FIVE);
                 } else {
-                    endSuffix = (char) ('A' + (tmp) % 26 - 1);
-                    endPrefix = (char) (endPrefix + (tmp) / 26);
+                    endSuffix = (char) (ExcelConstant.COLUMN_START_LETTER + (tmp) % NumberConstant.NUMBER_TWENTY_FIVE);
+                    endPrefix = (char) (endPrefix + (tmp) / ExcelConstant.ALPHABET_LENGTH);
                 }
             }
-            return "$" + start + "$" + rowId + ":$" + endPrefix + endSuffix + "$" + rowId;
+            return SymbolConstant.DOLLAR + start + SymbolConstant.DOLLAR + rowId + SymbolConstant.COLON + SymbolConstant.DOLLAR + endPrefix
+                + endSuffix + SymbolConstant.DOLLAR + rowId;
         }
     }
 
@@ -363,7 +502,7 @@ public class ExcelsUtil extends ExcelUtil {
     }
 
     private static Sheet getHiddenSheet(Workbook workbook) {
-        String sheetName = new StringBuilder(CommonConstant.ExcelConstant.HIDDEN_SHEET_NAME).append(workbook.getNumberOfSheets()).toString();
+        String sheetName = new StringBuilder(ExcelConstant.HIDDEN_SHEET_NAME).append(workbook.getNumberOfSheets()).toString();
         Sheet sheet = workbook.createSheet(sheetName);
         sheet.autoSizeColumn(0);
         hiddenSheet(workbook, sheet);
@@ -371,7 +510,7 @@ public class ExcelsUtil extends ExcelUtil {
     }
 
     private static void addValidationData(Sheet sheet, String formula, int firstRow, int lastRow, char column) {
-        Integer col = column - 'A';
+        Integer col = column - ExcelConstant.COLUMN_START_LETTER;
         DataValidationHelper helper = sheet.getDataValidationHelper();
         DataValidationConstraint constraint = helper.createFormulaListConstraint(formula);
         CellRangeAddressList regions = new CellRangeAddressList(firstRow, lastRow, col, col);
@@ -383,5 +522,37 @@ public class ExcelsUtil extends ExcelUtil {
             validation.setShowErrorBox(true);
         }
         sheet.addValidationData(validation);
+    }
+
+    private static HorizontalCellStyleStrategy buildHorizontalCellStyleStrategy() {
+        // 表头样式
+        WriteCellStyle headWriteCellStyle = new WriteCellStyle();
+        headWriteCellStyle.setHorizontalAlignment(HorizontalAlignment.CENTER);
+        headWriteCellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        headWriteCellStyle.setFillForegroundColor(IndexedColors.WHITE.getIndex());
+        headWriteCellStyle.setFillPatternType(FillPatternType.SOLID_FOREGROUND);
+        headWriteCellStyle.setWriteFont(createWriteFont((short) NumberConstant.NUMBER_FOURTEEN));
+
+        // 内容样式
+        WriteCellStyle contentWriteCellStyle = new WriteCellStyle();
+        contentWriteCellStyle.setHorizontalAlignment(HorizontalAlignment.CENTER);
+        contentWriteCellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        contentWriteCellStyle.setWriteFont(createWriteFont((short) NumberConstant.NUMBER_TWELVE));
+
+        return new HorizontalCellStyleStrategy(headWriteCellStyle, contentWriteCellStyle);
+    }
+
+    /**
+     * 创建字体样式.
+     *
+     * @param fontSize 字体大小
+     * @return 字体样式
+     */
+    private static WriteFont createWriteFont(short fontSize) {
+        WriteFont writeFont = new WriteFont();
+        writeFont.setFontName(ExcelConstant.DEFAULT_FONT_NAME);
+        writeFont.setFontHeightInPoints(fontSize);
+        writeFont.setBold(false);
+        return writeFont;
     }
 }

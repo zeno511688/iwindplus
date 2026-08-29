@@ -10,7 +10,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.iwindplus.base.domain.vo.ExcelVerifyResultVO;
 import com.iwindplus.base.domain.vo.UserBaseVO;
-import com.iwindplus.base.document.handler.EasyExcelImportVerifyHandler;
+import com.iwindplus.base.util.support.EasyExcelImportVerifyHandler;
 import com.iwindplus.mgt.domain.enums.MgtCodeEnum;
 import com.iwindplus.setup.domain.dto.WechatConfigMpImportDTO;
 import com.iwindplus.setup.domain.enums.SetupCodeEnum;

@@ -898,9 +898,24 @@ public final class CommonConstant {
         public static final String LEFT_CURLY_BRACKET = "{";
 
         /**
+         * 右花括号.
+         */
+        public static final String RIGHT_CURLY_BRACKET = "}";
+
+        /**
          * 井号 + 左花括号.
          */
         public static final String WELL_NO_AND_LEFT_CURLY_BRACKET = "#{";
+
+        /**
+         * 左括号.
+         */
+        public static final String LEFT_BRACKET = "(";
+
+        /**
+         * 右括号.
+         */
+        public static final String RIGHT_BRACKET = ")";
 
         /**
          * 美元符号 + 左花括号.
@@ -911,11 +926,6 @@ public final class CommonConstant {
          * 双美元符号.
          */
         public static final String DOUBLE_DOLLAR = "$$";
-
-        /**
-         * 右花括号.
-         */
-        public static final String RIGHT_CURLY_BRACKET = "}";
 
         /**
          * 左中括号.
@@ -1139,6 +1149,16 @@ public final class CommonConstant {
         public static final int NUMBER_TEN = 10;
 
         /**
+         * 12.
+         */
+        public static final int NUMBER_TWELVE = 12;
+
+        /**
+         * 14.
+         */
+        public static final int NUMBER_FOURTEEN = 14;
+
+        /**
          * 15.
          */
         public static final int NUMBER_FIFTEEN = 15;
@@ -1321,12 +1341,55 @@ public final class CommonConstant {
         /**
          * excel 导入支持的最大行数.
          */
-        public static final int EXCEL_MAX_ROW = 1000;
+        public static final int EXCEL_MAX_ROW = NumberConstant.NUMBER_ONE_THOUSAND;
 
         /**
          * 隐藏的工作表名称.
          */
         public static final String HIDDEN_SHEET_NAME = "hiddenSheet";
+
+        /**
+         * 默认字体名称.
+         */
+        public static final String DEFAULT_FONT_NAME = "宋体";
+
+        /**
+         * 默认的sheet名称.
+         */
+        public static final String DEFAULT_SHEET_NAME = "Sheet1";
+
+        /**
+         * Excel公式：A列绝对引用前缀（用于下拉框数据引用）.
+         * <p>
+         * 格式说明：!$A$1:$A$ 表示引用当前工作表A列从第1行到指定行的绝对引用区域.
+         * 例如：hiddenSheet!$A$1:$A$10 表示引用hiddenSheet工作表A列第1到第10行的数据.
+         * </p>
+         */
+        public static final String FORMULA_COLUMN_A_PREFIX = "!$A$1:$A$";
+
+        /**
+         * Excel公式：INDIRECT函数前缀（用于级联下拉框）.
+         * <p>
+         * INDIRECT函数用于返回由文本字符串指定的引用.
+         * 例如：INDIRECT($A2) 表示返回A2单元格内容所指定的工作表区域.
+         * </p>
+         */
+        public static final String FORMULA_INDIRECT_PREFIX = "INDIRECT($";
+
+        /**
+         * 错误文件名前缀.
+         */
+        public static final String ERROR_FILE_PREFIX = "error_";
+
+        /**
+         * Excel字母表长度（A-Z共26个字母）.
+         */
+        public static final int ALPHABET_LENGTH = NumberConstant.NUMBER_TWENTY_SIX;
+
+        /**
+         * Excel列起始字母（A列）.
+         */
+        public static final char COLUMN_START_LETTER = 'A';
     }
 
     /**
