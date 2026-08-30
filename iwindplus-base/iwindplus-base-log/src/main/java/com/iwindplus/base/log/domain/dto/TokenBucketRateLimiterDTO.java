@@ -7,7 +7,9 @@
 
 package com.iwindplus.base.log.domain.dto;
 
+import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.ToString;
 
 /**
  * 令牌桶限流器.
@@ -31,7 +33,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author zengdegui
  * @since 2026/08/26
  */
-public class TokenBucketRateLimiterDTO {
+@ToString
+public class TokenBucketRateLimiterDTO implements Serializable {
 
     /**
      * 桶容量（最大令牌数）.
