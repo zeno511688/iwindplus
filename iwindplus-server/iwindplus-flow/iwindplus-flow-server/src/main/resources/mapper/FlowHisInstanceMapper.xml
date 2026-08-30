@@ -26,18 +26,7 @@
                 where fht.deleted = 0
                 <choose>
                     <when test="ew.queryType.name() == 'MY_DONE'">
-                        and fht.type = 0
-                        and(
-                        (fhtp.type = 0 and fhtp.player_id = #{ew.userId})
-                        <if test="ew.roleIds != null and ew.roleIds.size() > 0">
-                            or(
-                            fhtp.type = 1 and fhtp.player_id in
-                            <foreach item="roleId" collection="ew.roleIds" open="(" separator="," close=")">
-                                #{roleId}
-                            </foreach>
-                            )
-                        </if>
-                        )
+                        and fht.type = 0 and and fhtp.player_id = #{ew.userId}
                     </when>
                     <when test="ew.queryType.name() == 'MY_CC'">
                         and fht.type = 1 and fhtp.player_id = #{ew.userId}
