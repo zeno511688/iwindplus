@@ -33,7 +33,7 @@ spring:
           enabled: ${nacos.watch-enabled:true}
         metadata:
           name: ${server.servlet.application-display-name:${spring.application.name}}
-          version: ${nacos.app-vesion:v1}
+          version: ${nacos.app-vesion:stable}
       config:
         enabled: true
         server-addr: ${spring.cloud.nacos.server-addr}
