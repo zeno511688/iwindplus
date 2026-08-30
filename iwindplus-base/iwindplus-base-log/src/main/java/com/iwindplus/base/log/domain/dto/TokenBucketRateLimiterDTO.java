@@ -5,7 +5,7 @@
  *
  */
 
-package com.iwindplus.base.log.ratelimit;
+package com.iwindplus.base.log.domain.dto;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -31,17 +31,17 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author zengdegui
  * @since 2026/08/26
  */
-public class TokenBucketRateLimiter {
+public class TokenBucketRateLimiterDTO {
 
     /**
      * 桶容量（最大令牌数）.
      */
-    private final long capacity;
+    private final Long capacity;
 
     /**
      * 令牌生成速率（每秒生成的令牌数）.
      */
-    private final long rate;
+    private final Long rate;
 
     /**
      * 当前令牌数量.
@@ -59,7 +59,7 @@ public class TokenBucketRateLimiter {
      * @param capacity 桶容量（最大令牌数）
      * @param rate     令牌生成速率（每秒生成的令牌数）
      */
-    public TokenBucketRateLimiter(long capacity, long rate) {
+    public TokenBucketRateLimiterDTO(long capacity, long rate) {
         if (capacity <= 0) {
             throw new IllegalArgumentException("capacity must > 0");
         }
@@ -111,8 +111,6 @@ public class TokenBucketRateLimiter {
             if (tokens.compareAndSet(current, newTokens)) {
                 return true;
             }
-
-            // CAS 失败，重试
         }
     }
 
@@ -158,8 +156,6 @@ public class TokenBucketRateLimiter {
             if (tokens.compareAndSet(current, newTokens)) {
                 return;
             }
-
-            // CAS 失败，重试
         }
     }
 

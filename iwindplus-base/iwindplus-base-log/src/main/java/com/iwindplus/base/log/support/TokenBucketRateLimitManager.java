@@ -5,16 +5,17 @@
  *
  */
 
-package com.iwindplus.base.log.ratelimit;
+package com.iwindplus.base.log.support;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.iwindplus.base.log.domain.dto.TokenBucketRateLimiterDTO;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * 基于令牌桶的限流管理器.
- * 
+ *
  * <p>特性：
  * <ul>
  *   <li>使用令牌桶算法，更简单可靠</li>
@@ -132,11 +133,11 @@ public class TokenBucketRateLimitManager {
      */
     private static class RateLimitEntry {
 
-        private final TokenBucketRateLimiter rateLimiter;
+        private final TokenBucketRateLimiterDTO rateLimiter;
         private volatile long silenceEndTime = 0;
 
         RateLimitEntry(long capacity, long rate) {
-            this.rateLimiter = new TokenBucketRateLimiter(capacity, rate);
+            this.rateLimiter = new TokenBucketRateLimiterDTO(capacity, rate);
         }
 
         boolean tryAcquire() {

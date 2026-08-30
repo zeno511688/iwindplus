@@ -20,9 +20,8 @@ import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.log.domain.property.AlertLogProperty;
 import com.iwindplus.base.log.domain.property.AlertLogProperty.WebhookCfg;
-import com.iwindplus.base.log.ratelimit.TokenBucketRateLimitManager;
+import com.iwindplus.base.log.support.TokenBucketRateLimitManager;
 import com.iwindplus.base.util.HttpsUtil;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
@@ -41,8 +40,7 @@ import org.springframework.core.env.Environment;
 public class AlertLogAppender extends AppenderBase<ILoggingEvent> {
 
     private static final DateTimeFormatter DATE_FORMATTER =
-        DateTimeFormatter.ofPattern(DatePattern.NORM_DATETIME_PATTERN)
-            .withZone(ZoneId.systemDefault());
+        DateTimeFormatter.ofPattern(DatePattern.NORM_DATETIME_PATTERN);
 
     private final TokenBucketRateLimitManager rateLimitManager;
     private final AlertLogProperty property;
