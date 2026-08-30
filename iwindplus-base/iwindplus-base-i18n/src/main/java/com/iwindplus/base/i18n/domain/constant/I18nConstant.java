@@ -22,6 +22,11 @@ public final class I18nConstant {
     }
 
     /**
+     * 线程池bean名称.
+     */
+    public static final String THREAD_POOL_BEAN_NAME = "i18nThreadPool";
+
+    /**
      * Nacos i18n分组.
      */
     public static final String I18N_GROUP = "I18N_GROUP";

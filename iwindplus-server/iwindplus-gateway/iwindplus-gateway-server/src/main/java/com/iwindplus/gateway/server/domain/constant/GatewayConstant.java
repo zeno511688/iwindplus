@@ -25,6 +25,11 @@ public class GatewayConstant {
     public static final String RATE_LIMITER_KEY = "gateway_rate_limiter:";
 
     /**
+     * 线程池bean名称.
+     */
+    public static final String THREAD_POOL_BEAN_NAME = "routeThreadPool";
+
+    /**
      * filter顺序相关常数（注意：顺序有讲究，可能存在依赖关系） .
      */
     public static class FilterConstant {

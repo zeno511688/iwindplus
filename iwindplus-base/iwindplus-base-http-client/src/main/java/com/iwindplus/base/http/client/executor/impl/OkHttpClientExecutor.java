@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ThreadPoolExecutor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import okhttp3.FormBody;
@@ -43,7 +44,6 @@ import okhttp3.ResponseBody;
 import okhttp3.internal.Util;
 import okio.BufferedSink;
 import okio.Okio;
-import org.dromara.dynamictp.core.executor.DtpExecutor;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -67,10 +67,10 @@ public class OkHttpClientExecutor extends AbstractHttpClientExecutor implements 
         HttpClientProperty property,
         HttpExecuteTemplate executeTemplate,
         ResponseExtractorStrategyFactory extractorStrategyFactory,
-        DtpExecutor httpClientTaskExecutor,
+        ThreadPoolExecutor threadPoolExecutor,
         OkHttpClient okHttpClient) {
 
-        super(property, executeTemplate, extractorStrategyFactory, httpClientTaskExecutor);
+        super(property, executeTemplate, extractorStrategyFactory, threadPoolExecutor);
         this.okHttpClient = okHttpClient;
     }
 

@@ -27,7 +27,7 @@ public class HttpClientConstant {
     public static final String DEFAULT_GET_APP_CERT_PREFIX = "lb://iwindplus-mgt";
 
     /**
-     * 默认获取应用凭证url.
+     * 线程池bean名称.
      */
-    public static final String DEFAULT_GET_APP_CERT_URL = DEFAULT_GET_APP_CERT_PREFIX + "/inner/appCert/getByCertType";
+    public static final String THREAD_POOL_BEAN_NAME = "httpClientThreadPool";
 }

@@ -43,7 +43,6 @@ public record WebManager(
         return JacksonUtil.parseObject(data, UserBaseVO.class);
     }
 
-
     /**
      * 响应数据.
      *

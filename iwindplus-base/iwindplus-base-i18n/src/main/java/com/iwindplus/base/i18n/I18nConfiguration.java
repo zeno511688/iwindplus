@@ -8,6 +8,7 @@
 package com.iwindplus.base.i18n;
 
 import com.alibaba.cloud.nacos.NacosConfigManager;
+import com.iwindplus.base.i18n.domain.constant.I18nConstant;
 import com.iwindplus.base.i18n.domain.property.I18nProperty;
 import com.iwindplus.base.i18n.support.NacosBundleMessageSource;
 import jakarta.annotation.Resource;
@@ -35,8 +36,8 @@ import org.springframework.context.annotation.Primary;
 @ConditionalOnBean(NacosConfigManager.class)
 public class I18nConfiguration {
 
-    @Resource(name = "i18nTaskExecutor")
-    private DtpExecutor i18nTaskExecutor;
+    @Resource(name = I18nConstant.THREAD_POOL_BEAN_NAME)
+    private DtpExecutor threadPoolExecutor;
 
     @Resource
     private I18nProperty property;
@@ -54,10 +55,10 @@ public class I18nConfiguration {
     public NacosBundleMessageSource messageSource() {
         NacosBundleMessageSource messageSource = NacosBundleMessageSource.builder()
             .configService(this.nacosConfigManager.getConfigService())
-            .group(property.getGroup())
+            .group(this.property.getGroup())
             .cacheDuration(this.property.getCacheDuration())
-            .maxCacheSize(property.getMaxCacheSize())
-            .i18nTaskExecutor(this.i18nTaskExecutor)
+            .maxCacheSize(this.property.getMaxCacheSize())
+            .threadPoolExecutor(this.threadPoolExecutor)
             .build();
         messageSource.setBasenames(this.property.getBasename());
         if (Objects.isNull(this.property.getEncoding())) {
@@ -68,7 +69,7 @@ public class I18nConfiguration {
         messageSource.setFallbackToSystemLocale(this.property.isFallbackToSystemLocale());
         messageSource.setAlwaysUseMessageFormat(this.property.isAlwaysUseMessageFormat());
         messageSource.setUseCodeAsDefaultMessage(this.property.isUseCodeAsDefaultMessage());
-        log.info("MessageSource={}", messageSource);
+        log.info("NacosBundleMessageSource={}", messageSource);
         return messageSource;
     }
 

@@ -9,6 +9,7 @@ package com.iwindplus.base.http.client;
 
 import cn.hutool.core.util.StrUtil;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
+import com.iwindplus.base.http.client.domain.constant.HttpClientConstant;
 import com.iwindplus.base.http.client.domain.property.HttpClientProperty;
 import com.iwindplus.base.http.client.executor.HttpClientExecutor;
 import com.iwindplus.base.http.client.executor.impl.ApacheHttpClientExecutor;
@@ -57,8 +58,8 @@ public class HttpClientConfiguration {
     @Resource
     private HttpClientProperty property;
 
-    @Resource(name = "httpClientTaskExecutor")
-    private DtpExecutor httpClientTaskExecutor;
+    @Resource(name = HttpClientConstant.THREAD_POOL_BEAN_NAME)
+    private DtpExecutor threadPoolExecutor;
 
     /**
      * 创建 HttpExecuteTemplate.
@@ -115,7 +116,7 @@ public class HttpClientConfiguration {
         @Autowired(required = false) CloseableHttpAsyncClient closeableHttpAsyncClient) {
         final ApacheHttpClientExecutor apacheHttpClientExecutor = new ApacheHttpClientExecutor(property
             , httpExecuteTemplate, responseExtractorStrategyFactory
-            , httpClientTaskExecutor, closeableHttpClient, closeableHttpAsyncClient);
+            , threadPoolExecutor, closeableHttpClient, closeableHttpAsyncClient);
         log.info("ApacheHttpClientExecutor={}", apacheHttpClientExecutor);
         return apacheHttpClientExecutor;
     }
@@ -136,7 +137,7 @@ public class HttpClientConfiguration {
         @Autowired(required = false) OkHttpClient okHttpClient) {
         final OkHttpClientExecutor okHttpClientExecutor = new OkHttpClientExecutor(property
             , httpExecuteTemplate, responseExtractorStrategyFactory
-            , httpClientTaskExecutor, okHttpClient);
+            , threadPoolExecutor, okHttpClient);
         log.info("OkHttpClientExecutor={}", okHttpClientExecutor);
         return okHttpClientExecutor;
     }
@@ -159,7 +160,7 @@ public class HttpClientConfiguration {
         @Autowired(required = false) @Qualifier("restClient") RestClient restClient) {
         final RestClientExecutor restClientExecutor = new RestClientExecutor(property
             , httpExecuteTemplate, responseExtractorStrategyFactory
-            , httpClientTaskExecutor, loadBalancedRestClient, restClient);
+            , threadPoolExecutor, loadBalancedRestClient, restClient);
         log.info("RestClientExecutor={}", restClientExecutor);
         return restClientExecutor;
     }
@@ -182,7 +183,7 @@ public class HttpClientConfiguration {
         @Autowired(required = false) @Qualifier("webClient") WebClient webClient) {
         final WebClientExecutor webClientExecutor = new WebClientExecutor(property
             , httpExecuteTemplate, responseExtractorStrategyFactory
-            , httpClientTaskExecutor, loadBalancedWebClient, webClient);
+            , threadPoolExecutor, loadBalancedWebClient, webClient);
         log.info("WebClientExecutor={}", webClientExecutor);
         return webClientExecutor;
     }

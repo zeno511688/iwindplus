@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.web.support;
 
+import com.iwindplus.base.web.domain.constant.WebConstant;
 import io.micrometer.context.ContextSnapshot;
 import io.micrometer.context.ContextSnapshotFactory;
 import io.micrometer.observation.ObservationRegistry;
@@ -28,14 +29,12 @@ public record AsyncThreadPoolConfigurer(
     ContextSnapshotFactory contextSnapshotFactory,
     ObservationRegistry observationRegistry) implements AsyncConfigurer {
 
-    private static final String DEFAULT_TASK_EXECUTOR_BEAN_NAME = "asyncTaskExecutor";
-
     /**
      * 所有 @Async 使用 DynamicTP
      */
     @Override
     public Executor getAsyncExecutor() {
-        Executor executor = DtpRegistry.getExecutor(DEFAULT_TASK_EXECUTOR_BEAN_NAME);
+        Executor executor = DtpRegistry.getExecutor(WebConstant.THREAD_POOL_BEAN_NAME);
 
         return command -> {
             ContextSnapshot snapshot = contextSnapshotFactory.captureAll();

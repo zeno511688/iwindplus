@@ -44,7 +44,7 @@ public class CaptchaLogExpireJob {
         // 获取分片参数，并进行边界校验
         int shardIndex = XxlJobHelper.getShardIndex();
         int shardTotal = XxlJobHelper.getShardTotal();
-
+        
         // 边界校验：确保分片参数合法
         if (shardTotal < 1) {
             shardTotal = 1;
@@ -53,7 +53,7 @@ public class CaptchaLogExpireJob {
             log.warn("分片索引异常，shardIndex={}, shardTotal={}，已自动修正为0", shardIndex, shardTotal);
             shardIndex = 0;
         }
-
+        
         final String jobParam = XxlJobHelper.getJobParam();
 
         XxlJobHelper.log("验证码日志过期清理任务，参数={}，开始时间={}，分片索引={}, 分片总数={}", jobParam, start, shardIndex, shardTotal);

@@ -1,26 +1,9 @@
 server:
   #配置启动的接口
   port: 9005
-  shutdown: graceful
   servlet:
     application-display-name: 监控服务
-  undertow:
-    threads:
-      io: 16
-      worker: 256
-    buffer-size: 1024
-    direct-buffers: true
 spring:
-  jmx:
-    enabled: true
-  messages:
-    basename: i18n/messages
-    fallback-to-system-locale: true
-    cache-duration: -1
-    # 是否开启远程消息源
-    enabled-remote: true
-    # nacos分组名称
-    group: I18N_GROUP
   security:
     user:
       name: ${login-security-username}
@@ -56,32 +39,3 @@ spring:
           socketFactory:
             port: ${spring.mail.port}
             class: javax.net.ssl.SSLSocketFactory
-logging:
-  level:
-    root: INFO
-  console:
-    enabled: true
-    enabled-async: true
-  logstash:
-    enabled: true
-    enabled-async: true
-    address: 127.0.0.1:4560
-  config: classpath:logback-spring.xml
-management:
-  health:
-    mail:
-      enabled: false
-  endpoints:
-    jmx:
-      exposure:
-        include: "*"
-    web:
-      exposure:
-        include: health,info,prometheus,metrics,logfile
-        exclude: env,heapdump,threaddump,mappings
-  endpoint:
-    health:
-      show-details: always
-  tracing:
-    sampling:
-      probability: 0.1

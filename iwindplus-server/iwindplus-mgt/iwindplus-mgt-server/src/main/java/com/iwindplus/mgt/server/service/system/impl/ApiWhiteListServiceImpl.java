@@ -12,8 +12,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.google.common.collect.ImmutableMap;
-import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
-import com.iwindplus.base.async.cmd.executor.AsyncCmdExecutor;
+import com.iwindplus.base.async.task.domain.dto.AsyncTaskSubmitDTO;
+import com.iwindplus.base.async.task.executor.AsyncTaskExecutor;
 import com.iwindplus.base.domain.dto.MessageBaseDTO;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
@@ -30,7 +30,7 @@ import com.iwindplus.mgt.domain.vo.system.ApiWhiteListPageVO;
 import com.iwindplus.mgt.domain.vo.system.ApiWhiteListVO;
 import com.iwindplus.mgt.server.dal.model.system.ApiWhiteListDO;
 import com.iwindplus.mgt.server.dal.repository.system.ApiWhiteListRepository;
-import com.iwindplus.mgt.server.service.asynccmd.ApiWhiteListTaskHandler;
+import com.iwindplus.mgt.server.service.asynctask.ApiWhiteListTaskHandler;
 import com.iwindplus.mgt.server.service.system.ApiWhiteListService;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +60,7 @@ public class ApiWhiteListServiceImpl implements ApiWhiteListService {
 
     private final RedissonService redissonService;
     private final ApiWhiteListRepository apiWhiteListRepository;
-    private final AsyncCmdExecutor asyncCmdExecutor;
+    private final AsyncTaskExecutor asyncTaskExecutor;
 
     @CacheEvict(allEntries = true)
     @Override
@@ -249,7 +249,7 @@ public class ApiWhiteListServiceImpl implements ApiWhiteListService {
         messageDTO.setData(apiWhiteListChangeDTO);
         final String content = JacksonUtil.toJsonStr(messageDTO);
 
-        final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
+        final AsyncTaskSubmitDTO build = AsyncTaskSubmitDTO.builder()
             .bizName("API白名单数据发送kafka")
             .bizKey("API_WHITE_LIST")
             .bizType("API_WHITE_LIST_PUSH")
@@ -257,7 +257,7 @@ public class ApiWhiteListServiceImpl implements ApiWhiteListService {
             .executorClass(ApiWhiteListTaskHandler.class)
             .remark("API白名单数据发送kafka")
             .build();
-        this.asyncCmdExecutor.submit(build);
+        this.asyncTaskExecutor.submit(build);
         return true;
     }
 }

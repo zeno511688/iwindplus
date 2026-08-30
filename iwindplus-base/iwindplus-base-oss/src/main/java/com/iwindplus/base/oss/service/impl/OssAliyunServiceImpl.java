@@ -57,9 +57,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.dromara.dynamictp.core.executor.DtpExecutor;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -133,7 +133,7 @@ public class OssAliyunServiceImpl extends AbstractOssBaseServiceImpl implements 
     }
 
     @Override
-    public List<FilePathVO> listSignUrl(List<String> relativePaths, Integer timeout, DtpExecutor taskExecutor) {
+    public List<FilePathVO> listSignUrl(List<String> relativePaths, Integer timeout, ThreadPoolExecutor threadPoolExecutor) {
         if (CollUtil.isEmpty(relativePaths)) {
             return Collections.emptyList();
         }
@@ -144,7 +144,7 @@ public class OssAliyunServiceImpl extends AbstractOssBaseServiceImpl implements 
 
         OSS ossClient = this.getOssClient();
         try {
-            return getFilePathList(timeout, taskExecutor, batches, result, ossClient);
+            return getFilePathList(timeout, threadPoolExecutor, batches, result, ossClient);
         } finally {
             this.closeOssClient(ossClient);
         }
@@ -313,13 +313,13 @@ public class OssAliyunServiceImpl extends AbstractOssBaseServiceImpl implements 
         return partTags;
     }
 
-    private List<FilePathVO> getFilePathList(Integer timeout, DtpExecutor taskExecutor, List<List<String>> batches, List<FilePathVO> result,
+    private List<FilePathVO> getFilePathList(Integer timeout, ThreadPoolExecutor threadPoolExecutor, List<List<String>> batches, List<FilePathVO> result,
         OSS ossClient) {
         for (List<String> batch : batches) {
             List<CompletableFuture<FilePathVO>> futures = batch.stream()
                 .map(path -> CompletableFuture.supplyAsync(
                     () -> this.getUrl(ossClient, path, timeout),
-                    taskExecutor))
+                    threadPoolExecutor))
                 .collect(Collectors.toList());
 
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();

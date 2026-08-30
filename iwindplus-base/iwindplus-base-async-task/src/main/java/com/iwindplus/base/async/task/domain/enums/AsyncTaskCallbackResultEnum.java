@@ -1,0 +1,81 @@
+/*
+ *
+ *  * Copyright (c) iwindplus Technologies Co., Ltd.2024-2030, All rights reserved.
+ *
+ *
+ */
+
+package com.iwindplus.base.async.task.domain.enums;
+
+import com.baomidou.mybatisplus.annotation.EnumValue;
+import com.iwindplus.base.async.task.domain.constant.AsyncTaskConstant;
+import com.iwindplus.base.domain.enums.BaseEnum;
+import java.util.Map;
+import java.util.Objects;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 异步回调结果回调枚举定义.
+ *
+ * @author zengdegui
+ * @since 2025/9/14
+ */
+@Slf4j
+@Getter
+@RequiredArgsConstructor
+public enum AsyncTaskCallbackResultEnum implements BaseEnum<Integer> {
+
+    /**
+     * 等待.
+     */
+    WAITING(20, "等待"),
+
+    /**
+     * 成功.
+     */
+    SUCCESS(30, "成功"),
+
+    /**
+     * 失败.
+     */
+    FAILED(40, "失败"),
+
+    ;
+
+    /**
+     * 值.
+     */
+    @EnumValue
+    private final Integer value;
+
+    /**
+     * 描述.
+     */
+    private final String desc;
+
+    /**
+     * 从result中解析预存的回调结果.
+     *
+     * @param result 结果集
+     * @return AsyncTaskCallbackResultEnum，无预存时返回WAITING以外的null
+     */
+    public static AsyncTaskCallbackResultEnum fromResultMap(Map<String, Object> result) {
+        if (Objects.isNull(result)) {
+            return null;
+        }
+
+        final Object value = result.get(AsyncTaskConstant.CALLBACK_RESULT_KEY);
+        if (Objects.isNull(value)) {
+            return null;
+        }
+
+        try {
+            return AsyncTaskCallbackResultEnum.valueOf(String.valueOf(value));
+        } catch (IllegalArgumentException ex) {
+            log.error("AsyncTaskCallbackResultEnum parse error", ex);
+            return null;
+        }
+    }
+}

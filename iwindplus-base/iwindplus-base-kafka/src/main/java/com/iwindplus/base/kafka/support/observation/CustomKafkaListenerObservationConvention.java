@@ -8,7 +8,7 @@
 package com.iwindplus.base.kafka.support.observation;
 
 import cn.hutool.core.text.CharSequenceUtil;
-import com.iwindplus.base.domain.constant.CommonConstant.SystemConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.ObservationConstant;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
 import io.micrometer.common.KeyValues;
 import java.nio.charset.StandardCharsets;
@@ -35,7 +35,7 @@ public class CustomKafkaListenerObservationConvention extends DefaultKafkaListen
         }
 
         return KeyValues.concat(
-            super.getHighCardinalityKeyValues(context),
+            defaultKeyValues,
             KeyValues.of(
                 KafkaConstant.CLUSTER,
                 cluster
@@ -46,18 +46,13 @@ public class CustomKafkaListenerObservationConvention extends DefaultKafkaListen
     @Override
     public KeyValues getHighCardinalityKeyValues(
         KafkaRecordReceiverContext context) {
-        final KeyValues defaultKeyValues = super.getHighCardinalityKeyValues(context);
-        final String requestId = getHeader(context, SystemConstant.REQUEST_ID);
-        if (CharSequenceUtil.isBlank(requestId)) {
-            return defaultKeyValues;
-        }
 
-        return KeyValues.concat(
-            defaultKeyValues,
-            KeyValues.of(
-                SystemConstant.REQUEST_ID,
-                requestId
-            )
+        String error = context.getError() == null
+            ? ObservationConstant.NONE
+            : context.getError().getClass().getSimpleName();
+
+        return KeyValues.of(
+            ObservationConstant.EXCEPTION, error
         );
     }
 

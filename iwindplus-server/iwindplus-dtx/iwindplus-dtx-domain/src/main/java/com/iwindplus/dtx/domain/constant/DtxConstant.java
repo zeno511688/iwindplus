@@ -30,4 +30,9 @@ public class DtxConstant {
      * 分布式服务客户端扫描包名.
      */
     public static final String DTX_CLIENT_SCAN_BASE_PACKAGE = "com.iwindplus.dtx.client";
+
+    /**
+     * 线程池bean名称.
+     */
+    public static final String THREAD_POOL_BEAN_NAME = "tccThreadPool";
 }

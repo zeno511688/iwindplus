@@ -1,82 +1,11 @@
 server:
   # 配置启动的接口
   port: 9009
-  shutdown: graceful
   servlet:
     application-display-name: binlog消费者
-    encoding:
-      force: true
-      force-request: true
-      force-response: true
-  undertow:
-    threads:
-      io: 16
-      worker: 256
-    buffer-size: 1024
-    direct-buffers: true
 cross:
   # 是否开启跨域
   enabled: false
-filter:
-  xss:
-    # 是否开启xss过滤器，防止攻击
-    enabled: true
-  request:
-    # 是否开启请求过滤器
-    enabled: true
-  # 过滤器加解密使用
-  crypto:
-    # 算法
-    algorithm: AES
-    # 公钥
-    public-key: ${filter-crypto-public-key:}
-    # 私钥
-    private-key: ${filter-crypto-private-key:}
-    # 密钥
-    key: ${filter-crypto-key:}
-http:
-  client:
-    api-protection:
-      # 是否开启API防护
-      enabled: true
-      enabled-remote: false
-      access-key: ${httpClient-apiProtection-access-key}
-      secret-key: ${httpClient-apiProtection-secret-key}
-global:
-  error:
-    # 是否开启全局异常捕获
-    enabled: true
-response:
-  body:
-    enabled: true
-    crypto:
-      # 是否开启加密功能，默认关闭
-      enabled: false
-      # 算法
-      algorithm: RSA
-      # 公钥
-      public-key: ${response-body-crypto-public-key:}
-      # 私钥
-      private-key: ${response-body-crypto-private-key:}
-      # 密钥
-      key: ${response-body-crypto-key:}
-jackson:
-  # 是否开启自定义jackson配置
-  enabled: true
-  sensitive:
-    # 是否开启敏感数据脱敏，响应接口结果时用
-    enabled: false
-validator:
-  # 是否开启参数校验
-  enabled: true
-  # 是否快速失败返回模式
-  fail-fast: true
-key:
-  generator:
-    # 是否开启唯一key
-    enabled: true
-    # key是否开启加密
-    enabled-crypto: true
 operate:
   enabled: true
   log:
@@ -105,255 +34,65 @@ swagger:
     maxRetry: 5
     # 重试间隔时间（单位：秒）
     retryInterval: 3
-feign:
-  request:
-    # 是否开启请求拦截器，传递请求头信息
-    enabled: true
-  error:
-    # 是否开启全局异常捕获
-    enabled: true
-  sentinel:
-    enabled: true
-loadbalancer:
-  nacos:
-    # 是否开启nacos负载均衡，请求头设置version，支持灰度
-    enabled: true
-  custom:
-    # 是否开启自定义负载均衡，请求头设置version，支持灰度
-    enabled: false
-# 全局默认熔断策略
-resilience4j:
-  circuitbreaker:
-    configs:
-      default:
-        # 失败率阈值，达到50%触发熔断
-        failureRateThreshold: 50
-        # 慢调用率阈值
-        slowCallRateThreshold: 80
-        # 慢调用时间阈值（毫秒）
-        slowCallDurationThreshold: 1000
-        # 熔断器开启持续时间（秒）
-        waitDurationInOpenState: 10s
-        # 允许半开状态的最大调用数
-        permittedNumberOfCallsInHalfOpenState: 3
-        # 滑动窗口大小
-        slidingWindowSize: 10
-        # 最小调用次数才计算失败率
-        minimumNumberOfCalls: 5
-        # 自动从打开状态过渡到半开状态
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        # 仅以下异常计入失败
-        record-exceptions:
-          - java.io.IOException
-          - java.util.concurrent.TimeoutException
-    # 留空即可，全部走 default
-    instances: {}
-  timelimiter:
-    configs:
-      default:
-        # 单次调用硬超时 3 s（覆盖 Feign 默认 1 s）
-        timeout-duration: 3s
-  # 重试配置（可选）
-  retry:
-    configs:
-      default:
-        # 含首次，共 3 次
-        max-attempts: 3
-        wait-duration: 500ms
-        enable-exponential-backoff: true
-        exponential-backoff-multiplier: 1.5
-  # 限流配置（可选）
-  ratelimiter:
-    configs:
-      default:
-        limit-for-period: 10
-        limit-refresh-period: 1s
-        timeout-duration: 1000
-  # 隔离配置（可选）
-  bulkhead:
-    configs:
-      default:
-        maxConcurrentCalls: 10
-        maxWaitDuration: 0
 dynamictp:
-  enabled: true
-  enabledCollect: true
-  enabledBanner: true
-  collectorTypes: micrometer
-  monitorInterval: 5
-  platforms:
-    - platform: lark
-      platformId: 1
-      urlKey: e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: ${dynamictp-lark-secret}
-      receivers: test1,test2
-  globalExecutorProps:
-    rejectedHandlerType: CallerRunsPolicy
-    queueType: VariableLinkedBlockingQueue
-    waitForTasksToCompleteOnShutdown: true
-    awaitTerminationSeconds: 3
-    taskWrapperNames: [ "micrometer", "ttl", "mdc" ]
-    queueTimeout: 300
-    runTimeout: 300
-    notifyEnabled: true
-    notifyItems:
-      - type: change
-        silencePeriod: 120
-      - type: capacity
-        threshold: 80
-        count: 2
-        period: 30
-        silencePeriod: 0
-      - type: liveness
-        threshold: 80
-        count: 3
-        period: 30
-        silencePeriod: 0
-      - type: reject
-        count: 1
-        period: 30
-        silencePeriod: 0
-      - type: run_timeout
-        count: 20
-        period: 30
-        silencePeriod: 30
-      - type: queue_timeout
-        count: 5
-        period: 30
-        silencePeriod: 0
   executors:
-    - threadPoolName: asyncTaskExecutor
-      threadPoolAliasName: 异步任务线程池
+    - threadPoolName: asyncThreadPool
+      threadPoolAliasName: 异步线程池
       executorType: eager
-      corePoolSize: 8
-      maximumPoolSize: 32
-      queueCapacity: 100
-      threadNamePrefix: asyncTask
+      corePoolSize: 2
+      maximumPoolSize: 4
+      queueCapacity: 50
       runTimeout: 5000
       platformIds: [ 1 ]
-    - threadPoolName: i18nTaskExecutor
+    - threadPoolName: i18nThreadPool
       threadPoolAliasName: 国际化线程池
       executorType: eager
       corePoolSize: 2
       maximumPoolSize: 4
       queueCapacity: 50
-      threadNamePrefix: i18nTask
       runTimeout: 5000
       platformIds: [ 1 ]
-    - threadPoolName: httpClientTaskExecutor
+    - threadPoolName: httpClientThreadPool
       threadPoolAliasName: http调用客户端线程池
       executorType: eager
       corePoolSize: 16
       maximumPoolSize: 32
       queueCapacity: 100
-      threadNamePrefix: httpClientTask
       runTimeout: 5000
       platformIds: [ 1 ]
-    - threadPoolName: binlogTaskExecutor
+    - threadPoolName: binlogThreadPool
       threadPoolAliasName: binlog线程池
       executorType: eager
       corePoolSize: 16
       maximumPoolSize: 32
       queueCapacity: 100
-      threadNamePrefix: binlogTask
       runTimeout: 5000
       platformIds: [ 1 ]
-    - threadPoolName: httpClientTaskExecutor
+    - threadPoolName: httpClientThreadPool
       threadPoolAliasName: http调用客户端线程池
       executorType: eager
       corePoolSize: 16
       maximumPoolSize: 32
       queueCapacity: 100
-      threadNamePrefix: httpClientTask
       runTimeout: 5000
       platformIds: [ 1 ]
-    - threadPoolName: kafkaListerTaskExecutor
+    - threadPoolName: kafkaListerThreadPool
       threadPoolAliasName: kafka默认集群监听线程池
       executorType: eager
       corePoolSize: 8
       maximumPoolSize: 32
       queueCapacity: 100
-      threadNamePrefix: kafkaListerTask
       runTimeout: 0
       queueTimeout: 0
       platformIds: [ 1 ]
-    - threadPoolName: disruptorTaskExecutor
+    - threadPoolName: disruptorThreadPool
       threadPoolAliasName: disruptor线程池
       executorType: eager
       corePoolSize: 16
       maximumPoolSize: 32
       queueCapacity: 100
-      threadNamePrefix: disruptorTask
       runTimeout: 5000
       platformIds: [ 1 ]
-spring:
-  cloud:
-    circuitbreaker:
-      resilience4j:
-        enabled: true
-    openfeign:
-      circuitbreaker:
-        # 开启服务熔断
-        enabled: true
-        group:
-          enabled: true
-      micrometer:
-        enabled: true
-      compression:
-        request:
-          enabled: false
-        response:
-          enabled: false
-      httpclient:
-        hc5:
-          enabled: true
-          connection-request-timeout: 3
-          socket-timeout: 10
-          pool-reuse-policy: fifo
-          pool-concurrency-policy: STRICT
-        # 默认连接超时时间：2000毫秒
-        connection-timeout: 5000
-        # 连接池管理定时器执行频率：默认 3000（单位：毫秒）
-        connection-timer-repeat: 5000
-        # 连接池最大连接数，默认200
-        max-connections: 500
-        # 每一个IP最大占用多少连接 默认 50
-        max-connections-per-route: 200
-        # 连接池中存活时间，默认为5
-        time-to-live: 10
-        time-to-live-unit: minutes
-        ok-http:
-          read-timeout: 10000
-      client:
-        config:
-          # default代表所有服务
-          default:
-            # 日志级别
-            loggerLevel: FULL
-            # feign客户端建立连接超时时间（单位：毫秒）
-            connect-timeout: 5000
-            # feign客户端建立连接后读取资源超时时间（单位：毫秒）
-            read-timeout: 10000
-      okhttp:
-        enabled: false
-  mvc:
-    path-match:
-      matching-strategy: ant_path_matcher
-  jmx:
-    enabled: true
-  messages:
-    basename: i18n/messages
-    fallback-to-system-locale: true
-    cache-duration: -1
-    # 是否开启远程消息源
-    enabled-remote: true
-    # nacos分组名称
-    group: I18N_GROUP
-  servlet:
-    multipart:
-      enabled: true
-      maxFileSize: 1GB
-      maxRequestSize: 10GB
 kafka:
   multi:
     enabled: true
@@ -389,7 +128,7 @@ kafka:
           group: default-consumer-group
           client-id: default-consumer
           concurrency: 3
-          thread-pool-name: kafkaListerTaskExecutor
+          thread-pool-name: kafkaListerThreadPool
           enable-auto-commit: false
           ack-mode: MANUAL
           auto-commit-interval-ms: 1000
@@ -432,7 +171,7 @@ disruptor:
         # 阻塞等待超时单位
         time-unit: MILLISECONDS
         # work线程池名称
-        thread-pool-name: disruptorTaskExecutor
+        thread-pool-name: disruptorThreadPool
 binlog:
   consumer:
     # 是否开启
@@ -461,48 +200,6 @@ alert:
     stack:
       max-length: -1
       max-frames: -1
-logging:
-  level:
-    root: INFO
-  console:
-    enabled: true
-    enabled-async: true
-  logstash:
-    enabled: true
-    enabled-async: true
-    address: 127.0.0.1:4560
-  config: classpath:logback-spring.xml
-management:
-  endpoints:
-    jmx:
-      exposure:
-        include: "*"
-    web:
-      exposure:
-        include: health,info,circuitbreakers,metrics,ratelimiters,bulkheads,retries,prometheus,logfile,redis
-        exclude: env,heapdump,threaddump,mappings
-  endpoint:
-    health:
-      show-details: always
-  health:
-    circuitbreakers:
-      enabled: true
-  otlp:
-    tracing:
-      endpoint: http://127.0.0.1:4318/v1/traces
-    metrics:
-      export:
-        url: http://127.0.0.1:4318/v1/metrics
-  metrics:
-    tags:
-      application: ${spring.application.name}
-  tracing:
-    enabled: true
-    sampling:
-      probability: 1.0
-    propagation:
-      type:
-        - W3C
 springdoc:
   packagesToScan:
     - com.iwindplus.binlog.consumer.server.web

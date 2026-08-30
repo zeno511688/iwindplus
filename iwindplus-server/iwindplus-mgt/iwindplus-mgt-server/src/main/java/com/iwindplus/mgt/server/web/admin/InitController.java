@@ -24,12 +24,16 @@ import com.iwindplus.mgt.domain.constant.MgtConstant;
 import com.iwindplus.mgt.domain.dto.InitDataDTO;
 import com.iwindplus.mgt.server.service.InitService;
 import com.iwindplus.setup.domain.constant.SetupConstant;
+import feign.Client;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.springframework.context.ApplicationContext;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -57,6 +61,9 @@ public class InitController extends BaseController {
 
     @Resource
     private FlowInstanceClient flowInstanceClient;
+
+    @Resource
+    private ApplicationContext applicationContext;
 
     /**
      * 初始化数据（新组织）.
@@ -133,5 +140,18 @@ public class InitController extends BaseController {
     public ResultVO<Boolean> flowCallback(@RequestBody @Validated FlowInstanceCallbackExtDTO entity) {
         System.out.println(JacksonUtil.toJsonStr(entity));
         return ResultVO.success(true);
+    }
+
+    @GetMapping("checkFeignHttpClient")
+    public String check() {
+        // 1. 检查自定义的 CloseableHttpClient Bean 是否存在
+        CloseableHttpClient httpClient = applicationContext.getBean(CloseableHttpClient.class);
+        System.out.println("自定义HttpClient实例：" + httpClient);
+
+        // 2. 检查 Feign 最终使用的 Client 类型
+        Client feignClient = applicationContext.getBean(Client.class);
+        System.out.println("Feign底层客户端类型：" + feignClient.getClass().getName());
+
+        return "校验完成";
     }
 }

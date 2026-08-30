@@ -91,16 +91,6 @@ public final class CommonConstant {
         public static final String CLASS = "class";
 
         /**
-         * 空.
-         */
-        public static final String NULL = "null";
-
-        /**
-         * 请求ID.
-         */
-        public static final String REQUEST_ID = "requestId";
-
-        /**
          * OpenTelemetry baggage.
          */
         public static final String OT_BAGGAGE = "ot-baggage-";

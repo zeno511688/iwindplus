@@ -47,11 +47,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
-import org.dromara.dynamictp.core.executor.DtpExecutor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.multipart.MultipartFile;
@@ -154,7 +154,7 @@ public class OssMinioServiceImpl extends AbstractOssBaseServiceImpl implements O
     }
 
     @Override
-    public List<FilePathVO> listSignUrl(List<String> relativePaths, Integer timeout, DtpExecutor taskExecutor) {
+    public List<FilePathVO> listSignUrl(List<String> relativePaths, Integer timeout, ThreadPoolExecutor threadPoolExecutor) {
         if (CollUtil.isEmpty(relativePaths)) {
             return Collections.emptyList();
         }
@@ -165,7 +165,7 @@ public class OssMinioServiceImpl extends AbstractOssBaseServiceImpl implements O
 
         MinioClient minioClient = this.getMinioClient();
         try {
-            return getFilePathList(timeout, taskExecutor, batches, result, minioClient);
+            return getFilePathList(timeout, threadPoolExecutor, batches, result, minioClient);
         } finally {
             this.closeMinioClient(minioClient);
         }
@@ -231,13 +231,13 @@ public class OssMinioServiceImpl extends AbstractOssBaseServiceImpl implements O
         return null;
     }
 
-    private List<FilePathVO> getFilePathList(Integer timeout, DtpExecutor taskExecutor, List<List<String>> batches, List<FilePathVO> result,
+    private List<FilePathVO> getFilePathList(Integer timeout, ThreadPoolExecutor threadPoolExecutor, List<List<String>> batches, List<FilePathVO> result,
         MinioClient minioClient) {
         for (List<String> batch : batches) {
             List<CompletableFuture<FilePathVO>> futures = batch.stream()
                 .map(path -> CompletableFuture.supplyAsync(
                     () -> this.getUrl(minioClient, path, timeout),
-                    taskExecutor))
+                    threadPoolExecutor))
                 .collect(Collectors.toList());
 
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();

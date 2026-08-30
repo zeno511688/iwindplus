@@ -47,24 +47,6 @@ public abstract class BaseGatewayFilter implements GlobalFilter, Ordered {
     }
 
     /**
-     * 确保请求包含唯一标识，并将其写入下游请求头。
-     *
-     * @param exchange 当前 exchange
-     * @return 包含请求标识的 exchange
-     */
-    private ServerWebExchange ensureRequestId(ServerWebExchange exchange) {
-        String requestId = exchange.getRequest().getHeaders().getFirst(HeaderConstant.X_REQUESTED_ID);
-        if (StringUtils.hasText(requestId)) {
-            return exchange;
-        }
-
-        String generatedRequestId = UUID.randomUUID().toString();
-        return exchange.mutate()
-            .request(builder -> builder.header(HeaderConstant.X_REQUESTED_ID, generatedRequestId))
-            .build();
-    }
-
-    /**
      * 子类实现（可完全控制 chain）
      */
     protected Mono<Void> filterInternal(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -97,5 +79,23 @@ public abstract class BaseGatewayFilter implements GlobalFilter, Ordered {
      */
     protected Mono<Void> onError(ServerWebExchange exchange, Throwable e) {
         return Mono.error(e);
+    }
+
+    /**
+     * 确保请求包含唯一标识，并将其写入下游请求头。
+     *
+     * @param exchange 当前 exchange
+     * @return 包含请求标识的 exchange
+     */
+    private ServerWebExchange ensureRequestId(ServerWebExchange exchange) {
+        String requestId = exchange.getRequest().getHeaders().getFirst(HeaderConstant.X_REQUESTED_ID);
+        if (StringUtils.hasText(requestId)) {
+            return exchange;
+        }
+
+        String generatedRequestId = UUID.randomUUID().toString();
+        return exchange.mutate()
+            .request(builder -> builder.header(HeaderConstant.X_REQUESTED_ID, generatedRequestId))
+            .build();
     }
 }

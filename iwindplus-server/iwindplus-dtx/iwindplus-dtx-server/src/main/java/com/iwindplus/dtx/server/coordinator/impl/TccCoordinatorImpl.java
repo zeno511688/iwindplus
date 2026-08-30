@@ -14,6 +14,7 @@ import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.http.client.domain.enums.HttpClientTypeEnum;
 import com.iwindplus.base.http.client.factory.HttpClientExecutorStrategyFactory;
 import com.iwindplus.base.util.DatesUtil;
+import com.iwindplus.dtx.domain.constant.DtxConstant;
 import com.iwindplus.dtx.domain.dto.TccBranchTxDTO;
 import com.iwindplus.dtx.domain.dto.TccGlobalTxDTO;
 import com.iwindplus.dtx.domain.enums.BranchTxStatusEnum;
@@ -22,7 +23,7 @@ import com.iwindplus.dtx.domain.enums.TxActionEnum;
 import com.iwindplus.dtx.domain.vo.TccBranchResultVO;
 import com.iwindplus.dtx.domain.vo.TccBranchTxVO;
 import com.iwindplus.dtx.domain.vo.TccGlobalTxVO;
-import com.iwindplus.dtx.server.config.property.DtxProperty;
+import com.iwindplus.dtx.server.config.property.DtxTaskProperty;
 import com.iwindplus.dtx.server.coordinator.TccCoordinator;
 import com.iwindplus.dtx.server.dal.model.TccBranchTxDO;
 import com.iwindplus.dtx.server.service.TccBranchTxService;
@@ -51,7 +52,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TccCoordinatorImpl implements TccCoordinator {
 
     @Resource
-    private DtxProperty property;
+    private DtxTaskProperty property;
 
     @Resource
     private TccGlobalTxService globalTxService;
@@ -59,8 +60,8 @@ public class TccCoordinatorImpl implements TccCoordinator {
     @Resource
     private TccBranchTxService branchTxService;
 
-    @Resource(name = "tccTaskExecutor")
-    private DtpExecutor tccTaskExecutor;
+    @Resource(name = DtxConstant.THREAD_POOL_BEAN_NAME)
+    private DtpExecutor threadPoolExecutor;
 
     @Resource
     private HttpClientExecutorStrategyFactory factory;
@@ -122,9 +123,9 @@ public class TccCoordinatorImpl implements TccCoordinator {
 
     @Override
     public Integer getSize() {
-        int activeCount = tccTaskExecutor.getActiveCount();
-        int maxPoolSize = tccTaskExecutor.getMaximumPoolSize();
-        final int queueSize = tccTaskExecutor.getQueue().size();
+        int activeCount = threadPoolExecutor.getActiveCount();
+        int maxPoolSize = threadPoolExecutor.getMaximumPoolSize();
+        final int queueSize = threadPoolExecutor.getQueue().size();
         int available = maxPoolSize - activeCount - queueSize;
         return Math.max(0, Math.min(this.property.getMaxPageSize(), available));
     }
@@ -181,7 +182,7 @@ public class TccCoordinatorImpl implements TccCoordinator {
             branches.stream()
                 .map(b -> CompletableFuture.supplyAsync(
                     () -> executeBranch(b, action),
-                    tccTaskExecutor
+                    threadPoolExecutor
                 ))
                 .toList();
 

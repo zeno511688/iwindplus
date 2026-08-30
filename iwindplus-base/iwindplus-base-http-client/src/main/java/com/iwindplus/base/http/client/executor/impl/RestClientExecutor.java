@@ -21,8 +21,8 @@ import com.iwindplus.base.http.client.factory.ResponseExtractorStrategyFactory;
 import com.iwindplus.base.http.client.template.HttpExecuteTemplate;
 import com.iwindplus.base.util.JacksonUtil;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ThreadPoolExecutor;
 import lombok.extern.slf4j.Slf4j;
-import org.dromara.dynamictp.core.executor.DtpExecutor;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -45,10 +45,10 @@ public class RestClientExecutor extends AbstractHttpClientExecutor implements Ht
         HttpClientProperty property,
         HttpExecuteTemplate executeTemplate,
         ResponseExtractorStrategyFactory extractorStrategyFactory,
-        DtpExecutor httpClientTaskExecutor,
+        ThreadPoolExecutor threadPoolExecutor,
         RestClient loadBalancedRestClient,
         RestClient restClient) {
-        super(property, executeTemplate, extractorStrategyFactory, httpClientTaskExecutor);
+        super(property, executeTemplate, extractorStrategyFactory, threadPoolExecutor);
         this.loadBalancedRestClient = loadBalancedRestClient;
         this.restClient = restClient;
     }

@@ -12,8 +12,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.google.common.collect.ImmutableMap;
-import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
-import com.iwindplus.base.async.cmd.executor.AsyncCmdExecutor;
+import com.iwindplus.base.async.task.domain.dto.AsyncTaskSubmitDTO;
+import com.iwindplus.base.async.task.executor.AsyncTaskExecutor;
 import com.iwindplus.base.domain.dto.MessageBaseDTO;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
@@ -28,7 +28,7 @@ import com.iwindplus.mgt.domain.vo.system.IpBlackListPageVO;
 import com.iwindplus.mgt.domain.vo.system.IpBlackListVO;
 import com.iwindplus.mgt.server.dal.model.system.IpBlackListDO;
 import com.iwindplus.mgt.server.dal.repository.system.IpBlackListRepository;
-import com.iwindplus.mgt.server.service.asynccmd.ApiWhiteListTaskHandler;
+import com.iwindplus.mgt.server.service.asynctask.ApiWhiteListTaskHandler;
 import com.iwindplus.mgt.server.service.system.IpBlackListService;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +56,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class IpBlackListServiceImpl implements IpBlackListService {
 
     private final IpBlackListRepository ipBlackListRepository;
-    private final AsyncCmdExecutor asyncCmdExecutor;
+    private final AsyncTaskExecutor asyncTaskExecutor;
 
     @CacheEvict(allEntries = true)
     @Override
@@ -223,7 +223,7 @@ public class IpBlackListServiceImpl implements IpBlackListService {
         messageDTO.setData(ipBlackListChangeDTO);
         final String content = JacksonUtil.toJsonStr(messageDTO);
 
-        final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
+        final AsyncTaskSubmitDTO build = AsyncTaskSubmitDTO.builder()
             .bizName("IP黑名单数据发送kafka")
             .bizKey("IP_BLACK_LIST")
             .bizType("IP_BLACK_PUSH")
@@ -231,7 +231,7 @@ public class IpBlackListServiceImpl implements IpBlackListService {
             .executorClass(ApiWhiteListTaskHandler.class)
             .remark("IP黑名单数据发送kafka")
             .build();
-        this.asyncCmdExecutor.submit(build);
+        this.asyncTaskExecutor.submit(build);
         return true;
     }
 }

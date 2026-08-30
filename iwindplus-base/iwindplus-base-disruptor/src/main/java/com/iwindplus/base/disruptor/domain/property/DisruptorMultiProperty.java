@@ -124,7 +124,7 @@ public class DisruptorMultiProperty {
          * 线程池bean名称（对于DtpExecutor）.
          */
         @Builder.Default
-        private String threadPoolName = "disruptorTaskExecutor";
+        private String threadPoolName = "disruptorThreadPool";
     }
 
     /**

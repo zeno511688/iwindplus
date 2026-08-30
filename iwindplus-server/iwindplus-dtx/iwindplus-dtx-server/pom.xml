@@ -18,6 +18,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.iwindplus.im</groupId>
+            <artifactId>iwindplus-im-client</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.iwindplus.dtx</groupId>
             <artifactId>iwindplus-dtx-api</artifactId>
         </dependency>

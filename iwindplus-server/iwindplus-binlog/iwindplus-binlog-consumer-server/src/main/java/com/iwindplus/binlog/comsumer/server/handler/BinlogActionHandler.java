@@ -14,6 +14,7 @@ import com.iwindplus.base.alert.factory.AlertExecutorStrategyFactory;
 import com.iwindplus.base.domain.dto.ValidListDTO;
 import com.iwindplus.base.domain.enums.DbActionTypeEnum;
 import com.iwindplus.base.util.JacksonUtil;
+import com.iwindplus.binlog.comsumer.server.domain.constant.BinlogConsumerConstant;
 import com.iwindplus.binlog.comsumer.server.domain.dto.BinlogActionCheckSignDTO;
 import com.iwindplus.binlog.comsumer.server.domain.dto.BinlogActionProcessDTO;
 import com.iwindplus.binlog.comsumer.server.domain.dto.BinlogRowDataDTO;
@@ -54,8 +55,8 @@ public class BinlogActionHandler {
     @Resource
     private BinlogAlertClient binlogAlertClient;
 
-    @Resource
-    private DtpExecutor binlogTaskExecutor;
+    @Resource(name = BinlogConsumerConstant.THREAD_POOL_BEAN_NAME)
+    private DtpExecutor threadPoolExecutor;
 
     /**
      * 处理binlog数据.
@@ -89,7 +90,7 @@ public class BinlogActionHandler {
             .map(BinlogRowDataProcessDTO::getBinlogAlert).toList();
         final ValidListDTO<BinlogAlertDTO> paramList = new ValidListDTO<>(dtoList);
 
-        this.binlogTaskExecutor.execute(() -> {
+        this.threadPoolExecutor.execute(() -> {
             try {
                 this.binlogAlertClient.saveBatch(paramList);
             } catch (Exception e) {

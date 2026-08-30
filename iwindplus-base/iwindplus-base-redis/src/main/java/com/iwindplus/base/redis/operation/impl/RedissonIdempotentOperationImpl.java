@@ -70,8 +70,8 @@ public class RedissonIdempotentOperationImpl implements RedissonIdempotentOperat
     private RedisProperty property;
 
     @Autowired(required = false)
-    @Qualifier("idempotentTaskScheduler")
-    private ScheduledDtpExecutor idempotentTaskScheduler;
+    @Qualifier(RedisConstant.SCHEDULER_THREAD_POOL_BEAN_NAME)
+    private ScheduledDtpExecutor schedulerThreadPool;
 
     private static final long SINGLE_FLIGHT_TIMEOUT_MS = 5000L;
     private static final long HEARTBEAT_THRESHOLD_MS = 60_000L;
@@ -534,8 +534,8 @@ public class RedissonIdempotentOperationImpl implements RedissonIdempotentOperat
 
         ScheduledFuture<?> poll = null;
 
-        if (idempotentTaskScheduler != null) {
-            poll = idempotentTaskScheduler.scheduleAtFixedRate(() -> {
+        if (schedulerThreadPool != null) {
+            poll = schedulerThreadPool.scheduleAtFixedRate(() -> {
                 try {
                     DirectResult<T> v = getDirectSync(bizKey, type);
                     if (v != null) {
@@ -687,14 +687,14 @@ public class RedissonIdempotentOperationImpl implements RedissonIdempotentOperat
     private HeartbeatHandle startHeartbeatSync(String key, String version, long ttl) {
         if (Boolean.FALSE.equals(property.getIdempotent().getEnabledHeartbeat())
             || ttl <= HEARTBEAT_THRESHOLD_MS
-            || idempotentTaskScheduler == null) {
+            || schedulerThreadPool == null) {
             return NO_OP_HEARTBEAT;
         }
 
         long period = calculateHeartbeatPeriod(ttl);
         AtomicBoolean stopped = new AtomicBoolean(false);
 
-        ScheduledFuture<?> f = idempotentTaskScheduler.scheduleAtFixedRate(() -> {
+        ScheduledFuture<?> f = schedulerThreadPool.scheduleAtFixedRate(() -> {
             if (stopped.get()) {
                 return;
             }

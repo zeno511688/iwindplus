@@ -1,0 +1,105 @@
+/*
+ *
+ *  * Copyright (c) iwindplus Technologies Co., Ltd.2024-2030, All rights reserved.
+ *
+ *
+ */
+
+package com.iwindplus.base.async.task.domain.vo;
+
+import com.iwindplus.base.async.task.domain.enums.AsyncTaskStatusEnum;
+import com.iwindplus.base.domain.vo.DbVersionBaseVO;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
+/**
+ * 异步任务分页视图对象.
+ *
+ * @author zengdegui
+ * @since 2021/9/23
+ */
+@Schema(description = "异步任务分页视图对象")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AsyncTaskPageVO extends DbVersionBaseVO {
+
+    /**
+     * 状态（PENDING：待执行，EXECUTING：执行中，WAITING：等待中，SUCCESS：成功，FAILED：失败，DISCARD：丢弃）.
+     */
+    @Schema(description = "状态（PENDING：待执行，EXECUTING：执行中，WAITING：等待中，SUCCESS：成功，FAILED：失败，DISCARD：丢弃）")
+    private AsyncTaskStatusEnum status;
+
+    /**
+     * 环境.
+     */
+    @Schema(description = "环境")
+    private String env;
+
+    /**
+     * 业务key，例如 ORDER.
+     */
+    @Schema(description = "业务key，例如 ORDER")
+    private String bizKey;
+
+    /**
+     * 业务类型，例如 ORDER_CREATE.
+     */
+    @Schema(description = "业务类型，例如 ORDER_CREATE")
+    private String bizType;
+
+    /**
+     * 业务流水号.
+     */
+    @Schema(description = "业务流水号")
+    private String bizNumber;
+
+    /**
+     * 执行器名称.
+     */
+    @Schema(description = "执行器名称")
+    private String executeName;
+
+    /**
+     * 参数.
+     */
+    @Schema(description = "参数")
+    private Map<String, Object> param;
+
+    /**
+     * 过期时间.
+     */
+    @Schema(description = "过期时间")
+    private Long expireTime;
+
+    /**
+     * 下一次重试时间.
+     */
+    @Schema(description = "下一次重试时间")
+    private Long nextRetryTime;
+
+    /**
+     * 重试次数.
+     */
+    @Schema(description = "重试次数")
+    private Integer retryCount;
+
+    /**
+     * 子任务总数.
+     */
+    @Schema(description = "子任务总数")
+    private Integer subTaskCount;
+
+    /**
+     * 累计耗时.
+     */
+    @Schema(description = "耗时")
+    private Long costTime;
+}

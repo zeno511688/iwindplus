@@ -157,7 +157,7 @@
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
-            <artifactId>iwindplus-base-async-cmd</artifactId>
+            <artifactId>iwindplus-base-async-task</artifactId>
         </dependency>
        <!-- <dependency>
             <groupId>com.alibaba.cloud</groupId>

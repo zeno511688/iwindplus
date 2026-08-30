@@ -50,7 +50,7 @@ public class ImProperty {
     @Builder.Default
     @NestedConfigurationProperty
     private SmsConfig sms = new SmsConfig();
-    
+
     /**
      * 对象存储配置.
      */
@@ -74,8 +74,7 @@ public class ImProperty {
          * 邮件模板编码.
          */
         @Schema(description = "邮件模板编码")
-        @Builder.Default
-        private String tplCode = "c3f67fd355dd6098156053f68285ba3e";
+        private String tplCode;
     }
 
     /**

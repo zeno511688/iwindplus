@@ -14,6 +14,7 @@ import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.util.CryptoUtil;
 import com.iwindplus.base.util.JacksonUtil;
 import com.iwindplus.gateway.server.client.MgtClient;
+import com.iwindplus.gateway.server.domain.constant.GatewayConstant;
 import com.iwindplus.gateway.server.domain.converter.RouteDefinitionConverter;
 import com.iwindplus.gateway.server.support.RouteService;
 import com.iwindplus.mgt.domain.vo.system.ServerRouteDefinitionVO;
@@ -50,8 +51,8 @@ public class RouteListener {
     @Resource
     private NacosConfigManager nacosConfigManager;
 
-    @Resource(name = "routeTaskExecutor")
-    private DtpExecutor routeTaskExecutor;
+    @Resource(name = GatewayConstant.THREAD_POOL_BEAN_NAME)
+    private DtpExecutor threadPoolExecutor;
 
     @Resource
     private MgtClient mgtClient;
@@ -144,7 +145,7 @@ public class RouteListener {
         return new Listener() {
             @Override
             public Executor getExecutor() {
-                return routeTaskExecutor;
+                return threadPoolExecutor;
             }
 
             @Override

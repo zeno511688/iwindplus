@@ -22,8 +22,8 @@ import com.iwindplus.base.http.client.factory.ResponseExtractorStrategyFactory;
 import com.iwindplus.base.http.client.template.HttpExecuteTemplate;
 import com.iwindplus.base.util.JacksonUtil;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ThreadPoolExecutor;
 import lombok.extern.slf4j.Slf4j;
-import org.dromara.dynamictp.core.executor.DtpExecutor;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -46,10 +46,10 @@ public class WebClientExecutor extends AbstractHttpClientExecutor implements Htt
         HttpClientProperty property,
         HttpExecuteTemplate executeTemplate,
         ResponseExtractorStrategyFactory extractorStrategyFactory,
-        DtpExecutor httpClientTaskExecutor,
+        ThreadPoolExecutor threadPoolExecutor,
         WebClient loadBalancedWebClient,
         WebClient webClient) {
-        super(property, executeTemplate, extractorStrategyFactory, httpClientTaskExecutor);
+        super(property, executeTemplate, extractorStrategyFactory, threadPoolExecutor);
         this.loadBalancedWebClient = loadBalancedWebClient;
         this.webClient = webClient;
     }

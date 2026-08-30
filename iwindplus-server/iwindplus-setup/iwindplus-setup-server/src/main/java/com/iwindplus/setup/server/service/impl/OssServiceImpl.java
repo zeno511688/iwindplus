@@ -10,15 +10,16 @@ import com.iwindplus.base.oss.domain.property.OssProperty;
 import com.iwindplus.base.oss.service.OssAliyunService;
 import com.iwindplus.base.oss.service.OssMinioService;
 import com.iwindplus.base.oss.service.OssQiniuService;
+import com.iwindplus.setup.domain.constant.SetupConstant;
 import com.iwindplus.setup.domain.dto.OssUploadByteDTO;
 import com.iwindplus.setup.domain.vo.OssConfigVO;
 import com.iwindplus.setup.domain.vo.OssTplVO;
 import com.iwindplus.setup.server.service.OssConfigService;
 import com.iwindplus.setup.server.service.OssService;
 import com.iwindplus.setup.server.service.OssTplService;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.dromara.dynamictp.core.executor.DtpExecutor;
 import org.springframework.stereotype.Service;
@@ -33,15 +34,25 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @Transactional(rollbackFor = Exception.class)
-@RequiredArgsConstructor
 public class OssServiceImpl implements OssService {
 
-    private final OssAliyunService ossAliyunService;
-    private final OssMinioService ossMinioService;
-    private final OssQiniuService ossQiniuService;
-    private final OssConfigService ossConfigService;
-    private final OssTplService ossTplService;
-    private final DtpExecutor ossTaskExecutor;
+    @Resource
+    private OssAliyunService ossAliyunService;
+
+    @Resource
+    private OssMinioService ossMinioService;
+
+    @Resource
+    private OssQiniuService ossQiniuService;
+
+    @Resource
+    private OssConfigService ossConfigService;
+
+    @Resource
+    private OssTplService ossTplService;
+
+    @Resource(name = SetupConstant.THREAD_POOL_BEAN_NAME_OSS)
+    private DtpExecutor threadPoolExecutor;
 
     @Override
     public UploadVO uploadByte(OssUploadByteDTO entity) {
@@ -70,13 +81,13 @@ public class OssServiceImpl implements OssService {
         final OssConfigVO ossConfig = this.ossConfigService.getDetail(ossTpl.getConfigId());
         if (OssTypeEnum.MINIO.equals(ossConfig.getType())) {
             this.buildOssConfigMinio(ossConfig, ossTpl);
-            this.ossTaskExecutor.execute(() -> this.ossMinioService.downloadFile(response, relativePath, fileName));
+            this.threadPoolExecutor.execute(() -> this.ossMinioService.downloadFile(response, relativePath, fileName));
         } else if (OssTypeEnum.ALIYUN.equals(ossConfig.getType())) {
             this.buildOssConfigAliyun(ossConfig, ossTpl);
-            this.ossTaskExecutor.execute(() -> this.ossAliyunService.downloadFile(response, relativePath, fileName));
+            this.threadPoolExecutor.execute(() -> this.ossAliyunService.downloadFile(response, relativePath, fileName));
         } else if (OssTypeEnum.QINIU.equals(ossConfig.getType())) {
             this.buildOssConfigQiniu(ossConfig, ossTpl);
-            this.ossTaskExecutor.execute(() -> this.ossQiniuService.downloadFile(response, relativePath, fileName));
+            this.threadPoolExecutor.execute(() -> this.ossQiniuService.downloadFile(response, relativePath, fileName));
         }
     }
 
@@ -86,13 +97,13 @@ public class OssServiceImpl implements OssService {
         final OssConfigVO ossConfig = this.ossConfigService.getDetail(ossTpl.getConfigId());
         if (OssTypeEnum.MINIO.equals(ossConfig.getType())) {
             this.buildOssConfigMinio(ossConfig, ossTpl);
-            return this.ossMinioService.listSignUrl(relativePaths, timeout, ossTaskExecutor);
+            return this.ossMinioService.listSignUrl(relativePaths, timeout, threadPoolExecutor);
         } else if (OssTypeEnum.ALIYUN.equals(ossConfig.getType())) {
             this.buildOssConfigAliyun(ossConfig, ossTpl);
-            return this.ossAliyunService.listSignUrl(relativePaths, timeout, ossTaskExecutor);
+            return this.ossAliyunService.listSignUrl(relativePaths, timeout, threadPoolExecutor);
         } else if (OssTypeEnum.QINIU.equals(ossConfig.getType())) {
             this.buildOssConfigQiniu(ossConfig, ossTpl);
-            return this.ossQiniuService.listSignUrl(relativePaths, timeout, ossTaskExecutor);
+            return this.ossQiniuService.listSignUrl(relativePaths, timeout, threadPoolExecutor);
         }
         return null;
     }
@@ -103,13 +114,13 @@ public class OssServiceImpl implements OssService {
         final OssConfigVO ossConfig = this.ossConfigService.getDetail(ossTpl.getConfigId());
         if (OssTypeEnum.MINIO.equals(ossConfig.getType())) {
             this.buildOssConfigMinio(ossConfig, ossTpl);
-            this.ossTaskExecutor.execute(() -> this.ossMinioService.removeFiles(relativePaths));
+            this.threadPoolExecutor.execute(() -> this.ossMinioService.removeFiles(relativePaths));
         } else if (OssTypeEnum.ALIYUN.equals(ossConfig.getType())) {
             this.buildOssConfigAliyun(ossConfig, ossTpl);
-            this.ossTaskExecutor.execute(() -> this.ossAliyunService.removeFiles(relativePaths));
+            this.threadPoolExecutor.execute(() -> this.ossAliyunService.removeFiles(relativePaths));
         } else if (OssTypeEnum.QINIU.equals(ossConfig.getType())) {
             this.buildOssConfigQiniu(ossConfig, ossTpl);
-            this.ossTaskExecutor.execute(() -> this.ossQiniuService.removeFiles(relativePaths));
+            this.threadPoolExecutor.execute(() -> this.ossQiniuService.removeFiles(relativePaths));
         }
     }
 

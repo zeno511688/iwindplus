@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ThreadPoolExecutor;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -49,7 +50,6 @@ import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.hc.core5.net.URIBuilder;
-import org.dromara.dynamictp.core.executor.DtpExecutor;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -68,11 +68,11 @@ public class ApacheHttpClientExecutor extends AbstractHttpClientExecutor impleme
         HttpClientProperty property,
         HttpExecuteTemplate executeTemplate,
         ResponseExtractorStrategyFactory extractorStrategyFactory,
-        DtpExecutor httpClientTaskExecutor,
+        ThreadPoolExecutor threadPoolExecutor,
         CloseableHttpClient closeableHttpClient,
         CloseableHttpAsyncClient closeableHttpAsyncClient) {
 
-        super(property, executeTemplate, extractorStrategyFactory, httpClientTaskExecutor);
+        super(property, executeTemplate, extractorStrategyFactory, threadPoolExecutor);
         this.closeableHttpClient = closeableHttpClient;
         this.closeableHttpAsyncClient = closeableHttpAsyncClient;
     }

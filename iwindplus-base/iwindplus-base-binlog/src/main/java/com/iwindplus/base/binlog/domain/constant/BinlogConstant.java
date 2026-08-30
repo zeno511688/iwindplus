@@ -22,6 +22,16 @@ public class BinlogConstant {
     }
 
     /**
+     * 线程池bean名称.
+     */
+    public static final String THREAD_POOL_BEAN_NAME = "binlogThreadPool";
+
+    /**
+     * 定时任务线程池bean名称.
+     */
+    public static final String SCHEDULER_THREAD_POOL_BEAN_NAME = "binlogSchedulerThreadPool";
+
+    /**
      * 操作.
      */
     public static final String OP = "op";

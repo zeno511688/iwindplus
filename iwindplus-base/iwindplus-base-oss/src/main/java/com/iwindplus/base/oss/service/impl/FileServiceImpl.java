@@ -31,8 +31,8 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ThreadPoolExecutor;
 import lombok.extern.slf4j.Slf4j;
-import org.dromara.dynamictp.core.executor.DtpExecutor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -151,7 +151,7 @@ public class FileServiceImpl extends AbstractBaseServiceImpl implements FileServ
     }
 
     @Override
-    public List<FilePathVO> listSignUrl(List<String> relativePaths, Integer timeout, DtpExecutor taskExecutor) {
+    public List<FilePathVO> listSignUrl(List<String> relativePaths, Integer timeout, ThreadPoolExecutor threadPoolExecutor) {
         return null;
     }
 

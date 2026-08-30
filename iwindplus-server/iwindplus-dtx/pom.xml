@@ -19,6 +19,11 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>com.iwindplus.im</groupId>
+                <artifactId>iwindplus-im-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.iwindplus.dtx</groupId>
                 <artifactId>iwindplus-dtx-domain</artifactId>
                 <version>${revision}</version>

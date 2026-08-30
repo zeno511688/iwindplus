@@ -29,6 +29,16 @@ public class SetupConstant {
     public static final String SETUP_CLIENT_SCAN_BASE_PACKAGE = "com.iwindplus.setup.client";
 
     /**
+     * 线程池bean名称（oss）.
+     */
+    public static final String THREAD_POOL_BEAN_NAME_OSS = "ossThreadPool";
+
+    /**
+     * 线程池bean名称（sms）.
+     */
+    public static final String THREAD_POOL_BEAN_NAME_SMS = "smsThreadPool";
+
+    /**
      * redis 缓存相关常数.
      */
     public static class RedisCacheConstant {

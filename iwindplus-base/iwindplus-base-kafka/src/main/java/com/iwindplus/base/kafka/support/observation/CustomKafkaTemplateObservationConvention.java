@@ -8,7 +8,6 @@
 package com.iwindplus.base.kafka.support.observation;
 
 import cn.hutool.core.text.CharSequenceUtil;
-import com.iwindplus.base.domain.constant.CommonConstant.SystemConstant;
 import com.iwindplus.base.kafka.domain.constant.KafkaConstant;
 import io.micrometer.common.KeyValues;
 import java.nio.charset.StandardCharsets;
@@ -46,19 +45,8 @@ public class CustomKafkaTemplateObservationConvention extends DefaultKafkaTempla
     @Override
     public KeyValues getHighCardinalityKeyValues(
         KafkaRecordSenderContext context) {
-        final KeyValues defaultKeyValues = super.getHighCardinalityKeyValues(context);
-        final String requestId = getHeader(context, SystemConstant.REQUEST_ID);
-        if (CharSequenceUtil.isBlank(requestId)) {
-            return defaultKeyValues;
-        }
 
-        return KeyValues.concat(
-            defaultKeyValues,
-            KeyValues.of(
-                SystemConstant.REQUEST_ID,
-                requestId
-            )
-        );
+        return KeyValues.empty();
     }
 
     private String getHeader(

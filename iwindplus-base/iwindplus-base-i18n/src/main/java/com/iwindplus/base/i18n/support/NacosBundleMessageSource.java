@@ -29,10 +29,10 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.dromara.dynamictp.core.executor.DtpExecutor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.support.AbstractResourceBasedMessageSource;
 
@@ -52,7 +52,7 @@ public class NacosBundleMessageSource extends AbstractResourceBasedMessageSource
     private static final Duration DEFAULT_CACHE_DURATION = Duration.ofMinutes(10);
     private static final int DEFAULT_MAX_CACHE_SIZE = 100;
 
-    private final DtpExecutor i18nTaskExecutor;
+    private final ThreadPoolExecutor threadPoolExecutor;
     private final ConfigService configService;
     private final String group;
     private final Duration cacheDuration;
@@ -63,12 +63,12 @@ public class NacosBundleMessageSource extends AbstractResourceBasedMessageSource
 
     @Builder
     public NacosBundleMessageSource(ConfigService configService,
-        DtpExecutor i18nTaskExecutor, String group, Duration cacheDuration, Integer maxCacheSize) {
+        ThreadPoolExecutor threadPoolExecutor, String group, Duration cacheDuration, Integer maxCacheSize) {
         this.configService = Objects.requireNonNull(configService, "ConfigService cannot be null");
         this.group = CharSequenceUtil.blankToDefault(group, DEFAULT_GROUP);
         this.cacheDuration = getCacheDuration(cacheDuration);
         this.maxCacheSize = Optional.ofNullable(maxCacheSize).orElse(DEFAULT_MAX_CACHE_SIZE);
-        this.i18nTaskExecutor = i18nTaskExecutor;
+        this.threadPoolExecutor = threadPoolExecutor;
         this.fileCache = getFileCache(this.cacheDuration);
 
         log.info("NacosBundleMessageSource initialized: cacheDuration={}, maxCacheSize={}", this.cacheDuration, this.maxCacheSize);
@@ -270,7 +270,7 @@ public class NacosBundleMessageSource extends AbstractResourceBasedMessageSource
 
         @Override
         public Executor getExecutor() {
-            return source.i18nTaskExecutor;
+            return source.threadPoolExecutor;
         }
 
         @Override

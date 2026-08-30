@@ -125,9 +125,9 @@
     </properties>
 
     <modules>
-        <module>iwindplus-base-async-cmd</module>
+        <module>iwindplus-base-async-task</module>
         <module>iwindplus-base-domain</module>
-        <module>iwindplus-base-document</module>
+        <module>iwindplus-base-export-task</module>
         <module>iwindplus-base-http-client</module>
         <module>iwindplus-base-http-client-integration</module>
         <module>iwindplus-base-kafka</module>
@@ -653,7 +653,7 @@
 
             <dependency>
                 <groupId>com.iwindplus.base</groupId>
-                <artifactId>iwindplus-base-async-cmd</artifactId>
+                <artifactId>iwindplus-base-async-task</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -698,7 +698,7 @@
             </dependency>
             <dependency>
                 <groupId>com.iwindplus.base</groupId>
-                <artifactId>iwindplus-base-document</artifactId>
+                <artifactId>iwindplus-base-export-task</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

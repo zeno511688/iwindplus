@@ -9,6 +9,7 @@ package com.iwindplus.base.binlog.manager;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.text.CharSequenceUtil;
+import com.iwindplus.base.binlog.domain.constant.BinlogConstant;
 import com.iwindplus.base.binlog.domain.property.BinlogProperty;
 import com.iwindplus.base.binlog.domain.property.BinlogProperty.TopicHistory;
 import com.iwindplus.base.binlog.domain.property.BinlogProperty.TopicOffset;
@@ -65,11 +66,11 @@ public class BinlogEngineManager implements SmartLifecycle {
     @Resource
     private BinlogProcessHandler handler;
 
-    @Resource(name = "binlogTaskExecutor")
-    private DtpExecutor binlogTaskExecutor;
+    @Resource(name = BinlogConstant.THREAD_POOL_BEAN_NAME)
+    private DtpExecutor threadPoolExecutor;
 
-    @Resource(name = "binlogTaskScheduler")
-    private ScheduledDtpExecutor binlogTaskScheduler;
+    @Resource(name = BinlogConstant.SCHEDULER_THREAD_POOL_BEAN_NAME)
+    private ScheduledDtpExecutor schedulerThreadPool;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final Map<String, Future<?>> engines = new ConcurrentHashMap<>(16);
@@ -125,7 +126,7 @@ public class BinlogEngineManager implements SmartLifecycle {
                     scheduleRestart(ds);
                 })
                 .build();
-        return binlogTaskExecutor.submit(engine);
+        return threadPoolExecutor.submit(engine);
     }
 
     private void submitEngine(BinlogProperty.DataSource ds) {
@@ -143,7 +144,7 @@ public class BinlogEngineManager implements SmartLifecycle {
         String serverId = ds.getServerId();
         engines.compute(serverId, (k, existing) ->
             // 延迟执行
-            binlogTaskScheduler.schedule(() -> {
+            schedulerThreadPool.schedule(() -> {
                 engines.remove(k);
                 log.info("Restarting binlog engine for serverId={}", serverId);
                 submitEngine(ds);

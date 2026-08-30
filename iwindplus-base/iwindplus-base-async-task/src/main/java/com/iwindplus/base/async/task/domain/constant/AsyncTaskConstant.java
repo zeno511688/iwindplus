@@ -1,0 +1,93 @@
+/*
+ *
+ *  * Copyright (c) iwindplus Technologies Co., Ltd.2024-2030, All rights reserved.
+ *
+ *
+ */
+
+package com.iwindplus.base.async.task.domain.constant;
+
+import com.iwindplus.base.domain.constant.CommonConstant;
+
+/**
+ * 常数.
+ *
+ * @author zengdegui
+ * @since 2020/11/8
+ */
+public class AsyncTaskConstant {
+
+    private AsyncTaskConstant() {
+        throw new IllegalStateException(CommonConstant.UTILITY_CLASS);
+    }
+
+    /**
+     * 异步任务mapper扫描包名.
+     */
+    public static final String ASYNC_TASK_MAPPER_SCAN_BASE_PACKAGE = "com.iwindplus.base.async.task.dal.mapper";
+
+    /**
+     * 异步任务bean扫描包名.
+     */
+    public static final String ASYNC_TASK_COMPONENT_SCAN_BASE_PACKAGE = "com.iwindplus.base.async.task";
+
+    /**
+     * 异步任务线程池bean名称.
+     */
+    public static final String THREAD_POOL_BEAN_NAME = "asyncTaskThreadPool";
+
+    /**
+     * 异步任务子线程池bean名称.
+     */
+    public static final String THREAD_POOL_SUB_BEAN_NAME = "asyncTaskSubThreadPool";
+
+    /**
+     * 预存回调结果在result中的保留键.
+     */
+    public static final String CALLBACK_RESULT_KEY = "callbackResult";
+
+    /**
+     * 预存回调错误信息在result中的保留键.
+     */
+    public static final String CALLBACK_ERROR_MSG_KEY = "callbackErrorMsg";
+
+    /**
+     * 反射方法名：主任务回调执行方法.
+     */
+    public static final String METHOD_EXECUTE_CALLBACK = "executeCallback";
+
+    /**
+     * 反射方法名：子任务回调执行方法.
+     */
+    public static final String METHOD_EXECUTE_SUB_CALLBACK = "executeSubCallback";
+
+    /**
+     * 钩子方法名：主任务执行成功.
+     */
+    public static final String HOOK_ON_TASK_SUCCESS = "onTaskSuccess";
+
+    /**
+     * 钩子方法名：主任务执行失败.
+     */
+    public static final String HOOK_ON_TASK_FAIL = "onTaskFail";
+
+    /**
+     * 钩子方法名：主任务异步等待.
+     */
+    public static final String HOOK_ON_TASK_ASYNC_WAIT = "onTaskAsyncWait";
+
+    /**
+     * 钩子方法名：子任务执行成功.
+     */
+    public static final String HOOK_ON_SUB_TASK_SUCCESS = "onSubTaskSuccess";
+
+    /**
+     * 钩子方法名：子任务执行失败.
+     */
+    public static final String HOOK_ON_SUB_TASK_FAIL = "onSubTaskFail";
+
+    /**
+     * 钩子方法名：子任务异步等待.
+     */
+    public static final String HOOK_ON_SUB_TASK_ASYNC_WAIT = "onSubTaskAsyncWait";
+}

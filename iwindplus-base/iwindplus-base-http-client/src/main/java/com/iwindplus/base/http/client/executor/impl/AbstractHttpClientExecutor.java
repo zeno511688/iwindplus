@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ThreadPoolExecutor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.dromara.dynamictp.core.executor.DtpExecutor;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,7 +44,7 @@ public abstract class AbstractHttpClientExecutor implements HttpClientExecutor {
     private final HttpClientProperty property;
     private final HttpExecuteTemplate executeTemplate;
     private final ResponseExtractorStrategyFactory extractorStrategyFactory;
-    private final DtpExecutor httpClientTaskExecutor;
+    private final ThreadPoolExecutor threadPoolExecutor;
 
     @Override
     public <T> T exchange(HttpRequestSpecDTO request, Class<T> responseType) {
@@ -61,13 +61,13 @@ public abstract class AbstractHttpClientExecutor implements HttpClientExecutor {
     @Override
     public <T> CompletionStage<T> exchangeAsync(HttpRequestSpecDTO request, Class<T> responseType) {
         return executeAsyncInternal(request)
-            .thenApplyAsync(result -> extractorStrategyFactory.extract(result, responseType), httpClientTaskExecutor);
+            .thenApplyAsync(result -> extractorStrategyFactory.extract(result, responseType), threadPoolExecutor);
     }
 
     @Override
     public <T> CompletionStage<T> exchangeAsync(HttpRequestSpecDTO request, TypeReference<T> typeReference) {
         return executeAsyncInternal(request)
-            .thenApplyAsync(result -> extractorStrategyFactory.extract(result, typeReference), httpClientTaskExecutor);
+            .thenApplyAsync(result -> extractorStrategyFactory.extract(result, typeReference), threadPoolExecutor);
     }
 
     /**

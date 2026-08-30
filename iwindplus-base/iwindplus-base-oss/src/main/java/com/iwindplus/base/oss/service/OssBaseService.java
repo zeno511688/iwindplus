@@ -12,7 +12,7 @@ import com.iwindplus.base.domain.vo.UploadVO;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.util.List;
-import org.dromara.dynamictp.core.executor.DtpExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -100,12 +100,12 @@ public interface OssBaseService {
     /**
      * 获取文件访问路径.
      *
-     * @param relativePaths 相对路径集合（必填）
-     * @param timeout       过期时间（可选，单位：分钟，默认：60）
-     * @param taskExecutor  线程池
+     * @param relativePaths      相对路径集合（必填）
+     * @param timeout            过期时间（可选，单位：分钟，默认：60）
+     * @param threadPoolExecutor 线程池
      * @return List<FilePathVO>
      */
-    List<FilePathVO> listSignUrl(List<String> relativePaths, Integer timeout, DtpExecutor taskExecutor);
+    List<FilePathVO> listSignUrl(List<String> relativePaths, Integer timeout, ThreadPoolExecutor threadPoolExecutor);
 
     /**
      * 批量删除上传的文件.

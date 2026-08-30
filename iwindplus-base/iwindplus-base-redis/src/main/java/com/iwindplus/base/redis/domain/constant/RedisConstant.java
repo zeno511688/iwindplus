@@ -55,4 +55,9 @@ public final class RedisConstant {
      * 限流前缀.
      */
     public static final String RATE_LIMITER_KEY = "rate_limiter:";
+
+    /**
+     * 定时任务线程池bean名称.
+     */
+    public static final String SCHEDULER_THREAD_POOL_BEAN_NAME = "idempotentSchedulerThreadPool";
 }

@@ -12,10 +12,10 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.google.common.collect.ImmutableMap;
-import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdExtDTO;
-import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
-import com.iwindplus.base.async.cmd.domain.vo.AsyncCmdSubmitVO;
-import com.iwindplus.base.async.cmd.executor.AsyncCmdExecutor;
+import com.iwindplus.base.async.task.domain.dto.AsyncTaskExtDTO;
+import com.iwindplus.base.async.task.domain.dto.AsyncTaskSubmitDTO;
+import com.iwindplus.base.async.task.domain.vo.AsyncTaskSubmitVO;
+import com.iwindplus.base.async.task.executor.AsyncTaskExecutor;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
@@ -37,8 +37,8 @@ import com.iwindplus.mgt.domain.vo.system.I18nProjectPageVO;
 import com.iwindplus.mgt.server.dal.model.system.I18nProjectDO;
 import com.iwindplus.mgt.server.dal.repository.system.I18nMsgRepository;
 import com.iwindplus.mgt.server.dal.repository.system.I18nProjectRepository;
-import com.iwindplus.mgt.server.service.asynccmd.I18nMsgPushTaskHandler;
-import com.iwindplus.mgt.server.service.asynccmd.I18nMsgRemoveTaskHandler;
+import com.iwindplus.mgt.server.service.asynctask.I18nMsgPushTaskHandler;
+import com.iwindplus.mgt.server.service.asynctask.I18nMsgRemoveTaskHandler;
 import com.iwindplus.mgt.server.service.system.I18nProjectService;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
@@ -77,7 +77,7 @@ public class I18nProjectServiceImpl implements I18nProjectService {
     private final I18nProjectRepository i18nProjectRepository;
     private final I18nMsgRepository i18nMsgRepository;
     private final RedissonService redissonService;
-    private final AsyncCmdExecutor asyncCmdExecutor;
+    private final AsyncTaskExecutor asyncTaskExecutor;
 
     @CacheEvict(allEntries = true)
     @Override
@@ -331,31 +331,31 @@ public class I18nProjectServiceImpl implements I18nProjectService {
     }
 
     private boolean pushData(String fileName, String content) {
-        final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
+        final AsyncTaskSubmitDTO build = AsyncTaskSubmitDTO.builder()
             .bizName("国际化消息推送数据至Nacos")
             .bizKey("I18N_MSG")
             .bizType("I18N_MSG_PUSH")
             .param(ImmutableMap.of("fileName", fileName, "content", content))
             .executorClass(I18nMsgPushTaskHandler.class)
             .remark("国际化消息推送数据至Nacos")
-            .ext(AsyncCmdExtDTO.builder().enabledSuccessDelete(Boolean.TRUE).build())
+            .ext(AsyncTaskExtDTO.builder().enabledSuccessDelete(Boolean.TRUE).build())
             .build();
-        final AsyncCmdSubmitVO submit = this.asyncCmdExecutor.submit(build);
+        final AsyncTaskSubmitVO submit = this.asyncTaskExecutor.submit(build);
         log.info("Push i18n data to nacos, fileName: {}, result: {}", fileName, submit);
         return true;
     }
 
     private boolean removeData(String fileName) {
-        final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
+        final AsyncTaskSubmitDTO build = AsyncTaskSubmitDTO.builder()
             .bizName("删除Nacos国际化消息数据")
             .bizKey("I18N_MSG")
             .bizType("I18N_MSG_REMOVE")
             .param(ImmutableMap.of("fileName", fileName))
             .executorClass(I18nMsgRemoveTaskHandler.class)
             .remark("删除Nacos国际化消息数据")
-            .ext(AsyncCmdExtDTO.builder().enabledSuccessDelete(Boolean.TRUE).build())
+            .ext(AsyncTaskExtDTO.builder().enabledSuccessDelete(Boolean.TRUE).build())
             .build();
-        this.asyncCmdExecutor.submit(build);
+        this.asyncTaskExecutor.submit(build);
         return true;
     }
 

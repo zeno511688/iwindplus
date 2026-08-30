@@ -13,8 +13,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.google.common.collect.ImmutableMap;
-import com.iwindplus.base.async.cmd.domain.dto.AsyncCmdSubmitDTO;
-import com.iwindplus.base.async.cmd.executor.AsyncCmdExecutor;
+import com.iwindplus.base.async.task.domain.dto.AsyncTaskSubmitDTO;
+import com.iwindplus.base.async.task.executor.AsyncTaskExecutor;
 import com.iwindplus.base.domain.dto.MessageBaseDTO;
 import com.iwindplus.base.domain.enums.AppCertTypeEnum;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
@@ -33,7 +33,7 @@ import com.iwindplus.mgt.domain.vo.system.AppCertPageVO;
 import com.iwindplus.mgt.domain.vo.system.AppCertVO;
 import com.iwindplus.mgt.server.dal.model.system.AppCertDO;
 import com.iwindplus.mgt.server.dal.repository.system.AppCertRepository;
-import com.iwindplus.mgt.server.service.asynccmd.AppCertTaskHandler;
+import com.iwindplus.mgt.server.service.asynctask.AppCertTaskHandler;
 import com.iwindplus.mgt.server.service.system.AppCertService;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +62,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AppCertServiceImpl implements AppCertService {
 
     private final AppCertRepository appCertRepository;
-    private final AsyncCmdExecutor asyncCmdExecutor;
+    private final AsyncTaskExecutor asyncTaskExecutor;
 
     @CacheEvict(allEntries = true)
     @Override
@@ -330,7 +330,7 @@ public class AppCertServiceImpl implements AppCertService {
         messageDTO.setData(dataList);
         final String content = JacksonUtil.toJsonStr(messageDTO);
 
-        final AsyncCmdSubmitDTO build = AsyncCmdSubmitDTO.builder()
+        final AsyncTaskSubmitDTO build = AsyncTaskSubmitDTO.builder()
             .bizName("应用凭证数据发送kafka")
             .bizKey("APP_CERT")
             .bizType("APP_CERT_PUSH")
@@ -338,7 +338,7 @@ public class AppCertServiceImpl implements AppCertService {
             .executorClass(AppCertTaskHandler.class)
             .remark("应用凭证数据发送kafka")
             .build();
-        this.asyncCmdExecutor.submit(build);
+        this.asyncTaskExecutor.submit(build);
         return true;
     }
 

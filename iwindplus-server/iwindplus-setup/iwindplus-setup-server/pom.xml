@@ -149,7 +149,7 @@
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
-            <artifactId>iwindplus-base-document</artifactId>
+            <artifactId>iwindplus-base-export-task</artifactId>
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>

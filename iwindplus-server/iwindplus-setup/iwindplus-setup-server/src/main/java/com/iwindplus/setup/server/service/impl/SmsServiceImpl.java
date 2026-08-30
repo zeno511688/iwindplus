@@ -19,15 +19,16 @@ import com.iwindplus.mgt.client.power.UserClient;
 import com.iwindplus.mgt.domain.dto.power.UserBaseQueryDTO;
 import com.iwindplus.mgt.domain.vo.power.UserInfoVO;
 import com.iwindplus.mgt.domain.vo.power.UserVO;
+import com.iwindplus.setup.domain.constant.SetupConstant;
 import com.iwindplus.setup.domain.dto.SmsSendDTO;
 import com.iwindplus.setup.domain.vo.SmsConfigVO;
 import com.iwindplus.setup.domain.vo.SmsTplVO;
 import com.iwindplus.setup.server.service.SmsConfigService;
 import com.iwindplus.setup.server.service.SmsService;
 import com.iwindplus.setup.server.service.SmsTplService;
+import jakarta.annotation.Resource;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.dromara.dynamictp.core.executor.DtpExecutor;
 import org.springframework.stereotype.Service;
@@ -42,18 +43,34 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @Transactional(rollbackFor = Exception.class)
-@RequiredArgsConstructor
 public class SmsServiceImpl implements SmsService {
 
-    private final SmsConfigService smsConfigService;
-    private final SmsTplService smsTplService;
-    private final SmsAliyunService smsAliyunService;
-    private final SmsQiniuService smsQiniuService;
-    private final SmsLingkaiService smsLingkaiService;
-    private final SmsMxtongService smsMxtongService;
-    private final SmsCaptchaLogClient smsCaptchaLogClient;
-    private final UserClient userClient;
-    private final DtpExecutor smsTaskExecutor;
+    @Resource
+    private SmsConfigService smsConfigService;
+
+    @Resource
+    private SmsTplService smsTplService;
+
+    @Resource
+    private SmsAliyunService smsAliyunService;
+
+    @Resource
+    private SmsQiniuService smsQiniuService;
+
+    @Resource
+    private SmsLingkaiService smsLingkaiService;
+
+    @Resource
+    private SmsMxtongService smsMxtongService;
+
+    @Resource
+    private SmsCaptchaLogClient smsCaptchaLogClient;
+
+    @Resource
+    private UserClient userClient;
+
+    @Resource(name = SetupConstant.THREAD_POOL_BEAN_NAME_SMS)
+    private DtpExecutor threadPoolExecutor;
 
     @Override
     public void sendCaptcha(String requestId, String tplCode, String mobile) {
@@ -85,22 +102,22 @@ public class SmsServiceImpl implements SmsService {
             this.buildSmsConfigAliyun(smsConfig, smsTpl);
             CompletableFuture.runAsync(() ->
                     this.smsAliyunService.smsSend(entity.getPhoneNumbers(), entity.getTemplateParamValue(), null)
-                , this.smsTaskExecutor);
+                , this.threadPoolExecutor);
         } else if (SmsTypeEnum.QINIU.equals(smsConfig.getType())) {
             this.buildSmsConfigQiniu(smsConfig, smsTpl);
             CompletableFuture.runAsync(() ->
                     this.smsQiniuService.smsSend(entity.getPhoneNumbers(), entity.getTemplateParamValue(), null)
-                , this.smsTaskExecutor);
+                , this.threadPoolExecutor);
         } else if (SmsTypeEnum.LINGKAI.equals(smsConfig.getType())) {
             this.buildSmsConfigLingkai(smsConfig, smsTpl);
             CompletableFuture.runAsync(() ->
                     this.smsLingkaiService.smsSend(entity.getPhoneNumbers(), entity.getTemplateParamValue(), null)
-                , this.smsTaskExecutor);
+                , this.threadPoolExecutor);
         } else if (SmsTypeEnum.MXTONG.equals(smsConfig.getType())) {
             this.buildSmsConfigMxtong(smsConfig, smsTpl);
             CompletableFuture.runAsync(() ->
                     this.smsMxtongService.smsSend(entity.getPhoneNumbers(), entity.getTemplateParamValue(), null)
-                , this.smsTaskExecutor);
+                , this.threadPoolExecutor);
         }
     }
 
@@ -192,25 +209,25 @@ public class SmsServiceImpl implements SmsService {
             CompletableFuture.runAsync(() -> {
                 SmsLogVO data = this.smsAliyunService.smsSendCaptcha(mobile, smsTpl.getCaptchaLength(), smsTpl.getCaptchaTimeout());
                 this.saveSmsLog(data, smsTpl, requestId, userId, orgId);
-            }, this.smsTaskExecutor);
+            }, this.threadPoolExecutor);
         } else if (SmsTypeEnum.QINIU.equals(smsConfig.getType())) {
             this.buildSmsConfigQiniu(smsConfig, smsTpl);
             CompletableFuture.runAsync(() -> {
                 SmsLogVO data = this.smsQiniuService.smsSendCaptcha(mobile, smsTpl.getCaptchaLength(), smsTpl.getCaptchaTimeout());
                 this.saveSmsLog(data, smsTpl, requestId, userId, orgId);
-            }, this.smsTaskExecutor);
+            }, this.threadPoolExecutor);
         } else if (SmsTypeEnum.LINGKAI.equals(smsConfig.getType())) {
             this.buildSmsConfigLingkai(smsConfig, smsTpl);
             CompletableFuture.runAsync(() -> {
                 SmsLogVO data = this.smsLingkaiService.smsSendCaptcha(mobile, smsTpl.getCaptchaLength(), smsTpl.getCaptchaTimeout());
                 this.saveSmsLog(data, smsTpl, requestId, userId, orgId);
-            }, this.smsTaskExecutor);
+            }, this.threadPoolExecutor);
         } else if (SmsTypeEnum.MXTONG.equals(smsConfig.getType())) {
             this.buildSmsConfigMxtong(smsConfig, smsTpl);
             CompletableFuture.runAsync(() -> {
                 SmsLogVO data = this.smsMxtongService.smsSendCaptcha(mobile, smsTpl.getCaptchaLength(), smsTpl.getCaptchaTimeout());
                 this.saveSmsLog(data, smsTpl, requestId, userId, orgId);
-            }, this.smsTaskExecutor);
+            }, this.threadPoolExecutor);
         }
     }
 }
