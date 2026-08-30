@@ -26,7 +26,7 @@
                 where fht.deleted = 0
                 <choose>
                     <when test="ew.queryType.name() == 'MY_DONE'">
-                        and fht.type = 0 and and fhtp.player_id = #{ew.userId}
+                        and fht.type = 0 and fhtp.player_id = #{ew.userId}
                     </when>
                     <when test="ew.queryType.name() == 'MY_CC'">
                         and fht.type = 1 and fhtp.player_id = #{ew.userId}
