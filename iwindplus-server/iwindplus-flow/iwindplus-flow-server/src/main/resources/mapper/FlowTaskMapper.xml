@@ -10,7 +10,7 @@
 
     <select id="selectMyPendingPage" resultType="com.iwindplus.flow.domain.vo.FlowTaskPageVO">
         select
-            ft.id, ft.created_timestamp, ft.created_by, ft.modified_time, ft.modified_timestamp, ft.modified_by, ft.version,
+            ft.id, ft.created_timestamp, ft.created_by, ft.modified_timestamp, ft.modified_by, ft.version,
             ft.code, ft.name, ft.type, ft.instance_id, fi.name as instance_name, fi.biz_number, fi.current_node_name, ft.model_id,
             fm.name as model_name, fm.code as model_code
         from flow_task ft
