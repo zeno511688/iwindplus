@@ -39,18 +39,17 @@ public class TimingGatewayFilter implements Ordered, GlobalFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        final long start = System.currentTimeMillis();
         // 统一生成并透传请求唯一标识，保证同一请求链路使用相同的采样 Key。
-        ServerWebExchange requestExchange = ensureRequestId(exchange);
-
-        long start = System.currentTimeMillis();
-        // 设置请求开始时间
+        final ServerWebExchange requestExchange = ensureRequestId(exchange);
+        // 必须写入最终传递给下游的 exchange，避免 mutate().build() 后计时属性不一致。
         ReactorUtil.setAttribute(requestExchange, ServerWebExchangeContextConstant.REQUEST_TIME, start);
 
         return chain.filter(requestExchange)
             .doFinally(signal -> {
                 // 总耗时
                 final long cost = System.currentTimeMillis() - start;
-                log.info("[GatewayTotalTiming] cost={}ms", cost);
+                log.info("[GatewayTotalTiming] execute cost={}ms", cost);
 
                 GatewayUtil.clearRequestParams(requestExchange);
             });
