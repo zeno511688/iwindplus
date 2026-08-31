@@ -174,14 +174,30 @@ public class NacosServiceInstanceLoadBalancer implements ReactorServiceInstanceL
     /**
      * 灰度实例选择.
      * <p>
-     * 选择灰度实例（version=gray的实例），如果不存在则降级使用所有实例.
+     * 仅选择 version=gray 的实例；灰度实例不存在时，根据配置决定返回空响应或回退到全部实例。
      * </p>
      *
      * @param instances 实例列表
      * @return Response<ServiceInstance>
      */
     private Response<ServiceInstance> getGrayInstanceResponse(List<ServiceInstance> instances) {
-        return this.selectInstancesByVersion(instances, VersionTypeEnum.GRAY.getValue());
+        final List<ServiceInstance> grayInstances = this.filterInstancesByVersion(
+            instances,
+            VersionTypeEnum.GRAY.getValue()
+        );
+        if (CollUtil.isNotEmpty(grayInstances)) {
+            log.debug("Select gray instances, count: {}", grayInstances.size());
+            return this.selectInstanceByWeight(grayInstances);
+        }
+
+        final GrayConfig grayConfig = this.loadBalancerProperty.getGray();
+        if (Boolean.TRUE.equals(grayConfig.getFallbackWhenNoInstance())) {
+            log.warn("No gray instances found for service: {}, fallback to all instances", this.serviceId);
+            return this.selectInstanceByWeight(instances);
+        }
+
+        log.warn("No gray instances found for service: {}, return empty response", this.serviceId);
+        return new EmptyResponse();
     }
 
     /**

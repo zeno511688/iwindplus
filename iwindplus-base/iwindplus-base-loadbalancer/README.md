@@ -190,6 +190,7 @@ loadbalancer:
       - vip001
       - test001
     percentage: 10
+    fallback-when-no-instance: false
 ```
 
 配置字段：
@@ -200,6 +201,7 @@ loadbalancer:
 | `loadbalancer.gray.strategy` | `percentage` | `whitelist` 或 `percentage` |
 | `loadbalancer.gray.user-id-whitelist` | 空 | 白名单策略使用的用户 ID |
 | `loadbalancer.gray.percentage` | `10` | 百分比策略，范围 `0-100` |
+| `loadbalancer.gray.fallback-when-no-instance` | `false` | 灰度实例不存在时是否回退到全部实例；关闭时返回空响应 |
 
 只有请求中存在 `X-User-Id` 时才会判断灰度。没有该请求头时不会进入灰度实例。
 
@@ -226,7 +228,7 @@ X-User-Id: user-001
 
 - `user-001` 在白名单中：优先选择 `version=gray`；
 - 不在白名单中：按 `X-Version` 或 `stable` 版本路由；
-- 灰度实例不存在：降级使用候选实例集合。
+- 灰度实例不存在：默认返回空响应；开启 `fallback-when-no-instance` 后才降级使用候选实例集合。
 
 ## 8. 百分比灰度
 

@@ -76,6 +76,12 @@ public class LoadBalancerProperty {
         private Boolean enabled = false;
 
         /**
+         * 灰度实例不存在时是否回退到全部实例（默认开启）.
+         */
+        @Builder.Default
+        private Boolean fallbackWhenNoInstance = true;
+
+        /**
          * 灰度策略类型（whitelist: 白名单策略，percentage: 百分比策略）.
          */
         @Builder.Default
