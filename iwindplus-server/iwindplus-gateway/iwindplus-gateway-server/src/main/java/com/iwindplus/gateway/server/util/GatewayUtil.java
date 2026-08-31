@@ -78,7 +78,7 @@ public class GatewayUtil {
             return true;
         }
 
-        Boolean whited = ReactorUtil.getAttribute(
+        Boolean whited = ReactorUtil.<Boolean>getAttribute(
             exchange,
             ServerWebExchangeContextConstant.WHITED_FLAG
         );
@@ -107,14 +107,13 @@ public class GatewayUtil {
      * @param filterName 过滤器名称
      */
     public static void logTiming(ServerWebExchange exchange, String filterName) {
-        final long start = ReactorUtil.getAttribute(exchange, ServerWebExchangeContextConstant.REQUEST_TIME);
+        final Long start = ReactorUtil.<Long>getAttribute(exchange, ServerWebExchangeContextConstant.REQUEST_TIME);
         if (Objects.isNull(start)) {
             return;
         }
 
         long cost = System.currentTimeMillis() - start;
-        log.info("{} execute cost={} ms",
-            filterName, cost);
+        log.info("{} execute cost={} ms", filterName, cost);
     }
 
     /**
@@ -187,7 +186,7 @@ public class GatewayUtil {
      */
     public static Mono<GatewayLogDTO> buildGatewayLog(ServerWebExchange exchange, LogConfig cfg) {
         final UserBaseVO user = ReactorUtil.getAttribute(exchange, ServerWebExchangeContextConstant.USER_INFO);
-        final long requestTime = ReactorUtil.getAttribute(exchange, ServerWebExchangeContextConstant.REQUEST_TIME);
+        final Long requestTime = ReactorUtil.<Long>getAttribute(exchange, ServerWebExchangeContextConstant.REQUEST_TIME);
         final ServerHttpRequest request = exchange.getRequest();
         final HttpHeaders headers = request.getHeaders();
 

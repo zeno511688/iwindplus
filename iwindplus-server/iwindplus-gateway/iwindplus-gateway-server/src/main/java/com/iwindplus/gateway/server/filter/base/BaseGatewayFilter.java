@@ -7,13 +7,10 @@
 
 package com.iwindplus.gateway.server.filter.base;
 
-import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.gateway.server.util.GatewayUtil;
-import java.util.UUID;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -27,23 +24,20 @@ public abstract class BaseGatewayFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        // 统一生成并透传请求唯一标识，保证同一请求链路使用相同的采样 Key。
-        ServerWebExchange requestExchange = ensureRequestId(exchange);
-
         // 统一打点
-        GatewayUtil.logTiming(requestExchange, this.getClass().getSimpleName());
+        GatewayUtil.logTiming(exchange, this.getClass().getSimpleName());
 
-        if (shouldSkip(requestExchange)) {
-            return chain.filter(requestExchange);
+        if (shouldSkip(exchange)) {
+            return chain.filter(exchange);
         }
 
-        return before(requestExchange)
+        return before(exchange)
             .flatMap(newExchange ->
                 filterInternal(newExchange, chain)
                     // after 保证一定执行（成功 / 失败 / cancel）
                     .doFinally(signal -> afterFinally(newExchange))
             )
-            .onErrorResume(e -> onError(requestExchange, e));
+            .onErrorResume(e -> onError(exchange, e));
     }
 
     /**
@@ -79,23 +73,5 @@ public abstract class BaseGatewayFilter implements GlobalFilter, Ordered {
      */
     protected Mono<Void> onError(ServerWebExchange exchange, Throwable e) {
         return Mono.error(e);
-    }
-
-    /**
-     * 确保请求包含唯一标识，并将其写入下游请求头。
-     *
-     * @param exchange 当前 exchange
-     * @return 包含请求标识的 exchange
-     */
-    private ServerWebExchange ensureRequestId(ServerWebExchange exchange) {
-        String requestId = exchange.getRequest().getHeaders().getFirst(HeaderConstant.X_REQUESTED_ID);
-        if (StringUtils.hasText(requestId)) {
-            return exchange;
-        }
-
-        String generatedRequestId = UUID.randomUUID().toString();
-        return exchange.mutate()
-            .request(builder -> builder.header(HeaderConstant.X_REQUESTED_ID, generatedRequestId))
-            .build();
     }
 }

@@ -7,15 +7,18 @@
 
 package com.iwindplus.gateway.server.filter;
 
+import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.base.util.ReactorUtil;
 import com.iwindplus.gateway.server.domain.constant.GatewayConstant.FilterConstant;
 import com.iwindplus.gateway.server.domain.constant.GatewayConstant.ServerWebExchangeContextConstant;
 import com.iwindplus.gateway.server.util.GatewayUtil;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -36,18 +39,38 @@ public class TimingGatewayFilter implements Ordered, GlobalFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        // 统一生成并透传请求唯一标识，保证同一请求链路使用相同的采样 Key。
+        ServerWebExchange requestExchange = ensureRequestId(exchange);
+
         long start = System.currentTimeMillis();
         // 设置请求开始时间
-        ReactorUtil.setAttribute(exchange, ServerWebExchangeContextConstant.REQUEST_TIME, start);
+        ReactorUtil.setAttribute(requestExchange, ServerWebExchangeContextConstant.REQUEST_TIME, start);
 
-        return chain.filter(exchange)
+        return chain.filter(requestExchange)
             .doFinally(signal -> {
                 // 总耗时
-                long cost = System.currentTimeMillis() - start;
+                final long cost = System.currentTimeMillis() - start;
                 log.info("[GatewayTotalTiming] cost={}ms", cost);
 
-                GatewayUtil.clearRequestParams(exchange);
+                GatewayUtil.clearRequestParams(requestExchange);
             });
     }
 
+    /**
+     * 确保请求包含唯一标识，并将其写入下游请求头。
+     *
+     * @param exchange 当前 exchange
+     * @return 包含请求标识的 exchange
+     */
+    private ServerWebExchange ensureRequestId(ServerWebExchange exchange) {
+        String requestId = exchange.getRequest().getHeaders().getFirst(HeaderConstant.X_REQUESTED_ID);
+        if (StringUtils.hasText(requestId)) {
+            return exchange;
+        }
+
+        String generatedRequestId = UUID.randomUUID().toString();
+        return exchange.mutate()
+            .request(builder -> builder.header(HeaderConstant.X_REQUESTED_ID, generatedRequestId))
+            .build();
+    }
 }
