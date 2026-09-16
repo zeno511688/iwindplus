@@ -42,20 +42,6 @@ public class ApiWhiteListRepository extends JoinCrudRepository<ApiWhiteListMappe
     }
 
     /**
-     * 检查编码是否存在.
-     *
-     * @param code 编码
-     */
-    public void getCodeIsExist(String code) {
-        final LambdaQueryWrapper<ApiWhiteListDO> queryWrapper = Wrappers.lambdaQuery(ApiWhiteListDO.class)
-            .eq(ApiWhiteListDO::getCode, code);
-        boolean result = SqlHelper.retBool(super.count(queryWrapper));
-        if (Boolean.TRUE.equals(result)) {
-            throw new BizException(MgtCodeEnum.CODE_EXIST);
-        }
-    }
-
-    /**
      * 检查API路径是否存在.
      *
      * @param apiUrl API路径

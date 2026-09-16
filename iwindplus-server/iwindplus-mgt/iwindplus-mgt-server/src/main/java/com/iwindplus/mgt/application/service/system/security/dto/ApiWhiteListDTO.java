@@ -49,13 +49,6 @@ public class ApiWhiteListDTO extends DbVersionBaseDTO {
     private String name;
 
     /**
-     * 编码.
-     */
-    @Schema(description = "编码")
-    @Length(max = 50, message = "{code.length}", groups = {SaveGroup.class, EditGroup.class})
-    private String code;
-
-    /**
      * API路径.
      */
     @Schema(description = "API路径")

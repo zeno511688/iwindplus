@@ -12,8 +12,10 @@ import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.validation.EditGroup;
 import com.iwindplus.base.domain.validation.SaveGroup;
 import com.iwindplus.base.domain.vo.ResultVO;
+import com.iwindplus.base.domain.vo.UserBaseVO;
 import com.iwindplus.base.operate.domain.annotation.OperateLog;
 import com.iwindplus.base.operate.domain.annotation.OperateValid;
+import com.iwindplus.base.redis.domain.annotation.RedisIdempotent;
 import com.iwindplus.base.web.controller.BaseController;
 import com.iwindplus.mgt.application.query.system.security.IpBlackListQueryService;
 import com.iwindplus.mgt.application.query.system.security.dto.IpBlackListSearchDTO;
@@ -23,6 +25,7 @@ import com.iwindplus.mgt.application.service.system.security.IpBlackListApplicat
 import com.iwindplus.mgt.application.service.system.security.dto.IpBlackListDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +37,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * IP黑名单相关操作接口定义类.
@@ -150,5 +155,29 @@ public class IpBlackListController extends BaseController {
     public ResultVO<IpBlackListVO> getDetail(@RequestParam Long id) {
         IpBlackListVO data = this.ipBlackListQueryService.getDetail(id);
         return ResultVO.success(data);
+    }
+
+    /**
+     * 导出模版.
+     *
+     * @param response 响应
+     */
+    @Operation(summary = "导出模版")
+    @GetMapping("exportTemplate")
+    public void exportTemplate(HttpServletResponse response) {
+        this.ipBlackListApplicationService.exportTemplate(response);
+    }
+
+    /**
+     * 导入.
+     *
+     * @param file     文件
+     * @param response 响应
+     */
+    @Operation(summary = "导入")
+    @PostMapping("importByTemplate")
+    public void importByTemplate(@RequestPart MultipartFile file, HttpServletResponse response) {
+        UserBaseVO userInfo = this.getUserInfo();
+        this.ipBlackListApplicationService.importByTemplate(file, userInfo, response);
     }
 }

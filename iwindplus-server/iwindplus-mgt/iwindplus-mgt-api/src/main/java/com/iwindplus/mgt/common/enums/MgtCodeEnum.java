@@ -44,6 +44,11 @@ public enum MgtCodeEnum implements CommonException {
     NAME_EXIST("name_exist", "名称已经存在"),
 
     /**
+     * 名称在表中存在，请检查.
+     */
+    NAME_EXIST_IN_TABLE("name_exist_in_table", "名称在表中存在，请检查"),
+
+    /**
      * 手机不能为空.
      */
     MOBILE_NOT_EMPTY("mobile_not_empty", "手机不能为空"),
@@ -199,6 +204,11 @@ public enum MgtCodeEnum implements CommonException {
     IP_EXIST("ip_exist", "IP已经存在"),
 
     /**
+     * IP在表中存在，请检查.
+     */
+    IP_EXIST_IN_TABLE("ip_exist_in_table", "IP在表中存在，请检查"),
+
+    /**
      * 角色编码开头应为role.
      */
     ROLE_PREFIX_ERROR("role_prefix_error", "角色编码开头应为role"),
@@ -227,6 +237,16 @@ public enum MgtCodeEnum implements CommonException {
      * API路径已经存在.
      */
     API_URL_EXIST("api_url_exist", "API路径已经存在"),
+
+    /**
+     * API路径格式错误.
+     */
+    API_URL_FORMAT_ERROR("api_url_format_error", "API路径格式错误"),
+
+    /**
+     * API路径在表中存在，请检查.
+     */
+    API_URL_EXIST_IN_TABLE("api_url_exist_in_table", "API路径在表中存在，请检查"),
 
     /**
      * API路径不能为空.

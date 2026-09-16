@@ -512,12 +512,10 @@ CREATE TABLE `api_white_list`
     `remark`             varchar(255)     NOT NULL DEFAULT '' COMMENT '备注',
     `status`             int unsigned     NOT NULL DEFAULT 1 COMMENT '状态（0：禁用，1：启用，2：锁定）',
     `name`               varchar(100)     NOT NULL DEFAULT '' COMMENT '名称',
-    `code`               varchar(50)      NOT NULL DEFAULT '' COMMENT '编码',
     `api_url`            varchar(255)     NOT NULL DEFAULT '' COMMENT 'API路径',
     `seq`                int unsigned     NOT NULL DEFAULT 1 COMMENT '排序',
     `build_in_flag`      tinyint unsigned NOT NULL DEFAULT 0 COMMENT '是否内置（0：否，1：是）',
     PRIMARY KEY (`id`),
-    KEY `idx_code` (`code`) COMMENT '普通索引（编码）',
     KEY `idx_name` (`name`) COMMENT '普通索引（名称）',
     KEY `idx_api_url` (`api_url`) COMMENT '普通索引（API路径）'
 ) COMMENT ='API白名单表';

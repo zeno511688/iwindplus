@@ -37,12 +37,6 @@ public class ApiWhiteListSearchDTO extends DbPageDTO {
     private EnableStatusEnum status;
 
     /**
-     * 编码.
-     */
-    @Schema(description = "编码")
-    private String code;
-
-    /**
      * 名称.
      */
     @Schema(description = "名称")

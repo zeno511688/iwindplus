@@ -45,12 +45,6 @@ public class ApiWhiteListDO extends DbBaseDO {
     private String name;
 
     /**
-     * 编码.
-     */
-    @Schema(description = "编码")
-    private String code;
-
-    /**
      * API路径.
      */
     @Schema(description = "API路径")

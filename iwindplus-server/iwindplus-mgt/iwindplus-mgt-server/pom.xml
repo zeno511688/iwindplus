@@ -156,6 +156,10 @@
             <artifactId>iwindplus-base-async-task</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-export-task</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.iwindplus.dtx</groupId>
             <artifactId>iwindplus-dtx-tcc</artifactId>
         </dependency>

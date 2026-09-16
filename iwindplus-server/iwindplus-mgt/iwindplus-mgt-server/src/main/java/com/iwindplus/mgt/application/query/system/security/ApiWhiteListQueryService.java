@@ -56,9 +56,6 @@ public class ApiWhiteListQueryService {
         if (Objects.nonNull(entity.getStatus())) {
             queryWrapper.eq(ApiWhiteListDO::getStatus, entity.getStatus());
         }
-        if (CharSequenceUtil.isNotBlank(entity.getCode())) {
-            queryWrapper.eq(ApiWhiteListDO::getCode, entity.getCode().trim());
-        }
         if (CharSequenceUtil.isNotBlank(entity.getName())) {
             queryWrapper.eq(ApiWhiteListDO::getName, entity.getName().trim());
         }
