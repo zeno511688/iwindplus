@@ -25,6 +25,5 @@
         <module>iwindplus-flow</module>
         <module>iwindplus-binlog</module>
         <module>iwindplus-dtx</module>
-        <module>iwindplus-integr</module>
     </modules>
 </project>
