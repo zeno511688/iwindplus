@@ -131,6 +131,10 @@
             <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-operate</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-logging-alert</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

@@ -26,14 +26,6 @@ operate:
     enabled-mail: false
     # 是否开启短信校验
     enabled-sms: false
-swagger:
-  server-api:
-    # 是否启用API注册
-    enabled: true
-    # 最大重试次数
-    maxRetry: 5
-    # 重试间隔时间（单位：秒）
-    retryInterval: 3
 dynamictp:
   executors:
     - threadPoolName: asyncThreadPool
@@ -184,22 +176,11 @@ binlog:
         # 需要验签的表
         table-list:
           - user
-    webhook:
-      url: https://open.feishu.cn/open-apis/bot/v2/hook/20f6845c-7040-4c81-a409-77eba662316c
-      secret: ${binlog-webhook-secret}
-alert:
-  # 飞书
-  feishu:
-    app-id: cli_a9b7d7e706f8dbd3
-    app-secret: ${alert-feishu-app-secret}
-  log:
-    enabled: true
-    webhook:
-      url: https://open.feishu.cn/open-apis/bot/v2/hook/e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: ${alert-feishu-webhook-secret}
-    stack:
-      max-length: -1
-      max-frames: -1
+    # 告警相关
+    alert:
+      channel-type: FEI_SHU
+      code: feishu-main
+      webhook-code: binlog-alert
 springdoc:
   packagesToScan:
     - com.iwindplus.binlog.consumer.server.web

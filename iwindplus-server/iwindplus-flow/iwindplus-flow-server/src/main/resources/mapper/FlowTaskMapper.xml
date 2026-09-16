@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.iwindplus.flow.server.dal.mapper.FlowTaskMapper">
+<mapper namespace="com.iwindplus.flow.infrastructure.persistence.task.FlowTaskMapper">
     <sql id="inSql">
         <foreach collection="coll" item="item" index="index" open="(" separator="," close=")">
             #{item}
         </foreach>
     </sql>
 
-    <select id="selectMyPendingPage" resultType="com.iwindplus.flow.domain.vo.FlowTaskPageVO">
+    <select id="selectMyPendingPage" resultType="com.iwindplus.flow.application.query.task.vo.FlowTaskPageVO">
         select
             ft.id, ft.created_timestamp, ft.created_by, ft.modified_timestamp, ft.modified_by, ft.version,
             ft.code, ft.name, ft.type, ft.instance_id, fi.name as instance_name, fi.biz_number, fi.current_node_name, ft.model_id,

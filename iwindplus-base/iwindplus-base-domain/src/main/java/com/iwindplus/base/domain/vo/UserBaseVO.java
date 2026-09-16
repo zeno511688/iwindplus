@@ -51,7 +51,7 @@ public class UserBaseVO implements Serializable {
      * 用户名.
      */
     @Schema(description = "用户名")
-    @Sensitive(type = SensitiveTypeEnum.CUSTOM, startInclude = 2, endReserve = 2)
+    @Sensitive(type = SensitiveTypeEnum.CUSTOM)
     private String username;
 
     /**

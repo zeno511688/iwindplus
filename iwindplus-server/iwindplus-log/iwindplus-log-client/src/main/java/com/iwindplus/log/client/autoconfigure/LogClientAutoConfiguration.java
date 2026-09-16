@@ -7,7 +7,7 @@
 
 package com.iwindplus.log.client.autoconfigure;
 
-import com.iwindplus.log.domain.constant.LogConstant;
+import com.iwindplus.log.common.constant.LogConstant;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.EnableFeignClients;

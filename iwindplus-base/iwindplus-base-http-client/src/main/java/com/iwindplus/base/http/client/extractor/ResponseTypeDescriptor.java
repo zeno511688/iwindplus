@@ -17,8 +17,9 @@ import java.lang.reflect.Type;
  * @since 2026/01/21 00:44
  */
 
-public record ResponseTypeDescriptor(Class<?> rawClass, Type genericType,
-                                     TypeReference<?> typeReference) {
+public record ResponseTypeDescriptor(
+    Class<?> rawClass, Type genericType,
+    TypeReference<?> typeReference) {
 
     /**
      * 创建一个ResponseTypeDescriptor实例.

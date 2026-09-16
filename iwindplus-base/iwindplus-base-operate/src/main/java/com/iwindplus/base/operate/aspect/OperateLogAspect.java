@@ -140,9 +140,14 @@ public class OperateLogAspect {
             return null;
         }
         final UserBaseVO userInfo = UserContextHolder.getContext();
-        final Long userId = Optional.ofNullable(userInfo).map(UserBaseVO::getUserId).orElse(null);
-        final Long orgId = Optional.ofNullable(userInfo).map(UserBaseVO::getOrgId).orElse(null);
-        final String realName = Optional.ofNullable(userInfo).map(UserBaseVO::getRealName).orElse(null);
+        if (Objects.isNull(userInfo)) {
+            log.warn("用户信息为空不记录操作日志");
+            return null;
+        }
+
+        final Long userId = userInfo.getUserId();
+        final Long orgId = userInfo.getOrgId();
+        final String realName = userInfo.getRealName();
 
         // 解析spel表达式字段
         String bizType = this.parseSpelField(entity.bizType(), method, args, result, String.class);

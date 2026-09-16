@@ -16,10 +16,10 @@ import com.iwindplus.base.disruptor.domain.enums.DisruptorWaitStrategyEnum;
 import com.iwindplus.base.disruptor.domain.event.DisruptorEvent;
 import com.iwindplus.base.disruptor.domain.property.DisruptorMultiProperty;
 import com.iwindplus.base.disruptor.domain.property.DisruptorMultiProperty.DisruptorMultiConfig;
-import com.iwindplus.base.disruptor.factory.DisruptorEventHandlerStrategyFactory;
+import com.iwindplus.base.disruptor.factory.DisruptorEventHandlerFactory;
 import com.iwindplus.base.disruptor.support.DisruptorDispatcherHandler;
-import com.iwindplus.base.disruptor.template.DisruptorTemplate;
-import com.iwindplus.base.disruptor.template.impl.DefaultDisruptorTemplateImpl;
+import com.iwindplus.base.disruptor.support.DisruptorTemplate;
+import com.iwindplus.base.disruptor.support.impl.DefaultDisruptorTemplateImpl;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.monitor.domain.constant.MonitorConstant;
 import com.iwindplus.base.monitor.support.MonitorTemplate;
@@ -56,7 +56,7 @@ import org.springframework.context.SmartLifecycle;
 public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecycle {
 
     private final DisruptorMultiProperty property;
-    private final DisruptorEventHandlerStrategyFactory factory;
+    private final DisruptorEventHandlerFactory factory;
     private final TraceContextPropagator traceContextPropagator;
     private final ObservationExecutor observationExecutor;
     private final MonitorTemplate monitorTemplate;
@@ -175,6 +175,9 @@ public class DisruptorManagerImpl<T> implements DisruptorManager<T>, SmartLifecy
      */
     private Disruptor<DisruptorEvent<?>> createDisruptor(String name, DisruptorMultiConfig config) {
         DtpExecutor dtpExecutor = DtpRegistry.getDtpExecutor(config.getThreadPoolName());
+        if (dtpExecutor == null) {
+            throw new IllegalStateException("Disruptor DtpExecutor not found: " + config.getThreadPoolName());
+        }
         Disruptor<DisruptorEvent<?>> disruptor = new Disruptor<>(
             DisruptorEvent::new,
             config.getRingBufferSize(),

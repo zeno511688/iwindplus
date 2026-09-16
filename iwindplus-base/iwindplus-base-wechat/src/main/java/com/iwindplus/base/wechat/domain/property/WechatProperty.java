@@ -8,6 +8,8 @@
 package com.iwindplus.base.wechat.domain.property;
 
 import com.github.binarywang.wxpay.config.WxPayConfig;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +17,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
  * 微信相关属性.
@@ -31,25 +32,63 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 public class WechatProperty {
 
     /**
-     * 微信小程序配置.
+     * 是否启用.
      */
     @Builder.Default
-    @NestedConfigurationProperty
-    private MaConfig ma = new MaConfig();
+    private Boolean enabled = Boolean.TRUE;
 
     /**
-     * 微信公众号配置.
+     * 微信小程序配置列表.
      */
     @Builder.Default
-    @NestedConfigurationProperty
-    private MpConfig mp = new MpConfig();
+    private List<MaConfig> ma = new ArrayList<>(10);
 
     /**
-     * 微信支付配置.
+     * 微信公众号配置列表.
      */
     @Builder.Default
-    @NestedConfigurationProperty
-    private PayConfig pay = new PayConfig();
+    private List<MpConfig> mp = new ArrayList<>(10);
+
+    /**
+     * 微信支付配置列表.
+     */
+    @Builder.Default
+    private List<PayConfig> pay = new ArrayList<>(10);
+
+    /**
+     * 微信基础配置.
+     *
+     * @author zengdegui
+     * @since 2026/9/7
+     */
+    @Data
+    @EqualsAndHashCode(callSuper = false)
+    @SuperBuilder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public abstract static class BaseConfig {
+
+        /**
+         * 是否启用.
+         */
+        @Builder.Default
+        private Boolean enabled = Boolean.FALSE;
+
+        /**
+         * 配置编码（唯一标识）.
+         */
+        private String code;
+
+        /**
+         * 配置名称.
+         */
+        private String name;
+
+        /**
+         * 优先级（数字越小优先级越高）.
+         */
+        private Integer priority;
+    }
 
     /**
      * 微信小程序相关属性.
@@ -58,16 +97,11 @@ public class WechatProperty {
      * @since 2023/6/1
      */
     @Data
+    @EqualsAndHashCode(callSuper = false)
     @SuperBuilder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class MaConfig {
-
-        /**
-         * 是否启用.
-         */
-        @Builder.Default
-        private Boolean enabled = Boolean.FALSE;
+    public static class MaConfig extends BaseConfig {
 
         /**
          * 是否使用redis存储.
@@ -107,16 +141,11 @@ public class WechatProperty {
      * @since 2023/6/1
      */
     @Data
+    @EqualsAndHashCode(callSuper = false)
     @SuperBuilder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class MpConfig {
-
-        /**
-         * 是否启用.
-         */
-        @Builder.Default
-        private Boolean enabled = Boolean.FALSE;
+    public static class MpConfig extends BaseConfig {
 
         /**
          * 是否使用redis存储.
@@ -162,5 +191,20 @@ public class WechatProperty {
          */
         @Builder.Default
         private Boolean enabled = Boolean.FALSE;
+
+        /**
+         * 配置编码（唯一标识）.
+         */
+        private String code;
+
+        /**
+         * 配置名称.
+         */
+        private String name;
+
+        /**
+         * 优先级（数字越小优先级越高）.
+         */
+        private Integer priority;
     }
 }

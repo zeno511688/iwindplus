@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.iwindplus.im.server.dal.mapper.ChatGroupMapper">
+<mapper namespace="com.iwindplus.im.infrastructure.persistence.mysql.ChatGroupMapper">
     <sql id="chatGroupPageAliasField">
         cg.id, cg.created_timestamp, cg.created_by, cg.modified_timestamp, cg.modified_by, cg.version,
         cg.status, cg.group_name
@@ -24,7 +24,7 @@
         <include refid="inSql"/>
     </delete>
 
-    <select id="selectPageByCondition" resultType="com.iwindplus.im.domain.vo.ChatGroupPageVO">
+    <select id="selectPageByCondition" resultType="com.iwindplus.im.application.query.vo.ChatGroupPageVO">
         select
             <include refid="chatGroupPageAliasField"/>
         from chat_group cg

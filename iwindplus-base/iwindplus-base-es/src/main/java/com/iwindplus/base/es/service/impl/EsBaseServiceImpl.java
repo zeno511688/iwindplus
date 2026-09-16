@@ -80,6 +80,9 @@ public class EsBaseServiceImpl<T extends EsDbBaseDO> implements EsBaseService<T>
 
     @Override
     public T save(T entity) {
+        if (entity == null) {
+            return null;
+        }
         this.buildDefaultEntity(entity, getCurrentUserInfo());
         return operations.save(entity);
     }
@@ -105,8 +108,8 @@ public class EsBaseServiceImpl<T extends EsDbBaseDO> implements EsBaseService<T>
             return false;
         }
 
-        List<T> saveList = new ArrayList<>();
-        List<T> updateList = new ArrayList<>();
+        List<T> saveList = new ArrayList<>(10);
+        List<T> updateList = new ArrayList<>(10);
 
         for (T entity : entities) {
             if (CharSequenceUtil.isBlank(entity.getId())) {
@@ -152,6 +155,9 @@ public class EsBaseServiceImpl<T extends EsDbBaseDO> implements EsBaseService<T>
 
     @Override
     public boolean remove(EsLambdaQueryWrapper<T> wrapper) {
+        if (wrapper == null) {
+            return false;
+        }
         DeleteQuery deleteQuery = DeleteQuery.builder(wrapper.build()).build();
 
         ByQueryResponse resp = operations.delete(deleteQuery, entityClass);
@@ -194,6 +200,9 @@ public class EsBaseServiceImpl<T extends EsDbBaseDO> implements EsBaseService<T>
 
     @Override
     public <E extends IPage<T>> E page(E page, EsLambdaQueryWrapper<T> wrapper) {
+        if (page == null || wrapper == null) {
+            return page;
+        }
         wrapQueryByDelete(wrapper);
         SearchHits<T> hits = operations.search(wrapper.build(page), entityClass);
 
@@ -207,6 +216,9 @@ public class EsBaseServiceImpl<T extends EsDbBaseDO> implements EsBaseService<T>
 
     @Override
     public EsPageDTO<T> pageByAfter(EsPageDTO<T> page, EsLambdaQueryWrapper<T> wrapper) {
+        if (page == null || wrapper == null) {
+            return page;
+        }
         wrapQueryByDelete(wrapper);
         wrapper.orderByDesc(T::getModifiedTimestamp);
 
@@ -245,6 +257,9 @@ public class EsBaseServiceImpl<T extends EsDbBaseDO> implements EsBaseService<T>
 
     @Override
     public List<T> list(EsLambdaQueryWrapper<T> wrapper) {
+        if (wrapper == null) {
+            return Collections.emptyList();
+        }
         wrapQueryByDelete(wrapper);
         SearchHits<T> hits = operations.search(wrapper.build(), entityClass);
 
@@ -280,6 +295,9 @@ public class EsBaseServiceImpl<T extends EsDbBaseDO> implements EsBaseService<T>
 
     @Override
     public T getOne(EsLambdaQueryWrapper<T> wrapper) {
+        if (wrapper == null) {
+            return null;
+        }
         wrapQueryByDelete(wrapper);
         SearchHits<T> hits = operations.search(
             wrapper.build(PageRequest.of(0, 1)),
@@ -293,12 +311,18 @@ public class EsBaseServiceImpl<T extends EsDbBaseDO> implements EsBaseService<T>
 
     @Override
     public long count(EsLambdaQueryWrapper<T> wrapper) {
+        if (wrapper == null) {
+            return 0;
+        }
         wrapQueryByDelete(wrapper);
         return operations.count(wrapper.build(), entityClass);
     }
 
     @Override
     public boolean exists(EsLambdaQueryWrapper<T> wrapper) {
+        if (wrapper == null) {
+            return false;
+        }
         wrapQueryByDelete(wrapper);
         return operations.count(wrapper.build(PageRequest.of(0, 1)), entityClass) > 0;
     }

@@ -7,7 +7,7 @@
 
 package com.iwindplus.flow.client.autoconfigure;
 
-import com.iwindplus.flow.domain.constant.FlowConstant;
+import com.iwindplus.flow.common.constant.FlowConstant;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.EnableFeignClients;

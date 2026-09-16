@@ -171,9 +171,10 @@ public class ExceptionUtil {
     private static ResponseEntity<ResultVO<Object>> handleConstraintViolation(Throwable ex, String className) {
         ConstraintViolationException exs = (ConstraintViolationException) ex;
         String message = getMessage(exs);
+        log.error("约束违反异常, className={}, message={}", className, message);
         BizCodeEnum bizCodeEnum = BizCodeEnum.PARAM_CONSTRAINT_VIOLATION;
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(ResultVO.buildSourceResult(bizCodeEnum.getBizCode(), message));
+            .body(ResultVO.error(bizCodeEnum));
     }
 
     /**
@@ -186,9 +187,10 @@ public class ExceptionUtil {
     private static ResponseEntity<ResultVO<Object>> handleMethodArgumentNotValid(Throwable ex, String className) {
         MethodArgumentNotValidException exs = (MethodArgumentNotValidException) ex;
         String message = getMessage(exs.getBindingResult());
+        log.error("参数无效异常, className={}, message={}", className, message);
         BizCodeEnum bizCodeEnum = BizCodeEnum.PARAM_INVALID;
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(ResultVO.buildSourceResult(bizCodeEnum.getBizCode(), message));
+            .body(ResultVO.error(bizCodeEnum));
     }
 
     /**
@@ -201,9 +203,10 @@ public class ExceptionUtil {
     private static ResponseEntity<ResultVO<Object>> handleBindException(Throwable ex, String className) {
         BindException exs = (BindException) ex;
         String message = getMessage(exs.getBindingResult());
+        log.error("绑定异常, className={}, message={}", className, message);
         BizCodeEnum bizCodeEnum = BizCodeEnum.PARAM_BIND_ERROR;
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(ResultVO.buildSourceResult(bizCodeEnum.getBizCode(), message));
+            .body(ResultVO.error(bizCodeEnum));
     }
 
     /**

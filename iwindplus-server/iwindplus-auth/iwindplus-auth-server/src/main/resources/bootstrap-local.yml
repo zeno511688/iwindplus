@@ -31,6 +31,12 @@ operate:
 auth:
   # 是否启用校验访问token过期
   enabled-token-expired-valid: false
+  mail:
+    # 邮件模板编码
+    tpl-code: c3f67fd355dd6098156053f68285ba3e
+  sms:
+    # 短信模板编码
+    tpl-code: c3f67fd354dd6098154053f68285ba35
   log:
     # 是否开启登录日志审计
     enabled: true
@@ -170,19 +176,6 @@ kafka:
             group: iwindplus-loginLog-group
             # 是否自动创建
             auto-create: true
-alert:
-  # 飞书
-  feishu:
-    app-id: cli_a92f34e733b81cd1
-    app-secret: ${alert-feishu-app-secret:}
-  log:
-    enabled: true
-    webhook:
-      url: https://open.feishu.cn/open-apis/bot/v2/hook/e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: ${alert-feishu-webhook-secret:}
-    stack:
-      max-length: -1
-      max-frames: -1
 springdoc:
   packagesToScan:
     - com.iwindplus.auth.server.web

@@ -14,7 +14,7 @@ import com.iwindplus.base.redis.domain.annotation.RedisRateLimiter;
 import com.iwindplus.base.redis.domain.constant.RedisConstant;
 import com.iwindplus.base.redis.domain.property.RedisProperty;
 import com.iwindplus.base.redis.domain.property.RedisProperty.RateLimiterConfig;
-import com.iwindplus.base.redis.service.RedissonService;
+import com.iwindplus.base.redis.executor.RedissonExecutor;
 import com.iwindplus.base.redis.support.RedisKeyResolver;
 import com.iwindplus.base.util.CryptoUtil;
 import com.iwindplus.base.util.HttpsUtil;
@@ -44,7 +44,7 @@ import org.springframework.core.annotation.Order;
 public class RedisRateLimiterAspect {
 
     @Resource
-    private RedissonService redissonService;
+    private RedissonExecutor redissonExecutor;
 
     @Resource
     private KeyGenerator keyGenerator;
@@ -82,15 +82,36 @@ public class RedisRateLimiterAspect {
         final RedisKeyResolver keyResolver = SpringUtil.getBean(annotation.keyResolver());
         final String path = HttpsUtil.getPath();
         final String fallback = joinPoint.getSignature().toShortString();
+        final String[] names = this.resolveNames(annotation, path, fallback);
+
+        final String name = this.redissonExecutor.baseOperation().getRedisKey(RedisConstant.RATE_LIMITER_KEY, names,
+            keyResolver, joinPoint, this.keyGenerator, annotation.keys());
+
+        this.redissonExecutor.rateLimiter().execute(name, rateType, rate, Duration.of(rateInterval, rateIntervalUnit), null);
+    }
+
+    /**
+     * 解析限流名称.
+     *
+     * <p>当开启按路径限流（enabledLimitPath=true）时，将请求路径的 SM3 摘要追加到名称中，
+     * 实现同一名称下不同路径分别限流；否则保持原有逻辑。</p>
+     *
+     * @param annotation 限流注解
+     * @param path       请求路径
+     * @param fallback   兜底名称（方法签名）
+     * @return 限流名称数组
+     */
+    private String[] resolveNames(RedisRateLimiter annotation, String path, String fallback) {
         final String[] names = ArrayUtil.isNotEmpty(annotation.names())
             ? annotation.names()
             : CharSequenceUtil.isNotBlank(path)
                 ? new String[]{CryptoUtil.encryptBySm3(path)} : new String[]{fallback};
 
-        final String name = redissonService.baseOperation().getRedisKey(RedisConstant.RATE_LIMITER_KEY, names,
-            keyResolver, joinPoint, this.keyGenerator, annotation.keys());
-
-        this.redissonService.rateLimiter().execute(name, rateType, rate, Duration.of(rateInterval, rateIntervalUnit), null);
+        if (Boolean.TRUE.equals(annotation.enabledLimitPath()) && CharSequenceUtil.isNotBlank(path)) {
+            final String pathDigest = CryptoUtil.encryptBySm3(path);
+            return ArrayUtil.append(names, pathDigest);
+        }
+        return names;
     }
 
 }

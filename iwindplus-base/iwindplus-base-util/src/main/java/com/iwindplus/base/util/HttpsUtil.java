@@ -191,6 +191,9 @@ public class HttpsUtil extends HttpUtil {
     public static Map<String, String> getHeaders(
         HttpServletRequest request, Set<String> excludeHeaders) {
         Map<String, String> params = new LinkedHashMap<>(16);
+        if (Objects.isNull(request)) {
+            return params;
+        }
         Enumeration<String> enumeration = request.getHeaderNames();
         while (enumeration.hasMoreElements()) {
             String key = enumeration.nextElement();

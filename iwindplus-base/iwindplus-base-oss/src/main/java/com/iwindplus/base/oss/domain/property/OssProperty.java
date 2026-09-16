@@ -8,7 +8,9 @@
 package com.iwindplus.base.oss.domain.property;
 
 import com.iwindplus.base.domain.dto.AkSkDTO;
-import com.iwindplus.base.oss.domain.dto.StsTokenDTO;
+import com.iwindplus.base.domain.dto.StsTokenDTO;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,25 +34,68 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 public class OssProperty {
 
     /**
-     * 阿里云对象存储配置.
+     * 是否启用.
      */
     @Builder.Default
-    @NestedConfigurationProperty
-    private AliyunConfig aliyun = new AliyunConfig();
+    private Boolean enabled = Boolean.TRUE;
 
     /**
-     * 七牛云对象存储配置.
+     * 默认配置编码（可选）.
      */
-    @Builder.Default
-    @NestedConfigurationProperty
-    private QiniuConfig qiniu = new QiniuConfig();
+    private String defaultCode;
 
     /**
-     * Minio对象存储配置.
+     * 阿里云对象存储配置列表.
      */
     @Builder.Default
-    @NestedConfigurationProperty
-    private MinioConfig minio = new MinioConfig();
+    private List<AliyunConfig> aliyun = new ArrayList<>(10);
+
+    /**
+     * 七牛云对象存储配置列表.
+     */
+    @Builder.Default
+    private List<QiniuConfig> qiniu = new ArrayList<>(10);
+
+    /**
+     * Minio对象存储配置列表.
+     */
+    @Builder.Default
+    private List<MinioConfig> minio = new ArrayList<>(10);
+
+    /**
+     * OSS基础配置.
+     *
+     * @author zengdegui
+     * @since 2026/9/4
+     */
+    @Data
+    @EqualsAndHashCode(callSuper = false)
+    @SuperBuilder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public abstract static class BaseConfig extends AkSkDTO {
+
+        /**
+         * 是否启用.
+         */
+        @Builder.Default
+        private Boolean enabled = Boolean.TRUE;
+
+        /**
+         * 配置编码（唯一标识）.
+         */
+        private String code;
+
+        /**
+         * 配置名称.
+         */
+        private String name;
+
+        /**
+         * 优先级（数字越小优先级越高，用于自动故障转移）.
+         */
+        private Integer priority;
+    }
 
     /**
      * 阿里云对象存储相关属性.
@@ -59,32 +104,16 @@ public class OssProperty {
      * @since 2023/6/1
      */
     @Data
-    @EqualsAndHashCode(callSuper=false)
+    @EqualsAndHashCode(callSuper = false)
     @SuperBuilder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class AliyunConfig extends AkSkDTO {
-
-        /**
-         * 是否启用.
-         */
-        @Builder.Default
-        private Boolean enabled = Boolean.FALSE;
+    public static class AliyunConfig extends BaseConfig {
 
         /**
          * oss地域节点（必填，如：oss-cn-shenzhen.aliyuncs.com）.
          */
         private String endpoint;
-
-        /**
-         * 空间名（必填）.
-         */
-        private String bucketName;
-
-        /**
-         * 访问域名（可选，自定义域名）.
-         */
-        private String accessDomain;
 
         /**
          * 分片大小（可选，单位：兆，默认：10M）.
@@ -99,8 +128,9 @@ public class OssProperty {
         /**
          * sts配置（可选）.
          */
+        @Builder.Default
         @NestedConfigurationProperty
-        private StsTokenDTO sts;
+        private StsTokenDTO sts = new StsTokenDTO();
     }
 
     /**
@@ -110,32 +140,11 @@ public class OssProperty {
      * @since 2023/6/1
      */
     @Data
-    @EqualsAndHashCode(callSuper=false)
+    @EqualsAndHashCode(callSuper = false)
     @SuperBuilder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class QiniuConfig extends AkSkDTO {
-
-        /**
-         * 是否启用.
-         */
-        @Builder.Default
-        private Boolean enabled = Boolean.FALSE;
-
-        /**
-         * 空间名（必填）.
-         */
-        private String bucketName;
-
-        /**
-         * 访问域名（必填，自定义域名）.
-         */
-        private String accessDomain;
-
-        /**
-         * 分片大小（可选，单位：兆，默认：10M）.
-         */
-        private Long partSize;
+    public static class QiniuConfig extends BaseConfig {
 
         /**
          * 是否开启断点上传（可选，默认：false）.
@@ -150,17 +159,11 @@ public class OssProperty {
      * @since 2023/6/1
      */
     @Data
-    @EqualsAndHashCode(callSuper=false)
+    @EqualsAndHashCode(callSuper = false)
     @SuperBuilder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class MinioConfig extends AkSkDTO {
-
-        /**
-         * 是否启用.
-         */
-        @Builder.Default
-        private Boolean enabled = Boolean.FALSE;
+    public static class MinioConfig extends BaseConfig {
 
         /**
          * oss地域节点（必填）.
@@ -171,16 +174,6 @@ public class OssProperty {
          * 区域（可选）.
          */
         private String region;
-
-        /**
-         * 空间名（必填）.
-         */
-        private String bucketName;
-
-        /**
-         * 访问域名（可选，自定义域名）.
-         */
-        private String accessDomain;
 
         /**
          * 分片大小（可选，单位：兆，默认：10M）.

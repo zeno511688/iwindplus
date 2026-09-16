@@ -1,0 +1,27 @@
+/*
+ *
+ *  * Copyright (c) iwindplus Technologies Co., Ltd.2024-2030, All rights reserved.
+ *
+ *
+ */
+
+package com.iwindplus.flow.domain.engine;
+
+import com.iwindplus.flow.application.service.instance.dto.FlowInstanceEventDTO;
+
+/**
+ * 流程实例事件动作监听器接口.
+ *
+ * @author zengdegui
+ * @since 2026/05/20
+ */
+public interface FlowInstanceActionListener {
+
+    /**
+     * 接收流程实例事件.
+     *
+     * @param event 事件数据
+     */
+    void onEvent(FlowInstanceEventDTO event);
+
+}

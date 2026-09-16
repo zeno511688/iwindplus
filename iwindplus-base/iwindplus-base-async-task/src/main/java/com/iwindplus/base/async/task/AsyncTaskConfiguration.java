@@ -14,9 +14,9 @@ import com.iwindplus.base.async.task.domain.constant.AsyncTaskConstant;
 import com.iwindplus.base.async.task.domain.property.AsyncTaskProperty;
 import com.iwindplus.base.async.task.executor.AsyncTaskExecutor;
 import com.iwindplus.base.async.task.executor.impl.AsyncTaskExecutorImpl;
-import com.iwindplus.base.async.task.factory.AsyncTaskHandlerStrategyFactory;
-import com.iwindplus.base.async.task.factory.AsyncTaskJobHandlerStrategyFactory;
-import com.iwindplus.base.async.task.factory.AsyncTaskSubHandlerStrategyFactory;
+import com.iwindplus.base.async.task.factory.AsyncTaskHandlerFactory;
+import com.iwindplus.base.async.task.factory.AsyncTaskJobHandlerFactory;
+import com.iwindplus.base.async.task.factory.AsyncTaskSubHandlerFactory;
 import com.iwindplus.base.async.task.jobhandler.AsyncTaskJob;
 import com.iwindplus.base.async.task.service.AsyncTaskService;
 import com.iwindplus.base.async.task.service.AsyncTaskSubService;
@@ -28,15 +28,16 @@ import com.iwindplus.base.async.task.support.AsyncTaskHandler;
 import com.iwindplus.base.async.task.support.AsyncTaskJobHandler;
 import com.iwindplus.base.async.task.support.AsyncTaskStateSupport;
 import com.iwindplus.base.async.task.support.AsyncTaskSubHandler;
-import com.iwindplus.base.async.task.support.impl.AsyncTaskExecuteHandlerGroup;
-import com.iwindplus.base.async.task.support.impl.AsyncTaskExecuteHandlerMain;
-import com.iwindplus.base.async.task.support.impl.AsyncTaskJobHandlerRetry;
+import com.iwindplus.base.async.task.support.impl.GroupAsyncTaskExecuteHandler;
+import com.iwindplus.base.async.task.support.impl.MainAsyncTaskExecuteHandler;
+import com.iwindplus.base.async.task.support.impl.RetryAsyncTaskJobHandler;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.dromara.dynamictp.core.executor.DtpExecutor;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -72,11 +73,11 @@ public class AsyncTaskConfiguration {
     /**
      * 创建 AsyncTaskExecutor.
      *
-     * @param asyncTaskService                   asyncTaskService
-     * @param asyncTaskSubService                asyncTaskSubService
-     * @param asyncTaskBizProcessor              asyncTaskBizProcessor
-     * @param asyncTaskHandlerStrategyFactory    asyncTaskHandlerStrategyFactory
-     * @param asyncTaskSubHandlerStrategyFactory asyncTaskSubHandlerStrategyFactory
+     * @param asyncTaskService           asyncTaskService
+     * @param asyncTaskSubService        asyncTaskSubService
+     * @param asyncTaskBizProcessor      asyncTaskBizProcessor
+     * @param asyncTaskHandlerFactory    asyncTaskHandlerFactory
+     * @param asyncTaskSubHandlerFactory asyncTaskSubHandlerFactory
      * @return AsyncTaskExecutor
      */
     @Bean
@@ -84,11 +85,11 @@ public class AsyncTaskConfiguration {
         AsyncTaskService asyncTaskService,
         AsyncTaskSubService asyncTaskSubService,
         AsyncTaskBizProcessor asyncTaskBizProcessor,
-        AsyncTaskHandlerStrategyFactory asyncTaskHandlerStrategyFactory,
-        AsyncTaskSubHandlerStrategyFactory asyncTaskSubHandlerStrategyFactory) {
+        AsyncTaskHandlerFactory asyncTaskHandlerFactory,
+        AsyncTaskSubHandlerFactory asyncTaskSubHandlerFactory) {
         AsyncTaskExecutor asyncTaskExecutor = new AsyncTaskExecutorImpl(
             asyncTaskService, asyncTaskSubService, asyncTaskBizProcessor,
-            asyncTaskHandlerStrategyFactory, asyncTaskSubHandlerStrategyFactory);
+            asyncTaskHandlerFactory, asyncTaskSubHandlerFactory);
         log.info("AsyncTaskExecutor={}", asyncTaskExecutor);
         return asyncTaskExecutor;
     }
@@ -156,33 +157,33 @@ public class AsyncTaskConfiguration {
     }
 
     /**
-     * 创建 AsyncTaskHandlerStrategyFactory.
+     * 创建 AsyncTaskHandlerFactory.
      *
      * @param executorProvider 执行器提供者
-     * @return AsyncTaskHandlerStrategyFactory
+     * @return AsyncTaskHandlerFactory
      */
     @Bean
-    public AsyncTaskHandlerStrategyFactory asyncTaskHandlerStrategyFactory(
+    public AsyncTaskHandlerFactory asyncTaskHandlerFactory(
         ObjectProvider<AsyncTaskHandler> executorProvider) {
-        AsyncTaskHandlerStrategyFactory asyncTaskHandlerStrategyFactory =
-            new AsyncTaskHandlerStrategyFactory(executorProvider);
-        log.info("AsyncTaskHandlerStrategyFactory={}", asyncTaskHandlerStrategyFactory);
-        return asyncTaskHandlerStrategyFactory;
+        AsyncTaskHandlerFactory asyncTaskHandlerFactory =
+            new AsyncTaskHandlerFactory(executorProvider);
+        log.info("AsyncTaskHandlerFactory={}", asyncTaskHandlerFactory);
+        return asyncTaskHandlerFactory;
     }
 
     /**
-     * 创建 AsyncTaskSubHandlerStrategyFactory.
+     * 创建 AsyncTaskSubHandlerFactory.
      *
      * @param executorProvider 执行器提供者
-     * @return AsyncTaskSubHandlerStrategyFactory
+     * @return AsyncTaskSubHandlerFactory
      */
     @Bean
-    public AsyncTaskSubHandlerStrategyFactory asyncTaskSubHandlerStrategyFactory(
+    public AsyncTaskSubHandlerFactory asyncTaskSubHandlerFactory(
         ObjectProvider<AsyncTaskSubHandler> executorProvider) {
-        AsyncTaskSubHandlerStrategyFactory asyncTaskSubHandlerStrategyFactory =
-            new AsyncTaskSubHandlerStrategyFactory(executorProvider);
-        log.info("AsyncTaskSubHandlerStrategyFactory={}", asyncTaskSubHandlerStrategyFactory);
-        return asyncTaskSubHandlerStrategyFactory;
+        AsyncTaskSubHandlerFactory asyncTaskSubHandlerFactory =
+            new AsyncTaskSubHandlerFactory(executorProvider);
+        log.info("AsyncTaskSubHandlerFactory={}", asyncTaskSubHandlerFactory);
+        return asyncTaskSubHandlerFactory;
     }
 
     /**
@@ -210,46 +211,46 @@ public class AsyncTaskConfiguration {
     }
 
     /**
-     * 创建 AsyncTaskExecuteHandlerMain.
+     * 创建 MainAsyncTaskExecuteHandler.
      *
-     * @param asyncTaskHandlerStrategyFactor asyncTaskHandlerStrategyFactor
-     * @param asyncTaskStateSupport          asyncTaskStateSupport
-     * @param asyncTaskService               asyncTaskService
-     * @return AsyncTaskExecuteHandlerMain
+     * @param asyncTaskHandlerFactor asyncTaskHandlerFactor
+     * @param asyncTaskStateSupport  asyncTaskStateSupport
+     * @param asyncTaskService       asyncTaskService
+     * @return MainAsyncTaskExecuteHandler
      */
     @Bean
-    public AsyncTaskExecuteHandlerMain asyncTaskExecuteHandlerMain(
-        AsyncTaskHandlerStrategyFactory asyncTaskHandlerStrategyFactor,
+    public AsyncTaskExecuteHandler mainAsyncTaskExecuteHandler(
+        AsyncTaskHandlerFactory asyncTaskHandlerFactor,
         AsyncTaskStateSupport asyncTaskStateSupport,
         AsyncTaskService asyncTaskService) {
-        AsyncTaskExecuteHandlerMain asyncTaskExecuteHandlerMain = new AsyncTaskExecuteHandlerMain(
-            asyncTaskHandlerStrategyFactor, asyncTaskStateSupport, asyncTaskService);
-        log.info("AsyncTaskExecuteHandlerMain={}", asyncTaskExecuteHandlerMain);
-        return asyncTaskExecuteHandlerMain;
+        AsyncTaskExecuteHandler mainAsyncTaskExecuteHandler = new MainAsyncTaskExecuteHandler(
+            asyncTaskHandlerFactor, asyncTaskStateSupport, asyncTaskService);
+        log.info("MainAsyncTaskExecuteHandler={}", mainAsyncTaskExecuteHandler);
+        return mainAsyncTaskExecuteHandler;
     }
 
     /**
-     * 创建 AsyncTaskExecuteHandlerGroup.
+     * 创建 GroupAsyncTaskExecuteHandler.
      *
-     * @param asyncTaskHandlerStrategyFactory    asyncTaskHandlerStrategyFactory
-     * @param asyncTaskStateSupport              asyncTaskStateSupport
-     * @param asyncTaskService                   asyncTaskService
-     * @param asyncTaskSubService                asyncTaskSubService
-     * @param asyncTaskSubHandlerStrategyFactory asyncTaskSubHandlerStrategyFactory
-     * @return AsyncTaskExecuteHandlerGroup
+     * @param asyncTaskHandlerFactory    asyncTaskHandlerFactory
+     * @param asyncTaskStateSupport      asyncTaskStateSupport
+     * @param asyncTaskService           asyncTaskService
+     * @param asyncTaskSubService        asyncTaskSubService
+     * @param asyncTaskSubHandlerFactory asyncTaskSubHandlerFactory
+     * @return GroupAsyncTaskExecuteHandler
      */
     @Bean
-    public AsyncTaskExecuteHandlerGroup asyncTaskExecuteHandlerGroup(
-        AsyncTaskHandlerStrategyFactory asyncTaskHandlerStrategyFactory,
+    public AsyncTaskExecuteHandler groupAsyncTaskExecuteHandler(
+        AsyncTaskHandlerFactory asyncTaskHandlerFactory,
         AsyncTaskStateSupport asyncTaskStateSupport,
         AsyncTaskService asyncTaskService,
         AsyncTaskSubService asyncTaskSubService,
-        AsyncTaskSubHandlerStrategyFactory asyncTaskSubHandlerStrategyFactory) {
-        AsyncTaskExecuteHandlerGroup asyncTaskExecuteHandlerGroup = new AsyncTaskExecuteHandlerGroup(
-            asyncTaskHandlerStrategyFactory, asyncTaskStateSupport, asyncTaskService,
-            asyncTaskSubService, asyncTaskSubHandlerStrategyFactory, subThreadPoolExecutor);
-        log.info("AsyncTaskExecuteHandlerGroup={}", asyncTaskExecuteHandlerGroup);
-        return asyncTaskExecuteHandlerGroup;
+        AsyncTaskSubHandlerFactory asyncTaskSubHandlerFactory) {
+        AsyncTaskExecuteHandler groupAsyncTaskExecuteHandler = new GroupAsyncTaskExecuteHandler(
+            asyncTaskHandlerFactory, asyncTaskStateSupport, asyncTaskService,
+            asyncTaskSubService, asyncTaskSubHandlerFactory, subThreadPoolExecutor);
+        log.info("GroupAsyncTaskExecuteHandler={}", groupAsyncTaskExecuteHandler);
+        return groupAsyncTaskExecuteHandler;
     }
 
     /**
@@ -258,8 +259,8 @@ public class AsyncTaskConfiguration {
      * @param property                     property
      * @param asyncTaskService             asyncTaskService
      * @param asyncTaskSubService          asyncTaskSubService
-     * @param asyncTaskExecuteHandlerMain  asyncTaskExecuteHandlerMain
-     * @param asyncTaskExecuteHandlerGroup asyncTaskExecuteHandlerGroup
+     * @param mainAsyncTaskExecuteHandler  mainAsyncTaskExecuteHandler
+     * @param groupAsyncTaskExecuteHandler groupAsyncTaskExecuteHandler
      * @return AsyncTaskBizProcessor
      */
     @Bean
@@ -268,59 +269,59 @@ public class AsyncTaskConfiguration {
         AsyncTaskService asyncTaskService,
         AsyncTaskSubService asyncTaskSubService,
         AsyncTaskStateSupport asyncTaskStateSupport,
-        AsyncTaskExecuteHandler asyncTaskExecuteHandlerMain,
-        AsyncTaskExecuteHandler asyncTaskExecuteHandlerGroup) {
+        @Qualifier("mainAsyncTaskExecuteHandler") AsyncTaskExecuteHandler mainAsyncTaskExecuteHandler,
+        @Qualifier("groupAsyncTaskExecuteHandler") AsyncTaskExecuteHandler groupAsyncTaskExecuteHandler) {
         AsyncTaskBizProcessor asyncTaskBizProcessor = new AsyncTaskBizProcessor(
             property, asyncTaskService, asyncTaskSubService, asyncTaskStateSupport,
-            asyncTaskExecuteHandlerMain, asyncTaskExecuteHandlerGroup, threadPoolExecutor);
+            mainAsyncTaskExecuteHandler, groupAsyncTaskExecuteHandler, threadPoolExecutor);
         return asyncTaskBizProcessor;
     }
 
     /**
-     * 创建 AsyncTaskJobHandlerRetry.
+     * 创建 RetryAsyncTaskJobHandler.
      *
      * @param property              property
      * @param asyncTaskService      asyncTaskService
      * @param asyncTaskBizProcessor asyncTaskBizProcessor
      * @param asyncTaskStateSupport asyncTaskStateSupport
-     * @return AsyncTaskJobHandlerRetry
+     * @return RetryAsyncTaskJobHandler
      */
     @Bean
-    public AsyncTaskJobHandlerRetry asyncTaskJobHandlerRetry(
+    public RetryAsyncTaskJobHandler retryAsyncTaskJobHandler(
         AsyncTaskProperty property,
         AsyncTaskService asyncTaskService,
         AsyncTaskBizProcessor asyncTaskBizProcessor,
         AsyncTaskStateSupport asyncTaskStateSupport) {
-        AsyncTaskJobHandlerRetry asyncTaskJobHandlerRetry = new AsyncTaskJobHandlerRetry(
+        RetryAsyncTaskJobHandler retryAsyncTaskJobHandler = new RetryAsyncTaskJobHandler(
             property, asyncTaskService, asyncTaskBizProcessor, asyncTaskStateSupport);
-        return asyncTaskJobHandlerRetry;
+        return retryAsyncTaskJobHandler;
     }
 
     /**
-     * 创建 AsyncTaskJobHandlerStrategyFactory.
+     * 创建 AsyncTaskJobHandlerFactory.
      *
      * @param executorProvider 执行器提供者
-     * @return AsyncTaskJobHandlerStrategyFactory
+     * @return AsyncTaskJobHandlerFactory
      */
     @Bean
-    public AsyncTaskJobHandlerStrategyFactory asyncTaskJobHandlerStrategyFactory(
+    public AsyncTaskJobHandlerFactory asyncTaskJobHandlerFactory(
         ObjectProvider<AsyncTaskJobHandler> executorProvider) {
-        AsyncTaskJobHandlerStrategyFactory asyncTaskJobHandlerStrategyFactory = new AsyncTaskJobHandlerStrategyFactory(executorProvider);
-        log.info("AsyncTaskJobHandlerStrategyFactory={}", asyncTaskJobHandlerStrategyFactory);
-        return asyncTaskJobHandlerStrategyFactory;
+        AsyncTaskJobHandlerFactory asyncTaskJobHandlerFactory = new AsyncTaskJobHandlerFactory(executorProvider);
+        log.info("AsyncTaskJobHandlerFactory={}", asyncTaskJobHandlerFactory);
+        return asyncTaskJobHandlerFactory;
     }
 
     /**
      * 创建 AsyncTaskJob.
      *
-     * @param asyncTaskJobHandlerStrategyFactory asyncTaskJobHandlerStrategyFactory
+     * @param asyncTaskJobHandlerFactory asyncTaskJobHandlerFactory
      * @return AsyncTaskJob
      */
     @ConditionalOnProperty(prefix = "async-task.job", name = "enabled", havingValue = "true", matchIfMissing = true)
     @Bean
     public AsyncTaskJob asyncTaskJob(
-        AsyncTaskJobHandlerStrategyFactory asyncTaskJobHandlerStrategyFactory) {
-        AsyncTaskJob asyncTaskJob = new AsyncTaskJob(asyncTaskJobHandlerStrategyFactory);
+        AsyncTaskJobHandlerFactory asyncTaskJobHandlerFactory) {
+        AsyncTaskJob asyncTaskJob = new AsyncTaskJob(asyncTaskJobHandlerFactory);
         log.info("AsyncTaskJob={}", asyncTaskJob);
         return asyncTaskJob;
     }

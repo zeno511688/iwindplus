@@ -548,10 +548,10 @@ CREATE TABLE `ip_black_list`
 
 
 -- ----------------------------
--- Table structure for third_bind_grant
+-- Table structure for user_extend_bind_grant
 -- ----------------------------
-DROP TABLE IF EXISTS `third_bind_grant`;
-CREATE TABLE `third_bind_grant`
+DROP TABLE IF EXISTS `user_extend_bind_grant`;
+CREATE TABLE `user_extend_bind_grant`
 (
     `id`                 bigint unsigned  NOT NULL COMMENT '主键',
     `created_timestamp`  bigint unsigned  NOT NULL DEFAULT (unix_timestamp() * 1000) COMMENT '创建时间戳',
@@ -572,7 +572,7 @@ CREATE TABLE `third_bind_grant`
     KEY `idx_openid` (`openid`) COMMENT '普通索引（用户唯一标识）',
     KEY `idx_code` (`code`) COMMENT '普通索引（编码）',
     KEY `idx_user_id` (`user_id`) COMMENT '普通索引（用户主键）'
-) COMMENT ='第三方绑定授权表';
+) COMMENT ='用户扩展绑定授权表';
 
 -- ----------------------------
 -- Table structure for user

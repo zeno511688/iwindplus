@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.iwindplus.base.util.DiffUtil;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,9 +31,9 @@ public class DiffUtilTest {
         Map<String, Object> left = new HashMap<>();
         left.put("name", "Alice");
         left.put("age", 25);
-        left.put("hobbies", Arrays.asList("reading", "traveling"));
+        left.put("hobbies", List.of("reading", "traveling"));
         left.put("address", Map.of("city", "New York", "zip", "10001"));
-        left.put("friends", Arrays.asList(
+        left.put("friends", List.of(
             Map.of("name", "Bob", "age", 30),
             Map.of("name", "Charlie", "age", 35)
         ));
@@ -42,9 +41,9 @@ public class DiffUtilTest {
         Map<String, Object> right = new HashMap<>();
         right.put("name", "Alice");
         right.put("age", 26);
-        right.put("hobbies", Arrays.asList("traveling", "reading"));
+        right.put("hobbies", List.of("traveling", "reading"));
         right.put("address", Map.of("zip", "10001", "city", "New York"));
-        right.put("friends", Arrays.asList(
+        right.put("friends", List.of(
             Map.of("name", "Charlie", "age", 35),
             Map.of("name", "Bob", "age", 30)
         ));
@@ -65,10 +64,10 @@ public class DiffUtilTest {
     public void testListComparison() {
         // 创建包含列表的简单对象
         Map<String, Object> left = new HashMap<>();
-        left.put("hobbies", Arrays.asList("reading", "traveling"));
+        left.put("hobbies", List.of("reading", "traveling"));
 
         Map<String, Object> right = new HashMap<>();
-        right.put("hobbies", Arrays.asList("traveling", "reading"));
+        right.put("hobbies", List.of("traveling", "reading"));
 
         // 调用 compare 方法
         List<String> differences = DiffUtil.compare(left, right);

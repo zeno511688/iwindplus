@@ -68,12 +68,12 @@ public class TemplateUtil {
         if (ArrayUtil.isEmpty(templateParam)) {
             return Collections.emptyMap();
         }
-        final List<String> paramList = Arrays.asList(templateParam);
+        final List<String> paramList = List.of(templateParam);
         return paramList.stream().collect(Collectors.toMap(
                 key -> key,
                 key -> {
                     final int index = paramList.indexOf(key);
-                    return index < templateParams.size() ? templateParams.get(index) : "";
+                    return index < templateParams.size() ? templateParams.get(index) : SymbolConstant.EMPTY_STR;
                 },
                 (existing, replacement) -> existing
             )

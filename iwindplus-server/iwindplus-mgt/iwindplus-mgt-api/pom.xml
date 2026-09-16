@@ -14,8 +14,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.iwindplus.mgt</groupId>
-            <artifactId>iwindplus-mgt-domain</artifactId>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-domain</artifactId>
         </dependency>
     </dependencies>
 </project>

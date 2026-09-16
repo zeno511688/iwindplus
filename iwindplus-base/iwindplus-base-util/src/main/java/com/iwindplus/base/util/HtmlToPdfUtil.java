@@ -208,7 +208,7 @@ public class HtmlToPdfUtil {
         connection.setInstanceFollowRedirects(false);
 
         int responseCode = connection.getResponseCode();
-        if (responseCode != HttpURLConnection.HTTP_OK) {
+        if (responseCode != java.net.HttpURLConnection.HTTP_OK) {
             throw new IOException("HTTP response code: " + responseCode);
         }
 

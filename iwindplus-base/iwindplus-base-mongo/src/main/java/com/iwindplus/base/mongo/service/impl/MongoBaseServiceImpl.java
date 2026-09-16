@@ -30,6 +30,7 @@ import jakarta.annotation.Resource;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +84,9 @@ public class MongoBaseServiceImpl<T extends MongoDbBaseDO> implements MongoBaseS
 
     @Override
     public T save(T entity) {
+        if (entity == null) {
+            return null;
+        }
         this.buildDefaultEntity(entity, getCurrentUserInfo());
         return this.mongoTemplate.save(entity);
     }
@@ -117,8 +121,8 @@ public class MongoBaseServiceImpl<T extends MongoDbBaseDO> implements MongoBaseS
             return false;
         }
 
-        List<T> saveList = new ArrayList<>();
-        List<T> updateList = new ArrayList<>();
+        List<T> saveList = new ArrayList<>(10);
+        List<T> updateList = new ArrayList<>(10);
 
         for (T entity : entities) {
             if (CharSequenceUtil.isBlank(entity.getId())) {
@@ -148,6 +152,9 @@ public class MongoBaseServiceImpl<T extends MongoDbBaseDO> implements MongoBaseS
 
     @Override
     public boolean remove(Query query, boolean deleted) {
+        if (query == null) {
+            return false;
+        }
         if (Boolean.TRUE.equals(deleted)) {
             DeleteResult result = this.mongoTemplate.remove(query, this.entityClass);
             return result != null && result.getDeletedCount() > 0;
@@ -171,6 +178,9 @@ public class MongoBaseServiceImpl<T extends MongoDbBaseDO> implements MongoBaseS
 
     @Override
     public boolean update(T entity, Query query) {
+        if (entity == null || query == null) {
+            return false;
+        }
         query.addCriteria(this.getCriteriaDeleted());
 
         Update update = this.getUpdate(entity);
@@ -186,7 +196,10 @@ public class MongoBaseServiceImpl<T extends MongoDbBaseDO> implements MongoBaseS
 
     @Override
     public <E extends IPage<T>> E page(E page, Query query) {
-        List<Sort.Order> orders = new ArrayList<>();
+        if (page == null || query == null) {
+            return page;
+        }
+        List<Sort.Order> orders = new ArrayList<>(10);
         List<OrderItem> orderList = page.orders();
 
         if (CollUtil.isEmpty(orderList)) {
@@ -228,12 +241,18 @@ public class MongoBaseServiceImpl<T extends MongoDbBaseDO> implements MongoBaseS
 
     @Override
     public List<T> listById(List<String> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
         return this.mongoTemplate.find(Query.query(Criteria.where(DbConstant.ID).in(ids)),
             this.entityClass);
     }
 
     @Override
     public List<T> list(Query query) {
+        if (query == null) {
+            return Collections.emptyList();
+        }
         query.addCriteria(this.getCriteriaDeleted());
         return this.mongoTemplate.find(query, this.entityClass);
     }
@@ -248,18 +267,27 @@ public class MongoBaseServiceImpl<T extends MongoDbBaseDO> implements MongoBaseS
 
     @Override
     public T getOne(Query query) {
+        if (query == null) {
+            return null;
+        }
         query.addCriteria(this.getCriteriaDeleted());
         return this.mongoTemplate.findOne(query, this.entityClass);
     }
 
     @Override
     public long count(Query query) {
+        if (query == null) {
+            return 0;
+        }
         query.addCriteria(this.getCriteriaDeleted());
         return this.mongoTemplate.count(query, this.entityClass);
     }
 
     @Override
     public boolean exists(MongoLambdaQueryWrapper<T> wrapper) {
+        if (wrapper == null) {
+            return false;
+        }
         wrapQueryByDelete(wrapper);
         return this.mongoTemplate.exists(wrapper.build(), this.entityClass);
     }
@@ -390,7 +418,7 @@ public class MongoBaseServiceImpl<T extends MongoDbBaseDO> implements MongoBaseS
     private Update getUpdateDeleted() {
         UserBaseVO user = getCurrentUserInfo();
 
-        return Update.update(DbConstant.DELETED, NumberConstant.NUMBER_ONE)
+        return Update.update(DbConstant.DELETED, CommonConstant.NumberConstant.NUMBER_ONE)
             .set(DbConstant.MODIFIED_TIMESTAMP, System.currentTimeMillis())
             .set(DbConstant.MODIFIED_BY, user.getRealName())
             .set(DbConstant.MODIFIED_ID, user.getUserId());
@@ -453,7 +481,7 @@ public class MongoBaseServiceImpl<T extends MongoDbBaseDO> implements MongoBaseS
 
     private Criteria getCriteriaDeleted() {
         return Criteria.where(DbConstant.DELETED)
-            .is(NumberConstant.NUMBER_ZERO);
+            .is(CommonConstant.NumberConstant.NUMBER_ZERO);
     }
 
     private MongoLambdaQueryWrapper wrapQueryByDelete(MongoLambdaQueryWrapper<T> wrapper) {

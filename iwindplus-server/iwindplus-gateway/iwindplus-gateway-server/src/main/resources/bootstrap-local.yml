@@ -9,7 +9,7 @@ cross:
 gateway:
   rate-limiter:
     # 是否开启限流过滤器
-    enabled: true
+    enabled: false
     # 最大缓存数量
     maxSize: 1000
     # 缓存超时时间
@@ -41,15 +41,14 @@ gateway:
     # 忽略的API
     ignored-api:
       - /admin/imWs/ws
-      - /admin/setup/wechat/getWechatMpQrCode
-      - /admin/setup/wechat/getWechatMpQrCodeCallback
-      - /admin/setup/wechat/getWechatMaCodeByMobile
-      - /admin/setup/wechat/getWechatMaCodeByUserInfo
-      - /admin/setup/wechat/getWechatMaQrCode
-      - /admin/setup/sms/sendCaptcha
-      - /admin/setup/mailbox/sendCaptcha
-      - /admin/setup/oss/uploadFile
-      - /admin/mgt/thirdBindGrant/editUser
+      - /admin/mgt/wechat/getMpQrCode
+      - /admin/mgt/wechat/getMpQrCodeCallback
+      - /admin/mgt/wechat/getMaQrCode
+      - /admin/mgt/wechat/getMaCodeByPhoneNumber
+      - /admin/mgt/wechat/getMaCodeByUserInfo
+      - /admin/mgt/userExtendBindGrant/editUser
+      - /admin/integr/sms/sendCaptcha
+      - /admin/integr/mailbox/sendCaptcha
   ip-black-list:
     # 是否开启IP黑名单过滤器
     enabled: true
@@ -99,10 +98,6 @@ gateway:
     # 忽略鉴权的API
     ignored-api:
       - /admin/auth/oauth2/logout
-      - /admin/setup/mail/config/listEnabled
-      - /admin/setup/mail/tpl/listDisabled
-      - /admin/setup/oss/listSignUrl
-      - /admin/im/direct/msg/editMsgStatus
     # 通用都有权限的API
     general-api:
       - /admin/mgt/user/getUserInfo
@@ -134,7 +129,7 @@ gateway:
     # 忽略的API
     ignored-api:
       - /admin/imWs/ws
-      - /admin/setup/region/**
+      - /admin/mgt/region/**
       - /admin/log/gateway/log/**
       - /admin/log/login/log/**
       - /admin/log/operation/log/**
@@ -400,19 +395,6 @@ kafka:
             group: iwindplus-ipBlackList-group
             # 是否自动创建
             auto-create: true
-alert:
-  # 飞书
-  feishu:
-    app-id: cli_a92f34e733b81cd1
-    app-secret: ${alert-feishu-app-secret:}
-  log:
-    enabled: true
-    webhook:
-      url: https://open.feishu.cn/open-apis/bot/v2/hook/e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: ${alert-feishu-webhook-secret:}
-    stack:
-      max-length: -1
-      max-frames: -1
 knife4j:
   gateway:
     enabled: true

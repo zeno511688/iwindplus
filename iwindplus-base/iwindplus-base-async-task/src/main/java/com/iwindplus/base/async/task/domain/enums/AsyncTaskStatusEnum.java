@@ -71,6 +71,6 @@ public enum AsyncTaskStatusEnum implements BaseEnum<Integer> {
      * @return List<AsyncTaskStatusEnum>
      */
     public static List<AsyncTaskStatusEnum> getUnfinishedStatus() {
-        return List.of(AsyncTaskStatusEnum.PENDING, AsyncTaskStatusEnum.EXECUTING, AsyncTaskStatusEnum.WAITING, AsyncTaskStatusEnum.FAILED);
+        return List.of(PENDING, EXECUTING, WAITING, FAILED);
     }
 }

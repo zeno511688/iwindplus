@@ -5,7 +5,7 @@
 package com.iwindplus.im.client;
 
 import com.iwindplus.im.api.WsMsgApi;
-import com.iwindplus.im.domain.constant.ImConstant;
+import com.iwindplus.im.common.constant.ImConstant;
 import org.springframework.cloud.openfeign.FeignClient;
 
 /**

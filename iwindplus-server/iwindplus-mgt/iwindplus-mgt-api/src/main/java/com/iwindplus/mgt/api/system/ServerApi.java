@@ -8,7 +8,7 @@
 package com.iwindplus.mgt.api.system;
 
 import com.iwindplus.base.domain.vo.ResultVO;
-import com.iwindplus.mgt.domain.vo.system.ServerRouteDefinitionVO;
+import com.iwindplus.mgt.api.system.vo.ServerRouteDefinitionVO;
 import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -99,6 +99,12 @@ public class ExportTaskRepository extends CrudRepository<ExportTaskMapper, Expor
         if (entity.getExportedCount() != null) {
             builder.exportedCount(entity.getExportedCount());
         }
+        if (entity.getTotalCount() != null) {
+            builder.totalCount(entity.getTotalCount());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getFilePath())) {
+            builder.filePath(entity.getFilePath());
+        }
         if (entity.getExt() != null) {
             builder.ext(entity.getExt());
         }

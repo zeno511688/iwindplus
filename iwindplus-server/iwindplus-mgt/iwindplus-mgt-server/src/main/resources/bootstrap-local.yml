@@ -138,7 +138,7 @@ spring:
     # 数据库url
     url: jdbc:mysql://127.0.0.1:3317/iwindplus-mgt?useUnicode=true&autoReconnect=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
     # 数据库用户名
-    username: ${mysql-username}
+    username: root
     # 数据库密码
     password: ${mysql-password}
     # Hikari 连接池配置
@@ -392,21 +392,19 @@ mgt:
     # 短信模板编码
     tpl-code: c3f67fd354dd6098154053f68285ba35
   oss:
-    # 对象存储模板编码
+    code: minio-main
     tpl-code: c3f67fd355dd6098156053f68385ba34
-alert:
-  # 飞书
-  feishu:
-    app-id: cli_a92f34e733b81cd1
-    app-secret: ${alert-feishu-app-secret:}
-  log:
-    enabled: true
-    webhook:
-      url: https://open.feishu.cn/open-apis/bot/v2/hook/e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: ${alert-feishu-webhook-secret:}
-    stack:
-      max-length: -1
-      max-frames: -1
+  wechat:
+    # 微信公众号配置编码
+    mp-code: wxd67fd355dd6098156053f68285ba3e
+    # 微信公众号回调地址（外网，扫码登陆用）
+    mp-callback-url: https://api.iwindplus.com/admin/mgt/wechat/getMpQrCodeCallback
+    # 微信公众号回调成功地址（扫码登陆用）
+    mp-callback-success-url: https://www.iwindplus.com/bindUser
+    #  微信小程序配置编码
+    ma-code: wxd67fd355dd6098156053f68285ba3e
+    # 微信小程序回调成功地址（授权登陆用）
+    ma-callback-success-url: https://www.iwindplus.com/bindMaUser
 springdoc:
   packagesToScan:
     - com.iwindplus.mgt.server.web

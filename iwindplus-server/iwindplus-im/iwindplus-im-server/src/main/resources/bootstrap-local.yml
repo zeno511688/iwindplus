@@ -11,17 +11,11 @@ im:
   enabled-remote-token: false
   # 聊天群扫码加入地址
   chatGroupScanUrl: https://www.iwindplus.com/im/joinChatGroup
-  mail:
-    # 邮件模板编码
-    tpl-code: c3f67fd355dd6098156053f68285ba3e
-  sms:
-    # 短信配置编码
-    code: 6856e64cc228215d44c1a351454a8cc5
-    # 短信模板编码
-    tpl-code: c3f67fd354dd6098154053f68285ba35
   oss:
-    # 对象存储模板编码
+    code: minio-main
     tpl-code: c3f67fd355dd6098156053f68385ba35
+    mgt-code: minio-main
+    mgt-tpl-code: c3f67fd355dd6098156053f68385ba34
 operate:
   enabled: true
   log:
@@ -90,7 +84,7 @@ spring:
     # 数据库url
     url: jdbc:mysql://127.0.0.1:3317/iwindplus-im?useUnicode=true&autoReconnect=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
     # 数据库用户名
-    username: ${mysql-username}
+    username: root
     # 数据库密码
     password: ${mysql-password}
     # Hikari 连接池配置
@@ -226,19 +220,6 @@ mybatis-plus:
       private-key: ${mybatis-field-crypto-private-key:}
       # 密钥
       key: ${mybatis-field-crypto-key:}
-alert:
-  # 飞书
-  feishu:
-    app-id: cli_a92f34e733b81cd1
-    app-secret: ${alert-feishu-app-secret}
-  log:
-    enabled: true
-    webhook:
-      url: https://open.feishu.cn/open-apis/bot/v2/hook/e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: ${alert-feishu-webhook-secret}
-    stack:
-      max-length: -1
-      max-frames: -1
 springdoc:
   packagesToScan:
     - com.iwindplus.im.server.web

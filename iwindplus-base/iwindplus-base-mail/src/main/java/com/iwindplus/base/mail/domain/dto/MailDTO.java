@@ -7,7 +7,7 @@
 
 package com.iwindplus.base.mail.domain.dto;
 
-import com.iwindplus.base.domain.dto.UploadByteDTO;
+import com.iwindplus.base.domain.dto.UploadFileDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -68,11 +68,17 @@ public class MailDTO implements Serializable {
      * 附件.
      */
     @Schema(description = "附件")
-    private List<UploadByteDTO> attachments;
+    private List<UploadFileDTO> attachments;
 
     /**
      * 是否是html方式.
      */
     @Schema(description = "是否是html方式")
     private Boolean html;
+
+    /**
+     * 业务编号（可选）.
+     */
+    @Schema(description = "业务编号")
+    private String bizNumber;
 }

@@ -31,8 +31,8 @@ public record AsyncTaskBizProcessor(
     AsyncTaskService asyncTaskService,
     AsyncTaskSubService asyncTaskSubService,
     AsyncTaskStateSupport asyncTaskStateSupport,
-    AsyncTaskExecuteHandler asyncTaskExecuteHandlerMain,
-    AsyncTaskExecuteHandler asyncTaskExecuteHandlerGroup,
+    AsyncTaskExecuteHandler mainAsyncTaskExecuteHandler,
+    AsyncTaskExecuteHandler groupAsyncTaskExecuteHandler,
     ThreadPoolExecutor threadPoolExecutor) {
 
     /**
@@ -152,6 +152,6 @@ public record AsyncTaskBizProcessor(
      * @return AsyncTaskExecuteHandler
      */
     private AsyncTaskExecuteHandler getExecuteHandler(long subTaskCount) {
-        return subTaskCount <= 0 ? asyncTaskExecuteHandlerMain : asyncTaskExecuteHandlerGroup;
+        return subTaskCount <= 0 ? mainAsyncTaskExecuteHandler : groupAsyncTaskExecuteHandler;
     }
 }

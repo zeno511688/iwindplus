@@ -29,18 +29,13 @@
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.iwindplus.setup</groupId>
-                <artifactId>iwindplus-setup-client</artifactId>
+                <groupId>com.iwindplus.integr</groupId>
+                <artifactId>iwindplus-integr-client</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.iwindplus.auth</groupId>
                 <artifactId>iwindplus-auth-client</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.iwindplus.im</groupId>
-                <artifactId>iwindplus-im-domain</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -67,7 +62,6 @@
     </dependencyManagement>
 
     <modules>
-        <module>iwindplus-im-domain</module>
         <module>iwindplus-im-api</module>
         <module>iwindplus-im-client</module>
         <module>iwindplus-im-server</module>

@@ -61,8 +61,11 @@ public record WebManager(
      * @param result 结果
      */
     public void encryptResult(ResultVO<Object> result) {
+        if (result == null) {
+            return;
+        }
         final ResponseBodyCryptoConfig crypto = responseBodyProperty.getCrypto();
-        if (Boolean.FALSE.equals(crypto.getEnabled())) {
+        if (crypto == null || Boolean.FALSE.equals(crypto.getEnabled())) {
             return;
         }
 

@@ -106,6 +106,9 @@ public class ReactorUtil {
      * @return 修改后的 ServerWebExchange
      */
     public static ServerWebExchange removeHeader(ServerWebExchange exchange, String headerName) {
+        if (StrUtil.isBlank(headerName)) {
+            return exchange;
+        }
         return removeHeaders(exchange, Set.of(headerName));
     }
 

@@ -9,9 +9,9 @@ package com.iwindplus.mgt.api.system;
 
 import com.iwindplus.base.domain.validation.SaveGroup;
 import com.iwindplus.base.domain.vo.ResultVO;
-import com.iwindplus.mgt.domain.dto.system.ClientDTO;
-import com.iwindplus.mgt.domain.vo.system.ClientBaseVO;
-import com.iwindplus.mgt.domain.vo.system.ClientVO;
+import com.iwindplus.mgt.api.system.dto.ClientDTO;
+import com.iwindplus.mgt.api.system.vo.ClientBaseVO;
+import com.iwindplus.mgt.api.system.vo.ClientVO;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;

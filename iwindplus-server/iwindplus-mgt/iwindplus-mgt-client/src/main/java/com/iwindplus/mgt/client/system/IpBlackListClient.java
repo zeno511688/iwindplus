@@ -8,7 +8,7 @@
 package com.iwindplus.mgt.client.system;
 
 import com.iwindplus.mgt.api.system.IpBlackListApi;
-import com.iwindplus.mgt.domain.constant.MgtConstant;
+import com.iwindplus.mgt.common.constant.MgtConstant;
 import org.springframework.cloud.openfeign.FeignClient;
 
 /**

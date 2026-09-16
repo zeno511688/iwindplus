@@ -12,8 +12,8 @@ import com.iwindplus.base.export.task.domain.constant.ExportTaskConstant;
 import com.iwindplus.base.export.task.domain.property.ExportTaskProperty;
 import com.iwindplus.base.export.task.executor.ExportTaskExecutor;
 import com.iwindplus.base.export.task.executor.impl.ExportTaskExecutorImpl;
-import com.iwindplus.base.export.task.factory.ExportTaskHandlerStrategyFactory;
-import com.iwindplus.base.export.task.factory.ExportTaskJobHandlerStrategyFactory;
+import com.iwindplus.base.export.task.factory.ExportTaskHandlerFactory;
+import com.iwindplus.base.export.task.factory.ExportTaskJobHandlerFactory;
 import com.iwindplus.base.export.task.jobhandler.ExportTaskJob;
 import com.iwindplus.base.export.task.service.ExportTaskService;
 import com.iwindplus.base.export.task.service.impl.ExportTaskServiceImpl;
@@ -22,7 +22,8 @@ import com.iwindplus.base.export.task.support.ExportTaskExecuteHandler;
 import com.iwindplus.base.export.task.support.ExportTaskHandler;
 import com.iwindplus.base.export.task.support.ExportTaskJobHandler;
 import com.iwindplus.base.export.task.support.ExportTaskStateSupport;
-import com.iwindplus.base.export.task.support.impl.ExportTaskJobHandlerRetry;
+import com.iwindplus.base.export.task.support.impl.RetryExportTaskJobHandler;
+import com.iwindplus.base.oss.factory.OssExecuteHandlerFactory;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -61,18 +62,18 @@ public class ExportTaskConfiguration {
     /**
      * 创建 ExportTaskExecutor.
      *
-     * @param exportTaskService                exportTaskService
-     * @param exportTaskBizProcessor           exportTaskBizProcessor
-     * @param exportTaskHandlerStrategyFactory exportTaskHandlerStrategyFactory
+     * @param exportTaskService        exportTaskService
+     * @param exportTaskBizProcessor   exportTaskBizProcessor
+     * @param exportTaskHandlerFactory exportTaskHandlerFactory
      * @return ExportTaskExecutor
      */
     @Bean
     public ExportTaskExecutor exportTaskExecutor(
         ExportTaskService exportTaskService,
         ExportTaskBizProcessor exportTaskBizProcessor,
-        ExportTaskHandlerStrategyFactory exportTaskHandlerStrategyFactory) {
+        ExportTaskHandlerFactory exportTaskHandlerFactory) {
         ExportTaskExecutor exportTaskExecutor = new ExportTaskExecutorImpl(
-            exportTaskService, exportTaskBizProcessor, exportTaskHandlerStrategyFactory);
+            exportTaskService, exportTaskBizProcessor, exportTaskHandlerFactory);
         log.info("ExportTaskExecutor={}", exportTaskExecutor);
         return exportTaskExecutor;
     }
@@ -103,30 +104,30 @@ public class ExportTaskConfiguration {
     }
 
     /**
-     * 创建 ExportTaskHandlerStrategyFactory.
+     * 创建 ExportTaskHandlerFactory.
      *
      * @param handlerProvider 处理器提供者
-     * @return ExportTaskHandlerStrategyFactory
+     * @return ExportTaskHandlerFactory
      */
     @Bean
-    public ExportTaskHandlerStrategyFactory exportTaskHandlerStrategyFactory(
+    public ExportTaskHandlerFactory exportTaskHandlerFactory(
         ObjectProvider<ExportTaskHandler> handlerProvider) {
-        ExportTaskHandlerStrategyFactory exportTaskHandlerStrategyFactory = new ExportTaskHandlerStrategyFactory(handlerProvider);
-        log.info("ExportTaskHandlerStrategyFactory={}", exportTaskHandlerStrategyFactory);
-        return exportTaskHandlerStrategyFactory;
+        ExportTaskHandlerFactory exportTaskHandlerFactory = new ExportTaskHandlerFactory(handlerProvider);
+        log.info("ExportTaskHandlerFactory={}", exportTaskHandlerFactory);
+        return exportTaskHandlerFactory;
     }
 
     /**
-     * 创建 ExportTaskTaskJobHandlerStrategyFactory.
+     * 创建 ExportTaskTaskJobHandlerFactory.
      *
      * @param handlerProvider 处理器提供者
-     * @return ExportTaskTaskJobHandlerStrategyFactory
+     * @return ExportTaskTaskJobHandlerFactory
      */
     @Bean
-    public ExportTaskJobHandlerStrategyFactory exportTaskTaskJobHandlerStrategyFactory(
+    public ExportTaskJobHandlerFactory exportTaskTaskJobHandlerFactory(
         ObjectProvider<ExportTaskJobHandler> handlerProvider) {
-        ExportTaskJobHandlerStrategyFactory factory = new ExportTaskJobHandlerStrategyFactory(handlerProvider);
-        log.info("ExportTaskTaskJobHandlerStrategyFactory={}", factory);
+        ExportTaskJobHandlerFactory factory = new ExportTaskJobHandlerFactory(handlerProvider);
+        log.info("ExportTaskTaskJobHandlerFactory={}", factory);
         return factory;
     }
 
@@ -152,37 +153,41 @@ public class ExportTaskConfiguration {
     /**
      * 创建 ExportTaskExecuteHandler.
      *
-     * @param exportTaskHandlerStrategyFactory exportTaskHandlerStrategyFactory
-     * @param exportTaskStateSupport           exportTaskStateSupport
-     * @param exportTaskService                exportTaskService
+     * @param property                 property
+     * @param exportTaskHandlerFactory exportTaskHandlerFactory
+     * @param exportTaskStateSupport   exportTaskStateSupport
+     * @param exportTaskService        exportTaskService
      * @return ExportTaskExecuteHandler
      */
     @Bean
     public ExportTaskExecuteHandler exportTaskExecuteHandler(
-        ExportTaskHandlerStrategyFactory exportTaskHandlerStrategyFactory,
+        ExportTaskProperty property,
+        ExportTaskHandlerFactory exportTaskHandlerFactory,
         ExportTaskStateSupport exportTaskStateSupport,
-        ExportTaskService exportTaskService) {
+        ExportTaskService exportTaskService,
+        ObjectProvider<OssExecuteHandlerFactory> ossExecuteHandlerFactoryProvider) {
         ExportTaskExecuteHandler handler = new ExportTaskExecuteHandler(
-            exportTaskHandlerStrategyFactory, exportTaskStateSupport, exportTaskService);
+            property, exportTaskHandlerFactory, exportTaskStateSupport,
+            exportTaskService, ossExecuteHandlerFactoryProvider);
         log.info("ExportTaskExecuteHandler={}", handler);
         return handler;
     }
 
     /**
-     * 创建 ExportTaskJobHandlerRetry.
+     * 创建 RetryExportTaskJobHandler.
      *
      * @param property               property
      * @param exportTaskService      exportTaskService
      * @param exportTaskBizProcessor exportTaskBizProcessor
-     * @return ExportTaskJobHandlerRetry
+     * @return RetryExportTaskJobHandler
      */
     @Bean
-    public ExportTaskJobHandlerRetry exportTaskJobHandlerRetry(
+    public RetryExportTaskJobHandler retryExportTaskJobHandler(
         ExportTaskProperty property,
         ExportTaskService exportTaskService,
         ExportTaskBizProcessor exportTaskBizProcessor,
         ExportTaskStateSupport exportTaskStateSupport) {
-        return new ExportTaskJobHandlerRetry(
+        return new RetryExportTaskJobHandler(
             property, exportTaskService, exportTaskBizProcessor, exportTaskStateSupport);
     }
 
@@ -216,7 +221,7 @@ public class ExportTaskConfiguration {
     @ConditionalOnProperty(prefix = "export-task.job", name = "enabled", havingValue = "true", matchIfMissing = true)
     @Bean
     public ExportTaskJob exportTaskTaskJob(
-        ExportTaskJobHandlerStrategyFactory factory) {
+        ExportTaskJobHandlerFactory factory) {
         ExportTaskJob exportTaskTaskJob = new ExportTaskJob(factory);
         log.info("ExportTaskTaskJob={}", exportTaskTaskJob);
         return exportTaskTaskJob;

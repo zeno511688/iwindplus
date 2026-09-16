@@ -45,4 +45,34 @@ public class ExportTaskConstant {
      * 钩子方法名：主任务执行失败.
      */
     public static final String HOOK_ON_TASK_FAIL = "onTaskFail";
+
+    /**
+     * 导出批次大小（每页查询条数）.
+     */
+    public static final int EXPORT_BATCH_SIZE = 1000;
+
+    /**
+     * 首页页码.
+     */
+    public static final int FIRST_PAGE_INDEX = 1;
+
+    /**
+     * 第二页页码.
+     */
+    public static final int SECOND_PAGE_INDEX = 2;
+
+    /**
+     * 进度百分比基数.
+     */
+    public static final double PROGRESS_PERCENT_BASE = 100.0;
+
+    /**
+     * OSS相对路径默认前缀.
+     */
+    public static final String OSS_RELATIVE_PATH_PREFIX = "export-task/";
+
+    /**
+     * 路径分隔符.
+     */
+    public static final String PATH_SEPARATOR = "/";
 }

@@ -30,7 +30,7 @@ import lombok.experimental.SuperBuilder;
  * <p>
  * 使用示例：
  * <pre>
- * List<String> patterns = Arrays.asList("/api/*", "/admin/**");
+ * List<String> patterns = List.of("/api/*", "/admin/**");
  * boolean matched = PathMatchUtil.match(patterns, "/api/user");
  * </pre>
  *

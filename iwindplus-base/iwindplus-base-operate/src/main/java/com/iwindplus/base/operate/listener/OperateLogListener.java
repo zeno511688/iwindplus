@@ -10,7 +10,7 @@ package com.iwindplus.base.operate.listener;
 import cn.hutool.extra.spring.SpringUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.iwindplus.base.domain.vo.ResultVO;
-import com.iwindplus.base.http.client.factory.HttpClientExecutorStrategyFactory;
+import com.iwindplus.base.http.client.factory.HttpClientExecuteHandlerFactory;
 import com.iwindplus.base.operate.domain.dto.OperateLogDTO;
 import com.iwindplus.base.operate.domain.event.OperateLogEvent;
 import com.iwindplus.base.operate.domain.property.OperateProperty;
@@ -34,7 +34,7 @@ public class OperateLogListener {
     private OperateProperty property;
 
     @Resource
-    private HttpClientExecutorStrategyFactory httpClientExecutorStrategyFactory;
+    private HttpClientExecuteHandlerFactory httpClientExecuteHandlerFactory;
 
     /**
      * 操作日志监听保存数据.
@@ -51,8 +51,8 @@ public class OperateLogListener {
         }
 
         final OperateLogConfig cfg = property.getLog();
-        httpClientExecutorStrategyFactory
-            .getDefaultHttpClientExecutor()
+        httpClientExecuteHandlerFactory
+            .getDefaultHandler()
             .post(
                 cfg.getUrl(),
                 logData,

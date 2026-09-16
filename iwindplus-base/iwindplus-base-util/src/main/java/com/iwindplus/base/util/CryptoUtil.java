@@ -53,6 +53,9 @@ public class CryptoUtil {
      * @return String
      */
     public static String encrypt(String data, CryptoDTO config) {
+        if (ObjectUtil.isEmpty(config)) {
+            throw new BizException(BizCodeEnum.PARAM_ERROR);
+        }
         if (Boolean.FALSE.equals(config.getEnabled())) {
             return data;
         }
@@ -80,6 +83,9 @@ public class CryptoUtil {
      * @return String
      */
     public static String decrypt(String data, CryptoDTO config) {
+        if (ObjectUtil.isEmpty(config)) {
+            throw new BizException(BizCodeEnum.PARAM_ERROR);
+        }
         if (Boolean.FALSE.equals(config.getEnabled())) {
             return data;
         }

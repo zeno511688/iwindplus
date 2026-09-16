@@ -7,14 +7,15 @@
 
 package com.iwindplus.base.alert.domain.property;
 
-import com.iwindplus.base.alert.domain.enums.AlertChannelTypeEnum;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
  * 告警相关属性.
@@ -36,29 +37,88 @@ public class AlertProperty {
     private Boolean enabled = Boolean.TRUE;
 
     /**
-     * 默认告警渠道.
+     * 默认配置编码（可选）.
      */
-    @Builder.Default
-    private AlertChannelTypeEnum defaultAlertChannel = AlertChannelTypeEnum.FEI_SHU;
+    private String defaultCode;
 
     /**
-     * 飞书配置.
+     * 飞书配置列表.
      */
     @Builder.Default
-    @NestedConfigurationProperty
-    private FeishuConfig feishu = new FeishuConfig();
+    private List<FeishuConfig> feishu = new ArrayList<>(10);
 
     /**
-     * 飞书相关属性.
+     * 基础配置.
      *
      * @author zengdegui
-     * @since 2023/6/1
+     * @since 2026/9/9
      */
     @Data
     @SuperBuilder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class FeishuConfig {
+    public abstract static class BaseConfig {
+
+        /**
+         * 是否启用.
+         */
+        @Builder.Default
+        private Boolean enabled = Boolean.TRUE;
+
+        /**
+         * 配置编码（唯一标识）.
+         */
+        private String code;
+
+        /**
+         * 配置名称.
+         */
+        private String name;
+
+        /**
+         * 优先级（数字越小优先级越高）.
+         */
+        private Integer priority;
+    }
+
+    /**
+     * 飞书配置配置.
+     *
+     * @author zengdegui
+     * @since 2026/9/9
+     */
+    @Data
+    @EqualsAndHashCode(callSuper = false)
+    @SuperBuilder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class FeishuConfig extends BaseConfig {
+
+        /**
+         * 企业应用消息配置集合.
+         */
+        @Builder.Default
+        private List<AppConfig> apps = new ArrayList<>(10);
+
+        /**
+         * Webhook消息配置集合.
+         */
+        @Builder.Default
+        private List<WebhookConfig> webhooks = new ArrayList<>(10);
+    }
+
+    /**
+     * 企业应用消息配置.
+     *
+     * @author zengdegui
+     * @since 2026/9/9
+     */
+    @Data
+    @EqualsAndHashCode(callSuper = false)
+    @SuperBuilder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AppConfig extends BaseConfig {
 
         /**
          * 应用主键.
@@ -69,5 +129,29 @@ public class AlertProperty {
          * 应用密钥.
          */
         private String appSecret;
+    }
+
+    /**
+     * Webhook消息配置.
+     *
+     * @author zengdegui
+     * @since 2026/9/9
+     */
+    @Data
+    @EqualsAndHashCode(callSuper = false)
+    @SuperBuilder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class WebhookConfig extends BaseConfig {
+
+        /**
+         * Webhook地址.
+         */
+        private String url;
+
+        /**
+         * 密钥（可选）.
+         */
+        private String secretKey;
     }
 }

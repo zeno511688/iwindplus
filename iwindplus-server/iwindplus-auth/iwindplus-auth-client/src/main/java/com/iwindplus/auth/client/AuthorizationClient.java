@@ -5,7 +5,7 @@
 package com.iwindplus.auth.client;
 
 import com.iwindplus.auth.api.AuthorizationApi;
-import com.iwindplus.auth.domain.constant.AuthConstant;
+import com.iwindplus.auth.common.constant.AuthConstant;
 import org.springframework.cloud.openfeign.FeignClient;
 
 /**

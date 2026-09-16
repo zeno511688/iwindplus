@@ -13,7 +13,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.iwindplus.base.domain.vo.AppApiVO;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.http.client.domain.enums.HttpClientTypeEnum;
-import com.iwindplus.base.http.client.factory.HttpClientExecutorStrategyFactory;
+import com.iwindplus.base.http.client.factory.HttpClientExecuteHandlerFactory;
 import com.iwindplus.base.swagger.domain.property.SwaggerProperty;
 import com.iwindplus.base.swagger.service.SwaggerService;
 import jakarta.annotation.Resource;
@@ -45,7 +45,7 @@ public class SwaggerListener {
     private SwaggerService swaggerService;
 
     @Resource
-    private HttpClientExecutorStrategyFactory httpClientExecutorStrategyFactory;
+    private HttpClientExecuteHandlerFactory httpClientExecuteHandlerFactory;
 
     @Resource
     private ObjectProvider<DiscoveryClient> discoveryClientProvider;
@@ -167,8 +167,8 @@ public class SwaggerListener {
      */
     private Mono<Boolean> registerApiReactive(AppApiVO entity) {
         return Mono.fromCompletionStage(() ->
-                httpClientExecutorStrategyFactory
-                    .getHttpClientExecutor(HttpClientTypeEnum.WEB_CLIENT )
+                httpClientExecuteHandlerFactory
+                    .getHandler(HttpClientTypeEnum.WEB_CLIENT )
                     .postAsync(
                         property.getServerApi().getUrl(),
                         entity,

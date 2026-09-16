@@ -8,7 +8,7 @@
 package com.iwindplus.dtx.client;
 
 import com.iwindplus.dtx.api.TccBranchTxApi;
-import com.iwindplus.dtx.domain.constant.DtxConstant;
+import com.iwindplus.dtx.common.constant.DtxConstant;
 import org.springframework.cloud.openfeign.FeignClient;
 
 /**

@@ -9,7 +9,6 @@ package com.iwindplus.base.export.task.domain.enums;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.iwindplus.base.domain.enums.BaseEnum;
-import java.util.Arrays;
 import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -66,6 +65,6 @@ public enum ExportTaskStatusEnum implements BaseEnum<Integer> {
      * @return 未完成状态列表
      */
     public static List<ExportTaskStatusEnum> getUnfinishedStatus() {
-        return Arrays.asList(PENDING, EXECUTING);
+        return List.of(PENDING, EXECUTING, FAILED);
     }
 }

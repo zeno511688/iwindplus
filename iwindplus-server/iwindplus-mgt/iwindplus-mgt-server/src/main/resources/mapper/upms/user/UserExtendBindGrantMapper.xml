@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iwindplus.mgt.infrastructure.persistence.upms.user.UserExtendBindGrantMapper">
+    <sql id="userExtendBindGrantAliasField">
+        buebg.id, buebg.created_timestamp, buebg.created_by, buebg.created_id, buebg.modified_timestamp, buebg.modified_by, buebg.modified_id, buebg.deleted, buebg.version, buebg.remark,
+        buebg.code, buebg.openid, buebg.union_id, buebg.type, buebg.user_id
+    </sql>
+
+    <sql id="userAliasField">
+        bu.job_number, bu.mobile
+    </sql>
+
+    <sql id="inSql">
+        <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </sql>
+
+    <delete id="deleteByIds">
+        delete from user_extend_bind_grant
+        where id in
+        <include refid="inSql"/>
+    </delete>
+
+    <delete id="deleteByUserIds">
+        delete from user_extend_bind_grant
+        where user_id in
+        <include refid="inSql"/>
+    </delete>
+
+    <sql id="joinUserSql">
+        select
+            <include refid="userExtendBindGrantAliasField"/>
+            ,
+            <include refid="userAliasField"/>
+        from user_extend_bind_grant buebg
+        left join `user` bu on buebg.user_id = bu.id and bu.deleted = 0
+    </sql>
+
+    <select id="selectPageByCondition" resultType="com.iwindplus.mgt.application.query.upms.user.vo.UserExtendBindGrantPageVO">
+        <include refid="joinUserSql"/>
+        where buebg.deleted = 0
+        <if test="ew.type != null">
+            and buebg.type = #{ew.type}
+        </if>
+        <if test="ew.code != null and ew.code != ''">
+            and buebg.code like concat('%', #{ew.code}, '%')
+        </if>
+        <if test="ew.openid != null and ew.openid != ''">
+            and buebg.openid like concat('%', #{ew.openid}, '%')
+        </if>
+        <if test="ew.jobNumber != null and ew.jobNumber != ''">
+            and bu.job_number = #{ew.jobNumber}
+        </if>
+
+        <if test="ew.mobile != null and ew.mobile != ''">
+            and bu.mobile like concat('%', #{ew.mobile}, '%')
+        </if>
+        order by buebg.modified_timestamp desc
+    </select>
+
+    <select id="selectByOpenId" resultType="com.iwindplus.mgt.application.query.upms.user.vo.UserExtendBindGrantVO">
+        <include refid="joinUserSql"/>
+        where buebg.deleted = 0
+        <if test="unionId != null and unionId != ''">
+            and buebg.union_id = #{unionId}
+        </if>
+        and buebg.type = #{type}
+    </select>
+
+    <select id="selectDetailById" resultType="com.iwindplus.mgt.application.query.upms.user.vo.UserExtendBindGrantVO">
+        <include refid="joinUserSql"/>
+        where buebg.deleted = 0 and buebg.id = #{id}
+    </select>
+
+</mapper>

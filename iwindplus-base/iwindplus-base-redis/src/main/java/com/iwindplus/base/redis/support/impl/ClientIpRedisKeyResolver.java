@@ -10,6 +10,7 @@ package com.iwindplus.base.redis.support.impl;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.util.HttpsUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.JoinPoint;
 import org.springframework.cache.interceptor.KeyGenerator;
 
@@ -23,7 +24,8 @@ public class ClientIpRedisKeyResolver extends DefaultRedisKeyResolver {
 
     @Override
     public String resolver(JoinPoint joinPoint, KeyGenerator keyGenerator, String[] keys) {
-        String clientIp = HttpsUtil.getRealIp(HttpsUtil.getHttpServletRequest());
+        final HttpServletRequest request = HttpsUtil.getHttpServletRequest();
+        final String clientIp = request == null ? null : HttpsUtil.getRealIp(request);
         final String prefix = CharSequenceUtil.isNotBlank(clientIp) ? CharSequenceUtil.removeAll(clientIp, SymbolConstant.POINT) : null;
         return this.getKeyGeneratorStr(joinPoint, keyGenerator, keys, prefix);
     }

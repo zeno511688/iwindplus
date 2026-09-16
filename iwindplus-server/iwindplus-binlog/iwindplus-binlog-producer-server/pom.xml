@@ -9,6 +9,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>iwindplus-binlog-producer-server</artifactId>
+
     <packaging>jar</packaging>
 
     <name>iwindplus-binlog-producer-server</name>
@@ -91,6 +92,10 @@
         <dependency>
             <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-monitor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-logging-alert</artifactId>
         </dependency>
     </dependencies>
 

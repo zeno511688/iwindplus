@@ -22,8 +22,12 @@
             <artifactId>iwindplus-im-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.iwindplus.setup</groupId>
-            <artifactId>iwindplus-setup-client</artifactId>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-http-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iwindplus.integr</groupId>
+            <artifactId>iwindplus-integr-client</artifactId>
         </dependency>
         <dependency>
             <groupId>com.iwindplus.log</groupId>
@@ -113,6 +117,10 @@
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-es</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-websocket</artifactId>
         </dependency>
         <dependency>
@@ -133,11 +141,11 @@
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
-            <artifactId>iwindplus-base-es</artifactId>
+            <artifactId>iwindplus-base-operate</artifactId>
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
-            <artifactId>iwindplus-base-operate</artifactId>
+            <artifactId>iwindplus-base-logging-alert</artifactId>
         </dependency>
     </dependencies>
 

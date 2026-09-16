@@ -7,7 +7,7 @@
 
 package com.iwindplus.mgt.client.autoconfigure;
 
-import com.iwindplus.mgt.domain.constant.MgtConstant;
+import com.iwindplus.mgt.common.constant.MgtConstant;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.EnableFeignClients;

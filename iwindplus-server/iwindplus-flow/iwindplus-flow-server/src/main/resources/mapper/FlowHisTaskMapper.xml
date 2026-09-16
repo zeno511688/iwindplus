@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.iwindplus.flow.server.dal.mapper.FlowHisTaskMapper">
+<mapper namespace="com.iwindplus.flow.infrastructure.persistence.task.FlowHisTaskMapper">
     <sql id="hisTaskBaseField">
         fht.id, fht.created_timestamp, fht.created_by, fht.modified_timestamp, fht.modified_by, fht.version,
         fht.code, fht.name, fht.type, fht.status, fht.take_time, fht.instance_id, fhi.name as instance_name, fhi.biz_number, fht.model_id,
         fm.name as model_name, fm.code as model_code
     </sql>
 
-    <select id="selectApprovalRecordPage" resultType="com.iwindplus.flow.domain.vo.FlowHisTaskPageVO">
+    <select id="selectApprovalRecordPage" resultType="com.iwindplus.flow.application.query.task.vo.FlowHisTaskPageVO">
         select
             <include refid="hisTaskBaseField"/>
         from flow_his_task fht

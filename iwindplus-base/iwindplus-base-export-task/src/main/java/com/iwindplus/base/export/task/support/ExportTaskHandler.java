@@ -46,6 +46,13 @@ public interface ExportTaskHandler<Q extends DbPageDTO, V> {
     Class<V> getRowClass();
 
     /**
+     * 获取导出文件名.
+     *
+     * @return 文件名
+     */
+    String getFileName();
+
+    /**
      * 获取导出数据的Sheet名称（有默认值不需要实现）.
      *
      * @return Sheet名称
@@ -77,5 +84,4 @@ public interface ExportTaskHandler<Q extends DbPageDTO, V> {
      */
     default void onTaskFail(ExportTaskVO entity) {
     }
-
 }

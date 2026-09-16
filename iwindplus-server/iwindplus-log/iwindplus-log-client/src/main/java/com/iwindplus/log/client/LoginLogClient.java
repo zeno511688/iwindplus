@@ -5,7 +5,7 @@
 package com.iwindplus.log.client;
 
 import com.iwindplus.log.api.LoginLogApi;
-import com.iwindplus.log.domain.constant.LogConstant;
+import com.iwindplus.log.common.constant.LogConstant;
 import org.springframework.cloud.openfeign.FeignClient;
 
 /**

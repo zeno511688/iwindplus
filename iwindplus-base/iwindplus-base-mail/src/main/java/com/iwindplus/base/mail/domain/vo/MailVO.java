@@ -34,6 +34,18 @@ public class MailVO implements Serializable {
     private String bizNumber;
 
     /**
+     * 发件服务器账户.
+     */
+    @Schema(description = "发件服务器账户")
+    private String username;
+
+    /**
+     * 发件人昵称.
+     */
+    @Schema(description = "发件人昵称")
+    private String nickName;
+
+    /**
      * 结果.
      */
     @Schema(description = "结果")
@@ -55,22 +67,28 @@ public class MailVO implements Serializable {
      * 创建成功结果视图对象.
      *
      * @param bizNumber 业务流水号
+     * @param username  发件服务器账户
+     * @param nickName  发件人昵称
      * @param sendCount 发送次数
      * @return MailVO
      */
-    public static MailVO ok(String bizNumber, Integer sendCount) {
-        return new MailVO(bizNumber, true, sendCount, null);
+    public static MailVO ok(String bizNumber, String username,
+        String nickName, Integer sendCount) {
+        return new MailVO(bizNumber, username, nickName, true, sendCount, null);
     }
 
     /**
      * 创建失败结果视图对象.
      *
      * @param bizNumber 业务流水号
+     * @param username  发件服务器账户
+     * @param nickName  发件人昵称
      * @param sendCount 发送次数
      * @param errorMsg  错误信息
      * @return MailVO
      */
-    public static MailVO fail(String bizNumber, Integer sendCount, String errorMsg) {
-        return new MailVO(bizNumber, false, sendCount, errorMsg);
+    public static MailVO fail(String bizNumber, String username,
+        String nickName, Integer sendCount, String errorMsg) {
+        return new MailVO(bizNumber, username, nickName, false, sendCount, errorMsg);
     }
 }

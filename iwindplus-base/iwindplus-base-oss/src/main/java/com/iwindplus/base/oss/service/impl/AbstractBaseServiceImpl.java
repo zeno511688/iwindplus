@@ -14,26 +14,13 @@ import cn.hutool.core.io.file.FileNameUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
-import com.aliyuncs.DefaultAcsClient;
-import com.aliyuncs.auth.sts.AssumeRoleRequest;
-import com.aliyuncs.auth.sts.AssumeRoleResponse;
-import com.aliyuncs.http.MethodType;
-import com.aliyuncs.profile.DefaultProfile;
-import com.aliyuncs.profile.IClientProfile;
-import com.iwindplus.base.domain.constant.CommonConstant;
-import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.FileConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
-import com.iwindplus.base.domain.dto.AkSkDTO;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
-import com.iwindplus.base.oss.domain.constant.OssConstant;
-import com.iwindplus.base.oss.domain.dto.StsTokenDTO;
-import jakarta.annotation.Resource;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.Objects;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,14 +28,15 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * 通用业务层抽象类.
  *
+ * @param <T> 配置实体类型
  * @author zengdegui
  * @since 2020/3/13
  */
 @Slf4j
-public abstract class AbstractBaseServiceImpl {
+@RequiredArgsConstructor
+public abstract class AbstractBaseServiceImpl<T> extends AbstractBaseConfigServiceImpl<T> {
 
-    @Resource
-    private MultipartProperties multipartProperties;
+    private final MultipartProperties multipartProperties;
 
     /**
      * 获取服务器上传目录（应用所在的位置）.
@@ -60,24 +48,37 @@ public abstract class AbstractBaseServiceImpl {
     }
 
     /**
-     * 获取相对路径（包含后缀）.
+     * 获取文件相对路径，文件名前增加日期目录.
      *
-     * @param prefix   存储目录前缀（必填）
      * @param fileName 文件名，包含文件后缀（必填）
+     * @param renamed 是否重命名文件名
      * @return String
      */
-    protected String getRelativePath(String prefix, String fileName) {
-        if (CharSequenceUtil.isBlank(prefix)) {
-            throw new BizException(BizCodeEnum.FILE_DIR_EMPTY);
+    protected String getRelativePath(String fileName, Boolean renamed) {
+        if (CharSequenceUtil.isBlank(fileName)) {
+            throw new BizException(BizCodeEnum.FILE_NAME_NOT_EMPTY);
         }
-        String suffix = FileUtil.getSuffix(fileName);
+
+        final String suffix = FileUtil.getSuffix(fileName);
         if (CharSequenceUtil.isBlank(suffix)) {
-            throw new BizException(BizCodeEnum.FILE_HAS_NOT_SUFFIX);
+            throw new BizException(BizCodeEnum.FILE_NAME_MUST_CONTAIN_SUFFIX);
         }
-        StringBuilder sb = new StringBuilder(prefix).append(SymbolConstant.SLASH)
-            .append(DateUtil.format(LocalDateTime.now(), DatePattern.PURE_DATE_PATTERN))
-            .append(SymbolConstant.SLASH).append(fileName);
-        return sb.toString();
+
+        int start = 0;
+        while (start < fileName.length()
+            && fileName.charAt(start) == SymbolConstant.SLASH.charAt(0)) {
+            start++;
+        }
+
+        final String normalizedFileName = fileName.substring(start);
+
+        final String targetFileName = Boolean.TRUE.equals(renamed)
+            ? IdUtil.getSnowflakeNextIdStr() + SymbolConstant.POINT + suffix
+            : normalizedFileName;
+
+        return DateUtil.format(LocalDateTime.now(), DatePattern.PURE_DATE_PATTERN)
+            + SymbolConstant.SLASH
+            + targetFileName;
     }
 
     /**
@@ -88,35 +89,28 @@ public abstract class AbstractBaseServiceImpl {
      * @return String
      */
     protected String getNewFileName(String path, String fileName) {
-        String filePath = StrUtil.subBefore(path, SymbolConstant.QUESTION_MARK, false);
-        String suffix = FileUtil.getSuffix(filePath);
+        // 去除 URL 中的 query 参数
+        final String filePath = StrUtil.subBefore(path, SymbolConstant.QUESTION_MARK, false);
+
+        // 获取原始文件后缀
+        final String suffix = FileUtil.getSuffix(filePath);
         if (CharSequenceUtil.isBlank(suffix)) {
             throw new BizException(BizCodeEnum.FILE_HAS_NOT_SUFFIX);
         }
+
+        // 未指定新文件名，直接使用原文件名
         if (CharSequenceUtil.isBlank(fileName)) {
             return FileNameUtil.getName(filePath);
         }
-        return new StringBuilder(FileUtil.getPrefix(fileName.trim())).append(SymbolConstant.POINT)
-            .append(suffix).toString();
-    }
 
-    /**
-     * 重命名文件名，文件名随机（包含后缀）.
-     *
-     * @param renamed        是否重命名文件名（必填）
-     * @param sourceFileName 原文件，包含后缀（必填）
-     * @return String
-     */
-    protected String getNewFileName(Boolean renamed, String sourceFileName) {
-        if (Boolean.FALSE.equals(renamed)) {
-            return sourceFileName.trim();
+        // 去除前后空格，并去掉用户传入的后缀
+        final String name = FileUtil.getPrefix(fileName);
+        if (CharSequenceUtil.isBlank(name)) {
+            throw new BizException(BizCodeEnum.FILE_NAME_NOT_EMPTY);
         }
-        String suffix = FileUtil.getSuffix(sourceFileName);
-        if (CharSequenceUtil.isBlank(suffix)) {
-            throw new BizException(BizCodeEnum.FILE_HAS_NOT_SUFFIX);
-        }
-        return new StringBuilder(IdUtil.getSnowflakeNextIdStr()).append(SymbolConstant.POINT)
-            .append(suffix).toString();
+
+        // 使用原文件的后缀
+        return name.trim() + SymbolConstant.POINT + suffix;
     }
 
     /**
@@ -142,80 +136,6 @@ public abstract class AbstractBaseServiceImpl {
         long maxFileSize = this.multipartProperties.getMaxFileSize().toBytes();
         if (fileSize > maxFileSize) {
             throw new BizException(BizCodeEnum.FILE_TOO_BIG, new Object[]{fileSize});
-        }
-    }
-
-    /**
-     * 获取 AssumeRoleResponse
-     *
-     * @param region 区域
-     * @param akSk   阿里云配置
-     * @param sts    临时访问凭证配置
-     * @return DefaultAcsClient
-     */
-    protected DefaultAcsClient initAcsClient(String region, AkSkDTO akSk, StsTokenDTO sts) {
-        DefaultProfile profile;
-        if (Objects.nonNull(sts)) {
-            refreshStsTokenIfNeeded(akSk, sts);
-            profile = DefaultProfile.getProfile(region, sts.getAccessKey(), sts.getSecretKey(), sts.getSecurityToken());
-        } else {
-            profile = DefaultProfile.getProfile(region, akSk.getAccessKey(), akSk.getSecretKey());
-        }
-        return new DefaultAcsClient(profile);
-    }
-
-    private synchronized void refreshStsTokenIfNeeded(AkSkDTO akSk, StsTokenDTO sts) {
-        final Long securityTokenExpiration = sts.getExpiration();
-        if (Objects.isNull(securityTokenExpiration) || System.currentTimeMillis() > securityTokenExpiration) {
-            AssumeRoleResponse response = this.getAssumeRoleResponse(akSk, sts);
-            final long expiration = Instant.parse(response.getCredentials().getExpiration()).toEpochMilli();
-            sts.setAccessKey(response.getCredentials().getAccessKeyId());
-            sts.setSecretKey(response.getCredentials().getAccessKeySecret());
-            sts.setSecurityToken(response.getCredentials().getSecurityToken());
-            sts.setExpiration(expiration);
-        }
-    }
-
-    /**
-     * 获取临时访问凭证.
-     *
-     * @param akSk 阿里云配置
-     * @param sts  临时访问凭证配置
-     * @return AssumeRoleResponse
-     */
-    protected AssumeRoleResponse getAssumeRoleResponse(AkSkDTO akSk, StsTokenDTO sts) {
-        DefaultProfile.addEndpoint(SymbolConstant.EMPTY_STR, "Sts", sts.getEndpoint());
-        IClientProfile clientProfile = DefaultProfile.getProfile(SymbolConstant.EMPTY_STR, akSk.getAccessKey(), akSk.getSecretKey());
-        DefaultAcsClient client = new DefaultAcsClient(clientProfile);
-        final AssumeRoleRequest request = new AssumeRoleRequest();
-        request.setSysMethod(MethodType.POST);
-        request.setRoleArn(sts.getRoleArn());
-        request.setRoleSessionName("aliyun-java-sdk-core-" + System.currentTimeMillis());
-        if (CharSequenceUtil.isNotBlank(sts.getPolicy())) {
-            request.setPolicy(sts.getPolicy());
-        }
-        request.setDurationSeconds(OssConstant.SECURITY_TOKEN_EXPIRE_TIME);
-        AssumeRoleResponse response;
-        try {
-            response = client.getAcsResponse(request);
-        } catch (Exception ex) {
-            log.error(ExceptionConstant.EXCEPTION, ex);
-
-            throw new BizException(BizCodeEnum.GET_ACCESS_CREDENTIALS_ERROR);
-        } finally {
-            this.closeAcsClient(client);
-        }
-        return response;
-    }
-
-    /**
-     * 关闭AcsClient
-     *
-     * @param acsClient
-     */
-    protected void closeAcsClient(DefaultAcsClient acsClient) {
-        if (Objects.nonNull(acsClient)) {
-            acsClient.shutdown();
         }
     }
 }

@@ -7,7 +7,7 @@
 
 package com.iwindplus.auth.client.autoconfigure;
 
-import com.iwindplus.auth.domain.constant.AuthConstant;
+import com.iwindplus.auth.common.constant.AuthConstant;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.EnableFeignClients;

@@ -8,7 +8,7 @@
 package com.iwindplus.flow.client;
 
 import com.iwindplus.flow.api.FlowInstanceApi;
-import com.iwindplus.flow.domain.constant.FlowConstant;
+import com.iwindplus.flow.common.constant.FlowConstant;
 import org.springframework.cloud.openfeign.FeignClient;
 
 /**

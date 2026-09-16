@@ -39,12 +39,12 @@ public class MybatisInputInterceptor implements Interceptor {
             return invocation.proceed();
         }
 
-        final Object arg = invocation.getArgs()[0];
+        final Object mappedStatement = invocation.getArgs()[0];
         final Object paramObj = invocation.getArgs()[1];
-        if (arg == null || paramObj == null) {
+        if (mappedStatement == null || paramObj == null) {
             return invocation.proceed();
         }
-        if (!(arg instanceof MappedStatement ms)) {
+        if (!(mappedStatement instanceof MappedStatement ms)) {
             return invocation.proceed();
         }
 

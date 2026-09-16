@@ -126,6 +126,9 @@ public class ApiSignUtil {
     }
 
     private static void checkBaseParam(ApiSignGenerateDTO entity) {
+        if (ObjectUtil.isEmpty(entity)) {
+            throw new BizException(BizCodeEnum.PARAM_ERROR);
+        }
         // 时间戳
         final String timestamp = entity.getTimestamp();
         if (CharSequenceUtil.isBlank(timestamp)) {
@@ -150,6 +153,9 @@ public class ApiSignUtil {
     }
 
     private static void checkSignVerifyParam(ApiSignVerifyDTO entity) {
+        if (ObjectUtil.isEmpty(entity)) {
+            throw new BizException(BizCodeEnum.PARAM_ERROR);
+        }
         // 签名
         final String sign = entity.getSign();
         if (CharSequenceUtil.isBlank(sign)) {

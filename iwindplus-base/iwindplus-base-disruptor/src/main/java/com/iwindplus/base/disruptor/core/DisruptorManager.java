@@ -8,7 +8,7 @@
 package com.iwindplus.base.disruptor.core;
 
 import com.iwindplus.base.disruptor.domain.property.DisruptorMultiProperty;
-import com.iwindplus.base.disruptor.template.DisruptorTemplate;
+import com.iwindplus.base.disruptor.support.DisruptorTemplate;
 
 /**
  * Disruptor管理器 .

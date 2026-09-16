@@ -137,8 +137,8 @@
             <artifactId>iwindplus-log-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.iwindplus.setup</groupId>
-            <artifactId>iwindplus-setup-client</artifactId>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-http-client</artifactId>
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
@@ -147,6 +147,10 @@
         <dependency>
             <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-operate</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-logging-alert</artifactId>
         </dependency>
     </dependencies>
 

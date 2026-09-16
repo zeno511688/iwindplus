@@ -7,7 +7,7 @@
 
 package com.iwindplus.dtx.client.autoconfigure;
 
-import com.iwindplus.dtx.domain.constant.DtxConstant;
+import com.iwindplus.dtx.common.constant.DtxConstant;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.EnableFeignClients;

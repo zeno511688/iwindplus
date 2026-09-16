@@ -9,7 +9,7 @@ package com.iwindplus.base.async.task.jobhandler;
 
 import cn.hutool.core.date.DatePattern;
 import com.iwindplus.base.async.task.domain.enums.AsyncTaskJobEnum;
-import com.iwindplus.base.async.task.factory.AsyncTaskJobHandlerStrategyFactory;
+import com.iwindplus.base.async.task.factory.AsyncTaskJobHandlerFactory;
 import com.iwindplus.base.util.DatesUtil;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class AsyncTaskJob {
 
-    private final AsyncTaskJobHandlerStrategyFactory factory;
+    private final AsyncTaskJobHandlerFactory factory;
 
     /**
      * 异步任务调度器.

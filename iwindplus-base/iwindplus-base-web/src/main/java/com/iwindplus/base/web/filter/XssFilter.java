@@ -54,6 +54,9 @@ public class XssFilter extends OncePerRequestFilter {
     }
 
     private MultipartHttpServletRequest resolveMultipartRequest(HttpServletRequest request) throws IOException {
+        if (this.multipartResolver == null) {
+            return null;
+        }
         String contentType = request.getContentType();
         if (contentType != null && contentType.contains(MediaType.MULTIPART_FORM_DATA_VALUE)) {
             MultipartHttpServletRequest multipartRequest = this.multipartResolver.resolveMultipart(request);
