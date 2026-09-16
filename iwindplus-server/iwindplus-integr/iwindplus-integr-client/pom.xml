@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>iwindplus-integr</artifactId>
+        <groupId>com.iwindplus.integr</groupId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>iwindplus-integr-client</artifactId>
+    <packaging>jar</packaging>
+
+    <name>iwindplus-integr-client</name>
+    <description>集成服务客户端</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-feign</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iwindplus.integr</groupId>
+            <artifactId>iwindplus-integr-api</artifactId>
+        </dependency>
+    </dependencies>
+</project>

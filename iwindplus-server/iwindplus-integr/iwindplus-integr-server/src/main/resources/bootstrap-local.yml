@@ -1,0 +1,319 @@
+server:
+  # 配置启动的接口
+  port: 9006
+  servlet:
+    application-display-name: 集成服务
+cross:
+  # 是否开启跨域
+  enabled: false
+operate:
+  enabled: true
+  log:
+    # 是否开启操作日志审计
+    enabled: true
+    # 是否启用获取请求参数
+    enabled-request-param: true
+    # 是否启用获取请求体
+    enabled-request-body: true
+    # 是否启用获取响应体
+    enabled-response-body: true
+  valid:
+    # 是否开启操作配置校验
+    enabled: true
+    # 是否开启GA校验
+    enabled-ga: true
+    # 是否开启邮箱校验
+    enabled-mail: false
+    # 是否开启短信校验
+    enabled-sms: false
+dynamictp:
+  executors:
+    - threadPoolName: asyncThreadPool
+      threadPoolAliasName: 异步线程池
+      executorType: eager
+      corePoolSize: 2
+      maximumPoolSize: 4
+      queueCapacity: 50
+      runTimeout: 5000
+      platformIds: [ 1 ]
+    - threadPoolName: i18nThreadPool
+      threadPoolAliasName: 国际化线程池
+      executorType: eager
+      corePoolSize: 2
+      maximumPoolSize: 4
+      queueCapacity: 50
+      runTimeout: 5000
+      platformIds: [ 1 ]
+    - threadPoolName: idempotentSchedulerThreadPool
+      threadPoolAliasName: 幂等调度线程池
+      executorType: scheduled
+      corePoolSize: 2
+      maximumPoolSize: 4
+      runTimeout: 5000
+      platformIds: [ 1 ]
+    - threadPoolName: httpClientThreadPool
+      threadPoolAliasName: http调用客户端线程池
+      executorType: eager
+      corePoolSize: 16
+      maximumPoolSize: 32
+      queueCapacity: 100
+      runTimeout: 5000
+      platformIds: [ 1 ]
+    - threadPoolName: ossThreadPool
+      threadPoolAliasName: 对象存储线程池
+      executorType: eager
+      corePoolSize: 16
+      maximumPoolSize: 32
+      queueCapacity: 100
+      runTimeout: 5000
+      platformIds: [ 1 ]
+    - threadPoolName: smsThreadPool
+      threadPoolAliasName: 短信线程池
+      executorType: eager
+      corePoolSize: 16
+      maximumPoolSize: 32
+      queueCapacity: 100
+      runTimeout: 5000
+      platformIds: [ 1 ]
+    - threadPoolName: exportTaskThreadPool
+      threadPoolAliasName: 导出任务线程池
+      executorType: eager
+      corePoolSize: 16
+      maximumPoolSize: 32
+      queueCapacity: 100
+      runTimeout: 5000
+      platformIds: [ 1 ]
+
+spring:
+  # 初始化数据库
+  flyway:
+    enabled: true
+    placeholder-replacement: false
+    baseline-on-migrate: true
+    locations: classpath:db
+    table: flyway_schema_history
+    url: ${spring.datasource.url}
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+  datasource:
+    # 数据库url
+    url: jdbc:mysql://127.0.0.1:3317/iwindplus-integr?useUnicode=true&autoReconnect=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
+    # 数据库用户名
+    username: root
+    # 数据库密码
+    password: ${mysql-password}
+    # Hikari 连接池配置
+    hikari:
+      # 数据库连接超时时间
+      connectionTimeout: 30000
+      # 最小空闲连接数量
+      minimumIdle: 5
+      # 连接池最大连接数，默认是10
+      maximumPoolSize: 20
+      # 此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
+      maxLifetime: 1800000
+      connectionTestQuery: SELECT 1
+  cache:
+    redis:
+      time-to-live: 0
+  redis:
+    # 序列化类型
+    serialize-type: PROTOBUF
+    idempotent:
+      # 是否开启redis幂等（防重复提交）
+      enabled: true
+    lock:
+      # 是否开启redis锁
+      enabled: true
+    rate-limiter:
+      # 是否开启redis限流
+      enabled: true
+    redisson:
+      config: |
+        singleServerConfig:
+          address: redis://127.0.0.1:6379
+          password: ${redis-password}
+          database: 6
+          connectionMinimumIdleSize: 1
+          connectionPoolSize: 2
+          subscriptionConnectionMinimumIdleSize: 1
+          subscriptionConnectionPoolSize: 2
+seata:
+  enabled: true
+  enable-auto-data-source-proxy: true
+  data-source-proxy-mode: XA
+  application-id: ${spring.application.name}
+  # 事务分组名称，要和服务端对应
+  tx-service-group: iwindplus_tx_group
+  service:
+    vgroup-mapping:
+      # key是事务分组名称 value要和服务端的机房名称保持一致
+      iwindplus_tx_group: default
+    grouplist:
+      default: 127.0.0.1:8091
+    disable-global-transaction: false
+mail:
+  enabled: true
+  enabled-failover: true
+  default-code: "main-main"
+  enable-retry: true
+  period: 5s
+  max-period: 3600s
+  max-attempts: 5
+  configs:
+    - code: "main-main"
+      name: "邮件主配置"
+      enabled: true
+      priority: 1
+      host: smtp.163.com
+      port: 465
+      username: zengdeguiu88@163.com
+      password: ${mail-main-password:}
+      protocol: smtp
+      default-encoding: UTF-8
+      nick-name: 爱丰信息技术
+      properties:
+        mail.smtp.auth: true
+        mail.smtp.starttls.enable: true
+        mail.smtp.ssl.enable: true
+        mail.smtp.ssl.trust: smtp.163.com
+    - code: "main-backup"
+      name: "邮件备用配置"
+      enabled: true
+      priority: 2
+      host: smtp.qq.com
+      port: 465
+      username: 845875725@qq.com
+      password: ${mail-backup-password:}
+      protocol: smtp
+      default-encoding: UTF-8
+      nick-name: 爱丰信息技术
+      properties:
+        mail.smtp.auth: true
+        mail.smtp.starttls.enable: true
+        mail.smtp.ssl.enable: true
+        mail.smtp.ssl.trust: smtp.qq.com
+sms:
+  enabled: true
+  enabled-failover: true
+  aliyun:
+    - code: "aliyun-main"
+      name: "阿里云短信主配置"
+      enabled: true
+      priority: 1
+      access-key: ${sms-aliyun-main-access-key:}
+      secret-key: ${sms-aliyun-main-secret-key:}
+      sts:
+        endpoint: sts.cn-shenzhen.aliyuncs.com
+        role-arn: acs:ram::1277790089989807:role/sms-full
+  qiniu:
+    - code: "qiniu-main"
+      name: "七牛云短信配置"
+      enabled: true
+      priority: 2
+      access-key: ${sms-qiniu-main-access-key:}
+      secret-key: ${sms-qiniu-main-secret-key:}
+  lingkai:
+    - code: "lingkai-main"
+      name: "凌凯短信主配置"
+      enabled: true
+      priority: 3
+      access-key: ${sms-lingkai-main-access-key:}
+      secret-key: ${sms-lingkai-main-secret-key:}
+  mxtong:
+    - code: "mxtong-main"
+      name: "麦讯通短信主配置"
+      enabled: true
+      priority: 4
+      access-key: ${sms-mxtong-main-access-key:}
+      secret-key: ${sms-mxtong-main-secret-key:}
+oss:
+  enabled: true
+  default-code: "minio-main"
+  aliyun:
+    - code: "aliyun-main"
+      name: "阿里云OSS主配置"
+      enabled: true
+      priority: 1
+      access-key: ${oss-aliyun-main-access-key:}
+      secret-key: ${oss-aliyun-main-secret-key:}
+      endpoint: https://oss-cn-shenzhen.aliyuncs.com
+      part-size: 10
+      broke: false
+      sts:
+        endpoint: sts.cn-shenzhen.aliyuncs.com
+        role-arn: acs:ram::1277790089989807:role/oss-full
+  qiniu:
+    - code: "qiniu-main"
+      name: "七牛云主配置"
+      enabled: true
+      priority: 2
+      access-key: ${oss-qiniu-main-access-key:}
+      secret-key: ${oss-qiniu-main-secret-key:}
+      broke: false
+  minio:
+    - code: "minio-main"
+      name: "minio主配置"
+      enabled: true
+      priority: 3
+      endpoint: http://127.0.0.1:9010
+      region:
+      access-key: ${oss-minio-main-access-key:}
+      secret-key: ${oss-minio-main-secret-key:}
+      part-size: 10
+wechat:
+  enabled: true
+  mp:
+    - code: "wechat-mp-main"
+      name: "公众号主配置"
+      enabled: true
+      priority: 1
+      use-redis: false
+      app-id: ${wechat-mp-main-app-id}
+      secret: ${wechat-mp-main-secret}
+      token: ${wechat-mp-main-token}
+      aes-key: ${wechat-mp-main-aes-key}
+mybatis-plus:
+  type-aliases-package: com.iwindplus.**.model,com.iwindplus.**.domain
+  executor-type: REUSE
+  configuration:
+    use-column-label: true
+    call-setters-on-nulls: true
+    map-underscore-to-camel-case: true
+    cache-enabled: true
+    # 打印sql
+    #log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: ASSIGN_ID
+  field:
+    fill:
+      #  是否开启字段填充
+      enabled: true
+      # 是否开启插入严格模式
+      enabled-insert-strict: true
+    crypto:
+      # 是否开启
+      enabled: true
+      # 是否启用输入加密
+      enabled-input-encrypt: true
+      # 是否启用输入脱敏
+      enabled-input-sensitive: false
+      # 是否启用输出解密
+      enabled-output-decrypt: true
+      # 算法
+      algorithm: AES
+      # 公钥
+      public-key: ${mybatis-field-crypto-public-key:}
+      # 私钥
+      private-key: ${mybatis-field-crypto-private-key:}
+      # 密钥
+      key: ${mybatis-field-crypto-key:}
+springdoc:
+  packagesToScan:
+    - com.iwindplus.integr.server.web
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn

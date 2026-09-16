@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 根节点配置 scan：是否检测文件修改；scanPeriod：检测时间频率，默认60秒；debug：是否打印logback内部日志，默认false -->
+<configuration scan="false" scanPeriod="60 seconds" debug="false">
+    <springProperty name="app" source="spring.application.name" defaultValue="unknown-app"/>
+    <springProperty name="env" source="spring.profiles.active" defaultValue="local"/>
+
+    <springProperty name="rootLevel" source="logging.level.root" defaultValue="INFO"/>
+
+    <springProperty name="consoleEnabled" source="logging.console.enabled" defaultValue="true"/>
+    <springProperty name="consoleEnabledAsync" source="logging.console.enabled-async" defaultValue="true"/>
+    <springProperty name="consoleQueueSize" source="logging.console.queue-size" defaultValue="2048"/>
+    <springProperty name="consoleDiscardingThreshold" source="logging.console.discarding-threshold" defaultValue="0"/>
+    <springProperty name="consoleNeverBlock" source="logging.console.never-block" defaultValue="true"/>
+
+    <springProperty name="logstashEnabled" source="logging.logstash.enabled" defaultValue="true"/>
+    <springProperty name="logstashEnabledAsync" source="logging.logstash.enabled-async" defaultValue="true"/>
+    <springProperty name="logstashAddress" source="logging.logstash.address" defaultValue="127.0.0.1:4560"/>
+    <springProperty name="logstashQueueSize" source="logging.logstash.queue-size" defaultValue="8192"/>
+    <springProperty name="logstashDiscardingThreshold" source="logging.logstash.discarding-threshold" defaultValue="0"/>
+    <springProperty name="logstashNeverBlock" source="logging.logstash.never-block" defaultValue="true"/>
+    <springProperty name="logstashKeepAlive" source="logging.logstash.keep-alive" defaultValue="5 minutes"/>
+    <springProperty name="logstashReconnectDelay" source="logging.logstash.reconnect-delay" defaultValue="5 seconds"/>
+
+    <!-- 日志格式 -->
+    <property name="logPattern"
+      value="[${env},${app},%X{traceId:-}] %d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] [%thread] %logger{50} [%line] - %msg%n"/>
+
+    <!-- 控制台（同步） -->
+    <appender name="consoleLog" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${rootLevel}</level>
+        </filter>
+
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${logPattern}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 控制台（异步）-->
+    <appender name="consoleAsyncLog" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>${consoleQueueSize}</queueSize>
+        <discardingThreshold>${consoleDiscardingThreshold}</discardingThreshold>
+        <neverBlock>${consoleNeverBlock}</neverBlock>
+        <includeCallerData>false</includeCallerData>
+        <appender-ref ref="consoleLog"/>
+    </appender>
+
+    <!-- logstash（同步）-->
+    <appender name="logstashLog" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${rootLevel}</level>
+        </filter>
+
+        <destination>${logstashAddress}</destination>
+        <keepAliveDuration>${logstashKeepAlive}</keepAliveDuration>
+        <reconnectionDelay>${logstashReconnectDelay}</reconnectionDelay>
+
+        <encoder charset="UTF-8" class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>
+                {
+                "env":"${env}",
+                "app":"${app}"
+                }
+            </customFields>
+        </encoder>
+    </appender>
+
+    <!-- logstash（异步）-->
+    <appender name="logstashAsyncLog" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>${logstashQueueSize}</queueSize>
+        <discardingThreshold>${logstashDiscardingThreshold}</discardingThreshold>
+        <neverBlock>${logstashNeverBlock}</neverBlock>
+        <appender-ref ref="logstashLog"/>
+    </appender>
+
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="reactor.netty" level="WARN"/>
+    <logger name="com.alibaba.nacos" level="WARN"/>
+    <logger name="com.alibaba.csp.sentinel" level="WARN"/>
+    <logger name="org.apache.kafka" level="WARN"/>
+
+    <root level="${rootLevel}">
+        <!-- 控制台 -->
+        <if condition='property("consoleEnabled").equals("true")'>
+            <then>
+                <if condition='property("consoleEnabledAsync").equals("true")'>
+                    <then>
+                        <appender-ref ref="consoleAsyncLog"/>
+                    </then>
+                    <else>
+                        <appender-ref ref="consoleLog"/>
+                    </else>
+                </if>
+            </then>
+        </if>
+
+        <!-- logstash -->
+        <if condition='property("logstashEnabled").equals("true")'>
+            <then>
+                <if condition='property("logstashEnabledAsync").equals("true")'>
+                    <then>
+                        <appender-ref ref="logstashAsyncLog"/>
+                    </then>
+                    <else>
+                        <appender-ref ref="logstashLog"/>
+                    </else>
+                </if>
+            </then>
+        </if>
+    </root>
+</configuration>
