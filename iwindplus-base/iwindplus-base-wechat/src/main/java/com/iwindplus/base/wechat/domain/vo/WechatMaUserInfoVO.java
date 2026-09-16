@@ -26,8 +26,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 public class WechatMaUserInfoVO extends WxMaUserInfo {
+
     /**
      * 用户唯一标识.
      */

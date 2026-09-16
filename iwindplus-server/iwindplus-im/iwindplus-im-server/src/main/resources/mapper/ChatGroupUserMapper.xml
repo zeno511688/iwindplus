@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.iwindplus.im.server.dal.mapper.ChatGroupUserMapper">
+<mapper namespace="com.iwindplus.im.infrastructure.persistence.mysql.ChatGroupUserMapper">
     <sql id="chatGroupUserPageAliasField">
         cgu.id, cgu.created_timestamp, cgu.created_by, cgu.modified_timestamp, cgu.modified_by, cgu.version,
         cgu.status, cgu.nick_name, cgu.leader_flag, cgu.join_type, cgu.agree_flag, cgu.user_nick_name
@@ -30,7 +30,7 @@
         <include refid="inSql"/>
     </delete>
 
-    <select id="selectPageByCondition" resultType="com.iwindplus.im.domain.vo.ChatGroupUserPageVO">
+    <select id="selectPageByCondition" resultType="com.iwindplus.im.application.query.vo.ChatGroupUserPageVO">
         select
             <include refid="chatGroupUserPageAliasField"/>
         from chat_group_user cgu

@@ -1,0 +1,137 @@
+/*
+ *
+ *  * Copyright (c) iwindplus Technologies Co., Ltd.2024-2030, All rights reserved.
+ *
+ *
+ */
+
+package com.iwindplus.log.interfaces.controller;
+
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.iwindplus.base.domain.validation.SaveGroup;
+import com.iwindplus.base.domain.vo.ResultVO;
+import com.iwindplus.base.es.domain.dto.EsPageDTO;
+import com.iwindplus.base.operate.domain.annotation.OperateValid;
+import com.iwindplus.base.web.controller.BaseController;
+import com.iwindplus.log.api.dto.LoginLogDTO;
+import com.iwindplus.log.application.query.LoginLogQueryService;
+import com.iwindplus.log.application.query.dto.LoginLogSearchAfterDTO;
+import com.iwindplus.log.application.query.dto.LoginLogSearchDTO;
+import com.iwindplus.log.application.query.vo.LoginLogExtendVO;
+import com.iwindplus.log.application.query.vo.LoginLogPageVO;
+import com.iwindplus.log.application.query.vo.LoginLogVO;
+import com.iwindplus.log.application.service.LoginLogApplicationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * 登录日志相关操作接口定义类.
+ *
+ * @author zengdegui
+ * @since 2020/9/20
+ */
+
+@Tag(name = "登录日志接口")
+@Slf4j
+@RestController
+@RequestMapping("admin/log/login/log")
+@Validated
+@RequiredArgsConstructor
+public class LoginLogController extends BaseController {
+
+    private final LoginLogApplicationService loginLogApplicationService;
+    private final LoginLogQueryService loginLogQueryService;
+
+    /**
+     * 添加.
+     *
+     * @param entity 对象
+     * @return ResultVO < Boolean>
+     */
+    @Operation(summary = "添加")
+    @PostMapping("save")
+    public ResultVO<Boolean> save(@RequestBody @Validated({SaveGroup.class}) LoginLogDTO entity) {
+        entity.setOrgId(this.getUserInfo().getOrgId());
+        entity.setUserId(this.getUserInfo().getUserId());
+        boolean data = this.loginLogApplicationService.saveBatch(List.of(entity));
+        return ResultVO.success(data);
+    }
+
+    /**
+     * 批量删除.
+     *
+     * @param ids 主键集合
+     * @return ResultVO<Boolean>
+     */
+    @Operation(summary = "批量删除")
+    @DeleteMapping("removeByIds")
+    @OperateValid(enabledGa = true)
+    public ResultVO<Boolean> removeByIds(@RequestParam List<String> ids) {
+        boolean data = this.loginLogApplicationService.removeByIds(ids);
+        return ResultVO.success(data);
+    }
+
+    /**
+     * 列表.
+     *
+     * @param entity 对象
+     * @return ResultVO<IPage < LoginLogPageVO>>
+     */
+    @Operation(summary = "列表")
+    @GetMapping("page")
+    public ResultVO<IPage<LoginLogPageVO>> page(@Validated LoginLogSearchDTO entity) {
+        IPage<LoginLogPageVO> data = this.loginLogQueryService.page(entity);
+        return ResultVO.success(data);
+    }
+
+    /**
+     * 列表(深分页).
+     *
+     * @param entity 对象
+     * @return ResultVO<EsPageDTO < LoginLogPageVO>>
+     */
+    @Operation(summary = "列表(深分页)")
+    @GetMapping("pageByAfter")
+    public ResultVO<EsPageDTO<LoginLogPageVO>> pageByAfter(@Validated LoginLogSearchAfterDTO entity) {
+        EsPageDTO<LoginLogPageVO> data = this.loginLogQueryService.pageByAfter(entity);
+        return ResultVO.success(data);
+    }
+
+    /**
+     * 详情.
+     *
+     * @param id 主键
+     * @return ResultVO<LoginLogExtendVO>
+     */
+    @Operation(summary = "详情")
+    @GetMapping("getDetail")
+    public ResultVO<LoginLogExtendVO> getDetail(@RequestParam String id) {
+        LoginLogExtendVO data = this.loginLogQueryService.getDetail(id);
+        return ResultVO.success(data);
+    }
+
+    /**
+     * 获取最新登录信息.
+     *
+     * @return ResultVO<LoginLogVO>
+     */
+    @Operation(summary = "获取最新登录信息")
+    @GetMapping("getLoginInfo")
+    public ResultVO<LoginLogVO> getLoginInfo() {
+        Long userId = this.getUserInfo().getUserId();
+        Long orgId = this.getUserInfo().getOrgId();
+        LoginLogVO data = this.loginLogQueryService.getLoginInfo(userId, orgId);
+        return ResultVO.success(data);
+    }
+}

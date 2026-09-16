@@ -4,7 +4,7 @@
 
 package com.iwindplus.im.api;
 
-import com.iwindplus.im.domain.dto.WsMsgDTO;
+import com.iwindplus.im.api.dto.WsMsgDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;

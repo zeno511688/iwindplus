@@ -95,7 +95,7 @@
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
-            <artifactId>iwindplus-base-alert</artifactId>
+            <artifactId>iwindplus-base-logging-alert</artifactId>
         </dependency>
         <dependency>
             <groupId>com.iwindplus.log</groupId>
@@ -149,4 +149,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

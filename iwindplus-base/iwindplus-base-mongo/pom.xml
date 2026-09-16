@@ -15,6 +15,10 @@
     <dependencies>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-domain</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-util</artifactId>
         </dependency>
         <dependency>

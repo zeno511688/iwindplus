@@ -82,7 +82,7 @@ public @interface RedisRateLimiter {
     /**
      * 限流速率时间单位（可选，默认：秒(s)）
      *
-     * @return TimeUnit
+     * @return ChronoUnit
      */
     ChronoUnit rateIntervalUnit() default ChronoUnit.SECONDS;
 

@@ -141,6 +141,7 @@ public class OperateLogAspect {
         }
         final UserBaseVO userInfo = UserContextHolder.getContext();
         if (Objects.isNull(userInfo)) {
+            log.warn("用户信息为空不记录操作日志");
             return null;
         }
 

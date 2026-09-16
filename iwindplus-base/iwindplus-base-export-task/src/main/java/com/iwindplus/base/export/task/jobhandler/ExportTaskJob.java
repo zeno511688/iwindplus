@@ -9,7 +9,7 @@ package com.iwindplus.base.export.task.jobhandler;
 
 import cn.hutool.core.date.DatePattern;
 import com.iwindplus.base.export.task.domain.enums.ExportTaskJobEnum;
-import com.iwindplus.base.export.task.factory.ExportTaskJobHandlerStrategyFactory;
+import com.iwindplus.base.export.task.factory.ExportTaskJobHandlerFactory;
 import com.iwindplus.base.util.DatesUtil;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ExportTaskJob {
 
-    private final ExportTaskJobHandlerStrategyFactory factory;
+    private final ExportTaskJobHandlerFactory factory;
 
     /**
      * 导出任务.

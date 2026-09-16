@@ -35,12 +35,6 @@ import reactor.netty.transport.ProxyProvider;
 public class HttpClientProperty {
 
     /**
-     * 是否启用.
-     */
-    @Builder.Default
-    private Boolean enabled = Boolean.TRUE;
-
-    /**
      * 是否启用限流熔断观察.
      */
     @Builder.Default
@@ -136,12 +130,6 @@ public class HttpClientProperty {
         private String url = "lb://iwindplus-mgt/inner/appCert/getByCertType";
 
         /**
-         * 是否启用本地缓存应用凭证配置.
-         */
-        @Builder.Default
-        private Boolean enabledLocalCache = Boolean.TRUE;
-
-        /**
          * 忽略的API.
          */
         private List<String> ignoredApi;
@@ -160,7 +148,7 @@ public class HttpClientProperty {
          * 签名超时时间（单位：秒）.
          */
         @Builder.Default
-        private Integer timeout = 30;
+        private Duration timeout = Duration.ofSeconds(30);
 
         /**
          * 获取 host 后面的 path.
@@ -435,9 +423,24 @@ public class HttpClientProperty {
             @Builder.Default
             private Boolean enabled = Boolean.FALSE;
 
+            /**
+             * 主机.
+             */
             private String host;
+
+            /**
+             * 端口.
+             */
             private Integer port;
+
+            /**
+             * 用户名.
+             */
             private String username;
+
+            /**
+             * 密码.
+             */
             private String password;
         }
 

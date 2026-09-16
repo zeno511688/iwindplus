@@ -129,7 +129,7 @@
         <module>iwindplus-base-domain</module>
         <module>iwindplus-base-export-task</module>
         <module>iwindplus-base-http-client</module>
-        <module>iwindplus-base-http-client-integration</module>
+        <module>iwindplus-base-sumsub</module>
         <module>iwindplus-base-kafka</module>
         <module>iwindplus-base-mail</module>
         <module>iwindplus-base-mongo</module>
@@ -157,9 +157,10 @@
         <module>iwindplus-base-webflux</module>
         <module>iwindplus-base-binlog</module>
         <module>iwindplus-base-alert</module>
-        <module>iwindplus-base-log</module>
+        <module>iwindplus-base-logging-alert</module>
         <module>iwindplus-base-es</module>
         <module>iwindplus-base-disruptor</module>
+        <module>iwindplus-base-address</module>
     </modules>
 
     <dependencyManagement>
@@ -214,16 +215,16 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
+                <groupId>com.lmax</groupId>
+                <artifactId>disruptor</artifactId>
+                <version>${disruptor.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp-bom</artifactId>
                 <version>${okhttp3.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.lmax</groupId>
-                <artifactId>disruptor</artifactId>
-                <version>${disruptor.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
@@ -278,6 +279,11 @@
                 <version>${dynamic-tp.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.dromara.dynamictp</groupId>
+                <artifactId>dynamic-tp-extension-opentelemetry</artifactId>
+                <version>${dynamic-tp.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.dromara.easy-es</groupId>
@@ -410,6 +416,11 @@
                 <groupId>com.baomidou</groupId>
                 <artifactId>dynamic-datasource-spring-boot-common</artifactId>
                 <version>${dynamic-datasource.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.binarywang</groupId>
+                <artifactId>weixin-java-common</artifactId>
+                <version>${weixin-java.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.binarywang</groupId>
@@ -673,7 +684,7 @@
             </dependency>
             <dependency>
                 <groupId>com.iwindplus.base</groupId>
-                <artifactId>iwindplus-base-http-client-integration</artifactId>
+                <artifactId>iwindplus-base-sumsub</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -813,7 +824,7 @@
             </dependency>
             <dependency>
                 <groupId>com.iwindplus.base</groupId>
-                <artifactId>iwindplus-base-log</artifactId>
+                <artifactId>iwindplus-base-logging-alert</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -824,6 +835,11 @@
             <dependency>
                 <groupId>com.iwindplus.base</groupId>
                 <artifactId>iwindplus-base-disruptor</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.iwindplus.base</groupId>
+                <artifactId>iwindplus-base-address</artifactId>
                 <version>${revision}</version>
             </dependency>
         </dependencies>

@@ -11,11 +11,10 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.net.URLEncodeUtil;
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.core.util.ArrayUtil;
 import com.google.common.collect.Sets;
 import com.iwindplus.base.domain.constant.CommonConstant.ExceptionConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.FileConstant;
-import com.iwindplus.base.domain.dto.UploadByteDTO;
+import com.iwindplus.base.domain.dto.UploadFileDTO;
 import com.iwindplus.base.domain.support.InputStreamProcessor;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -86,6 +85,9 @@ public class FilesUtil extends FileUtil {
      * @return byte[]
      */
     public static byte[] getBytes(MultipartFile multipartFile) {
+        if (multipartFile == null) {
+            return new byte[0];
+        }
         try {
             return multipartFile.getBytes();
         } catch (IOException ex) {
@@ -98,32 +100,32 @@ public class FilesUtil extends FileUtil {
      * MultipartFile转UploadByteDTO.
      *
      * @param multipartFile 文件
-     * @return UploadByteDTO
+     * @return UploadFileDTO
      */
-    public static UploadByteDTO getUploadBytes(MultipartFile multipartFile) {
+    public static UploadFileDTO getUploadBytes(MultipartFile multipartFile) {
         if (multipartFile == null) {
             return null;
         }
 
         final byte[] bytes = FilesUtil.getBytes(multipartFile);
-        return UploadByteDTO.builder()
-            .data(ArrayUtil.wrap(bytes))
+        return UploadFileDTO.builder()
+            .data(bytes)
             .sourceFileName(multipartFile.getOriginalFilename())
             .contentType(multipartFile.getContentType())
             .build();
     }
 
     /**
-     * List<MultipartFile>转List<UploadByteDTO>.
+     * List<MultipartFile>转List<UploadFileDTO>.
      *
      * @param multipartFiles 文件列表
-     * @return List<UploadByteDTO>
+     * @return List<UploadFileDTO>
      */
-    public static List<UploadByteDTO> listUploadBytes(List<MultipartFile> multipartFiles) {
+    public static List<UploadFileDTO> listUploadBytes(List<MultipartFile> multipartFiles) {
         if (CollUtil.isEmpty(multipartFiles)) {
             return null;
         }
-        List<UploadByteDTO> attachment = Lists.newArrayList();
+        List<UploadFileDTO> attachment = Lists.newArrayList();
         multipartFiles.forEach(multipartFile -> attachment.add(getUploadBytes(multipartFile)));
         return attachment;
     }

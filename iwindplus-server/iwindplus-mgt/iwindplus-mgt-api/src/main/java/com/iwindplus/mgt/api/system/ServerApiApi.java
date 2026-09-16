@@ -9,7 +9,7 @@ package com.iwindplus.mgt.api.system;
 
 import com.iwindplus.base.domain.vo.AppApiVO;
 import com.iwindplus.base.domain.vo.ResultVO;
-import com.iwindplus.mgt.domain.vo.system.ServerApiBaseVO;
+import com.iwindplus.mgt.api.system.vo.ServerApiBaseVO;
 import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;

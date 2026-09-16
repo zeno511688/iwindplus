@@ -25,11 +25,6 @@
             </dependency>
             <dependency>
                 <groupId>com.iwindplus.dtx</groupId>
-                <artifactId>iwindplus-dtx-domain</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.iwindplus.dtx</groupId>
                 <artifactId>iwindplus-dtx-api</artifactId>
                 <version>${revision}</version>
             </dependency>
@@ -57,7 +52,6 @@
     </dependencyManagement>
 
     <modules>
-        <module>iwindplus-dtx-domain</module>
         <module>iwindplus-dtx-api</module>
         <module>iwindplus-dtx-client</module>
         <module>iwindplus-dtx-tcc</module>

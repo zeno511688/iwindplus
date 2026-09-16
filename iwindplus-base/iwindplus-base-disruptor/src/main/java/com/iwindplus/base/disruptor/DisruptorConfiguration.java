@@ -10,7 +10,7 @@ package com.iwindplus.base.disruptor;
 import com.iwindplus.base.disruptor.core.DisruptorManager;
 import com.iwindplus.base.disruptor.core.impl.DisruptorManagerImpl;
 import com.iwindplus.base.disruptor.domain.property.DisruptorMultiProperty;
-import com.iwindplus.base.disruptor.factory.DisruptorEventHandlerStrategyFactory;
+import com.iwindplus.base.disruptor.factory.DisruptorEventHandlerFactory;
 import com.iwindplus.base.disruptor.support.DisruptorEventHandler;
 import com.iwindplus.base.monitor.support.MonitorTemplate;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
@@ -35,18 +35,18 @@ import org.springframework.context.annotation.Configuration;
 public class DisruptorConfiguration {
 
     /**
-     * 创建 DisruptorEventHandlerStrategyFactory.
+     * 创建 DisruptorEventHandlerFactory.
      *
      * @param executorProvider 执行器提供者
-     * @return DisruptorEventHandlerStrategyFactory
+     * @return DisruptorEventHandlerFactory
      */
     @Bean
-    public DisruptorEventHandlerStrategyFactory disruptorEventHandlerStrategyFactory(
+    public DisruptorEventHandlerFactory disruptorEventHandlerFactory(
         ObjectProvider<DisruptorEventHandler<?>> executorProvider) {
-        DisruptorEventHandlerStrategyFactory disruptorEventHandlerStrategyFactory =
-            new DisruptorEventHandlerStrategyFactory(executorProvider);
-        log.info("DisruptorEventHandlerStrategyFactory={}", disruptorEventHandlerStrategyFactory);
-        return disruptorEventHandlerStrategyFactory;
+        DisruptorEventHandlerFactory disruptorEventHandlerFactory =
+            new DisruptorEventHandlerFactory(executorProvider);
+        log.info("DisruptorEventHandlerFactory={}", disruptorEventHandlerFactory);
+        return disruptorEventHandlerFactory;
     }
 
     /**
@@ -62,7 +62,7 @@ public class DisruptorConfiguration {
     @Bean
     public DisruptorManager disruptorManager(
         DisruptorMultiProperty property,
-        DisruptorEventHandlerStrategyFactory factory,
+        DisruptorEventHandlerFactory factory,
         TraceContextPropagator traceContextPropagator,
         ObservationExecutor observationExecutor,
         MonitorTemplate monitorTemplate) {

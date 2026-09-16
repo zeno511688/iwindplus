@@ -19,7 +19,7 @@ import com.iwindplus.base.redis.domain.constant.RedisConstant;
 import com.iwindplus.base.redis.domain.enums.IdempotentResultModeEnum;
 import com.iwindplus.base.redis.domain.property.RedisProperty;
 import com.iwindplus.base.redis.domain.property.RedisProperty.IdempotentConfig;
-import com.iwindplus.base.redis.service.RedissonService;
+import com.iwindplus.base.redis.executor.RedissonExecutor;
 import com.iwindplus.base.redis.support.RedisKeyResolver;
 import com.iwindplus.base.util.HttpsUtil;
 import jakarta.annotation.Resource;
@@ -55,7 +55,7 @@ public class RedisIdempotentAspect {
     private KeyGenerator keyGenerator;
 
     @Resource
-    private RedissonService redissonService;
+    private RedissonExecutor redissonExecutor;
 
     @Resource
     private RedisProperty property;
@@ -111,7 +111,7 @@ public class RedisIdempotentAspect {
         final RedisKeyResolver keyResolver = SpringUtil.getBean(annotation.keyResolver());
 
         // 构建 bizKey
-        String bizKey = redissonService.baseOperation().getRedisKey(
+        String bizKey = this.redissonExecutor.baseOperation().getRedisKey(
             RedisConstant.IDEMPOTENT_BIZ_KEY_PREFIX,
             annotation.names(),
             keyResolver,
@@ -126,7 +126,7 @@ public class RedisIdempotentAspect {
         final JavaType javaType = resolveReturnType(method);
         final IdempotentResultModeEnum resultMode = annotation.resultMode();
 
-        return this.redissonService.idempotent().execute(reqKey, bizKey, processingTtl,
+        return this.redissonExecutor.idempotent().execute(reqKey, bizKey, processingTtl,
             successTtl, javaType, resultMode, joinPoint::proceed);
     }
 

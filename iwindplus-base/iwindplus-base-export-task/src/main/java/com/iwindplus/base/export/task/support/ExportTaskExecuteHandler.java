@@ -8,21 +8,31 @@
 package com.iwindplus.base.export.task.support;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
+import com.iwindplus.base.domain.constant.CommonConstant.FileConstant;
+import com.iwindplus.base.domain.dto.DbPageDTO;
+import com.iwindplus.base.domain.vo.UploadVO;
+import com.iwindplus.base.export.task.domain.constant.ExportTaskConstant;
 import com.iwindplus.base.export.task.domain.dto.ExportTaskStatusEditDTO;
 import com.iwindplus.base.export.task.domain.enums.ExportTaskStatusEnum;
+import com.iwindplus.base.export.task.domain.property.ExportTaskProperty;
 import com.iwindplus.base.export.task.domain.vo.ExportTaskVO;
-import com.iwindplus.base.export.task.factory.ExportTaskHandlerStrategyFactory;
+import com.iwindplus.base.export.task.factory.ExportTaskHandlerFactory;
 import com.iwindplus.base.export.task.service.ExportTaskService;
-import com.iwindplus.base.domain.dto.DbPageDTO;
+import com.iwindplus.base.oss.domain.dto.OssCloudUploadDTO;
+import com.iwindplus.base.oss.factory.OssExecuteHandlerFactory;
+import com.iwindplus.base.oss.support.OssExecuteHandler;
 import com.iwindplus.base.util.JacksonUtil;
 import java.io.File;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 
 /**
  * 导出任务执行助手（核心）.
@@ -32,9 +42,11 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public record ExportTaskExecuteHandler(
-    ExportTaskHandlerStrategyFactory exportTaskHandlerStrategyFactory,
+    ExportTaskProperty property,
+    ExportTaskHandlerFactory exportTaskHandlerFactory,
     ExportTaskStateSupport exportTaskStateSupport,
-    ExportTaskService exportTaskService) {
+    ExportTaskService exportTaskService,
+    ObjectProvider<OssExecuteHandlerFactory> ossExecuteHandlerFactoryProvider) {
 
     /**
      * 执行导出任务.
@@ -71,7 +83,7 @@ public record ExportTaskExecuteHandler(
      * @return ExportTaskHandler
      */
     protected ExportTaskHandler getTaskHandler(String executeName) {
-        return this.exportTaskHandlerStrategyFactory.getTaskHandler(executeName);
+        return this.exportTaskHandlerFactory.getTaskHandler(executeName);
     }
 
     /**
@@ -81,8 +93,10 @@ public record ExportTaskExecuteHandler(
      * @param task    导出任务
      */
     private void processTask(ExportTaskHandler handler, ExportTaskVO task) {
-        String tempFilePath = this.buildTempFilePath(task.getFileName());
-        int batchSize = 1000;
+        final String fileName = handler.getFileName();
+        task.setFileName(fileName);
+        final String tempFilePath = this.buildTempFilePath(fileName);
+        final int batchSize = ExportTaskConstant.EXPORT_BATCH_SIZE;
 
         try (ExcelWriter excelWriter = EasyExcel.write(tempFilePath, handler.getRowClass()).build()) {
             WriteSheet writeSheet = EasyExcel.writerSheet(handler.getSheetName()).build();
@@ -97,19 +111,119 @@ public record ExportTaskExecuteHandler(
 
             // 写入剩余页面数据
             this.writeRemainingPages(excelWriter, writeSheet, handler, queryPageDTO, dataPage, task, exportedCount);
+        }
+
+        // 导出成功，回写文件路径供下载使用
+        this.resolveFilePath(task, tempFilePath);
+    }
+
+    /**
+     * 解析导出文件最终访问路径.
+     *
+     * <p>启用OSS时上传到OSS并返回访问URL，否则使用本地文件路径。</p>
+     *
+     * @param task         导出任务
+     * @param tempFilePath 本地临时文件路径
+     */
+    private void resolveFilePath(ExportTaskVO task, String tempFilePath) {
+        final ExportTaskProperty.OssConfig ossConfig = this.property.getOss();
+        if (ossConfig == null || Boolean.FALSE.equals(ossConfig.getEnabled())) {
+            // 未启用OSS，使用本地文件路径
+            task.setFilePath(tempFilePath);
+            return;
+        }
+
+        final OssExecuteHandlerFactory factory = this.ossExecuteHandlerFactoryProvider.getIfAvailable();
+        if (factory == null) {
+            log.warn("exportTask oss enabled but OssExecuteHandlerFactory not available, fallback to local file. id={}", task.getId());
+            task.setFilePath(tempFilePath);
+            return;
+        }
+
+        final OssExecuteHandler ossHandler = this.resolveOssHandler(factory, ossConfig.getCode());
+        if (ossHandler == null) {
+            log.warn("exportTask oss handler not found, fallback to local file. id={}", task.getId());
+            task.setFilePath(tempFilePath);
+            return;
+        }
+
+        try {
+            final String relativePath = this.buildOssRelativePath(ossConfig, task.getFileName());
+            final OssCloudUploadDTO uploadDTO = OssCloudUploadDTO.builder()
+                .bucketName(ossConfig.getBucketName())
+                .accessDomain(ossConfig.getAccessDomain())
+                .data(FileUtil.readBytes(tempFilePath))
+                .sourceFileName(task.getFileName())
+                .relativePath(relativePath)
+                .renamed(Boolean.TRUE)
+                .returnAbsolutePath(Boolean.FALSE)
+                .build();
+            final UploadVO uploadVO = ossHandler.uploadFile(uploadDTO);
+            if (uploadVO != null) {
+                task.setFilePath(uploadVO.getRelativePath());
+                log.info("exportTask upload to oss success. id={} filePath={}", task.getId(), uploadVO.getRelativePath());
+            } else {
+                log.warn("exportTask upload to oss failed, fallback to local file. id={}", task.getId());
+                task.setFilePath(tempFilePath);
+            }
+        } catch (Exception ex) {
+            log.error("exportTask upload to oss error, fallback to local file. id={}", task.getId(), ex);
+            task.setFilePath(tempFilePath);
         } finally {
-            this.cleanupTempFile(tempFilePath);
+            // 上传完成后删除本地临时文件
+            FileUtil.del(tempFilePath);
         }
     }
 
     /**
-     * 构建临时文件路径.
+     * 构建OSS相对路径.
+     *
+     * @param ossConfig OSS配置
+     * @param fileName  文件名
+     * @return 相对路径
+     */
+    private String buildOssRelativePath(ExportTaskProperty.OssConfig ossConfig, String fileName) {
+        final String prefix = Optional.ofNullable(ossConfig.getRelativePathPrefix())
+            .filter(CharSequenceUtil::isNotBlank)
+            .orElse(ExportTaskConstant.OSS_RELATIVE_PATH_PREFIX);
+        return prefix.endsWith(ExportTaskConstant.PATH_SEPARATOR)
+            ? prefix + fileName
+            : prefix + ExportTaskConstant.PATH_SEPARATOR + fileName;
+    }
+
+    /**
+     * 解析OSS策略.
+     *
+     * <p>优先使用配置编码匹配的策略，未指定编码时使用默认策略。</p>
+     *
+     * @param factory OSS策略工厂
+     * @param code    配置编码
+     * @return OSS策略
+     */
+    private OssExecuteHandler resolveOssHandler(OssExecuteHandlerFactory factory, String code) {
+        if (CharSequenceUtil.isBlank(code)) {
+            return factory.getDefaultHandler();
+        }
+        return factory.getHandler(property.getOss().getType(), code);
+    }
+
+    /**
+     * 构建导出文件存储路径.
+     *
+     * <p>优先使用配置的存储目录，未配置时回退到系统临时目录。</p>
      *
      * @param fileName 文件名
-     * @return 临时文件路径
+     * @return 文件路径
      */
     private String buildTempFilePath(String fileName) {
-        return System.getProperty("java.io.tmpdir") + File.separator + fileName;
+        final String baseDir = System.getProperty(FileConstant.TMP_DIR);
+
+        final File dir = new File(baseDir);
+        if (!dir.exists() && !dir.mkdirs()) {
+            log.warn("Failed to create export file directory: {}", baseDir);
+        }
+
+        return baseDir + File.separator + fileName;
     }
 
     /**
@@ -121,8 +235,8 @@ public record ExportTaskExecuteHandler(
      * @return 查询参数
      */
     private DbPageDTO buildQueryPageDTO(ExportTaskHandler handler, ExportTaskVO task, int batchSize) {
-        DbPageDTO queryPageDTO = (DbPageDTO) JacksonUtil.convertValue(task.getQueryParam(), handler.getQueryClass());
-        queryPageDTO.setCurrent(1);
+        DbPageDTO queryPageDTO = (DbPageDTO) JacksonUtil.parseObject(task.getQueryParam(), handler.getQueryClass());
+        queryPageDTO.setCurrent(ExportTaskConstant.FIRST_PAGE_INDEX);
         queryPageDTO.setSize(batchSize);
         return queryPageDTO;
     }
@@ -167,7 +281,7 @@ public record ExportTaskExecuteHandler(
         DbPageDTO queryPageDTO, PageDTO<?> firstDataPage, ExportTaskVO task, Long exportedCount) {
         long totalPages = firstDataPage.getPages();
 
-        for (int currentPage = 2; currentPage <= totalPages; currentPage++) {
+        for (int currentPage = ExportTaskConstant.SECOND_PAGE_INDEX; currentPage <= totalPages; currentPage++) {
             queryPageDTO.setCurrent(currentPage);
             PageDTO<?> dataPage = handler.pageByCondition(queryPageDTO);
             List<?> dataList = dataPage.getRecords();
@@ -185,21 +299,6 @@ public record ExportTaskExecuteHandler(
     }
 
     /**
-     * 清理临时文件.
-     *
-     * @param tempFilePath 临时文件路径
-     */
-    private void cleanupTempFile(String tempFilePath) {
-        File tempFile = new File(tempFilePath);
-        if (tempFile.exists()) {
-            boolean deleted = tempFile.delete();
-            if (!deleted) {
-                log.warn("Failed to delete temp file: {}", tempFilePath);
-            }
-        }
-    }
-
-    /**
      * 更新导出进度.
      *
      * @param task          导出任务
@@ -207,7 +306,7 @@ public record ExportTaskExecuteHandler(
      * @param exportedCount 已导出数量
      */
     private void updateProgress(ExportTaskVO task, Long totalCount, Long exportedCount) {
-        int progress = (int) ((exportedCount * 100.0) / totalCount);
+        int progress = (int) ((exportedCount * ExportTaskConstant.PROGRESS_PERCENT_BASE) / totalCount);
         final ExportTaskStatusEditDTO build = ExportTaskStatusEditDTO
             .builder()
             .id(task.getId())

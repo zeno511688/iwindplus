@@ -16,7 +16,7 @@ import com.iwindplus.base.domain.context.TccContextHolder;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.util.JacksonUtil;
 import com.iwindplus.dtx.client.TccBranchTxClient;
-import com.iwindplus.dtx.domain.dto.TccBranchTxDTO;
+import com.iwindplus.dtx.api.dto.TccBranchTxDTO;
 import jakarta.annotation.Resource;
 import java.lang.reflect.Parameter;
 import java.util.HashMap;

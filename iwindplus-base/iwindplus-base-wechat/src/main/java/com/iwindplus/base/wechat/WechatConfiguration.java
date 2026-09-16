@@ -7,32 +7,33 @@
 
 package com.iwindplus.base.wechat;
 
-import cn.binarywang.wx.miniapp.config.impl.WxMaDefaultConfigImpl;
-import cn.binarywang.wx.miniapp.config.impl.WxMaRedisBetterConfigImpl;
-import cn.hutool.core.text.CharSequenceUtil;
-import com.iwindplus.base.wechat.domain.constant.WechatConstant;
 import com.iwindplus.base.wechat.domain.property.WechatProperty;
-import com.iwindplus.base.wechat.service.impl.WechatMpServiceImpl;
-import com.iwindplus.base.wechat.service.WechatMaService;
-import com.iwindplus.base.wechat.service.WechatMpService;
-import com.iwindplus.base.wechat.service.WechatPayService;
-import com.iwindplus.base.wechat.service.impl.WechatMaServiceImpl;
-import com.iwindplus.base.wechat.service.impl.WechatPayServiceImpl;
-import jakarta.annotation.Resource;
+import com.iwindplus.base.wechat.factory.WechatMaExecuteHandlerFactory;
+import com.iwindplus.base.wechat.factory.WechatMpExecuteHandlerFactory;
+import com.iwindplus.base.wechat.factory.WechatPayExecuteHandlerFactory;
+import com.iwindplus.base.wechat.support.impl.WechatMaExecuteHandlerImpl;
+import com.iwindplus.base.wechat.support.impl.WechatMpExecuteHandlerImpl;
+import com.iwindplus.base.wechat.support.impl.WechatPayExecuteHandlerImpl;
+import com.iwindplus.base.wechat.support.WechatMaExecuteHandler;
+import com.iwindplus.base.wechat.support.WechatMpExecuteHandler;
+import com.iwindplus.base.wechat.support.WechatPayExecuteHandler;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import lombok.extern.slf4j.Slf4j;
-import me.chanjar.weixin.common.redis.RedisTemplateWxRedisOps;
-import me.chanjar.weixin.mp.config.impl.WxMpDefaultConfigImpl;
-import me.chanjar.weixin.mp.config.impl.WxMpRedisConfigImpl;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import java.util.Objects;
-
 /**
- * 微信小程序配置管理.
+ * 微信配置管理.
+ *
+ * <p>ma/mp/pay 各自独立支持多配置，每个配置对应一个运行时策略实例，通过配置编码区分。</p>
  *
  * @author zengdegui
  * @since 2019/7/16
@@ -40,82 +41,82 @@ import java.util.Objects;
 @Slf4j
 @Configuration
 @EnableConfigurationProperties(WechatProperty.class)
+@ConditionalOnProperty(prefix = "wechat", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class WechatConfiguration {
-    @Resource
-    private WechatProperty property;
-
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
 
     /**
-     * 创建 WechatMaService.
+     * 创建微信小程序策略工厂.
      *
-     * @return WechatMaService
+     * @param property            属性配置
+     * @param stringRedisTemplate redis模板
+     * @return WechatMaExecuteHandlerFactory
      */
-    @ConditionalOnProperty(prefix = "wechat.ma", name = "enabled", havingValue = "true")
     @Bean
-    public WechatMaService wechatMaService() {
-        WechatMaService maService = new WechatMaServiceImpl();
-        WechatProperty.MaConfig ma = this.property.getMa();
-        if (Objects.nonNull(ma) && CharSequenceUtil.isNotBlank(ma.getAppId()) && CharSequenceUtil.isNotBlank(ma.getSecret())) {
-            WxMaDefaultConfigImpl config;
-            if (Boolean.TRUE.equals(ma.getUseRedis())) {
-                RedisTemplateWxRedisOps wxRedisOps = new RedisTemplateWxRedisOps(this.stringRedisTemplate);
-                config = new WxMaRedisBetterConfigImpl(wxRedisOps, WechatConstant.WECHAT_MA_PREFIX);
-            } else {
-                config = new WxMaDefaultConfigImpl();
-            }
-            config.setAppid(ma.getAppId());
-            config.setSecret(ma.getSecret());
-            config.setToken(ma.getToken());
-            config.setAesKey(ma.getAesKey());
-            config.setMsgDataFormat(ma.getMsgDataFormat());
-            maService.setWxMaConfig(config);
-        }
-        log.info("WechatMaService={}", maService);
-        return maService;
+    public WechatMaExecuteHandlerFactory wechatMaExecuteHandlerFactory(WechatProperty property,
+        StringRedisTemplate stringRedisTemplate) {
+        List<WechatMaExecuteHandler> handlers = this.buildHandlers(property.getMa(),
+            config -> Boolean.TRUE.equals(config.getEnabled()),
+            WechatProperty.MaConfig::getCode,
+            config -> new WechatMaExecuteHandlerImpl(config, stringRedisTemplate)
+        );
+        return new WechatMaExecuteHandlerFactory(property, handlers);
     }
 
     /**
-     * 创建 WechatMpService.
+     * 创建微信公众号策略工厂.
      *
-     * @return WechatMpService
+     * @param property            属性配置
+     * @param stringRedisTemplate redis模板
+     * @return WechatMpExecuteHandlerFactory
      */
-    @ConditionalOnProperty(prefix = "wechat.mp", name = "enabled", havingValue = "true")
     @Bean
-    public WechatMpService wechatMpService() {
-        WechatMpService mpService = new WechatMpServiceImpl();
-        WechatProperty.MpConfig mp = this.property.getMp();
-        if (Objects.nonNull(mp) && CharSequenceUtil.isNotBlank(mp.getAppId()) && CharSequenceUtil.isNotBlank(mp.getSecret())) {
-            WxMpDefaultConfigImpl config;
-            if (Boolean.TRUE.equals(mp.getUseRedis())) {
-                RedisTemplateWxRedisOps wxRedisOps = new RedisTemplateWxRedisOps(this.stringRedisTemplate);
-                config = new WxMpRedisConfigImpl(wxRedisOps, WechatConstant.WECHAT_MP_PREFIX);
-            } else {
-                config = new WxMpDefaultConfigImpl();
-            }
-            config.setAppId(mp.getAppId());
-            config.setSecret(mp.getSecret());
-            config.setToken(mp.getToken());
-            config.setAesKey(mp.getAesKey());
-            mpService.setWxMpConfigStorage(config);
-        }
-        log.info("WechatMpService={}", mpService);
-        return mpService;
+    public WechatMpExecuteHandlerFactory wechatMpExecuteHandlerFactory(WechatProperty property,
+        StringRedisTemplate stringRedisTemplate) {
+        List<WechatMpExecuteHandler> handlers = this.buildHandlers(property.getMp(),
+            config -> Boolean.TRUE.equals(config.getEnabled()),
+            WechatProperty.MpConfig::getCode,
+            config -> new WechatMpExecuteHandlerImpl(config, stringRedisTemplate)
+        );
+        return new WechatMpExecuteHandlerFactory(property, handlers);
     }
 
     /**
-     * 创建 WechatPayService.
+     * 创建微信支付策略工厂.
      *
-     * @return WechatPayService
+     * @param property 属性配置
+     * @return WechatPayExecuteHandlerFactory
      */
-    @ConditionalOnProperty(prefix = "wechat.pay", name = "enabled", havingValue = "true")
     @Bean
-    public WechatPayService wechatPayService() {
-        WechatPayService wechatPayService = new WechatPayServiceImpl();
-        WechatProperty.PayConfig pay = this.property.getPay();
-        wechatPayService.setConfig(pay);
-        log.info("WechatPayService={}", wechatPayService);
-        return wechatPayService;
+    public WechatPayExecuteHandlerFactory wechatPayExecuteHandlerFactory(WechatProperty property) {
+        List<WechatPayExecuteHandler> handlers = this.buildHandlers(property.getPay(),
+            config -> Boolean.TRUE.equals(config.getEnabled()),
+            WechatProperty.PayConfig::getCode,
+            WechatPayExecuteHandlerImpl::new
+        );
+        return new WechatPayExecuteHandlerFactory(property, handlers);
+    }
+
+    /**
+     * 根据配置列表构建策略实例列表（过滤未启用配置并按编码去重）.
+     *
+     * @param configs          配置列表
+     * @param enabledPredicate 启用判断
+     * @param codeExtractor    配置编码提取器
+     * @param handlerFactory   策略实例工厂
+     * @param <C>              配置类型
+     * @param <H>              策略类型
+     * @return 策略实例列表
+     */
+    private <C, H> List<H> buildHandlers(List<C> configs,
+        Predicate<C> enabledPredicate,
+        Function<C, String> codeExtractor,
+        Function<C, H> handlerFactory) {
+        List<H> handlers = new ArrayList<>(10);
+        Set<String> codes = new HashSet<>(16);
+        configs.stream()
+            .filter(enabledPredicate)
+            .filter(config -> codes.add(codeExtractor.apply(config)))
+            .forEach(config -> handlers.add(handlerFactory.apply(config)));
+        return handlers;
     }
 }

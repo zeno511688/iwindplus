@@ -15,6 +15,7 @@ import java.util.concurrent.Executor;
 import lombok.extern.slf4j.Slf4j;
 import org.dromara.dynamictp.core.DtpRegistry;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
+import org.springframework.util.Assert;
 
 /**
  * DynamicTP异步线程池配置.
@@ -35,7 +36,7 @@ public record AsyncThreadPoolConfigurer(
     @Override
     public Executor getAsyncExecutor() {
         Executor executor = DtpRegistry.getExecutor(WebConstant.THREAD_POOL_BEAN_NAME);
-
+        Assert.notNull(executor, WebConstant.THREAD_POOL_BEAN_NAME + " must not be null");
         return command -> {
             ContextSnapshot snapshot = contextSnapshotFactory.captureAll();
 

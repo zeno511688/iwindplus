@@ -7,7 +7,6 @@
 
 package com.iwindplus.base.alert.domain.dto;
 
-import com.iwindplus.base.alert.domain.enums.AlertMessageTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import lombok.AllArgsConstructor;
@@ -30,10 +29,10 @@ import lombok.experimental.SuperBuilder;
 public class AlertBaseRequestDTO implements Serializable {
 
     /**
-     * 告警消息类型（用于策略路由）.
+     * 配置编码（可选，用于指定渠道下具体的 app/webhook 配置）.
      */
-    @Schema(description = "告警消息类型")
-    private AlertMessageTypeEnum type;
+    @Schema(description = "配置编码")
+    private String code;
 
     /**
      * 告警内容（通用字段）.

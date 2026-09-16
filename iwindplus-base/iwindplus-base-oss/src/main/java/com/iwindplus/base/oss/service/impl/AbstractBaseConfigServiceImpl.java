@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2020/3/13
  */
 @Slf4j
-public abstract class AbstractBaseConfigServiceImpl<T> extends AbstractBaseServiceImpl implements BaseConfigService<T> {
+public abstract class AbstractBaseConfigServiceImpl<T> implements BaseConfigService<T> {
 
     /**
      * 配置.

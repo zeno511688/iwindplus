@@ -31,6 +31,16 @@ public final class SmsConstant {
         }
 
         /**
+         * 主配置编码.
+         */
+        public static final String MAIN_CODE = "aliyun-main";
+
+        /**
+         * 备用配置编码.
+         */
+        public static final String BACKUP_CODE = "aliyun-backup";
+
+        /**
          * sts securityToken失效时间（单位：秒，默认：3600）.
          */
         public static final long SECURITY_TOKEN_EXPIRE_TIME = 3600L;
@@ -76,6 +86,16 @@ public final class SmsConstant {
         }
 
         /**
+         * 主配置编码.
+         */
+        public static final String MAIN_CODE = "qiniu-main";
+
+        /**
+         * 备用配置编码.
+         */
+        public static final String BACKUP_CODE = "qiniu-backup";
+
+        /**
          * 业务流水号.
          */
         public static final String BIZ_NUMBER = "job_id";
@@ -94,6 +114,16 @@ public final class SmsConstant {
          * 凌凯短信接口地址.
          */
         public static final String LING_KAI_SMS_URL = "https://mb345.com/ws/BatchSend2.aspx";
+
+        /**
+         * 主配置编码.
+         */
+        public static final String MAIN_CODE = "lingkai-main";
+
+        /**
+         * 备用配置编码.
+         */
+        public static final String BACKUP_CODE = "lingkai-backup";
 
         /**
          * 访问key.
@@ -129,6 +159,16 @@ public final class SmsConstant {
          * 麦讯通短信接口地址.
          */
         public static final String MX_TONG_SMS_URL = "http://www.weiwebs.cn/msg/HttpBatchSendSM";
+
+        /**
+         * 主配置编码.
+         */
+        public static final String MAIN_CODE = "mxtong-main";
+
+        /**
+         * 备用配置编码.
+         */
+        public static final String BACKUP_CODE = "mxtong-backup";
 
         /**
          * 访问key.

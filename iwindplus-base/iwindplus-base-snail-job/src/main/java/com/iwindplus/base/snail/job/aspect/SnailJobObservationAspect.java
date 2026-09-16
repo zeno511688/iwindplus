@@ -42,6 +42,9 @@ public record SnailJobObservationAspect(ObservationExecutor observationExecutor)
         final Method method = methodSignature.getMethod();
 
         final JobExecutor job = method.getAnnotation(JobExecutor.class);
+        if (job == null) {
+            return joinPoint.proceed();
+        }
         final String jobName = job.name();
 
         return observationExecutor.execute(

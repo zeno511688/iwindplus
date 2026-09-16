@@ -20,7 +20,7 @@ import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.domain.vo.UserBaseVO;
 import com.iwindplus.base.domain.vo.UserExtendFunctionValidVO;
-import com.iwindplus.base.http.client.factory.HttpClientExecutorStrategyFactory;
+import com.iwindplus.base.http.client.factory.HttpClientExecuteHandlerFactory;
 import com.iwindplus.base.operate.domain.annotation.OperateValid;
 import com.iwindplus.base.operate.domain.property.OperateProperty;
 import com.iwindplus.base.operate.domain.property.OperateProperty.OperateValidConfig;
@@ -53,7 +53,7 @@ public class OperateValidAspect {
     private OperateProperty property;
 
     @Resource
-    private HttpClientExecutorStrategyFactory httpClientExecutorStrategyFactory;
+    private HttpClientExecuteHandlerFactory httpClientExecuteHandlerFactory;
 
     /**
      * 切点.
@@ -157,8 +157,8 @@ public class OperateValidAspect {
         final OperateValidConfig cfg = property.getValid();
         UserExtendFunctionValidDTO dto = collectCaptchaData(annotation, context, request);
         final Map<String, Object> query = BeanUtil.beanToMap(dto);
-        final ResultVO<UserExtendFunctionValidVO> result = httpClientExecutorStrategyFactory
-            .getDefaultHttpClientExecutor()
+        final ResultVO<UserExtendFunctionValidVO> result = httpClientExecuteHandlerFactory
+            .getDefaultHandler()
             .post(
                 cfg.getUrl(),
                 query,

@@ -8,13 +8,15 @@
 package com.iwindplus.base.alert;
 
 import com.iwindplus.base.alert.domain.property.AlertProperty;
-import com.iwindplus.base.alert.executor.AlertExecutor;
-import com.iwindplus.base.alert.executor.impl.FeishuAlertExecutor;
-import com.iwindplus.base.alert.factory.AlertExecutorStrategyFactory;
-import com.iwindplus.base.http.client.factory.HttpClientExecutorStrategyFactory;
-import jakarta.annotation.Resource;
+import com.iwindplus.base.alert.factory.AlertExecuteHandlerFactory;
+import com.iwindplus.base.alert.support.AlertExecuteHandler;
+import com.iwindplus.base.alert.support.impl.FeishuAlertExecuteHandler;
+import com.iwindplus.base.http.client.factory.HttpClientExecuteHandlerFactory;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -32,35 +34,43 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(prefix = "alert", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class AlertConfiguration {
 
-    @Resource
-    private AlertProperty property;
-
-    @Resource
-    private HttpClientExecutorStrategyFactory httpClientExecutorStrategyFactory;
-
     /**
-     * 创建 AlertExecutorStrategyFactory.
+     * 创建 AlertExecuteHandlerFactory.
      *
-     * @param executorProvider 执行器提供者
-     * @return AlertExecutorStrategyFactory
+     * @param property                        属性配置
+     * @param httpClientExecuteHandlerFactory HTTP客户端执行器工厂
+     * @return AlertExecuteHandlerFactory
      */
     @Bean
-    public AlertExecutorStrategyFactory alertExecutorStrategyFactory(ObjectProvider<AlertExecutor> executorProvider) {
-        final AlertExecutorStrategyFactory alertExecutorStrategyFactory = new AlertExecutorStrategyFactory(property, executorProvider);
-        log.info("AlertExecutorStrategyFactory={}", alertExecutorStrategyFactory);
-        return alertExecutorStrategyFactory;
+    public AlertExecuteHandlerFactory alertExecuteHandlerFactory(
+        AlertProperty property,
+        HttpClientExecuteHandlerFactory httpClientExecuteHandlerFactory) {
+        final List<AlertExecuteHandler> executorHandlers =
+            this.feishuAlertExecuteHandlers(property, httpClientExecuteHandlerFactory);
+        final AlertExecuteHandlerFactory factory = new AlertExecuteHandlerFactory(property, executorHandlers);
+        log.info("AlertExecuteHandlerFactory={}", factory);
+        return factory;
     }
 
     /**
-     * 创建 FeishuAlertExecutor.
+     * 创建飞书告警执行器（支持多配置）.
      *
-     * @return FeishuAlertExecutor
+     * @param property                        属性配置
+     * @param httpClientExecuteHandlerFactory HTTP客户端执行器工厂
+     * @return 飞书告警执行器列表
      */
-    @Bean
-    @ConditionalOnProperty(prefix = "alert.feishu", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public AlertExecutor feishuAlertExecutor() {
-        final FeishuAlertExecutor feishuAlertExecutor = new FeishuAlertExecutor(property, httpClientExecutorStrategyFactory);
-        log.info("FeishuAlertExecutor={}", feishuAlertExecutor);
-        return feishuAlertExecutor;
+    private List<AlertExecuteHandler> feishuAlertExecuteHandlers(
+        AlertProperty property,
+        HttpClientExecuteHandlerFactory httpClientExecuteHandlerFactory) {
+        List<AlertExecuteHandler> handlers = new ArrayList<>(10);
+        Set<String> codes = new HashSet<>(16);
+        property.getFeishu().stream()
+            .filter(config -> Boolean.TRUE.equals(config.getEnabled()))
+            .filter(config -> codes.add(config.getCode()))
+            .forEach(config -> {
+                log.info("Initializing Alert feishu strategy [code={}]", config.getCode());
+                handlers.add(new FeishuAlertExecuteHandler(config, httpClientExecuteHandlerFactory));
+            });
+        return handlers;
     }
 }

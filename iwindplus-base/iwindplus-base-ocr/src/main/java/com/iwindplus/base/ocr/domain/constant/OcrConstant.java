@@ -10,7 +10,7 @@ package com.iwindplus.base.ocr.domain.constant;
 import com.iwindplus.base.domain.constant.CommonConstant;
 
 /**
- * ocr常数.
+ * OCR常数.
  *
  * @author zengdegui
  * @since 2020/6/13
@@ -21,7 +21,7 @@ public final class OcrConstant {
     }
 
     /**
-     * 印刷文字相关常数 .
+     * 印刷文字相关常数.
      */
     public final class PrintWordConstant {
         private PrintWordConstant() {
@@ -37,10 +37,20 @@ public final class OcrConstant {
          * 印刷文字营业执照图片识别接口地址.
          */
         public static final String BUSINESS_LICENSE_URL = "https://bizlicense.market.alicloudapi.com/rest/160601/ocr/ocr_business_license.json";
+
+        /**
+         * 主配置编码.
+         */
+        public static final String MAIN_CODE = "print-word-main";
+
+        /**
+         * 备用配置编码.
+         */
+        public static final String BACKUP_CODE = "print-word-backup";
     }
 
     /**
-     * 翔云相关常数 .
+     * 翔云相关常数.
      */
     public final class XiangyunConstant {
         private XiangyunConstant() {
@@ -56,6 +66,16 @@ public final class OcrConstant {
          * 翔云营业执照图片识别接口地址.
          */
         public static final String BUSINESS_LICENSE_URL = "https://netocr.com/api/recoglen.do";
+
+        /**
+         * 主配置编码.
+         */
+        public static final String MAIN_CODE = "xiangyun-main";
+
+        /**
+         * 备用配置编码.
+         */
+        public static final String BACKUP_CODE = "xiangyun-backup";
 
         /**
          * 翔云营业执照编码.

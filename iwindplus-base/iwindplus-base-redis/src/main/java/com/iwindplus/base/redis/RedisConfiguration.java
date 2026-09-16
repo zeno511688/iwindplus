@@ -17,6 +17,8 @@ import com.iwindplus.base.redis.aspect.RedisLockAspect;
 import com.iwindplus.base.redis.aspect.RedisRateLimiterAspect;
 import com.iwindplus.base.redis.aspect.RedisRepeatSubmitAspect;
 import com.iwindplus.base.redis.domain.property.RedisProperty;
+import com.iwindplus.base.redis.executor.RedissonExecutor;
+import com.iwindplus.base.redis.executor.impl.RedissonExecutorImpl;
 import com.iwindplus.base.redis.operation.RedissonBaseOperation;
 import com.iwindplus.base.redis.operation.RedissonIdempotentOperation;
 import com.iwindplus.base.redis.operation.RedissonLockOperation;
@@ -29,8 +31,6 @@ import com.iwindplus.base.redis.operation.impl.RedissonLockOperationImpl;
 import com.iwindplus.base.redis.operation.impl.RedissonRateLimiterOperationImpl;
 import com.iwindplus.base.redis.operation.impl.RedissonRepeatSubmitOperationImpl;
 import com.iwindplus.base.redis.operation.impl.RedissonSerialNumOperationImpl;
-import com.iwindplus.base.redis.service.RedissonService;
-import com.iwindplus.base.redis.service.impl.RedissonServiceImpl;
 import com.iwindplus.base.redis.support.handler.ExceptionCacheErrorHandler;
 import com.iwindplus.base.redis.support.impl.ClientIpRedisKeyResolver;
 import com.iwindplus.base.redis.support.impl.DefaultRedisKeyResolver;
@@ -43,7 +43,7 @@ import com.iwindplus.base.redis.support.serializer.ProtostuffRedisSerializer;
 import com.iwindplus.base.redis.support.strategy.CustomLockFailureStrategy;
 import com.iwindplus.base.redis.support.strategy.CustomLockKeyBuilder;
 import jakarta.annotation.Resource;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
@@ -257,15 +257,31 @@ public class RedisConfiguration {
     }
 
     /**
-     * 创建 RedissonService.
+     * 创建 RedissonExecutor.
      *
-     * @return RedissonService
+     * @param redissonBaseOperation         redissonBaseOperation
+     * @param redissonRepeatSubmitOperation redissonRepeatSubmitOperation
+     * @param redissonIdempotentOperation   redissonIdempotentOperation
+     * @param redissonLockOperation         redissonLockOperation
+     * @param redissonRateLimiterOperation  redissonRateLimiterOperation
+     * @param redissonSerialNumOperation    redissonSerialNumOperation
+     * @return RedissonExecutor
      */
     @Bean
-    public RedissonService redissonService() {
-        RedissonService redissonService = new RedissonServiceImpl();
-        log.info("RedissonService={}", redissonService);
-        return redissonService;
+    public RedissonExecutor redissonExecutor(
+        RedissonBaseOperation redissonBaseOperation,
+        RedissonRepeatSubmitOperation redissonRepeatSubmitOperation,
+        RedissonIdempotentOperation redissonIdempotentOperation,
+        RedissonLockOperation redissonLockOperation,
+        RedissonRateLimiterOperation redissonRateLimiterOperation,
+        RedissonSerialNumOperation redissonSerialNumOperation) {
+        RedissonExecutor redissonExecutor = new RedissonExecutorImpl(
+            redissonBaseOperation, redissonRepeatSubmitOperation,
+            redissonIdempotentOperation, redissonLockOperation,
+            redissonRateLimiterOperation, redissonSerialNumOperation
+        );
+        log.info("RedissonExecutor={}", redissonExecutor);
+        return redissonExecutor;
     }
 
     /**
@@ -425,7 +441,7 @@ public class RedisConfiguration {
             case JACKSON:
                 final ObjectMapper redisMapper = this.objectMapper.copy();
                 redisMapper.activateDefaultTyping(redisMapper.getPolymorphicTypeValidator(), ObjectMapper.DefaultTyping.NON_FINAL, As.PROPERTY);
-                redisMapper.registerModules(Arrays.asList(new CoreJackson2Module()));
+                redisMapper.registerModules(List.of(new CoreJackson2Module()));
                 final Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(redisMapper,
                     Object.class);
                 log.info("Jackson2JsonRedisSerializer={}", jackson2JsonRedisSerializer);

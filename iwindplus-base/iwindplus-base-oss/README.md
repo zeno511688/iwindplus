@@ -1,17 +1,24 @@
 # 对象存储与视频点播模块（iwindplus-base-oss）
 
-本模块提供本地文件、云对象存储和阿里云视频点播能力。
+本模块提供本地文件、云对象存储和阿里云视频点播能力，支持多配置管理，每个配置通过唯一编码（`code`）标识。
+
+模块采用策略模式：每个配置对应一个运行时策略实例，通过策略工厂（`OssExecuteHandlerFactory` / `VodExecuteHandlerFactory`）管理策略实例，以「提供商类型 + 配置编码」二维结构区分不同策略。
 
 ```text
 文件上传
    │
-   ├── FileService             本地 resources 文件下载/远程文件下载
-   ├── OssAliyunService        阿里云 OSS
-   ├── OssQiniuService         七牛云 OSS
-   └── OssMinioService         MinIO
+   ├── FileExecuteHandler（本地文件操作接口）
+   │       └── FileExecuteHandlerLocal  本地 resources 文件下载/远程文件下载
+   └── OssExecuteHandlerFactory（OSS 策略工厂，二维 Map：提供商类型 → 配置编码 → 策略）
+          │
+          ├── OssExecuteHandlerAliyun  阿里云 OSS 策略
+          ├── OssExecuteHandlerQiniu   七牛云 OSS 策略
+          └── OssExecuteHandlerMinio   MinIO 策略
 
 视频点播
-   └── VodAliyunService        阿里云 VOD
+   └── VodExecuteHandlerFactory（VOD 策略工厂，二维 Map：提供商类型 → 配置编码 → 策略）
+          │
+          └── VodExecuteHandlerAliyun  阿里云 VOD 策略
 ```
 
 ## 1. 引入依赖
@@ -23,142 +30,156 @@
 </dependency>
 ```
 
-云厂商服务的 Bean 是否注册由各自的 `enabled` 配置控制；本地 `FileService` 会自动注册。
-
 ## 2. 对象存储配置
 
-配置前缀为 `oss`，支持阿里云、七牛云和 MinIO：
+配置前缀为 `oss`，支持阿里云、七牛云和 MinIO 的多配置：
 
 ```yaml
 oss:
+  enabled: true
+  default-code: "default"
   aliyun:
-    enabled: true
-    access-key: ${ALIYUN_ACCESS_KEY}
-    secret-key: ${ALIYUN_SECRET_KEY}
-    endpoint: oss-cn-shenzhen.aliyuncs.com
-    bucket-name: demo-bucket
-    access-domain: https://cdn.example.com
-    part-size: 10
-    broke: false
+    - code: "default"
+      name: "默认阿里云OSS配置"
+      enabled: true
+      priority: 1
+      access-key: ${ALIYUN_ACCESS_KEY}
+      secret-key: ${ALIYUN_SECRET_KEY}
+      endpoint: oss-cn-shenzhen.aliyuncs.com
+      part-size: 10
+      broke: false
+    - code: "backup"
+      name: "备份阿里云OSS配置"
+      enabled: true
+      priority: 2
+      access-key: ${ALIYUN_BACKUP_ACCESS_KEY}
+      secret-key: ${ALIYUN_BACKUP_SECRET_KEY}
+      endpoint: oss-cn-beijing.aliyuncs.com
   qiniu:
-    enabled: false
-    access-key: ${QINIU_ACCESS_KEY}
-    secret-key: ${QINIU_SECRET_KEY}
-    bucket-name: demo-bucket
-    access-domain: https://cdn.example.com
-    part-size: 10
-    broke: false
+    - code: "qiniu-default"
+      name: "七牛云配置"
+      enabled: false
+      access-key: ${QINIU_ACCESS_KEY}
+      secret-key: ${QINIU_SECRET_KEY}
+      broke: false
   minio:
-    enabled: false
-    access-key: ${MINIO_ACCESS_KEY}
-    secret-key: ${MINIO_SECRET_KEY}
-    endpoint: http://127.0.0.1:9000
-    region: us-east-1
-    bucket-name: demo-bucket
-    access-domain: http://127.0.0.1:9000/demo-bucket
-    part-size: 10
+    - code: "minio-default"
+      name: "MinIO配置"
+      enabled: false
+      endpoint: http://minio.example.com:9000
+      region: us-east-1
+      access-key: ${MINIO_ACCESS_KEY}
+      secret-key: ${MINIO_SECRET_KEY}
+      part-size: 10
 ```
 
-### 2.1 阿里云 OSS
+### 2.1 公共配置字段
 
-`oss.aliyun.enabled=true` 时注册 `OssAliyunService`。
+三个供应商配置都继承 `OssProperty.BaseConfig`（`BaseConfig` 继承 `AkSkDTO`），公共字段如下：
 
-| 配置项 | 说明 |
-|---|---|
-| `oss.aliyun.access-key` | 继承 `AkSkDTO` 的访问密钥 |
-| `oss.aliyun.secret-key` | 继承 `AkSkDTO` 的密钥 |
-| `oss.aliyun.endpoint` | OSS 地域节点，例如 `oss-cn-shenzhen.aliyuncs.com` |
-| `oss.aliyun.bucket-name` | Bucket 名称 |
-| `oss.aliyun.access-domain` | 可选，自定义访问域名 |
-| `oss.aliyun.part-size` | 可选，分片大小，单位 MB |
-| `oss.aliyun.broke` | 可选，是否开启断点上传 |
-| `oss.aliyun.sts` | 可选，STS 临时凭证配置 |
+| 配置项 | 默认值 | 说明 |
+|---|---:|---|
+| `code` | 无 | 配置编码（唯一标识，必填） |
+| `name` | 无 | 配置名称 |
+| `enabled` | `true` | 是否启用 |
+| `priority` | 无 | 优先级（数字越小优先级越高） |
+| `access-key` | 无 | 访问密钥 |
+| `secret-key` | 无 | 密钥 |
 
-### 2.2 七牛云 OSS
+`oss` 顶层配置字段如下：
 
-`oss.qiniu.enabled=true` 时注册 `OssQiniuService`。
+| 配置项            | 默认值 | 说明 |
+|----------------|---:|---|
+| `enabled`      | `true` | 是否启用 |
+| `default-code` | 无 | 默认 OSS 配置编码（可选，指定后可通过 `getDefaultHandler()` 获取默认策略） |
 
-必填或常用字段：`access-key`、`secret-key`、`bucket-name`、`access-domain`。`part-size` 和 `broke` 用于分片及断点上传相关配置。
+> **说明**：`bucket-name`、`access-domain`、`return-absolute-path` 属于业务范畴（"存到哪里"、"用什么域名访问"），
+> 已从配置中移除，改为通过请求 DTO 由调用方传入，避免切换配置时存储位置和访问域名跟着变化。
 
-### 2.3 MinIO
+### 2.2 阿里云 OSS
 
-`oss.minio.enabled=true` 时注册 `OssMinioService`。
+阿里云在公共字段基础上额外包含：
 
-必填或常用字段：`access-key`、`secret-key`、`endpoint`、`bucket-name`。`region` 和 `access-domain` 可按部署环境配置。
+| 配置项 | 默认值 | 说明 |
+|---|---:|---|
+| `endpoint` | 无 | OSS 地域节点，例如 `oss-cn-shenzhen.aliyuncs.com` |
+| `part-size` | 无 | 可选，分片大小，单位 MB |
+| `broke` | 无 | 可选，是否开启断点上传 |
+| `sts` | 无 | 可选，STS 临时凭证配置 |
 
-## 3. 注入服务
+### 2.3 七牛云 OSS
 
-三个云存储服务是不同接口，没有统一的自动策略工厂。业务根据实际启用的供应商注入对应接口：
+七牛云在公共字段基础上额外包含：
+
+| 配置项 | 默认值 | 说明 |
+|---|---:|---|
+| `broke` | 无 | 可选，是否开启断点上传 |
+
+### 2.4 MinIO
+
+MinIO 在公共字段基础上额外包含：
+
+| 配置项 | 默认值 | 说明 |
+|---|---:|---|
+| `endpoint` | 无 | MinIO 服务地址 |
+| `region` | 无 | 可选，区域 |
+| `part-size` | 无 | 可选，分片大小，单位 MB |
+
+## 3. 使用方式
+
+### 3.1 注入策略工厂
+
+OSS 模块通过 `OssExecuteHandlerFactory` 对外提供策略路由能力，注入后先获取策略再调用操作方法：
 
 ```java
 @Resource
-private OssAliyunService ossAliyunService;
+private OssExecuteHandlerFactory ossExecuteHandlerFactory;
 ```
 
-或者：
+获取策略有两种方式：
 
 ```java
-@Resource
-private OssQiniuService ossQiniuService;
+// 方式一：按提供商类型获取（该提供商下优先级最高的可用策略）
+OssExecuteHandler handler = ossExecuteHandlerFactory.getHandler(OssTypeEnum.ALIYUN);
 
-@Resource
-private OssMinioService ossMinioService;
+// 方式二：按提供商类型 + 配置编码获取（精确指定配置）
+OssExecuteHandler handler = ossExecuteHandlerFactory.getHandler(OssTypeEnum.ALIYUN, "default");
+
+// 方式三：获取默认策略（根据 oss.default-code 配置的编码查找，未配置时返回 null）
+OssExecuteHandler handler = ossExecuteHandlerFactory.getDefaultHandler();
 ```
 
-如果多个供应商同时启用，不要按 `OssBaseService` 直接注入，避免出现多个候选 Bean；应注入明确的供应商接口，或在业务层自行封装供应商选择逻辑。
+> **重要**：OSS 不支持自动故障转移，存储和查询必须使用同一配置编码（`type` + `code`），
+> 否则会导致存储和查询不匹配。
 
-## 4. 上传文件
+### 3.2 上传文件
 
-所有云对象存储服务都继承 `OssBaseService`，支持 `byte[]`、`MultipartFile` 和 `File`。
-
-### 4.1 上传 MultipartFile
+所有 OSS 策略都支持 `byte[]`、`MultipartFile` 和 `File`，通过 `OssCloudUploadDTO` 传入业务参数：
 
 ```java
-UploadVO result = ossAliyunService.uploadFile(
-    multipartFile,
-    "orders/2026/08",
-    true,
-    true
+OssExecuteHandler handler = ossExecuteHandlerFactory.getHandler(OssTypeEnum.ALIYUN, "default");
+
+UploadVO result = handler.uploadFile(
+    OssCloudUploadDTO.builder()
+        .bucketName("demo-bucket")
+        .accessDomain("https://cdn.example.com")
+        .returnAbsolutePath(true)
+        .file(multipartFile)
+        .relativePath("orders/2026/08/order.pdf")
+        .build()
 );
 ```
 
-参数含义：
+`OssCloudUploadDTO` 字段说明：
 
-- 第一个参数：待上传文件；
-- `prefix`：存储目录前缀；
-- `renamed`：是否重新生成文件名；
-- `returnAbsolutePath`：是否返回绝对访问路径。
-
-如果已经有明确相对路径，可以使用：
-
-```java
-UploadVO result = ossAliyunService.uploadFile(
-    multipartFile,
-    "orders/2026/08/order.pdf",
-    true
-);
-```
-
-这里第二个参数是 `relativePath`，不是目录前缀。
-
-### 4.2 上传字节数组或 File
-
-```java
-UploadVO byteResult = ossAliyunService.uploadFile(
-    bytes,
-    "avatar",
-    "avatar.png",
-    true,
-    true
-);
-
-UploadVO fileResult = ossAliyunService.uploadFile(
-    localFile,
-    "backup",
-    true,
-    true
-);
-```
+| 字段 | 必填 | 说明 |
+|---|---:|---|
+| `bucketName` | 是 | 存储空间名 |
+| `accessDomain` | 否 | 自定义访问域名 |
+| `returnAbsolutePath` | 否 | 是否返回绝对路径，默认 `true` |
+| `file` / `data` | 是 | 待上传文件（二选一） |
+| `relativePath` | 是 | 相对路径（含文件名） |
+| `sourceFileName` | 否 | 原始文件名（`byte[]` 上传时使用） |
 
 `UploadVO` 包含：
 
@@ -169,50 +190,113 @@ UploadVO fileResult = ossAliyunService.uploadFile(
 - `accessDomain`：访问域名；
 - `absolutePath`：绝对路径。
 
-## 5. 获取签名访问地址
+### 3.3 获取签名访问地址
 
 ```java
-FilePathVO filePath = ossAliyunService.getSignUrl(
-    "orders/2026/08/order.pdf",
-    60
+OssExecuteHandler handler = ossExecuteHandlerFactory.getHandler(OssTypeEnum.ALIYUN, "default");
+
+FilePathVO filePath = handler.getSignUrl(
+    OssCloudGetSignUrlDTO.builder()
+        .bucketName("demo-bucket")
+        .accessDomain("https://cdn.example.com")
+        .relativePath("orders/2026/08/order.pdf")
+        .timeout(60)
+        .build()
 );
 ```
 
-第二个参数为过期时间，单位分钟。批量获取时可使用：
+`timeout` 为过期时间，单位分钟。批量获取时可使用：
 
 ```java
-List<FilePathVO> paths = ossAliyunService.listSignUrl(
-    relativePaths,
-    60,
-    taskExecutor
+List<FilePathVO> paths = handler.listSignUrl(
+    OssCloudListSignUrlDTO.builder()
+        .bucketName("demo-bucket")
+        .accessDomain("https://cdn.example.com")
+        .relativePaths(relativePaths)
+        .timeout(60)
+        .threadPoolExecutor(taskExecutor)
+        .build()
 );
 ```
 
 `FilePathVO` 包含 `accessDomain`、`relativePath` 和 `absolutePath`。签名 URL 适合私有文件的临时访问，不应长期缓存为永久地址。
 
-## 6. 删除和下载
+### 3.4 删除和下载
 
 批量删除：
 
 ```java
-boolean removed = ossAliyunService.removeFiles(
-    List.of("orders/2026/08/order.pdf")
+boolean removed = handler.removeFiles(
+    OssCloudRemoveDTO.builder()
+        .bucketName("demo-bucket")
+        .relativePaths(List.of("orders/2026/08/order.pdf"))
+        .build()
 );
 ```
 
 云存储下载需要传入 Servlet 响应：
 
 ```java
-ossAliyunService.downloadFile(
-    response,
-    "orders/2026/08/order.pdf",
-    "order.pdf"
+handler.downloadFile(
+    OssCloudDownloadDTO.builder()
+        .bucketName("demo-bucket")
+        .response(response)
+        .relativePath("orders/2026/08/order.pdf")
+        .fileName("order.pdf")
+        .build()
 );
 ```
 
-## 7. 本地文件服务
+### 3.5 请求 DTO 分层
 
-`FileConfiguration` 会无条件注册 `FileService`。它用于：
+OSS 请求 DTO 分为本地文件和云 OSS 两套，通过继承关系区分：
+
+```text
+OssUploadDTO（上传基类，implements Serializable）
+├── data：字节数组（与 file 二选一）
+├── file：文件（与 data 二选一）
+├── relativePath：相对路径（必填）
+└── sourceFileName：源文件名（必填）
+    └── OssCloudUploadDTO（云 OSS 上传）
+        ├── bucketName：空间名（必填）
+        ├── accessDomain：访问域名（可选）
+        └── returnAbsolutePath：是否返回绝对路径（可选，默认 true）
+
+OssDownloadDTO（下载基类，implements Serializable）
+├── response：响应（必填）
+├── relativePath：相对路径（必填）
+└── fileName：新文件名（必填）
+    └── OssCloudDownloadDTO（云 OSS 下载）
+        ├── bucketName：空间名（必填）
+        └── accessDomain：访问域名（可选）
+
+OssRemoveDTO（删除基类，implements Serializable）
+└── relativePaths：相对路径集合（必填）
+    └── OssCloudRemoveDTO（云 OSS 删除）
+        └── bucketName：空间名（必填）
+
+OssDownloadRemoteDTO（远程下载，implements Serializable，独立）
+├── response：响应（必填）
+├── absolutePath：绝对路径（必填）
+└── fileName：新文件名（可选）
+
+OssCloudGetSignUrlDTO（获取签名 URL，implements Serializable，独立）
+├── relativePath：相对路径（必填）
+├── timeout：过期时间（可选，单位：分钟，默认 60）
+├── bucketName：空间名（必填）
+└── accessDomain：访问域名（可选）
+
+OssCloudListSignUrlDTO（批量获取签名 URL，implements Serializable，独立）
+├── relativePaths：相对路径集合（必填）
+├── timeout：过期时间（可选，单位：分钟，默认 60）
+├── threadPoolExecutor：线程池（可选）
+├── bucketName：空间名（必填）
+└── accessDomain：访问域名（可选）
+```
+
+## 4. 本地文件服务
+
+`FileConfiguration` 会无条件注册 `FileExecuteHandler`（实现类为 `FileExecuteHandlerLocal`）。它用于：
 
 - 获取 `src/main/resources` 下的 Resource；
 - 下载 `src/main/resources` 下的文件；
@@ -220,115 +304,132 @@ ossAliyunService.downloadFile(
 
 ```java
 @Resource
-private FileService fileService;
+private FileExecuteHandler fileExecuteHandler;
 
-Resource resource = fileService.getResource("templates/demo.xlsx");
+Resource resource = fileExecuteHandler.getResource("templates/demo.xlsx");
 
-fileService.downloadResourceFile(
-    response,
-    "templates/demo.xlsx",
-    "demo.xlsx"
+fileExecuteHandler.downloadResourceFile(
+    OssDownloadDTO.builder()
+        .response(response)
+        .relativePath("templates/demo.xlsx")
+        .fileName("demo.xlsx")
+        .build()
 );
 
-fileService.downloadRemoteFile(
-    response,
-    "https://example.com/files/demo.xlsx",
-    "demo.xlsx"
+fileExecuteHandler.downloadRemoteFile(
+    OssDownloadRemoteDTO.builder()
+        .response(response)
+        .absolutePath("https://example.com/files/demo.xlsx")
+        .fileName("demo.xlsx")
+        .build()
 );
 ```
 
 `relativePath` 相对于 `src/main/resources`，不要把本地文件服务当作云对象存储服务使用。
 
-## 8. STS 临时凭证
+## 5. STS 临时凭证
 
 阿里云 OSS 和阿里云 VOD 配置都支持 `sts`：
 
 ```yaml
 oss:
   aliyun:
-    sts:
-      access-key: ${STS_ACCESS_KEY}
-      secret-key: ${STS_SECRET_KEY}
-      endpoint: sts.cn-shenzhen.aliyuncs.com
-      role-arn: acs:ram::123456789:role/demo-role
-      policy: '{"Version":"1","Statement":[]}'
+    - code: "default"
+      sts:
+        enabled: true
+        access-key: ${STS_ACCESS_KEY}
+        secret-key: ${STS_SECRET_KEY}
+        endpoint: sts.cn-shenzhen.aliyuncs.com
+        role-arn: acs:ram::123456789:role/demo-role
+        policy: '{"Version":"1","Statement":[]}'
 ```
 
-`StsTokenDTO` 还包含 `security-token` 和 `expiration` 字段，用于保存生成或传入的临时授权信息。STS 的权限策略应只授予业务所需 Bucket、目录和操作。
+`StsTokenDTO` 字段说明：
 
-## 9. 阿里云视频点播
+| 字段 | 必填 | 说明 |
+|---|---:|---|
+| `enabled` | 否 | 是否启用 STS |
+| `access-key` | 是 | 访问密钥 |
+| `secret-key` | 是 | 密钥 |
+| `endpoint` | 是 | STS 地域节点，例如 `sts.cn-shenzhen.aliyuncs.com` |
+| `role-arn` | 是 | RAM 角色，例如 `acs:ram::xxx:role/xxx` |
+| `policy` | 否 | RAM 权限策略 |
+| `security-token` | 否 | 上传授权安全令牌（会自动生成） |
+| `expiration` | 否 | 安全令牌过期时间（会自动生成） |
 
-配置前缀为 `vod.aliyun`，只有 `vod.aliyun.enabled=true` 时才注册 `VodAliyunService`：
+STS 的权限策略应只授予业务所需 Bucket、目录和操作。
+
+## 6. 阿里云视频点播
+
+配置前缀为 `vod.aliyun`：
 
 ```yaml
 vod:
+  enabled: true
   aliyun:
-    enabled: true
-    access-key: ${ALIYUN_VOD_ACCESS_KEY}
-    secret-key: ${ALIYUN_VOD_SECRET_KEY}
-    region: cn-shanghai
-    sts:
-      endpoint: sts.cn-shanghai.aliyuncs.com
-      role-arn: acs:ram::123456789:role/vod-role
+    - code: "default"
+      enabled: true
+      priority: 1
+      access-key: ${ALIYUN_VOD_ACCESS_KEY}
+      secret-key: ${ALIYUN_VOD_SECRET_KEY}
+      region: cn-shanghai
+      sts:
+        endpoint: sts.cn-shanghai.aliyuncs.com
+        role-arn: acs:ram::123456789:role/vod-role
 ```
 
-注入服务：
+注入策略工厂：
 
 ```java
 @Resource
-private VodAliyunService vodAliyunService;
+private VodExecuteHandlerFactory vodExecuteHandlerFactory;
 ```
 
-### 9.1 上传和播放
+获取策略：
 
 ```java
-UploadVideoVO uploadResult = vodAliyunService.uploadVideo(multipartFile);
+VodExecuteHandler handler = vodExecuteHandlerFactory.getHandler(VodTypeEnum.ALIYUN, "default");
+```
 
-String playAuth = vodAliyunService.getPlayAuth(
-    uploadResult.getVideoId(),
-    60L
-);
+### 6.1 上传和播放
+
+```java
+UploadVideoVO uploadResult = handler.uploadVideo(multipartFile);
+
+String playAuth = handler.getPlayAuth(uploadResult.getVideoId(), 60L);
 ```
 
 同时支持 `File` 上传：
 
 ```java
-UploadVideoVO uploadResult = vodAliyunService.uploadVideo(localFile);
+UploadVideoVO uploadResult = handler.uploadVideo(localFile);
 ```
 
-### 9.2 查询、删除和审核
+### 6.2 查询、删除和审核
 
 ```java
-GetVideoInfoResponse.Video video =
-    vodAliyunService.getVideoInfo(videoId);
+GetVideoInfoResponse.Video video = handler.getVideoInfo(videoId);
 
-GetMezzanineInfoResponse.Mezzanine source =
-    vodAliyunService.getSourceVideoInfo(videoId);
+GetMezzanineInfoResponse.Mezzanine source = handler.getSourceVideoInfo(videoId);
 
-Boolean removed = vodAliyunService.removeVideo(List.of(videoId));
+Boolean removed = handler.removeVideo(List.of(videoId));
 
-vodAliyunService.auditVideoByAi(videoId);
-vodAliyunService.auditVideoByManual(videoId);
+handler.auditVideoByAi(videoId);
+handler.auditVideoByManual(videoId);
 ```
 
 播放凭证过期时间单位为分钟；视频删除、审核等操作应由业务侧做好权限和状态校验。
 
-## 10. 动态更新配置
+## 7. 使用注意事项
 
-供应商服务同时实现 `BaseConfigService<OssProperty>` 或 `BaseConfigService<VodProperty>`，可以通过对应服务读取或设置配置：
-
-```java
-OssProperty property = ossAliyunService.getConfig();
-ossAliyunService.setConfig(property);
-```
-
-动态设置配置不会改变 Spring Bean 的注册条件；例如启动时未开启阿里云 OSS，不应依赖运行时 `setConfig` 让 `OssAliyunService` 自动出现。
-
-## 11. 注意事项
-
+- 每个配置必须有唯一的 `code`，用于标识和获取对应的 OSS 策略；
+- `default-code` 用于指定默认 OSS 配置编码，配置后可通过 `getDefaultHandler()` 获取默认策略，未配置时该方法返回 `null`；
+- 配置的 `enabled` 为 `false` 时，对应的策略不会被创建；
+- `priority` 用于同提供商多配置下的自动故障转移，数字越小优先级越高，未配置时默认最低优先级；
+- **OSS 不支持自动故障转移**，存储和查询必须使用同一配置编码（`type` + `code`），否则会导致存储和查询不匹配；
+- `bucket-name`、`access-domain`、`return-absolute-path` 属于业务范畴，通过请求 DTO 由调用方传入，不放在配置中；
 - AK/SK、STS 密钥和 Role ARN 使用密钥管理系统或环境变量注入；
-- 云服务 Bean 只在对应 `enabled=true` 时注册；
-- 阿里云 OSS 的 `endpoint`、Bucket，MinIO 的 `endpoint`、Bucket，七牛云的 Bucket、访问域名需要按实际厂商配置；
+- 阿里云 OSS 的 `endpoint`，MinIO 的 `endpoint` 需要按实际厂商配置；
 - `returnAbsolutePath` 为 `false` 时不要假设返回结果一定包含可直接访问的完整 URL；
 - 上传文件名和目录前缀应经过业务校验，避免路径穿越和非法对象名；
 - 私有资源优先使用 `getSignUrl`，不要将永久访问地址直接暴露给前端；

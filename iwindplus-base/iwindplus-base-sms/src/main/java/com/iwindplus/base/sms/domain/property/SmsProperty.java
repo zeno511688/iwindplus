@@ -8,6 +8,9 @@
 package com.iwindplus.base.sms.domain.property;
 
 import com.iwindplus.base.domain.dto.AkSkDTO;
+import com.iwindplus.base.domain.dto.StsTokenDTO;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +21,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
- * 阿里云短信相关属性.
+ * 短信相关属性.
  *
  * @author zengdegui
  * @since 2023/6/1
@@ -31,115 +34,95 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 public class SmsProperty {
 
     /**
-     * 阿里云短信配置.
+     * 是否启用.
      */
     @Builder.Default
-    @NestedConfigurationProperty
-    private AliyunConfig aliyun = new AliyunConfig();
+    private Boolean enabled = Boolean.TRUE;
 
     /**
-     * 七牛云短信配置.
+     * 是否启用自动故障转移（默认：true）.
      */
     @Builder.Default
-    @NestedConfigurationProperty
-    private QiniuConfig qiniu = new QiniuConfig();
+    private Boolean enabledFailover = Boolean.TRUE;
 
     /**
-     * 凌凯短信配置.
+     * 阿里云短信配置列表.
      */
     @Builder.Default
-    @NestedConfigurationProperty
-    private LingkaiConfig lingkai = new LingkaiConfig();
+    private List<AliyunConfig> aliyun = new ArrayList<>(10);
 
     /**
-     * 麦讯通短信配置.
+     * 七牛云短信配置列表.
      */
     @Builder.Default
-    @NestedConfigurationProperty
-    private MxtongConfig mxtong = new MxtongConfig();
+    private List<QiniuConfig> qiniu = new ArrayList<>(10);
 
     /**
-     * 短信相关属性.
+     * 凌凯短信配置列表.
+     */
+    @Builder.Default
+    private List<LingkaiConfig> lingkai = new ArrayList<>(10);
+
+    /**
+     * 麦讯通短信配置列表.
+     */
+    @Builder.Default
+    private List<MxtongConfig> mxtong = new ArrayList<>(10);
+
+    /**
+     * SMS基础配置.
      *
      * @author zengdegui
-     * @since 2023/6/1
+     * @since 2026/9/4
      */
     @Data
-    @EqualsAndHashCode(callSuper=false)
+    @EqualsAndHashCode(callSuper = false)
     @SuperBuilder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class AliyunConfig extends AkSkDTO {
+    public abstract static class BaseConfig extends AkSkDTO {
 
         /**
          * 是否启用.
          */
         @Builder.Default
-        private Boolean enabled = Boolean.FALSE;
+        private Boolean enabled = Boolean.TRUE;
 
         /**
-         * 签名名称（必填）.
+         * 配置编码（必填，用于标识不同的配置）.
          */
-        private String signName;
+        private String code;
 
         /**
-         * 模板内容（必填）.
+         * 配置名称.
          */
-        private String templateContent;
+        private String name;
+
+        /**
+         * 优先级（数字越小优先级越高，用于自动故障转移）.
+         */
+        private Integer priority;
+    }
+
+    /**
+     * 阿里云短信相关属性.
+     *
+     * @author zengdegui
+     * @since 2023/6/1
+     */
+    @Data
+    @EqualsAndHashCode(callSuper = false)
+    @SuperBuilder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AliyunConfig extends BaseConfig {
 
         /**
          * sts配置（可选）.
          */
+        @Builder.Default
         @NestedConfigurationProperty
-        private StsConfig sts;
-
-        /**
-         * sts相关属性.
-         *
-         * @author zengdegui
-         * @since 2023/6/1
-         */
-        @Data
-        @SuperBuilder
-        @NoArgsConstructor
-        @AllArgsConstructor
-        public static class StsConfig {
-
-            /**
-             * sts地域节点（必填，如：sts.cn-shenzhen.aliyuncs.com）.
-             */
-            private String endpoint;
-
-            /**
-             * RAM角色（必填）.
-             */
-            private String roleArn;
-
-            /**
-             * RAM权限策略（可选）.
-             */
-            private String policy;
-
-            /**
-             * 访问key（可选，会自动生成）.
-             */
-            private String accessKey;
-
-            /**
-             * 密钥（可选，会自动生成）.
-             */
-            private String secretKey;
-
-            /**
-             * 上传授权安全令牌（可选，会自动生成）.
-             */
-            private String securityToken;
-
-            /**
-             * 安全令牌过期时间（可选，会自动生成）
-             */
-            private Long expiration;
-        }
+        private StsTokenDTO sts = new StsTokenDTO();
     }
 
     /**
@@ -149,22 +132,11 @@ public class SmsProperty {
      * @since 2023/6/1
      */
     @Data
-    @EqualsAndHashCode(callSuper=false)
+    @EqualsAndHashCode(callSuper = false)
     @SuperBuilder
     @NoArgsConstructor
-    @AllArgsConstructor
-    public static class QiniuConfig extends AkSkDTO {
+    public static class QiniuConfig extends BaseConfig {
 
-        /**
-         * 是否启用.
-         */
-        @Builder.Default
-        private Boolean enabled = Boolean.FALSE;
-
-        /**
-         * 模板内容（必填）.
-         */
-        private String templateContent;
     }
 
     /**
@@ -174,22 +146,11 @@ public class SmsProperty {
      * @since 2023/6/1
      */
     @Data
-    @EqualsAndHashCode(callSuper=false)
+    @EqualsAndHashCode(callSuper = false)
     @SuperBuilder
     @NoArgsConstructor
-    @AllArgsConstructor
-    public static class LingkaiConfig extends AkSkDTO {
+    public static class LingkaiConfig extends BaseConfig {
 
-        /**
-         * 是否启用.
-         */
-        @Builder.Default
-        private Boolean enabled = Boolean.FALSE;
-
-        /**
-         * 模板内容（必填）.
-         */
-        private String templateContent;
     }
 
     /**
@@ -199,22 +160,11 @@ public class SmsProperty {
      * @since 2023/6/1
      */
     @Data
-    @EqualsAndHashCode(callSuper=false)
+    @EqualsAndHashCode(callSuper = false)
     @SuperBuilder
     @NoArgsConstructor
-    @AllArgsConstructor
-    public static class MxtongConfig extends AkSkDTO {
+    public static class MxtongConfig extends BaseConfig {
 
-        /**
-         * 是否启用.
-         */
-        @Builder.Default
-        private Boolean enabled = Boolean.FALSE;
-
-        /**
-         * 模板内容（必填）.
-         */
-        private String templateContent;
     }
 }
 

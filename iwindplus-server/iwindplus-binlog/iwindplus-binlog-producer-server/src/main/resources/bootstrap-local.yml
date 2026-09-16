@@ -26,14 +26,6 @@ operate:
     enabled-mail: false
     # 是否开启短信校验
     enabled-sms: false
-swagger:
-  server-api:
-    # 是否启用API注册
-    enabled: true
-    # 最大重试次数
-    maxRetry: 5
-    # 重试间隔时间（单位：秒）
-    retryInterval: 3
 dynamictp:
   executors:
     - threadPoolName: asyncThreadPool
@@ -164,7 +156,7 @@ binlog:
       server-id: 1
       host: 127.0.0.1
       port: 3317
-      username: ${binlog-mysql-username}
+      username: root
       password: ${binlog-mysql-password}
       # 包含的数据库
       database-include-list: iwindplus-mgt
@@ -184,19 +176,6 @@ binlog:
     topic: ${binlog.topic-prefix}-schema-history
     replication-factor: -1
     num-partitions: -1
-alert:
-  # 飞书
-  feishu:
-    app-id: cli_a92f34e733b81cd1
-    app-secret: ${alert-feishu-app-secret}
-  log:
-    enabled: true
-    webhook:
-      url: https://open.feishu.cn/open-apis/bot/v2/hook/e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: ${alert-feishu-webhook-secret}
-    stack:
-      max-length: -1
-      max-frames: -1
 springdoc:
   packagesToScan:
     - com.iwindplus.binlog.producer.server.web

@@ -22,8 +22,8 @@ import org.springframework.data.mongodb.core.query.Query;
  */
 public class MongoQueryWrapper {
 
-    private final List<Criteria> andCriteria = new ArrayList<>();
-    private final List<Criteria> orCriteria = new ArrayList<>();
+    private final List<Criteria> andCriteria = new ArrayList<>(10);
+    private final List<Criteria> orCriteria = new ArrayList<>(10);
 
     private final Query query = new Query();
 

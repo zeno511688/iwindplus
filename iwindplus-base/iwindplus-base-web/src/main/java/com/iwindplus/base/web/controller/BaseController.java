@@ -39,6 +39,11 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 public class BaseController {
 
+    /**
+     * 默认签名超时时间（秒）.
+     */
+    private static final long DEFAULT_SIGN_TIMEOUT_SECONDS = 300L;
+
     @Resource
     private HttpServletRequest request;
 
@@ -87,7 +92,9 @@ public class BaseController {
      * @return String
      */
     protected String getRequestId() {
-        return getHeaderMap().get(HeaderConstant.X_REQUESTED_ID);
+        return Optional.ofNullable(getHeaderMap())
+            .map(headerMap -> headerMap.get(HeaderConstant.X_REQUESTED_ID))
+            .orElse(null);
     }
 
     /**
@@ -96,17 +103,9 @@ public class BaseController {
      * @return String
      */
     protected String getRealId() {
-        return getHeaderMap().get(HeaderConstant.X_REAL_IP);
-    }
-
-    /**
-     * 简化方法，默认无需 AK/SK.
-     *
-     * @param request 请求
-     * @param timeout 签名超时时间
-     */
-    protected static void checkSign(HttpServletRequest request, Duration timeout) {
-        checkSign(request, timeout, null);
+        return Optional.ofNullable(getHeaderMap())
+            .map(headerMap -> headerMap.get(HeaderConstant.X_REAL_IP))
+            .orElse(null);
     }
 
     /**
@@ -116,10 +115,10 @@ public class BaseController {
      * @param entity  签名对象
      */
     protected static void checkSignByAkSk(HttpServletRequest request, BaseSignVO entity) {
-        checkSign(request, Duration.ofSeconds(entity.getTimeout()), entity);
+        checkSign(request, entity);
     }
 
-    private static void checkSign(HttpServletRequest request, Duration timeout, BaseSignVO akSkEntity) {
+    private static void checkSign(HttpServletRequest request, BaseSignVO akSkEntity) {
         Map<String, String> headerMap = HttpsUtil.getFilteredHeaders(request);
 
         final String timestamp = headerMap.get(ApiSignConstant.X_TIMESTAMP);
@@ -143,6 +142,10 @@ public class BaseController {
             .orElse(request.getServletPath());
         final Map<String, Object> params = HttpsUtil.getRequestAndJsonParams(request);
 
+        final long timeout = Optional.ofNullable(akSkEntity)
+            .map(BaseSignVO::getTimeout)
+            .orElse(DEFAULT_SIGN_TIMEOUT_SECONDS);
+
         ApiSignVerifyDTO dto = ApiSignVerifyDTO.builder()
             .accessKey(accessKey)
             .secretKey(secretKey)
@@ -151,7 +154,7 @@ public class BaseController {
             .path(path)
             .method(method)
             .sign(sign)
-            .timeout(timeout)
+            .timeout(Duration.ofSeconds(timeout))
             .params(params)
             .build();
 

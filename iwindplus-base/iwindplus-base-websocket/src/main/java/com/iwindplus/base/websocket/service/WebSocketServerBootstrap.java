@@ -80,6 +80,10 @@ public class WebSocketServerBootstrap implements SmartLifecycle {
 
     @Override
     public void stop() {
+        if (this.serverStarter == null) {
+            this.started.compareAndSet(true, false);
+            return;
+        }
         boolean stop = this.serverStarter.getTioServer().stop();
         if (Boolean.TRUE.equals(stop)) {
             this.started.compareAndSet(true, false);

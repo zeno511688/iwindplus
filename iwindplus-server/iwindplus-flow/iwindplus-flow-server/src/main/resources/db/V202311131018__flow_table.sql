@@ -79,7 +79,9 @@ CREATE TABLE `flow_his_instance` (
   KEY `idx_code` (`code`) COMMENT '普通索引（编码）',
   KEY `idx_name` (`name`) COMMENT '普通索引（名称）',
   KEY `idx_biz_number` (`biz_number`) COMMENT '普通索引（业务流水号）',
-  KEY `idx_model_id` (`model_id`) COMMENT '普通索引（模型主键）'
+  KEY `idx_model_id` (`model_id`) COMMENT '普通索引（模型主键）',
+  KEY `idx_created_id` (`created_id`) COMMENT '普通索引（创建人主键）',
+  KEY `idx_modified_timestamp` (`modified_timestamp`) COMMENT '普通索引（更新时间戳）'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='历史流程实例表';
 
 -- ----------------------------
@@ -132,8 +134,8 @@ CREATE TABLE `flow_his_task` (
   KEY `idx_code` (`code`) COMMENT '普通索引（编码）',
   KEY `idx_node_code` (`node_code`) COMMENT '普通索引（节点编码）',
   KEY `idx_name` (`name`) COMMENT '普通索引（名称）',
-  KEY `idx_instance_id` (`instance_id`) COMMENT '普通索引（实例主键）',
-  KEY `idx_model_id` (`model_id`) COMMENT '普通索引（模型主键）'
+  KEY `idx_model_id` (`model_id`) COMMENT '普通索引（模型主键）',
+  KEY `idx_instance_id_type` (`instance_id`, `type`) COMMENT '普通索引（实例主键+类型）'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='历史流程任务表';
 
 -- ----------------------------
@@ -172,9 +174,9 @@ CREATE TABLE `flow_his_task_player` (
   `model_id` bigint(20) unsigned NOT NULL DEFAULT 0 COMMENT '模型主键',
   PRIMARY KEY (`id`),
   KEY `idx_player_id` (`player_id`) COMMENT '普通索引（参与人主键）',
-  KEY `idx_task_id` (`task_id`) COMMENT '普通索引（任务主键）',
   KEY `idx_instance_id` (`instance_id`) COMMENT '普通索引（实例主键）',
-  KEY `idx_model_id` (`model_id`) COMMENT '普通索引（模型主键）'
+  KEY `idx_model_id` (`model_id`) COMMENT '普通索引（模型主键）',
+  KEY `idx_task_id_player_id` (`task_id`, `player_id`) COMMENT '普通索引（任务主键+参与人主键）'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='历史流程任务参与人';
 
 -- ----------------------------
@@ -202,7 +204,9 @@ CREATE TABLE `flow_instance` (
   KEY `idx_code` (`code`) COMMENT '普通索引（编码）',
   KEY `idx_name` (`name`) COMMENT '普通索引（名称）',
   KEY `idx_biz_number` (`biz_number`) COMMENT '普通索引（业务流水号）',
-  KEY `idx_model_id` (`model_id`) COMMENT '普通索引（模型主键）'
+  KEY `idx_model_id` (`model_id`) COMMENT '普通索引（模型主键）',
+  KEY `idx_created_id` (`created_id`) COMMENT '普通索引（创建人主键）',
+  KEY `idx_modified_timestamp` (`modified_timestamp`) COMMENT '普通索引（更新时间戳）'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='流程实例表';
 
 -- ----------------------------

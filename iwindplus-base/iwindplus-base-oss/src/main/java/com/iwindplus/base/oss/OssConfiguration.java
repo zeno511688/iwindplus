@@ -7,15 +7,24 @@
 
 package com.iwindplus.base.oss;
 
+import com.iwindplus.base.domain.enums.OssTypeEnum;
 import com.iwindplus.base.oss.domain.property.OssProperty;
-import com.iwindplus.base.oss.service.OssAliyunService;
-import com.iwindplus.base.oss.service.impl.OssAliyunServiceImpl;
-import com.iwindplus.base.oss.service.impl.OssMinioServiceImpl;
-import com.iwindplus.base.oss.service.impl.OssQiniuServiceImpl;
-import com.iwindplus.base.oss.service.OssMinioService;
-import com.iwindplus.base.oss.service.OssQiniuService;
+import com.iwindplus.base.oss.domain.property.OssProperty.BaseConfig;
+import com.iwindplus.base.oss.factory.OssExecuteHandlerFactory;
+import com.iwindplus.base.oss.support.OssExecuteHandler;
+import com.iwindplus.base.oss.support.impl.AliyunOssExecuteHandler;
+import com.iwindplus.base.oss.support.impl.MinioOssExecuteHandler;
+import com.iwindplus.base.oss.support.impl.QiniuOssExecuteHandler;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,45 +37,63 @@ import org.springframework.context.annotation.Configuration;
  */
 @Slf4j
 @Configuration
+@ConditionalOnProperty(prefix = "oss", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(OssProperty.class)
 public class OssConfiguration {
 
     /**
-     * 创建 OssAliyunService.
+     * 创建 OSS 策略工厂.
      *
-     * @return OssAliyunService
+     * @param multipartProperties  文件上传配置
+     * @param property             属性配置
+     * @param okHttpClientProvider HTTP客户端提供器
+     * @return OSS策略工厂
      */
-    @ConditionalOnProperty(prefix = "oss.aliyun", name = "enabled", havingValue = "true")
     @Bean
-    public OssAliyunService ossAliyunService() {
-        OssAliyunServiceImpl ossService = new OssAliyunServiceImpl();
-        log.info("OssAliyunService={}", ossService);
-        return ossService;
+    public OssExecuteHandlerFactory ossExecuteHandlerFactory(
+        MultipartProperties multipartProperties,
+        OssProperty property,
+        ObjectProvider<OkHttpClient> okHttpClientProvider) {
+        List<OssExecuteHandler> handlers = new ArrayList<>(10);
+        handlers.addAll(
+            this.buildHandlers(property.getAliyun(), OssTypeEnum.ALIYUN,
+                config -> new AliyunOssExecuteHandler(multipartProperties, config))
+        );
+        handlers.addAll(
+            this.buildHandlers(property.getQiniu(), OssTypeEnum.QINIU,
+                config -> new QiniuOssExecuteHandler(multipartProperties, config))
+        );
+        handlers.addAll(
+            this.buildHandlers(property.getMinio(), OssTypeEnum.MINIO,
+                config -> new MinioOssExecuteHandler(multipartProperties, config, okHttpClientProvider))
+        );
+        final OssExecuteHandlerFactory factory = new OssExecuteHandlerFactory(property, handlers);
+        log.info("OssExecuteHandlerFactory={}", factory);
+        return factory;
     }
 
     /**
-     * 创建 OssQiniuService.
+     * 根据配置列表构建策略实例列表（过滤未启用配置并按编码去重）.
      *
-     * @return OssQiniuService
+     * @param configs        配置列表
+     * @param provider       服务商
+     * @param handlerFactory 策略实例工厂
+     * @param <C>            配置类型
+     * @return 策略实例列表
      */
-    @ConditionalOnProperty(prefix = "oss.qiniu", name = "enabled", havingValue = "true")
-    @Bean
-    public OssQiniuService ossQiniuService() {
-        OssQiniuServiceImpl ossService = new OssQiniuServiceImpl();
-        log.info("OssQiniuService={}", ossService);
-        return ossService;
-    }
-
-    /**
-     * 创建 OssMinioService.
-     *
-     * @return OssMinioService
-     */
-    @ConditionalOnProperty(prefix = "oss.minio", name = "enabled", havingValue = "true")
-    @Bean
-    public OssMinioService ossMinioService() {
-        OssMinioServiceImpl ossService = new OssMinioServiceImpl();
-        log.info("OssMinioService={}", ossService);
-        return ossService;
+    private <C extends BaseConfig> List<OssExecuteHandler> buildHandlers(
+        List<C> configs,
+        OssTypeEnum provider,
+        Function<C, OssExecuteHandler> handlerFactory) {
+        List<OssExecuteHandler> handlers = new ArrayList<>(10);
+        Set<String> codes = new HashSet<>(16);
+        configs.stream()
+            .filter(config -> Boolean.TRUE.equals(config.getEnabled()))
+            .filter(config -> codes.add(config.getCode()))
+            .forEach(config -> {
+                log.info("Initializing {} OSS strategy [code={}]", provider, config.getCode());
+                handlers.add(handlerFactory.apply(config));
+            });
+        return handlers;
     }
 }

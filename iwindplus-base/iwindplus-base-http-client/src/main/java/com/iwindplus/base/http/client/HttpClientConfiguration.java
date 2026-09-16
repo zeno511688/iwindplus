@@ -11,17 +11,17 @@ import cn.hutool.core.util.StrUtil;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.http.client.domain.constant.HttpClientConstant;
 import com.iwindplus.base.http.client.domain.property.HttpClientProperty;
-import com.iwindplus.base.http.client.executor.HttpClientExecutor;
-import com.iwindplus.base.http.client.executor.impl.ApacheHttpClientExecutor;
-import com.iwindplus.base.http.client.executor.impl.OkHttpClientExecutor;
-import com.iwindplus.base.http.client.executor.impl.RestClientExecutor;
-import com.iwindplus.base.http.client.executor.impl.WebClientExecutor;
-import com.iwindplus.base.http.client.factory.HttpClientExecutorStrategyFactory;
-import com.iwindplus.base.http.client.factory.ResponseExtractorStrategyFactory;
+import com.iwindplus.base.http.client.support.HttpClientExecuteHandler;
+import com.iwindplus.base.http.client.support.impl.ApacheHttpClientExecuteHandler;
+import com.iwindplus.base.http.client.support.impl.OkHttpClientExecuteHandler;
+import com.iwindplus.base.http.client.support.impl.RestClientExecuteHandler;
+import com.iwindplus.base.http.client.support.impl.WebClientExecuteHandler;
+import com.iwindplus.base.http.client.factory.HttpClientExecuteHandlerFactory;
+import com.iwindplus.base.http.client.factory.ResponseExtractorFactory;
 import com.iwindplus.base.http.client.filter.ApiProtectionFilter;
 import com.iwindplus.base.http.client.support.ApiProtectionProvider;
-import com.iwindplus.base.http.client.template.HttpExecuteTemplate;
-import com.iwindplus.base.http.client.template.impl.DefaultHttpExecuteTemplateImpl;
+import com.iwindplus.base.http.client.support.HttpExecuteTemplate;
+import com.iwindplus.base.http.client.support.impl.DefaultHttpExecuteTemplateImpl;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
 import com.iwindplus.base.web.domain.property.FilterProperty;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
@@ -52,7 +52,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Slf4j
 @Configuration
 @EnableConfigurationProperties({HttpClientProperty.class})
-@ConditionalOnProperty(prefix = "http.client", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class HttpClientConfiguration {
 
     @Resource
@@ -76,133 +75,133 @@ public class HttpClientConfiguration {
     }
 
     /**
-     * 创建 ResponseExtractorStrategyFactory.
+     * 创建 ResponseExtractorFactory.
      *
-     * @return ResponseExtractorStrategyFactory
+     * @return ResponseExtractorFactory
      */
     @Bean
-    public ResponseExtractorStrategyFactory responseExtractorStrategyFactory() {
-        final ResponseExtractorStrategyFactory responseExtractorStrategyFactory = new ResponseExtractorStrategyFactory();
-        log.info("ResponseExtractorStrategyFactory={}", responseExtractorStrategyFactory);
-        return responseExtractorStrategyFactory;
+    public ResponseExtractorFactory responseExtractorFactory() {
+        final ResponseExtractorFactory responseExtractorFactory = new ResponseExtractorFactory();
+        log.info("ResponseExtractorFactory={}", responseExtractorFactory);
+        return responseExtractorFactory;
     }
 
     /**
-     * 创建 HttpClientExecutorStrategyFactory.
+     * 创建 httpClientExecuteHandlerFactory.
      *
      * @param executorProvider 执行器提供者
-     * @return HttpClientExecutorStrategyFactory
+     * @return httpClientExecuteHandlerFactory
      */
     @Bean
-    public HttpClientExecutorStrategyFactory httpClientExecutorStrategyFactory(ObjectProvider<HttpClientExecutor> executorProvider) {
-        return new HttpClientExecutorStrategyFactory(property, executorProvider);
+    public HttpClientExecuteHandlerFactory httpClientExecuteHandlerFactory(ObjectProvider<HttpClientExecuteHandler> executorProvider) {
+        return new HttpClientExecuteHandlerFactory(property, executorProvider);
     }
 
     /**
-     * 创建 ApacheHttpClientExecutor.
+     * 创建 ApacheHttpClientExecuteHandler.
      *
-     * @param httpExecuteTemplate              httpExecuteTemplate
-     * @param responseExtractorStrategyFactory responseExtractorStrategyFactory
-     * @param closeableHttpClient              closeableHttpClient
-     * @param closeableHttpAsyncClient         closeableHttpAsyncClient
-     * @return ApacheHttpClientExecutor
+     * @param httpExecuteTemplate      httpExecuteTemplate
+     * @param responseExtractorFactory responseExtractorFactory
+     * @param closeableHttpClient      closeableHttpClient
+     * @param closeableHttpAsyncClient closeableHttpAsyncClient
+     * @return ApacheHttpClientExecuteHandler
      */
     @Bean
     @ConditionalOnProperty(prefix = "http.client.apache", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public ApacheHttpClientExecutor apacheHttpClientExecutor(
+    public ApacheHttpClientExecuteHandler apacheHttpClientExecuteHandler(
         HttpExecuteTemplate httpExecuteTemplate,
-        ResponseExtractorStrategyFactory responseExtractorStrategyFactory,
+        ResponseExtractorFactory responseExtractorFactory,
         @Autowired(required = false) CloseableHttpClient closeableHttpClient,
         @Autowired(required = false) CloseableHttpAsyncClient closeableHttpAsyncClient) {
-        final ApacheHttpClientExecutor apacheHttpClientExecutor = new ApacheHttpClientExecutor(property
-            , httpExecuteTemplate, responseExtractorStrategyFactory
+        final ApacheHttpClientExecuteHandler apacheHttpClientExecuteHandler = new ApacheHttpClientExecuteHandler(property
+            , httpExecuteTemplate, responseExtractorFactory
             , threadPoolExecutor, closeableHttpClient, closeableHttpAsyncClient);
-        log.info("ApacheHttpClientExecutor={}", apacheHttpClientExecutor);
-        return apacheHttpClientExecutor;
+        log.info("ApacheHttpClientExecuteHandler={}", apacheHttpClientExecuteHandler);
+        return apacheHttpClientExecuteHandler;
     }
 
     /**
-     * 创建 OkHttpClientExecutor.
+     * 创建 OkHttpClientExecuteHandler.
      *
-     * @param httpExecuteTemplate              httpExecuteTemplate
-     * @param responseExtractorStrategyFactory responseExtractorStrategyFactory
-     * @param okHttpClient                     okHttpClient
-     * @return OkHttpClientExecutor
+     * @param httpExecuteTemplate      httpExecuteTemplate
+     * @param responseExtractorFactory responseExtractorFactory
+     * @param okHttpClient             okHttpClient
+     * @return OkHttpClientExecuteHandler
      */
     @Bean
     @ConditionalOnProperty(prefix = "http.client.ok", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public OkHttpClientExecutor okHttpClientExecutor(
+    public OkHttpClientExecuteHandler okHttpClientExecuteHandler(
         HttpExecuteTemplate httpExecuteTemplate,
-        ResponseExtractorStrategyFactory responseExtractorStrategyFactory,
+        ResponseExtractorFactory responseExtractorFactory,
         @Autowired(required = false) OkHttpClient okHttpClient) {
-        final OkHttpClientExecutor okHttpClientExecutor = new OkHttpClientExecutor(property
-            , httpExecuteTemplate, responseExtractorStrategyFactory
+        final OkHttpClientExecuteHandler okHttpClientExecuteHandler = new OkHttpClientExecuteHandler(property
+            , httpExecuteTemplate, responseExtractorFactory
             , threadPoolExecutor, okHttpClient);
-        log.info("OkHttpClientExecutor={}", okHttpClientExecutor);
-        return okHttpClientExecutor;
+        log.info("OkHttpClientExecuteHandler={}", okHttpClientExecuteHandler);
+        return okHttpClientExecuteHandler;
     }
 
     /**
-     * 创建 RestClientExecutor.
+     * 创建 RestClientExecuteHandler.
      *
-     * @param httpExecuteTemplate              httpExecuteTemplate
-     * @param responseExtractorStrategyFactory responseExtractorStrategyFactory
-     * @param loadBalancedRestClient           loadBalancedRestClient
-     * @param restClient                       restClient
-     * @return RestClientExecutor
+     * @param httpExecuteTemplate      httpExecuteTemplate
+     * @param responseExtractorFactory responseExtractorFactory
+     * @param loadBalancedRestClient   loadBalancedRestClient
+     * @param restClient               restClient
+     * @return RestClientExecuteHandler
      */
     @Bean
     @ConditionalOnProperty(prefix = "http.client.rest", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public RestClientExecutor restClientExecutor(
+    public RestClientExecuteHandler restClientExecuteHandler(
         HttpExecuteTemplate httpExecuteTemplate,
-        ResponseExtractorStrategyFactory responseExtractorStrategyFactory,
+        ResponseExtractorFactory responseExtractorFactory,
         @Autowired(required = false) @Qualifier("loadBalancedRestClient") RestClient loadBalancedRestClient,
         @Autowired(required = false) @Qualifier("restClient") RestClient restClient) {
-        final RestClientExecutor restClientExecutor = new RestClientExecutor(property
-            , httpExecuteTemplate, responseExtractorStrategyFactory
+        final RestClientExecuteHandler restClientExecuteHandler = new RestClientExecuteHandler(property
+            , httpExecuteTemplate, responseExtractorFactory
             , threadPoolExecutor, loadBalancedRestClient, restClient);
-        log.info("RestClientExecutor={}", restClientExecutor);
-        return restClientExecutor;
+        log.info("RestClientExecuteHandler={}", restClientExecuteHandler);
+        return restClientExecuteHandler;
     }
 
     /**
-     * 创建 WebClientExecutor.
+     * 创建 WebClientExecuteHandler.
      *
-     * @param httpExecuteTemplate              httpExecuteTemplate
-     * @param responseExtractorStrategyFactory responseExtractorStrategyFactory
-     * @param loadBalancedWebClient            loadBalancedWebClient
-     * @param webClient                        webClient
-     * @return WebClientExecutor
+     * @param httpExecuteTemplate      httpExecuteTemplate
+     * @param responseExtractorFactory responseExtractorFactory
+     * @param loadBalancedWebClient    loadBalancedWebClient
+     * @param webClient                webClient
+     * @return WebClientExecuteHandler
      */
     @Bean
     @ConditionalOnProperty(prefix = "http.client.web", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public WebClientExecutor webClientExecutor(
+    public WebClientExecuteHandler webClientExecuteHandler(
         HttpExecuteTemplate httpExecuteTemplate,
-        ResponseExtractorStrategyFactory responseExtractorStrategyFactory,
+        ResponseExtractorFactory responseExtractorFactory,
         @Autowired(required = false) @Qualifier("loadBalancedWebClient") WebClient loadBalancedWebClient,
         @Autowired(required = false) @Qualifier("webClient") WebClient webClient) {
-        final WebClientExecutor webClientExecutor = new WebClientExecutor(property
-            , httpExecuteTemplate, responseExtractorStrategyFactory
+        final WebClientExecuteHandler webClientExecuteHandler = new WebClientExecuteHandler(property
+            , httpExecuteTemplate, responseExtractorFactory
             , threadPoolExecutor, loadBalancedWebClient, webClient);
-        log.info("WebClientExecutor={}", webClientExecutor);
-        return webClientExecutor;
+        log.info("WebClientExecuteHandler={}", webClientExecuteHandler);
+        return webClientExecuteHandler;
     }
 
     /**
      * 创建 ApiProtectionProvider.
      *
-     * @param filterProperty                    filterProperty
-     * @param httpClientProperty                httpClientProperty
-     * @param httpClientExecutorStrategyFactory httpClientExecutorStrategyFactory
+     * @param filterProperty           filterProperty
+     * @param httpClientProperty       httpClientProperty
+     * @param httpClientExecuteHandlerFactory httpClientExecuteHandlerFactory
      * @return ApiProtectionProvider
      */
     @Bean
     public ApiProtectionProvider apiProtectionProvider(
         @Autowired(required = false) FilterProperty filterProperty,
         HttpClientProperty httpClientProperty,
-        HttpClientExecutorStrategyFactory httpClientExecutorStrategyFactory) {
+        HttpClientExecuteHandlerFactory httpClientExecuteHandlerFactory) {
         final ApiProtectionProvider apiProtectionProvider = new ApiProtectionProvider(filterProperty, httpClientProperty,
-            httpClientExecutorStrategyFactory);
+            httpClientExecuteHandlerFactory);
         return apiProtectionProvider;
     }
 

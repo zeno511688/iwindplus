@@ -37,12 +37,6 @@ public class ExportTaskSubmitDTO implements Serializable {
     private Class<? extends ExportTaskHandler> executorClass;
 
     /**
-     * 文件名（必填）.
-     */
-    @Schema(description = "文件名")
-    private String fileName;
-
-    /**
      * 参数（必填）.
      */
     @Schema(description = "参数")

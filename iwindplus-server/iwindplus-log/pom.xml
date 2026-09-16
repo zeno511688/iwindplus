@@ -19,8 +19,8 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.iwindplus.setup</groupId>
-                <artifactId>iwindplus-setup-client</artifactId>
+                <groupId>com.iwindplus.integr</groupId>
+                <artifactId>iwindplus-integr-client</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -35,12 +35,7 @@
             </dependency>
             <dependency>
                 <groupId>com.iwindplus.auth</groupId>
-                <artifactId>iwindplus-auth-domain</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.iwindplus.log</groupId>
-                <artifactId>iwindplus-log-domain</artifactId>
+                <artifactId>iwindplus-auth-client</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -67,7 +62,6 @@
     </dependencyManagement>
 
     <modules>
-        <module>iwindplus-log-domain</module>
         <module>iwindplus-log-api</module>
         <module>iwindplus-log-client</module>
         <module>iwindplus-log-server</module>

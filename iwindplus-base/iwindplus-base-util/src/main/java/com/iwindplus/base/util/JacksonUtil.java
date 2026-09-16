@@ -119,6 +119,9 @@ public class JacksonUtil {
      * @param function 函数
      */
     public static void cleanJsonNode(JsonNode node, Function<String, String> function) {
+        if (Objects.isNull(node) || Objects.isNull(function)) {
+            return;
+        }
         if (node.isObject()) {
             ObjectNode objectNode = (ObjectNode) node;
             objectNode.properties().forEach(entry -> {

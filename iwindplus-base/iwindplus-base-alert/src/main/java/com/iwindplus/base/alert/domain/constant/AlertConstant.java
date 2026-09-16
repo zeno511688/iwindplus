@@ -31,6 +31,16 @@ public final class AlertConstant {
         }
 
         /**
+         * 主配置编码.
+         */
+        public static final String MAIN_CODE = "feishu-main";
+
+        /**
+         * 备用配置编码.
+         */
+        public static final String BACKUP_CODE = "feishu-backup";
+
+        /**
          * 响应编码.
          */
         public static final String RESPONSE_CODE = "code";
@@ -54,6 +64,11 @@ public final class AlertConstant {
          * 签名.
          */
         public static final String SIGN = "sign";
+
+        /**
+         * 签名算法.
+         */
+        public static final String ALGORITHM = "HmacSHA256";
 
     }
 

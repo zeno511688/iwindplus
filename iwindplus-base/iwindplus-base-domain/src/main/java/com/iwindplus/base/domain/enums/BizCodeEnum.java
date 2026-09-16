@@ -788,6 +788,11 @@ public enum BizCodeEnum implements CommonException {
     // --------------------------------------------------------------------------------------
 
     /**
+     * 文件名不能为空.
+     */
+    FILE_NAME_NOT_EMPTY("file_name_not_empty", "文件名不能为空"),
+
+    /**
      * 文件名不存在.
      */
     FILE_NAME_NOT_EXIST("file_name_not_exist", "文件名不存在"),
@@ -796,6 +801,11 @@ public enum BizCodeEnum implements CommonException {
      * 文件名存在.
      */
     FILE_NAME_EXIST("file_name_exist", "文件名存在"),
+
+    /**
+     * 文件名必须包含文件后缀.
+     */
+    FILE_NAME_MUST_CONTAIN_SUFFIX("file_name_must_contain_suffix", "文件名必须包含文件后缀"),
 
     /**
      * 文件找不到.

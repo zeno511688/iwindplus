@@ -1,0 +1,267 @@
+/*
+ *
+ *  * Copyright (c) iwindplus Technologies Co., Ltd.2024-2030, All rights reserved.
+ *
+ *
+ */
+
+package com.iwindplus.mgt.application.service.system.security;
+
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.text.CharSequenceUtil;
+import cn.hutool.core.util.IdUtil;
+import com.google.common.collect.ImmutableMap;
+import com.iwindplus.base.async.task.domain.dto.AsyncTaskSubmitDTO;
+import com.iwindplus.base.async.task.executor.AsyncTaskExecutor;
+import com.iwindplus.base.domain.dto.MessageBaseDTO;
+import com.iwindplus.base.domain.enums.AppCertTypeEnum;
+import com.iwindplus.base.domain.enums.BizCodeEnum;
+import com.iwindplus.base.domain.enums.EnableStatusEnum;
+import com.iwindplus.base.domain.enums.OperateTypeEnum;
+import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.base.domain.vo.BaseSignVO;
+import com.iwindplus.base.util.JacksonUtil;
+import com.iwindplus.base.util.SecureRandomUtil;
+import com.iwindplus.mgt.application.query.system.security.vo.AppCertBaseVO;
+import com.iwindplus.mgt.application.query.system.security.vo.AppCertDataVO;
+import com.iwindplus.mgt.application.service.system.security.dto.AppCertDTO;
+import com.iwindplus.mgt.common.constant.MgtConstant.RedisCacheConstant;
+import com.iwindplus.mgt.infrastructure.asynctask.security.AppCertTaskHandler;
+import com.iwindplus.mgt.infrastructure.persistence.system.security.AppCertDO;
+import com.iwindplus.mgt.infrastructure.persistence.system.security.AppCertRepository;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * 应用凭证业务层接口实现类.
+ *
+ * @author zengdegui
+ * @since 2020/3/25
+ */
+
+@Service
+@CacheConfig(cacheNames = {RedisCacheConstant.CACHE_APP_CERT})
+@Slf4j
+@Transactional(rollbackFor = Exception.class)
+@RequiredArgsConstructor
+public class AppCertApplicationService {
+
+    private final AppCertRepository appCertRepository;
+    private final AsyncTaskExecutor asyncTaskExecutor;
+
+    @CacheEvict(allEntries = true)
+    public boolean save(AppCertDTO entity) {
+        entity.setAccessKey(IdUtil.simpleUUID());
+        String secret = SecureRandomUtil.randomString(32);
+        entity.setSecretKey(secret);
+        entity.setStatus(EnableStatusEnum.ENABLE);
+        this.appCertRepository.getAppCertTypeIsExist(entity.getCertType());
+        this.appCertRepository.getNameIsExist(entity.getName());
+        this.appCertRepository.getAccessKeyIsExist(entity.getAccessKey());
+        final AppCertDO model = BeanUtil.copyProperties(entity, AppCertDO.class);
+        this.appCertRepository.save(model);
+        entity.setId(model.getId());
+        // 发送消息
+        List<AppCertDataVO> result = List.of(
+            AppCertDataVO.builder()
+                .accessKey(entity.getAccessKey())
+                .secretKey(entity.getSecretKey())
+                .timeout(entity.getTimeout())
+                .certType(entity.getCertType())
+                .build());
+        this.sendMsg(OperateTypeEnum.ADD, result);
+        return Boolean.TRUE;
+    }
+
+    @CacheEvict(allEntries = true)
+    public boolean removeByIds(List<Long> ids) {
+        List<AppCertDO> list = this.appCertRepository.listByIds(ids);
+        if (CollUtil.isEmpty(list)) {
+            throw new BizException(BizCodeEnum.DATA_NOT_EXIST);
+        }
+        boolean match = list.stream().filter(Objects::nonNull).anyMatch(AppCertDO::getBuildInFlag);
+        if (Boolean.TRUE.equals(match)) {
+            throw new BizException(BizCodeEnum.HAS_BUILD_IN_DATA);
+        }
+        this.appCertRepository.removeByIds(ids);
+
+        // 发送消息
+        List<AppCertDataVO> result = list.stream()
+            .map(entity -> AppCertDataVO.builder()
+                .accessKey(entity.getAccessKey())
+                .secretKey(entity.getSecretKey())
+                .timeout(entity.getTimeout())
+                .certType(entity.getCertType())
+                .build())
+            .collect(Collectors.toCollection(ArrayList::new));
+        this.sendMsg(OperateTypeEnum.DELETE, result);
+        return Boolean.TRUE;
+    }
+
+    @CacheEvict(allEntries = true)
+    public boolean edit(AppCertDTO entity) {
+        AppCertDO data = this.appCertRepository.getById(entity.getId());
+        if (Objects.isNull(data)) {
+            throw new BizException(BizCodeEnum.DATA_NOT_EXIST);
+        }
+        if (Boolean.TRUE.equals(data.getBuildInFlag())) {
+            throw new BizException(BizCodeEnum.BUILD_IN_DATA_NOT_OPERATE);
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getName()) && !CharSequenceUtil.equals(data.getName(), entity.getName().trim())) {
+            this.appCertRepository.getNameIsExist(entity.getName().trim());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getAccessKey()) && !CharSequenceUtil.equals(data.getAccessKey(), entity.getAccessKey().trim())) {
+            this.appCertRepository.getAccessKeyIsExist(entity.getAccessKey().trim());
+        }
+        if (Objects.isNull(entity.getVersion())) {
+            entity.setVersion(data.getVersion());
+        }
+        final AppCertDO model = BeanUtil.copyProperties(entity, AppCertDO.class);
+        this.appCertRepository.updateById(model);
+
+        // 发送消息
+        List<AppCertDataVO> result = List.of(
+            AppCertDataVO.builder()
+                .accessKey(entity.getAccessKey())
+                .secretKey(entity.getSecretKey())
+                .timeout(entity.getTimeout())
+                .certType(entity.getCertType())
+                .build());
+        if (EnableStatusEnum.DISABLE.equals(entity.getStatus())
+            || EnableStatusEnum.LOCKED.equals(entity.getStatus())) {
+            this.sendMsg(OperateTypeEnum.DELETE, result);
+        } else {
+            this.sendMsg(OperateTypeEnum.MODIFY, result);
+        }
+        return Boolean.TRUE;
+    }
+
+    @CacheEvict(allEntries = true)
+    public boolean editStatus(Long id, EnableStatusEnum status) {
+        AppCertDO data = this.appCertRepository.getById(id);
+        if (Objects.isNull(data)) {
+            throw new BizException(BizCodeEnum.DATA_NOT_EXIST);
+        }
+        if (Boolean.TRUE.equals(data.getBuildInFlag())) {
+            throw new BizException(BizCodeEnum.BUILD_IN_DATA_NOT_OPERATE);
+        }
+        if (status.equals(data.getStatus())) {
+            throw new BizException(BizCodeEnum.ALREADY_OPERATED);
+        }
+        AppCertDO param = new AppCertDO();
+        param.setId(id);
+        param.setStatus(status);
+        param.setVersion(data.getVersion());
+        this.appCertRepository.updateById(param);
+
+        // 发送消息
+        List<AppCertDataVO> result = List.of(
+            AppCertDataVO.builder()
+                .accessKey(data.getAccessKey())
+                .secretKey(data.getSecretKey())
+                .timeout(data.getTimeout())
+                .certType(data.getCertType())
+                .build());
+        if (EnableStatusEnum.DISABLE.equals(status)
+            || EnableStatusEnum.LOCKED.equals(status)) {
+            this.sendMsg(OperateTypeEnum.DELETE, result);
+        } else {
+            this.sendMsg(OperateTypeEnum.MODIFY, result);
+        }
+        return Boolean.TRUE;
+    }
+
+    @CacheEvict(allEntries = true)
+    public boolean editBuildIn(Long id, Boolean buildInFlag) {
+        AppCertDO data = this.appCertRepository.getById(id);
+        if (Objects.isNull(data)) {
+            throw new BizException(BizCodeEnum.DATA_NOT_EXIST);
+        }
+        if (buildInFlag.equals(data.getBuildInFlag())) {
+            throw new BizException(BizCodeEnum.ALREADY_OPERATED);
+        }
+        AppCertDO param = new AppCertDO();
+        param.setId(id);
+        param.setBuildInFlag(buildInFlag);
+        param.setVersion(data.getVersion());
+        this.appCertRepository.updateById(param);
+        return Boolean.TRUE;
+    }
+
+    @CacheEvict(allEntries = true)
+    public AppCertBaseVO editSecret(Long id) {
+        final AppCertDO data = this.appCertRepository.getById(id);
+        if (Objects.isNull(data)) {
+            throw new BizException(BizCodeEnum.DATA_NOT_EXIST);
+        }
+        // 生成新的密钥
+        String secret = SecureRandomUtil.randomString(32);
+        AppCertDO param = new AppCertDO();
+        param.setId(data.getId());
+        param.setSecretKey(secret);
+        this.appCertRepository.updateById(param);
+
+        // 发送消息
+        List<AppCertDataVO> result = List.of(
+            AppCertDataVO.builder()
+                .accessKey(data.getAccessKey())
+                .secretKey(data.getSecretKey())
+                .timeout(data.getTimeout())
+                .certType(data.getCertType())
+                .build());
+        this.sendMsg(OperateTypeEnum.MODIFY, result);
+
+        return AppCertBaseVO.builder()
+            .id(data.getId())
+            .name(data.getName())
+            .accessKey(data.getAccessKey())
+            .secretKey(secret)
+            .build();
+    }
+
+    private boolean sendMsg(OperateTypeEnum operateType, List<AppCertDataVO> list) {
+        if (CollUtil.isEmpty(list)) {
+            return false;
+        }
+
+        List<BaseSignVO> dataList = list.stream()
+            .filter(data -> AppCertTypeEnum.API_GATEWAY_SIGN_BLACKLIST.equals(data.getCertType()))
+            .map(data -> BaseSignVO.builder()
+                .accessKey(data.getAccessKey())
+                .secretKey(data.getSecretKey())
+                .timeout(data.getTimeout().longValue())
+                .build())
+            .collect(Collectors.toList());
+
+        if (CollUtil.isEmpty(dataList)) {
+            return false;
+        }
+
+        MessageBaseDTO<List<BaseSignVO>> messageDTO = new MessageBaseDTO<>();
+        messageDTO.setOperateType(operateType.getValue());
+        messageDTO.setBizType(CharSequenceUtil.toCamelCase(AppCertTypeEnum.API_GATEWAY_SIGN_BLACKLIST.name()));
+        messageDTO.setData(dataList);
+        final String content = JacksonUtil.toJsonStr(messageDTO);
+
+        final AsyncTaskSubmitDTO build = AsyncTaskSubmitDTO.builder()
+            .bizName("应用凭证数据发送kafka")
+            .bizKey("APP_CERT")
+            .bizType("APP_CERT_PUSH")
+            .param(ImmutableMap.of("content", content))
+            .executorClass(AppCertTaskHandler.class)
+            .remark("应用凭证数据发送kafka")
+            .build();
+        this.asyncTaskExecutor.submit(build);
+        return true;
+    }
+
+}

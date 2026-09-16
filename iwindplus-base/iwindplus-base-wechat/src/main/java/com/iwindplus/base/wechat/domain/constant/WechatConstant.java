@@ -69,44 +69,4 @@ public final class WechatConstant {
      * 失败.
      */
     public static final int FAILED = -1;
-
-    /**
-     * code.
-     */
-    public static final String CODE = "code";
-
-    /**
-     * 绑定标记.
-     */
-    public static final String BIND_FLAG = "bindFlag";
-
-    /**
-     * 昵称.
-     */
-    public static final String NICK_NAME = "nickName";
-
-    /**
-     * 性别.
-     */
-    public static final String SEX = "sex";
-
-    /**
-     * 头像.
-     */
-    public static final String AVATAR = "avatar";
-
-    /**
-     * 国家.
-     */
-    public static final String COUNTRY = "country";
-
-    /**
-     * 省份.
-     */
-    public static final String PROVINCE = "province";
-
-    /**
-     * 城市.
-     */
-    public static final String CITY = "city";
 }

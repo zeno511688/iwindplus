@@ -10,7 +10,7 @@ package com.iwindplus.base.kafka.support.impl;
 import cn.hutool.core.util.StrUtil;
 import com.iwindplus.base.disruptor.core.DisruptorManager;
 import com.iwindplus.base.disruptor.domain.dto.DisruptorPublishDTO;
-import com.iwindplus.base.disruptor.template.DisruptorTemplate;
+import com.iwindplus.base.disruptor.support.DisruptorTemplate;
 import com.iwindplus.base.kafka.core.KafkaClusterManager;
 import com.iwindplus.base.kafka.domain.event.KafkaDisruptorEvent;
 import com.iwindplus.base.kafka.handler.KafkaDisruptorEventHandler;

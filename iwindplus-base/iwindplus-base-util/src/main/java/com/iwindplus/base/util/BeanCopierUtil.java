@@ -121,7 +121,7 @@ public class BeanCopierUtil {
      */
     public static <K, T> List<T> copyToList(List<K> sources, Supplier<T> target) {
         if (CollUtil.isEmpty(sources)) {
-            return new ArrayList<>();
+            return new ArrayList<>(10);
         }
         return copyToList(sources, target, null);
     }
@@ -137,7 +137,7 @@ public class BeanCopierUtil {
      */
     public static <K, T> List<T> copyToList(List<K> sources, Class<T> target) {
         if (CollUtil.isEmpty(sources)) {
-            return new ArrayList<>();
+            return new ArrayList<>(10);
         }
         return copyToList(sources, target, null);
     }
@@ -153,6 +153,9 @@ public class BeanCopierUtil {
      * @return List<T>
      */
     public static <K, T> List<T> copyToList(List<K> sources, Supplier<T> target, Converter converter) {
+        if (CollUtil.isEmpty(sources)) {
+            return new ArrayList<>(10);
+        }
         List<T> list = new ArrayList<>(sources.size());
         sources.forEach(source -> list.add(copyProperties(source, target, converter)));
         return list;
@@ -169,6 +172,9 @@ public class BeanCopierUtil {
      * @return List<T>
      */
     public static <K, T> List<T> copyToList(List<K> sources, Class<T> target, Converter converter) {
+        if (CollUtil.isEmpty(sources)) {
+            return new ArrayList<>(10);
+        }
         List<T> list = new ArrayList<>(sources.size());
         sources.forEach(source -> list.add(copyProperties(source, target, converter)));
         return list;

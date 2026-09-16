@@ -32,8 +32,8 @@ import com.iwindplus.base.async.task.domain.vo.AsyncTaskSubVO;
 import com.iwindplus.base.async.task.domain.vo.AsyncTaskSubmitVO;
 import com.iwindplus.base.async.task.domain.vo.AsyncTaskVO;
 import com.iwindplus.base.async.task.executor.AsyncTaskExecutor;
-import com.iwindplus.base.async.task.factory.AsyncTaskSubHandlerStrategyFactory;
-import com.iwindplus.base.async.task.factory.AsyncTaskHandlerStrategyFactory;
+import com.iwindplus.base.async.task.factory.AsyncTaskSubHandlerFactory;
+import com.iwindplus.base.async.task.factory.AsyncTaskHandlerFactory;
 import com.iwindplus.base.async.task.service.AsyncTaskService;
 import com.iwindplus.base.async.task.service.AsyncTaskSubService;
 import com.iwindplus.base.async.task.support.AsyncTaskBizProcessor;
@@ -67,8 +67,8 @@ public class AsyncTaskExecutorImpl implements AsyncTaskExecutor {
     private final AsyncTaskService asyncTaskService;
     private final AsyncTaskSubService asyncTaskSubService;
     private final AsyncTaskBizProcessor asyncTaskBizProcessor;
-    private final AsyncTaskHandlerStrategyFactory asyncTaskHandlerStrategyFactory;
-    private final AsyncTaskSubHandlerStrategyFactory asyncTaskSubHandlerStrategyFactory;
+    private final AsyncTaskHandlerFactory asyncTaskHandlerFactory;
+    private final AsyncTaskSubHandlerFactory asyncTaskSubHandlerFactory;
 
     @Override
     public AsyncTaskSubmitVO submit(AsyncTaskSubmitDTO entity) {
@@ -291,7 +291,7 @@ public class AsyncTaskExecutorImpl implements AsyncTaskExecutor {
      * @return String
      */
     private AsyncTaskHandler resolveTaskHandler(Class<? extends AsyncTaskHandler> executorClass) {
-        return this.asyncTaskHandlerStrategyFactory
+        return this.asyncTaskHandlerFactory
             .getTaskHandler(executorClass.getSimpleName());
     }
 
@@ -302,7 +302,7 @@ public class AsyncTaskExecutorImpl implements AsyncTaskExecutor {
      * @return String
      */
     private AsyncTaskSubHandler resolveSubTaskHandler(Class<? extends AsyncTaskSubHandler> executorClass) {
-        return this.asyncTaskSubHandlerStrategyFactory
+        return this.asyncTaskSubHandlerFactory
             .getTaskHandler(executorClass.getSimpleName());
     }
 

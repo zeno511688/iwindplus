@@ -10,7 +10,7 @@
     <packaging>jar</packaging>
 
     <name>iwindplus-base-export-task</name>
-    <description>文档模块，支持Excel、PDF、Docx等多种格式的导入导出</description>
+    <description>导出任务模块，支持Excel、PDF、Docx等多种格式的导出</description>
 
     <dependencies>
         <dependency>
@@ -36,6 +36,14 @@
         <dependency>
             <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-xxl-job</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-oss</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-web</artifactId>
         </dependency>
     </dependencies>
 </project>

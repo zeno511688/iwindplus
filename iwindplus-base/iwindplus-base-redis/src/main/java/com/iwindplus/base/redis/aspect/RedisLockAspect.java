@@ -13,7 +13,7 @@ import com.iwindplus.base.redis.domain.constant.RedisConstant;
 import com.iwindplus.base.redis.domain.enums.RedisLockTypeEnum;
 import com.iwindplus.base.redis.domain.property.RedisProperty;
 import com.iwindplus.base.redis.domain.property.RedisProperty.LockConfig;
-import com.iwindplus.base.redis.service.RedissonService;
+import com.iwindplus.base.redis.executor.RedissonExecutor;
 import com.iwindplus.base.redis.support.RedisKeyResolver;
 import jakarta.annotation.Resource;
 import java.lang.reflect.Method;
@@ -42,7 +42,7 @@ public class RedisLockAspect {
     private KeyGenerator keyGenerator;
 
     @Resource
-    private RedissonService redissonService;
+    private RedissonExecutor redissonExecutor;
 
     @Resource
     private RedisProperty property;
@@ -75,10 +75,10 @@ public class RedisLockAspect {
         final RedisKeyResolver keyResolver = SpringUtil.getBean(annotation.keyResolver());
 
         final RedisLockTypeEnum lockType = Optional.ofNullable(annotation.lockType()).orElse(cfg.getLockType());
-        final String key = redissonService.baseOperation().getRedisKey(RedisConstant.LOCK_KEY_PREFIX, annotation.names(),
+        final String key = this.redissonExecutor.baseOperation().getRedisKey(RedisConstant.LOCK_KEY_PREFIX, annotation.names(),
             keyResolver, joinPoint, this.keyGenerator, annotation.keys());
 
-        return this.redissonService.lock().execute(lockType, key, annotation.waitTime()
+        return this.redissonExecutor.lock().execute(lockType, key, annotation.waitTime()
             , annotation.leaseTime(), annotation.timeUnit(), joinPoint::proceed);
     }
 }

@@ -31,8 +31,8 @@
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.iwindplus.setup</groupId>
-                <artifactId>iwindplus-setup-client</artifactId>
+                <groupId>com.iwindplus.integr</groupId>
+                <artifactId>iwindplus-integr-client</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -43,11 +43,6 @@
             <dependency>
                 <groupId>com.iwindplus.flow</groupId>
                 <artifactId>iwindplus-flow-client</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.iwindplus.mgt</groupId>
-                <artifactId>iwindplus-mgt-domain</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -74,7 +69,6 @@
     </dependencyManagement>
 
     <modules>
-        <module>iwindplus-mgt-domain</module>
         <module>iwindplus-mgt-api</module>
         <module>iwindplus-mgt-client</module>
         <module>iwindplus-mgt-server</module>

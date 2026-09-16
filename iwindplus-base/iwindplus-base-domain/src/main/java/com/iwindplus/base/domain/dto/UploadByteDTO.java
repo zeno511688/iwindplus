@@ -8,8 +8,6 @@
 package com.iwindplus.base.domain.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import java.io.Serializable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,14 +31,12 @@ public class UploadByteDTO implements Serializable {
      * 文件二进制流.
      */
     @Schema(description = "文件二进制流")
-    @NotEmpty(message = "{data.notEmpty}")
-    private Byte[] data;
+    private byte[] data;
 
     /**
-     * 源文件名（必填）.
+     * 源文件名（可选）.
      */
     @Schema(description = "源文件名")
-    @NotBlank(message = "{sourceFileName.notEmpty}")
     private String sourceFileName;
 
     /**

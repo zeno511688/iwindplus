@@ -7,7 +7,7 @@ package com.iwindplus.log.api;
 import com.iwindplus.base.domain.dto.ValidListDTO;
 import com.iwindplus.base.domain.validation.SaveGroup;
 import com.iwindplus.base.domain.vo.ResultVO;
-import com.iwindplus.log.domain.dto.BinlogAlertDTO;
+import com.iwindplus.log.api.dto.BinlogAlertDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;

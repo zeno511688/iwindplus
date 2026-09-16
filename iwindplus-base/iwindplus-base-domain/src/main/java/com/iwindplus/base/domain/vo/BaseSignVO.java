@@ -42,6 +42,6 @@ public class BaseSignVO implements Serializable {
     /**
      * 签名超时时间.
      */
-    @Schema(description = "签名超时时间（单位：秒）")
-    private Integer timeout;
+    @Schema(description = "签名超时时间")
+    private Long timeout;
 }

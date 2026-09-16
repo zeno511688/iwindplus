@@ -28,16 +28,16 @@
             <artifactId>iwindplus-base-domain</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.larksuite.oapi</groupId>
+            <artifactId>oapi-sdk</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-util</artifactId>
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-http-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.larksuite.oapi</groupId>
-            <artifactId>oapi-sdk</artifactId>
         </dependency>
     </dependencies>
 </project>

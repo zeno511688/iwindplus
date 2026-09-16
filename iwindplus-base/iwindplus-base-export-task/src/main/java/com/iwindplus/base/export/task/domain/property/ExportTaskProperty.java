@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.export.task.domain.property;
 
+import com.iwindplus.base.domain.enums.OssTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -59,6 +60,13 @@ public class ExportTaskProperty {
     private Long timeoutSeconds = 120L;
 
     /**
+     * OSS上传配置（导出文件上传到OSS，解决分布式部署文件无法共享的问题）.
+     */
+    @Builder.Default
+    @NestedConfigurationProperty
+    private OssConfig oss = new OssConfig();
+
+    /**
      * 重试策略配置.
      */
     @Builder.Default
@@ -78,6 +86,51 @@ public class ExportTaskProperty {
     @Builder.Default
     @NestedConfigurationProperty
     private WebConfig web = new WebConfig();
+
+    /**
+     * OSS上传相关属性.
+     *
+     * @author zengdegui
+     * @since 2026/9/13
+     */
+    @Data
+    @SuperBuilder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class OssConfig {
+
+        /**
+         * 是否启用OSS上传（默认：false，不启用时使用本地文件存储）.
+         */
+        @Builder.Default
+        private Boolean enabled = Boolean.FALSE;
+
+        /**
+         * OSS类型.
+         */
+        @Builder.Default
+        private OssTypeEnum type = OssTypeEnum.MINIO;
+
+        /**
+         * OSS配置编码（可选，不配置时使用默认策略）.
+         */
+        private String code;
+
+        /**
+         * 空间名（必填，启用OSS上传时）.
+         */
+        private String bucketName;
+
+        /**
+         * 访问域名（可选，自定义域名）.
+         */
+        private String accessDomain;
+
+        /**
+         * 相对路径前缀（可选，如：export-task/）.
+         */
+        private String relativePathPrefix;
+    }
 
     /**
      * 重试策略相关属性.

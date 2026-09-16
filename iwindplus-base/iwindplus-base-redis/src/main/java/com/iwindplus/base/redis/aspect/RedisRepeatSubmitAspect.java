@@ -12,7 +12,7 @@ import com.iwindplus.base.redis.domain.annotation.RedisRepeatSubmit;
 import com.iwindplus.base.redis.domain.constant.RedisConstant;
 import com.iwindplus.base.redis.domain.property.RedisProperty;
 import com.iwindplus.base.redis.domain.property.RedisProperty.RepeatSubmitConfig;
-import com.iwindplus.base.redis.service.RedissonService;
+import com.iwindplus.base.redis.executor.RedissonExecutor;
 import com.iwindplus.base.redis.support.RedisKeyResolver;
 import jakarta.annotation.Resource;
 import java.lang.reflect.Method;
@@ -43,7 +43,7 @@ public class RedisRepeatSubmitAspect {
     private KeyGenerator keyGenerator;
 
     @Resource
-    private RedissonService redissonService;
+    private RedissonExecutor redissonExecutor;
 
     @Resource
     private RedisProperty property;
@@ -75,11 +75,11 @@ public class RedisRepeatSubmitAspect {
 
         final RedisKeyResolver keyResolver = SpringUtil.getBean(annotation.keyResolver());
 
-        final String key = redissonService.baseOperation().getRedisKey(RedisConstant.REPEAT_SUBMIT_KEY_PREFIX, annotation.names(),
+        final String key = this.redissonExecutor.baseOperation().getRedisKey(RedisConstant.REPEAT_SUBMIT_KEY_PREFIX, annotation.names(),
             keyResolver, joinPoint, this.keyGenerator, annotation.keys());
         final Duration ttl = getDuration(annotation.ttl(), annotation.timeUnit());
 
-        return this.redissonService.repeatSubmit().execute(key, ttl, joinPoint::proceed);
+        return this.redissonExecutor.repeatSubmit().execute(key, ttl, joinPoint::proceed);
     }
 
     private Duration getDuration(long ttl, TimeUnit timeUnit) {

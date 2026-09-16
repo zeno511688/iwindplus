@@ -22,5 +22,9 @@
             <groupId>com.iwindplus.binlog</groupId>
             <artifactId>iwindplus-binlog-producer-server</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.iwindplus.binlog</groupId>
+            <artifactId>iwindplus-binlog-consumer-server</artifactId>
+        </dependency>
     </dependencies>
 </project>

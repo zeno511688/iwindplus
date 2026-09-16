@@ -5,8 +5,8 @@
 package com.iwindplus.flow.api;
 
 import com.iwindplus.base.domain.vo.ResultVO;
-import com.iwindplus.flow.domain.dto.FlowStartInstanceDTO;
-import com.iwindplus.flow.domain.vo.FlowStartInstanceVO;
+import com.iwindplus.flow.api.dto.FlowStartInstanceDTO;
+import com.iwindplus.flow.api.vo.FlowStartInstanceVO;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

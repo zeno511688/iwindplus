@@ -8,7 +8,7 @@
 package com.iwindplus.dtx.api;
 
 import com.iwindplus.base.domain.vo.ResultVO;
-import com.iwindplus.dtx.domain.dto.TccBranchTxDTO;
+import com.iwindplus.dtx.api.dto.TccBranchTxDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -18,8 +18,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.iwindplus.auth</groupId>
-            <artifactId>iwindplus-auth-domain</artifactId>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-http-client</artifactId>
         </dependency>
         <dependency>
             <groupId>com.iwindplus.log</groupId>
@@ -28,6 +28,10 @@
         <dependency>
             <groupId>com.iwindplus.mgt</groupId>
             <artifactId>iwindplus-mgt-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iwindplus.auth</groupId>
+            <artifactId>iwindplus-auth-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -124,11 +128,15 @@
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-logging-alert</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-disruptor</artifactId>
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
-            <artifactId>iwindplus-base-http-client-integration</artifactId>
+            <artifactId>iwindplus-base-address</artifactId>
         </dependency>
     </dependencies>
 

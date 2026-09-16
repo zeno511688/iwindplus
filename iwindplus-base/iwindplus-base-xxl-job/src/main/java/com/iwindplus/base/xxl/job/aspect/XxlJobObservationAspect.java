@@ -42,6 +42,9 @@ public record XxlJobObservationAspect(ObservationExecutor observationExecutor) {
         final Method method = methodSignature.getMethod();
 
         final XxlJob xxlJob = method.getAnnotation(XxlJob.class);
+        if (xxlJob == null) {
+            return joinPoint.proceed();
+        }
         final String jobName = xxlJob.value();
 
         return observationExecutor.execute(

@@ -28,26 +28,13 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WechatMaUserInfoDTO implements Serializable {
-    /**
-     * code码.
-     */
-    @Schema(description = "code码")
-    @NotBlank(message = "{code.notEmpty}")
-    private String code;
 
     /**
-     * 加密用户数据.
+     * jsCode – 登录时获取的code.
      */
-    @Schema(description = "加密用户数据")
-    @NotBlank(message = "{encryptedData.notEmpty}")
-    private String encryptedData;
-
-    /**
-     * 初始向量.
-     */
-    @Schema(description = "初始向量")
-    @NotBlank(message = "{iv.notEmpty}")
-    private String iv;
+    @Schema(description = "登录时获取的code")
+    @NotBlank(message = "{jsCode.notEmpty}")
+    private String jsCode;
 
     /**
      * 用户原始数据字符串.
@@ -62,4 +49,18 @@ public class WechatMaUserInfoDTO implements Serializable {
     @Schema(description = "用户信息签名")
     @NotBlank(message = "{signature.notEmpty}")
     private String signature;
+
+    /**
+     * 加密用户数据.
+     */
+    @Schema(description = "加密用户数据")
+    @NotBlank(message = "{encryptedData.notEmpty}")
+    private String encryptedData;
+
+    /**
+     * 初始向量.
+     */
+    @Schema(description = "初始向量")
+    @NotBlank(message = "{iv.notEmpty}")
+    private String iv;
 }

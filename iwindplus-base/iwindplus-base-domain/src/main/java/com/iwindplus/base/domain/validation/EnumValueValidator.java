@@ -11,7 +11,6 @@ import com.iwindplus.base.domain.annotation.EnumValid;
 import com.iwindplus.base.domain.enums.BaseEnum;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -40,7 +39,7 @@ public class EnumValueValidator implements ConstraintValidator<EnumValid, Object
             return true;
         }
         final Class<? extends BaseEnum<?>> clazz = this.annotation.clazz();
-        final List<? extends BaseEnum<?>> list = Arrays.asList(clazz.getEnumConstants());
+        final List<? extends BaseEnum<?>> list = List.of(clazz.getEnumConstants());
         return list.stream().anyMatch(data -> Objects.equals(data, value));
     }
 }

@@ -127,19 +127,6 @@ mybatis-plus:
       private-key: ${mybatis-field-crypto-private-key:}
       # 密钥
       key: ${mybatis-field-crypto-key:}
-alert:
-  # 飞书
-  feishu:
-    app-id: cli_a92f34e733b81cd1
-    app-secret: ${alert-feishu-app-secret}
-  log:
-    enabled: true
-    webhook:
-      url: https://open.feishu.cn/open-apis/bot/v2/hook/e479bf95-3d8e-43a3-9d38-7f0db242c9d8
-      secret: ${alert-feishu-webhook-secret}
-    stack:
-      max-length: -1
-      max-frames: -1
 springdoc:
   packagesToScan:
     - com.iwindplus.dtx.server.web

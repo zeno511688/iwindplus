@@ -16,7 +16,7 @@ import com.iwindplus.base.async.task.domain.enums.AsyncTaskStatusEnum;
 import com.iwindplus.base.async.task.domain.vo.AsyncTaskCallbackResultVO;
 import com.iwindplus.base.async.task.domain.vo.AsyncTaskExecuteResultVO;
 import com.iwindplus.base.async.task.domain.vo.AsyncTaskVO;
-import com.iwindplus.base.async.task.factory.AsyncTaskHandlerStrategyFactory;
+import com.iwindplus.base.async.task.factory.AsyncTaskHandlerFactory;
 import com.iwindplus.base.async.task.service.AsyncTaskService;
 import com.iwindplus.base.async.task.support.AsyncTaskExecuteHandler;
 import com.iwindplus.base.async.task.support.AsyncTaskStateSupport;
@@ -40,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public abstract class AbstractAsyncTaskExecuteHandler implements AsyncTaskExecuteHandler {
 
-    private final AsyncTaskHandlerStrategyFactory asyncTaskHandlerStrategyFactory;
+    private final AsyncTaskHandlerFactory asyncTaskHandlerFactory;
     private final AsyncTaskStateSupport asyncTaskStateSupport;
     private final AsyncTaskService asyncTaskService;
 
@@ -51,7 +51,7 @@ public abstract class AbstractAsyncTaskExecuteHandler implements AsyncTaskExecut
      * @return AsyncTaskHandler
      */
     protected AsyncTaskHandler getTaskHandler(String executeName) {
-        return this.asyncTaskHandlerStrategyFactory.getTaskHandler(executeName);
+        return this.asyncTaskHandlerFactory.getTaskHandler(executeName);
     }
 
     /**

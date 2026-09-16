@@ -21,10 +21,10 @@
         <module>iwindplus-im</module>
         <module>iwindplus-log</module>
         <module>iwindplus-mgt</module>
-        <module>iwindplus-setup</module>
         <module>iwindplus-monitor</module>
         <module>iwindplus-flow</module>
         <module>iwindplus-binlog</module>
         <module>iwindplus-dtx</module>
+        <module>iwindplus-integr</module>
     </modules>
 </project>

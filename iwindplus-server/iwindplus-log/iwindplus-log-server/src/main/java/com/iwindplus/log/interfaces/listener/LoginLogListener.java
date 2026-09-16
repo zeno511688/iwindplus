@@ -1,0 +1,81 @@
+/*
+ *
+ *  * Copyright (c) iwindplus Technologies Co., Ltd.2024-2030, All rights reserved.
+ *
+ *
+ */
+
+package com.iwindplus.log.interfaces.listener;
+
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.text.CharSequenceUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.iwindplus.base.domain.dto.MessageBaseDTO;
+import com.iwindplus.base.kafka.domain.annotation.KafkaMultiListener;
+import com.iwindplus.base.util.JacksonUtil;
+import com.iwindplus.log.api.dto.LoginLogDTO;
+import com.iwindplus.log.application.service.LoginLogApplicationService;
+import jakarta.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.stereotype.Component;
+
+/**
+ * 登陆日志监听器.
+ *
+ * @author zengdegui
+ * @since 2025/08/24 13:04
+ */
+@Slf4j
+@Component
+public class LoginLogListener {
+
+    @Resource
+    private LoginLogApplicationService loginLogApplicationService;
+
+    @KafkaMultiListener(
+        cluster = "${kafka.multi.default-cluster}",
+        topics = {"${kafka.multi.clusters.default.bindings[1].topic}"},
+        group = "${kafka.multi.clusters.default.bindings[1].group}"
+    )
+    public void listenBatch(List<ConsumerRecord<String, String>> records) {
+        log.info("登陆日志批量监听开始, size={}", records.size());
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+
+        List<LoginLogDTO> batchList = new ArrayList<>(records.size());
+
+        try {
+            buildLoginLog(records, batchList);
+            if (CollUtil.isNotEmpty(batchList)) {
+                loginLogApplicationService.saveBatch(batchList);
+                log.info("LoginLogListener execute size={}", batchList.size());
+            }
+        } catch (Exception ex) {
+            log.error("登陆日志批量消费失败, size={}", records.size(), ex);
+            throw ex;
+        }
+    }
+
+    private void buildLoginLog(List<ConsumerRecord<String, String>> records, List<LoginLogDTO> batchList) {
+        for (ConsumerRecord<String, String> record : records) {
+            if (record == null || CharSequenceUtil.isBlank(record.value())) {
+                continue;
+            }
+
+            MessageBaseDTO<LoginLogDTO> messageDTO =
+                JacksonUtil.parseObject(record.value(), new TypeReference<>() {
+                });
+
+            if (messageDTO == null || messageDTO.getData() == null) {
+                log.warn("登陆日志消息解析为空: {}", record.value());
+                continue;
+            }
+
+            batchList.add(messageDTO.getData());
+        }
+    }
+}

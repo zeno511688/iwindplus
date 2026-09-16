@@ -8,8 +8,8 @@
 package com.iwindplus.base.binlog;
 
 import com.iwindplus.base.binlog.domain.property.BinlogProperty;
-import com.iwindplus.base.binlog.manager.BinlogEngineManager;
-import com.iwindplus.base.binlog.handler.BinlogProcessHandler;
+import com.iwindplus.base.binlog.core.BinlogEngineManager;
+import com.iwindplus.base.binlog.support.BinlogProcessHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

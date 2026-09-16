@@ -59,6 +59,9 @@ public class ResponseBodyHandler implements ResponseBodyAdvice<Object> {
     @Override
     public boolean supports(MethodParameter methodParameter, Class<? extends HttpMessageConverter<?>> converterType) {
         Method method = methodParameter.getMethod();
+        if (Objects.isNull(method)) {
+            return false;
+        }
         String simpleName = method.getDeclaringClass().getSimpleName();
 
         List<String> ignoredClasses = this.buildIgnoredClasses();

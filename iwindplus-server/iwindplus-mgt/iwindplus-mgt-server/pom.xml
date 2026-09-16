@@ -22,12 +22,8 @@
             <artifactId>iwindplus-mgt-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.iwindplus.dtx</groupId>
-            <artifactId>iwindplus-dtx-tcc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.iwindplus.setup</groupId>
-            <artifactId>iwindplus-setup-client</artifactId>
+            <groupId>com.iwindplus.integr</groupId>
+            <artifactId>iwindplus-integr-client</artifactId>
         </dependency>
         <dependency>
             <groupId>com.iwindplus.log</groupId>
@@ -36,10 +32,6 @@
         <dependency>
             <groupId>com.iwindplus.im</groupId>
             <artifactId>iwindplus-im-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.iwindplus.flow</groupId>
-            <artifactId>iwindplus-flow-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -157,12 +149,24 @@
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-logging-alert</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-async-task</artifactId>
         </dependency>
-       <!-- <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-seata</artifactId>
-        </dependency>-->
+        <dependency>
+            <groupId>com.iwindplus.dtx</groupId>
+            <artifactId>iwindplus-dtx-tcc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iwindplus.flow</groupId>
+            <artifactId>iwindplus-flow-client</artifactId>
+        </dependency>
+        <!-- <dependency>
+             <groupId>com.alibaba.cloud</groupId>
+             <artifactId>spring-cloud-starter-alibaba-seata</artifactId>
+         </dependency>-->
     </dependencies>
 
     <build>

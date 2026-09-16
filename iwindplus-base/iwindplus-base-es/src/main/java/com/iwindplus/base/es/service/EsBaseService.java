@@ -13,7 +13,6 @@ import com.iwindplus.base.es.domain.EsDbBaseDO;
 import com.iwindplus.base.es.domain.dto.EsPageDTO;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -90,7 +89,7 @@ public interface EsBaseService<T extends EsDbBaseDO> {
      * @return boolean
      */
     default boolean removeById(String id, boolean deleted) {
-        return this.removeByIds(Arrays.asList(id), deleted);
+        return this.removeByIds(List.of(id), deleted);
     }
 
     /**

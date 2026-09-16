@@ -33,6 +33,9 @@ public class TransactionUtil {
      * @param runnable 任务
      */
     public static void registerAfterCommit(Runnable runnable) {
+        if (runnable == null) {
+            return;
+        }
         if (isTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {
@@ -67,6 +70,9 @@ public class TransactionUtil {
      * @return 结果
      */
     public static <T> T executeInTransaction(TransactionTemplate transactionTemplate, Supplier<T> supplier) {
+        if (transactionTemplate == null || supplier == null) {
+            return null;
+        }
         return transactionTemplate.execute(status -> supplier.get());
     }
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.iwindplus.flow.server.dal.mapper.FlowModelExtendMapper">
+<mapper namespace="com.iwindplus.flow.infrastructure.persistence.model.FlowModelExtendMapper">
     <sql id="modelExtendAliasField">
         fme.model_content, fme.form_content
     </sql>

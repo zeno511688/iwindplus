@@ -16,8 +16,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.iwindplus.auth</groupId>
-            <artifactId>iwindplus-auth-domain</artifactId>
+            <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-domain</artifactId>
         </dependency>
     </dependencies>
 </project>

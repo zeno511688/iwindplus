@@ -9,7 +9,6 @@ package com.iwindplus.base.http.client.support;
 
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.extra.spring.SpringUtil;
-import com.iwindplus.base.util.SecureRandomUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -21,8 +20,9 @@ import com.iwindplus.base.domain.vo.BaseSignVO;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.http.client.domain.property.HttpClientProperty;
 import com.iwindplus.base.http.client.domain.property.HttpClientProperty.ApiProtectionConfig;
-import com.iwindplus.base.http.client.factory.HttpClientExecutorStrategyFactory;
+import com.iwindplus.base.http.client.factory.HttpClientExecuteHandlerFactory;
 import com.iwindplus.base.util.PathMatchUtil;
+import com.iwindplus.base.util.SecureRandomUtil;
 import com.iwindplus.base.util.domain.dto.ApiSignGenerateDTO;
 import com.iwindplus.base.web.domain.property.FilterProperty;
 import java.time.Duration;
@@ -44,7 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 public record ApiProtectionProvider(
     FilterProperty filterProperty,
     HttpClientProperty httpClientProperty,
-    HttpClientExecutorStrategyFactory httpClientExecutorStrategyFactory) {
+    HttpClientExecuteHandlerFactory httpClientExecuteHandlerFactory) {
 
     private static final List<String> DEFAULT_IGNORED_APIS =
         List.of(
@@ -73,7 +73,7 @@ public record ApiProtectionProvider(
         }
 
         // 忽略当前远程应用凭证配置的URL
-        if (path.contains(cfg.getPath())) {
+        if (cfg.getPath().contains(path)) {
             return null;
         }
 
@@ -88,15 +88,15 @@ public record ApiProtectionProvider(
 
         // 远程证书优先
         if (Boolean.TRUE.equals(cfg.getEnabledRemote())) {
-            cert = getRemoteCert(AppCertTypeEnum.SERVICE_INTERNAL_SIGN, cfg);
+            cert = this.getRemoteCert(AppCertTypeEnum.SERVICE_INTERNAL_SIGN, cfg);
         }
 
         // 本地配置兜底
         if (cert == null) {
-            cert = new BaseSignVO(cfg.getAccessKey(), cfg.getSecretKey(), cfg.getTimeout());
-
-            this.validateBaseSignVO(cert);
+            cert = new BaseSignVO(cfg.getAccessKey(), cfg.getSecretKey(), cfg.getTimeout().toSeconds());
         }
+
+        this.validateBaseSignVO(cert);
 
         return BaseSignExtendVO.builder()
             .accessKey(cert.getAccessKey())
@@ -132,28 +132,28 @@ public record ApiProtectionProvider(
             .build();
     }
 
-    private BaseSignVO getRemoteCert(AppCertTypeEnum certType, ApiProtectionConfig cfg) {
-        // 不启用本地缓存
-        if (Boolean.FALSE.equals(cfg.getEnabledLocalCache())) {
-            return loadRemoteCert(certType, cfg);
-        }
-
-        // 启用本地缓存
+    private BaseSignVO getRemoteCert(AppCertTypeEnum appCertType, ApiProtectionConfig cfg) {
+        // 远程凭证统一使用本地缓存
         return APP_CERT_CACHE.get(
-            certType,
-            key -> loadRemoteCert(certType, cfg)
+            appCertType,
+            key -> loadRemoteCert(appCertType, cfg)
         );
     }
 
-    private BaseSignVO loadRemoteCert(AppCertTypeEnum certType, ApiProtectionConfig cfg) {
-        log.info("加载远程服务间调用应用凭证配置: {}", certType);
-        Map<String, ?> query = Map.of(
-            "appCertType", certType
+    private BaseSignVO loadRemoteCert(AppCertTypeEnum appCertType, ApiProtectionConfig cfg) {
+        log.info("加载远程服务间调用应用凭证配置: {}", appCertType);
+        final Map<String, ?> query = Map.of(
+            "appCertType", appCertType
         );
-        final ResultVO<BaseSignVO> result = httpClientExecutorStrategyFactory
-            .getDefaultHttpClientExecutor()
-            .get(cfg.getUrl(), query, null, new TypeReference<>() {
-            });
+        final ResultVO<BaseSignVO> result = httpClientExecuteHandlerFactory
+            .getDefaultHandler()
+            .get(
+                cfg.getUrl(),
+                query,
+                null,
+                new TypeReference<>() {
+                }
+            );
         result.errorThrow();
         BaseSignVO cert = result.getBizData();
         validateBaseSignVO(cert);

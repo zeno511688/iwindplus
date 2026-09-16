@@ -9,7 +9,7 @@ package com.iwindplus.base.disruptor.support;
 
 import com.iwindplus.base.disruptor.domain.event.DisruptorEvent;
 import com.iwindplus.base.disruptor.domain.property.DisruptorMultiProperty.DisruptorMultiConfig;
-import com.iwindplus.base.disruptor.factory.DisruptorEventHandlerStrategyFactory;
+import com.iwindplus.base.disruptor.factory.DisruptorEventHandlerFactory;
 import com.iwindplus.base.disruptor.support.observation.DisruptorObservationContext;
 import com.iwindplus.base.disruptor.support.observation.DisruptorObservationConvention;
 import com.iwindplus.base.monitor.support.ObservationExecutor;
@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public record DisruptorDispatcherHandler<T>(
     String name,
     DisruptorMultiConfig config,
-    DisruptorEventHandlerStrategyFactory factory,
+    DisruptorEventHandlerFactory factory,
     TraceContextPropagator traceContextPropagator,
     ObservationExecutor observationExecutor)
     implements EventHandler<DisruptorEvent<T>> {

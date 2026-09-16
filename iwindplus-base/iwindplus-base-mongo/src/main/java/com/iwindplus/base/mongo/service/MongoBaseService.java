@@ -11,7 +11,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.iwindplus.base.domain.constant.CommonConstant;
 import com.iwindplus.base.mongo.domain.MongoDbBaseDO;
 import com.iwindplus.base.mongo.support.MongoLambdaQueryWrapper;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import org.springframework.data.mongodb.core.query.Query;
@@ -89,7 +88,7 @@ public interface MongoBaseService<T extends MongoDbBaseDO> {
      * @return boolean
      */
     default boolean removeById(String id, boolean deleted) {
-        return this.removeByIds(Arrays.asList(id), deleted);
+        return this.removeByIds(List.of(id), deleted);
     }
 
     /**

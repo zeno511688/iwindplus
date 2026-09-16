@@ -15,7 +15,7 @@ import com.iwindplus.base.export.task.domain.enums.ExportTaskStatusEnum;
 import com.iwindplus.base.export.task.domain.vo.ExportTaskSubmitVO;
 import com.iwindplus.base.export.task.domain.vo.ExportTaskVO;
 import com.iwindplus.base.export.task.executor.ExportTaskExecutor;
-import com.iwindplus.base.export.task.factory.ExportTaskHandlerStrategyFactory;
+import com.iwindplus.base.export.task.factory.ExportTaskHandlerFactory;
 import com.iwindplus.base.export.task.service.ExportTaskService;
 import com.iwindplus.base.export.task.support.ExportTaskBizProcessor;
 import com.iwindplus.base.export.task.support.ExportTaskHandler;
@@ -37,7 +37,7 @@ public class ExportTaskExecutorImpl implements ExportTaskExecutor {
 
     private final ExportTaskService exportTaskService;
     private final ExportTaskBizProcessor exportTaskBizProcessor;
-    private final ExportTaskHandlerStrategyFactory exportTaskHandlerStrategyFactory;
+    private final ExportTaskHandlerFactory exportTaskHandlerFactory;
 
     @Override
     public ExportTaskSubmitVO submit(ExportTaskSubmitDTO entity) {
@@ -113,7 +113,6 @@ public class ExportTaskExecutorImpl implements ExportTaskExecutor {
     private void checkSubmitParam(ExportTaskSubmitDTO entity) {
         Assert.notNull(entity, "entity must not be null");
         Assert.notNull(entity.getExecutorClass(), "executorClass must not be null");
-        Assert.hasText(entity.getFileName(), "fileName must not be blank");
         Assert.notEmpty(entity.getQueryParam(), "queryParam must not be empty");
     }
 
@@ -124,7 +123,7 @@ public class ExportTaskExecutorImpl implements ExportTaskExecutor {
      * @return ExportTaskHandler
      */
     private ExportTaskHandler resolveTaskHandler(Class<? extends ExportTaskHandler> executorClass) {
-        return this.exportTaskHandlerStrategyFactory.getTaskHandler(executorClass.getSimpleName());
+        return this.exportTaskHandlerFactory.getTaskHandler(executorClass.getSimpleName());
     }
 
     /**

@@ -121,7 +121,7 @@ UserVO userVO = BeanCopierUtil.copyProperties(userDO, UserVO.class);
 UserVO userVO = BeanCopierUtil.copyProperties(userDO, UserVO::new);
 
 // 集合复制（方式一：使用 Class）
-List<UserDO> userDOList = new ArrayList<>();
+List<UserDO> userDOList = new ArrayList<>(10);
 List<UserVO> userVOList = BeanCopierUtil.copyToList(userDOList, UserVO.class);
 
 // 集合复制（方式二：使用 Supplier，性能更好）

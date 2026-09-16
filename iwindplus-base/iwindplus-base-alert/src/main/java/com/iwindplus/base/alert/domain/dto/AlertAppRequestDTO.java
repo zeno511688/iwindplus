@@ -7,7 +7,6 @@
 
 package com.iwindplus.base.alert.domain.dto;
 
-import com.iwindplus.base.alert.domain.enums.AlertMessageTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -34,15 +33,4 @@ public class AlertAppRequestDTO extends AlertBaseRequestDTO {
      */
     @Schema(description = "接收人ID")
     private String receiveId;
-
-    /**
-     * 构造函数.
-     *
-     * @param receiveId 接收人ID
-     * @param content   告警内容
-     */
-    public AlertAppRequestDTO(String receiveId, String content) {
-        super(AlertMessageTypeEnum.APP, content);
-        this.receiveId = receiveId;
-    }
 }

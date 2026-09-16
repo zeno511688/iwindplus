@@ -7,11 +7,13 @@
 
 package com.iwindplus.base.oss;
 
-import com.iwindplus.base.oss.service.impl.FileServiceImpl;
-import com.iwindplus.base.oss.service.FileService;
+import com.iwindplus.base.oss.support.FileExecuteHandler;
+import com.iwindplus.base.oss.support.impl.LocalFileExecuteHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ResourceLoader;
 
 /**
  * 文件操作配置.
@@ -24,14 +26,18 @@ import org.springframework.context.annotation.Configuration;
 public class FileConfiguration {
 
     /**
-     * 创建FileService.
+     * 创建 FileExecuteHandler.
      *
-     * @return FileService
+     * @param multipartProperties 文件上传配置
+     * @param resourceLoader      资源加载器
+     * @return FileExecuteHandler
      */
     @Bean
-    public FileService fileService() {
-        FileServiceImpl fileService = new FileServiceImpl();
-        log.info("FileService={}", fileService);
-        return fileService;
+    public FileExecuteHandler fileExecuteHandler(
+        MultipartProperties multipartProperties,
+        ResourceLoader resourceLoader) {
+        LocalFileExecuteHandler fileExecuteHandler = new LocalFileExecuteHandler(multipartProperties, resourceLoader);
+        log.info("FileExecuteHandler={}", fileExecuteHandler);
+        return fileExecuteHandler;
     }
 }
