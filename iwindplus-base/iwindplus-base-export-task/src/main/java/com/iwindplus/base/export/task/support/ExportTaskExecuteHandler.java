@@ -13,9 +13,9 @@ import cn.hutool.core.text.CharSequenceUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
-import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.constant.CommonConstant.FileConstant;
 import com.iwindplus.base.domain.dto.DbPageDTO;
+import com.iwindplus.base.domain.vo.DbPageVO;
 import com.iwindplus.base.domain.vo.UploadVO;
 import com.iwindplus.base.export.task.domain.constant.ExportTaskConstant;
 import com.iwindplus.base.export.task.domain.dto.ExportTaskStatusEditDTO;
@@ -96,14 +96,14 @@ public record ExportTaskExecuteHandler(
         final String fileName = handler.getFileName();
         task.setFileName(fileName);
         final String tempFilePath = this.buildTempFilePath(fileName);
-        final int batchSize = ExportTaskConstant.EXPORT_BATCH_SIZE;
+        final Long batchSize = ExportTaskConstant.EXPORT_BATCH_SIZE;
 
         try (ExcelWriter excelWriter = EasyExcel.write(tempFilePath, handler.getRowClass()).build()) {
             WriteSheet writeSheet = EasyExcel.writerSheet(handler.getSheetName()).build();
             DbPageDTO queryPageDTO = this.buildQueryPageDTO(handler, task, batchSize);
 
             // 写入第一页数据
-            PageDTO<?> dataPage = handler.pageByCondition(queryPageDTO);
+            DbPageVO<?> dataPage = handler.pageByCondition(queryPageDTO);
             Long exportedCount = this.writeFirstPage(excelWriter, writeSheet, dataPage, task);
             if (exportedCount == null) {
                 return;
@@ -234,7 +234,7 @@ public record ExportTaskExecuteHandler(
      * @param batchSize 批次大小
      * @return 查询参数
      */
-    private DbPageDTO buildQueryPageDTO(ExportTaskHandler handler, ExportTaskVO task, int batchSize) {
+    private DbPageDTO buildQueryPageDTO(ExportTaskHandler handler, ExportTaskVO task, Long batchSize) {
         DbPageDTO queryPageDTO = (DbPageDTO) JacksonUtil.parseObject(task.getQueryParam(), handler.getQueryClass());
         queryPageDTO.setCurrent(ExportTaskConstant.FIRST_PAGE_INDEX);
         queryPageDTO.setSize(batchSize);
@@ -251,7 +251,7 @@ public record ExportTaskExecuteHandler(
      * @return 已导出数量，如果无数据则返回null
      */
     private Long writeFirstPage(ExcelWriter excelWriter,
-        WriteSheet writeSheet, PageDTO<?> dataPage, ExportTaskVO task) {
+        WriteSheet writeSheet, DbPageVO<?> dataPage, ExportTaskVO task) {
         List<?> dataList = dataPage.getRecords();
         if (CollUtil.isEmpty(dataList)) {
             return null;
@@ -278,12 +278,12 @@ public record ExportTaskExecuteHandler(
      * @param exportedCount 已导出数量
      */
     private void writeRemainingPages(ExcelWriter excelWriter, WriteSheet writeSheet, ExportTaskHandler handler,
-        DbPageDTO queryPageDTO, PageDTO<?> firstDataPage, ExportTaskVO task, Long exportedCount) {
-        long totalPages = firstDataPage.getPages();
+        DbPageDTO queryPageDTO, DbPageVO<?> firstDataPage, ExportTaskVO task, Long exportedCount) {
+        Long totalPages = firstDataPage.getPages();
 
-        for (int currentPage = ExportTaskConstant.SECOND_PAGE_INDEX; currentPage <= totalPages; currentPage++) {
+        for (Long currentPage = ExportTaskConstant.SECOND_PAGE_INDEX; currentPage <= totalPages; currentPage++) {
             queryPageDTO.setCurrent(currentPage);
-            PageDTO<?> dataPage = handler.pageByCondition(queryPageDTO);
+            DbPageVO<?> dataPage = handler.pageByCondition(queryPageDTO);
             List<?> dataList = dataPage.getRecords();
 
             if (CollUtil.isEmpty(dataList)) {
@@ -294,7 +294,7 @@ public record ExportTaskExecuteHandler(
             exportedCount += dataList.size();
 
             // 更新进度
-            this.updateProgress(task, null, exportedCount);
+            this.updateProgress(task, firstDataPage.getTotal(), exportedCount);
         }
     }
 

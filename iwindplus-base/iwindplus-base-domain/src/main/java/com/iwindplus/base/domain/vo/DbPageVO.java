@@ -31,25 +31,25 @@ public class DbPageVO<T> implements Serializable {
      * 当前页.
      */
     @Schema(description = "当前页")
-    private Integer current;
+    private Long current;
 
     /**
      * 每页显示条数.
      */
     @Schema(description = "每页显示条数")
-    private Integer size;
+    private Long size;
 
     /**
      * 总条数.
      */
     @Schema(description = "总条数")
-    private Integer total;
+    private Long total;
 
     /**
      * 总页数.
      */
     @Schema(description = "总页数")
-    private Integer pages;
+    private Long pages;
 
     /**
      * 当前页数据列表.
@@ -65,9 +65,9 @@ public class DbPageVO<T> implements Serializable {
      * @param total   总条数
      * @param records 当前页数据列表
      */
-    public DbPageVO(Integer current, Integer size, Integer total, List<T> records) {
+    public DbPageVO(Long current, Long size, Long total, List<T> records) {
         this.current = current <= 0 ? 1 : current;
-        this.size = size <= 0 ? 10 : size;
+        this.size = size <= 0 ? 10L : size;
         this.total = total < 0 ? 0 : total;
         this.pages = (this.total + this.size - 1) / this.size;
         this.records = records;

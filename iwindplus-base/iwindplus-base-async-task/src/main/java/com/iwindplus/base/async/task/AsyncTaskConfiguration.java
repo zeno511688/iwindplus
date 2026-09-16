@@ -213,18 +213,18 @@ public class AsyncTaskConfiguration {
     /**
      * 创建 MainAsyncTaskExecuteHandler.
      *
-     * @param asyncTaskHandlerFactor asyncTaskHandlerFactor
-     * @param asyncTaskStateSupport  asyncTaskStateSupport
-     * @param asyncTaskService       asyncTaskService
+     * @param asyncTaskHandlerFactory asyncTaskHandlerFactory
+     * @param asyncTaskStateSupport   asyncTaskStateSupport
+     * @param asyncTaskService        asyncTaskService
      * @return MainAsyncTaskExecuteHandler
      */
     @Bean
     public AsyncTaskExecuteHandler mainAsyncTaskExecuteHandler(
-        AsyncTaskHandlerFactory asyncTaskHandlerFactor,
+        AsyncTaskHandlerFactory asyncTaskHandlerFactory,
         AsyncTaskStateSupport asyncTaskStateSupport,
         AsyncTaskService asyncTaskService) {
         AsyncTaskExecuteHandler mainAsyncTaskExecuteHandler = new MainAsyncTaskExecuteHandler(
-            asyncTaskHandlerFactor, asyncTaskStateSupport, asyncTaskService);
+            asyncTaskHandlerFactory, asyncTaskStateSupport, asyncTaskService);
         log.info("MainAsyncTaskExecuteHandler={}", mainAsyncTaskExecuteHandler);
         return mainAsyncTaskExecuteHandler;
     }
@@ -261,6 +261,7 @@ public class AsyncTaskConfiguration {
      * @param asyncTaskSubService          asyncTaskSubService
      * @param mainAsyncTaskExecuteHandler  mainAsyncTaskExecuteHandler
      * @param groupAsyncTaskExecuteHandler groupAsyncTaskExecuteHandler
+     * @param asyncTaskHandlerFactory      asyncTaskHandlerFactory
      * @return AsyncTaskBizProcessor
      */
     @Bean
@@ -270,10 +271,12 @@ public class AsyncTaskConfiguration {
         AsyncTaskSubService asyncTaskSubService,
         AsyncTaskStateSupport asyncTaskStateSupport,
         @Qualifier("mainAsyncTaskExecuteHandler") AsyncTaskExecuteHandler mainAsyncTaskExecuteHandler,
-        @Qualifier("groupAsyncTaskExecuteHandler") AsyncTaskExecuteHandler groupAsyncTaskExecuteHandler) {
+        @Qualifier("groupAsyncTaskExecuteHandler") AsyncTaskExecuteHandler groupAsyncTaskExecuteHandler,
+        AsyncTaskHandlerFactory asyncTaskHandlerFactory) {
         AsyncTaskBizProcessor asyncTaskBizProcessor = new AsyncTaskBizProcessor(
             property, asyncTaskService, asyncTaskSubService, asyncTaskStateSupport,
-            mainAsyncTaskExecuteHandler, groupAsyncTaskExecuteHandler, threadPoolExecutor);
+            mainAsyncTaskExecuteHandler, groupAsyncTaskExecuteHandler,
+            asyncTaskHandlerFactory, threadPoolExecutor);
         return asyncTaskBizProcessor;
     }
 

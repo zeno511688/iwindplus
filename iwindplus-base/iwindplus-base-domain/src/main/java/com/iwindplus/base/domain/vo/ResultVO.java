@@ -367,11 +367,11 @@ public class ResultVO<T> implements Serializable {
     /**
      * 静态内部类.
      */
-    private static class MessageSourceHolder {
+    public static class MessageSourceHolder {
 
         /**
          * MessageSource.
          */
-        static final MessageSource MESSAGE_SOURCE = SpringUtil.getBean(MessageSource.class);
+        public static final MessageSource MESSAGE_SOURCE = SpringUtil.getBean(MessageSource.class);
     }
 }

@@ -7,18 +7,16 @@
 
 package com.iwindplus.base.domain.dto;
 
-import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 数据库分页数据传输对象.
@@ -36,13 +34,13 @@ public class DbPageDTO implements Serializable {
      * 当前页.
      */
     @Schema(description = "当前页")
-    private Integer current;
+    private Long current;
 
     /**
      * 每页显示条数.
      */
     @Schema(description = "每页显示条数")
-    private Integer size;
+    private Long size;
 
     /**
      * 排序字段信息.
@@ -54,7 +52,7 @@ public class DbPageDTO implements Serializable {
      * 构造方法.
      */
     public DbPageDTO() {
-        this(NumberConstant.NUMBER_ONE, NumberConstant.NUMBER_TEN);
+        this(1L, 10L);
     }
 
     /**
@@ -63,9 +61,9 @@ public class DbPageDTO implements Serializable {
      * @param current 当前页
      * @param size    每页显示条数
      */
-    public DbPageDTO(Integer current, Integer size) {
-        this.current = current <= 0 ? NumberConstant.NUMBER_ONE : current;
-        this.size = size <= 0 ? NumberConstant.NUMBER_TEN : size;
+    public DbPageDTO(Long current, Long size) {
+        this.current = current <= 0 ? 1L : current;
+        this.size = size <= 0 ? 10L : size;
     }
 
     /**

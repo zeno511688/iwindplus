@@ -122,11 +122,14 @@ public record AsyncTaskStateSupport(
     /**
      * 失败任务达到最大重试次数后丢弃.
      *
-     * @param entity 任务对象
+     * @param entity  任务对象
+     * @param handler 任务助手
      * @return boolean
      */
-    public boolean taskDiscard(AsyncTaskVO entity) {
-        return this.transition(
+    public boolean taskDiscard(
+        AsyncTaskVO entity,
+        AsyncTaskHandler handler) {
+        final boolean result = this.transition(
             () -> asyncTaskService.editStatusById(AsyncTaskStatusEditDTO.builder()
                 .id(entity.getId())
                 .from(AsyncTaskStatusEnum.FAILED)
@@ -134,6 +137,12 @@ public record AsyncTaskStateSupport(
                 .build()),
             () -> this.syncStatus(entity, AsyncTaskStatusEnum.DISCARD)
         );
+
+        if (result && Objects.nonNull(handler)) {
+            this.safeCallback(() -> handler.onTaskDiscard(entity), AsyncTaskConstant.HOOK_ON_TASK_DISCARD, entity.getId());
+        }
+
+        return result;
     }
 
     /**

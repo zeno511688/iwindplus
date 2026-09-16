@@ -49,17 +49,17 @@ public class ExportTaskConstant {
     /**
      * 导出批次大小（每页查询条数）.
      */
-    public static final int EXPORT_BATCH_SIZE = 1000;
+    public static final Long EXPORT_BATCH_SIZE = 1000L;
 
     /**
      * 首页页码.
      */
-    public static final int FIRST_PAGE_INDEX = 1;
+    public static final Long FIRST_PAGE_INDEX = 1L;
 
     /**
      * 第二页页码.
      */
-    public static final int SECOND_PAGE_INDEX = 2;
+    public static final Long SECOND_PAGE_INDEX = 2L;
 
     /**
      * 进度百分比基数.

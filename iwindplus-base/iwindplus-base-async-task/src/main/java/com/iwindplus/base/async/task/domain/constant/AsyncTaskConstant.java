@@ -77,6 +77,11 @@ public class AsyncTaskConstant {
     public static final String HOOK_ON_TASK_ASYNC_WAIT = "onTaskAsyncWait";
 
     /**
+     * 钩子方法名：主任务废弃.
+     */
+    public static final String HOOK_ON_TASK_DISCARD = "onTaskDiscard";
+
+    /**
      * 钩子方法名：子任务执行成功.
      */
     public static final String HOOK_ON_SUB_TASK_SUCCESS = "onSubTaskSuccess";

@@ -11,6 +11,7 @@ import com.iwindplus.base.async.task.domain.dto.AsyncTaskExtDTO;
 import com.iwindplus.base.async.task.domain.enums.AsyncTaskStatusEnum;
 import com.iwindplus.base.async.task.domain.property.AsyncTaskProperty;
 import com.iwindplus.base.async.task.domain.vo.AsyncTaskVO;
+import com.iwindplus.base.async.task.factory.AsyncTaskHandlerFactory;
 import com.iwindplus.base.async.task.service.AsyncTaskService;
 import com.iwindplus.base.async.task.service.AsyncTaskSubService;
 import com.iwindplus.base.util.TransactionUtil;
@@ -33,6 +34,7 @@ public record AsyncTaskBizProcessor(
     AsyncTaskStateSupport asyncTaskStateSupport,
     AsyncTaskExecuteHandler mainAsyncTaskExecuteHandler,
     AsyncTaskExecuteHandler groupAsyncTaskExecuteHandler,
+    AsyncTaskHandlerFactory asyncTaskHandlerFactory,
     ThreadPoolExecutor threadPoolExecutor) {
 
     /**
@@ -92,7 +94,7 @@ public record AsyncTaskBizProcessor(
             }
         } else if (AsyncTaskStatusEnum.FAILED.equals(status)) {
             if (this.reachMaxAttempts(entity)) {
-                if (asyncTaskStateSupport.taskDiscard(entity)) {
+                if (asyncTaskStateSupport.taskDiscard(entity, this.getTaskHandler(entity.getExecuteName()))) {
                     log.info("asyncTask retry count reached max attempts, discard. id={}, retryCount={}, maxAttempts={}",
                         entity.getId(), entity.getRetryCount(), entity.getExt().getMaxAttempts());
                 }
@@ -153,5 +155,15 @@ public record AsyncTaskBizProcessor(
      */
     private AsyncTaskExecuteHandler getExecuteHandler(long subTaskCount) {
         return subTaskCount <= 0 ? mainAsyncTaskExecuteHandler : groupAsyncTaskExecuteHandler;
+    }
+
+    /**
+     * 获取任务执行处理器.
+     *
+     * @param executeName 执行器名称
+     * @return AsyncTaskHandler
+     */
+    private AsyncTaskHandler getTaskHandler(String executeName) {
+        return this.asyncTaskHandlerFactory.getTaskHandler(executeName);
     }
 }

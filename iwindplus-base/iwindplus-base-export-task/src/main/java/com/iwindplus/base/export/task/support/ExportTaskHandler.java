@@ -7,20 +7,21 @@
 
 package com.iwindplus.base.export.task.support;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
-import com.iwindplus.base.export.task.domain.vo.ExportTaskVO;
 import com.iwindplus.base.domain.constant.CommonConstant.ExcelConstant;
 import com.iwindplus.base.domain.dto.DbPageDTO;
+import com.iwindplus.base.domain.vo.DbPageVO;
+import com.iwindplus.base.export.task.domain.vo.ExportTaskVO;
 
 /**
  * 导出任务处理器.
  *
- * @param <Q> 查询参数
- * @param <V> 返回值
+ * @param <Q> 查询参数对象
+ * @param <V> 查询返回值对象
+ * @param <E> 导出映射对象
  * @author zengdegui
  * @since 2026/08/27
  */
-public interface ExportTaskHandler<Q extends DbPageDTO, V> {
+public interface ExportTaskHandler<Q extends DbPageDTO, V, E> {
 
     /**
      * 获取执行器名称（有默认值不需要实现）.
@@ -43,7 +44,7 @@ public interface ExportTaskHandler<Q extends DbPageDTO, V> {
      *
      * @return Class对象
      */
-    Class<V> getRowClass();
+    Class<E> getRowClass();
 
     /**
      * 获取导出文件名.
@@ -64,15 +65,15 @@ public interface ExportTaskHandler<Q extends DbPageDTO, V> {
     /**
      * 按条件分页查询数据.
      *
-     * @param queryParam 查询参数类型
+     * @param entity 查询参数
      * @return 分页数据
      */
-    PageDTO<V> pageByCondition(Q queryParam);
+    DbPageVO<V> pageByCondition(Q entity);
 
     /**
      * 任务成功.
      *
-     * @param entity 命令对象
+     * @param entity 对象
      */
     default void onTaskSuccess(ExportTaskVO entity) {
     }
@@ -80,7 +81,7 @@ public interface ExportTaskHandler<Q extends DbPageDTO, V> {
     /**
      * 导出任务失败.
      *
-     * @param entity 命令对象
+     * @param entity 对象
      */
     default void onTaskFail(ExportTaskVO entity) {
     }
