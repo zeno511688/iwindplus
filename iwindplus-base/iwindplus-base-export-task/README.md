@@ -1,6 +1,6 @@
 # iwindplus-base-export-task
 
-`iwindplus-base-export-task` 基于 Alibaba EasyExcel，提供项目统一的excel导出功能，支持 Excel、PDF、Docx 等多种格式。
+`iwindplus-base-export-task` 是基于 Alibaba EasyExcel 的**异步导出任务**模块，面向大数据量导出场景，提供任务落库、分页写入、进度回写、失败重试、XXL-JOB 定时调度、OSS/本地文件下载等能力，避免大数据量导出导致前端长时间等待。
 
 ## 引入
 
@@ -11,14 +11,240 @@
 </dependency>
 ```
 
-该模块依赖 `iwindplus-base-domain`，导入行对象必须继承 `ExcelImportResultDTO`。
+本模块依赖 `iwindplus-base-util`（传递依赖 `iwindplus-base-domain`）。若业务同时使用 Excel 同步导入导出，行对象需要继承 `ExcelImportResultBaseVO`（位于 `iwindplus-base-domain`），该工具类为 `ExcelsUtil`（位于 `iwindplus-base-util`）。
 
-## Excel 行对象
+## 异步导出任务
+
+异步导出是本模块的核心能力，整体流程如下：
+
+```text
+提交导出任务
+   ↓
+ExportTaskExecutor.submit(ExportTaskSubmitDTO)
+   ↓
+落库 export_task（状态 PENDING）
+   ↓
+线程池异步执行
+   ↓
+按 getQueryClass 反序列化查询参数 → pageByCondition 分页查询
+   ↓
+将查询结果转换为 getRowClass（导出行模型）后分页写入 Excel
+   ↓
+SUCCESS（可下载） / FAILED（按策略重试） / DISCARD（人工重试）
+```
+
+### 泛型约定
+
+`ExportTaskHandler<Q, V, E>` 是导出任务的业务处理器接口，三个泛型含义如下：
+
+| 泛型 | 含义 | 约束 |
+|---|---|---|
+| `Q` | 查询参数对象 | 必须继承 `DbPageDTO`（框架会回填 `current`、`size` 分页参数） |
+| `V` | 查询返回值对象 | 业务视图对象，`pageByCondition` 的分页记录类型 |
+| `E` | 导出行模型 | Excel 行对象，需用 `@ExcelProperty` 标注导出列 |
+
+接口方法如下：
+
+```java
+public interface ExportTaskHandler<Q extends DbPageDTO, V, E> {
+
+    default String getExecuteName() {        // 有默认值，可不用实现
+        return this.getClass().getSimpleName();
+    }
+
+    Class<Q> getQueryClass();                // 查询参数类型，必实现
+
+    Class<E> getRowClass();                  // 导出行模型类型，必实现
+
+    String getFileName();                    // 导出文件名（含后缀），必实现
+
+    default String getSheetName() {          // Sheet 名称，有默认值
+        return ExcelConstant.DEFAULT_SHEET_NAME;
+    }
+
+    DbPageVO<V> pageByCondition(Q entity);   // 分页查询，必实现
+
+    default void onTaskSuccess(ExportTaskVO entity) {}  // 成功回调，可选
+
+    default void onTaskFail(ExportTaskVO entity) {}     // 失败回调，可选
+}
+```
+
+> 说明：由于 Java 泛型在运行期会被擦除，`getQueryClass()`、`getRowClass()` 并非冗余。框架在反序列化 `queryParam` 以及创建 EasyExcel `ExcelWriter` 时，都需要这两个运行时 `Class` 对象，实现类必须返回真实类型。
+
+### 初始化数据库
+
+执行模块内置的建表脚本创建任务表：
+
+- 表名：`export_task`
+- 脚本路径：`src/main/resources/db/V202608272324__export_task_table.sql`
+
+### 实现导出任务处理器
+
+为每个业务导出场景实现一个 `ExportTaskHandler`：
+
+```java
+@Component
+@RequiredArgsConstructor
+public class OrderExportTaskHandler implements ExportTaskHandler<OrderSearchDTO, OrderPageVO, OrderExportVO> {
+
+    private final OrderRepository orderRepository;
+
+    @Override
+    public Class<OrderSearchDTO> getQueryClass() {
+        return OrderSearchDTO.class;
+    }
+
+    @Override
+    public Class<OrderExportVO> getRowClass() {
+        return OrderExportVO.class;
+    }
+
+    @Override
+    public String getFileName() {
+        return "订单导出" + FileTypeEnum.XLSX.getSuffix();
+    }
+
+    @Override
+    public DbPageVO<OrderPageVO> pageByCondition(OrderSearchDTO entity) {
+        IPage<OrderPageVO> page = orderRepository.page(entity);
+        return new DbPageVO<>(page.getCurrent(), page.getSize(), page.getTotal(), page.getRecords());
+    }
+}
+```
+
+要点：
+
+- `OrderSearchDTO` 必须继承 `DbPageDTO`，框架会自动回填当前页和每页条数；
+- `OrderPageVO` 是查询返回的业务视图对象，与 `OrderExportVO`（Excel 行模型）可以不同；
+- 框架会通过 `BeanUtil.copyToList` 自动把查询结果转换为 `getRowClass()` 对应的行模型后写入 Excel，业务无需手动转换。
+
+### 提交导出任务
+
+在 Controller 中注入 `ExportTaskExecutor`，通过 `ExportTaskSubmitDTO` 提交：
+
+```java
+@PostMapping("exportTask")
+public ResultVO<ExportTaskSubmitVO> exportTask(@RequestBody @Validated OrderSearchDTO entity) {
+    ExportTaskSubmitDTO param = ExportTaskSubmitDTO.builder()
+        .executorClass(OrderExportTaskHandler.class)
+        .build();
+    param.setQueryParam(entity);
+
+    ExportTaskSubmitVO data = exportTaskExecutor.submit(param);
+    return ResultVO.success(data);
+}
+```
+
+`ExportTaskSubmitDTO` 字段：
+
+| 字段 | 说明 | 是否必填 |
+|---|---|---|
+| `executorClass` | 处理器类，用于定位对应的 `ExportTaskHandler` | 是 |
+| `queryParam` | 查询参数，通过 `setQueryParam(T)` 自动序列化为 Map | 是 |
+| `bizNumber` | 业务流水号，便于业务侧关联 | 否 |
+| `remark` | 备注 | 否 |
+| `ext` | 扩展对象 | 否 |
+
+提交返回 `ExportTaskSubmitVO`，包含 `id`（任务主键）和 `bizNumber`（业务流水号），用于后续查询进度和下载。
+
+### 查询进度与下载
+
+模块内置了查询进度和下载接口（`ExportTaskController`），无需业务自行实现：
+
+- 查询进度：`GET admin/report/exportTask/getDetail?id={任务ID}`
+- 下载文件：`GET admin/report/exportTask/download?id={任务ID}`
+
+接口基础路径可通过 `export-task.web.path` 配置（默认 `admin/report/exportTask`）。
+
+`ExportTaskVO` 关键字段：
+
+| 字段 | 说明 |
+|---|---|
+| `status` | 任务状态 |
+| `progress` | 进度（0-100） |
+| `exportedCount` | 已导出数量 |
+| `totalCount` | 总数 |
+| `errorMsg` | 失败原因 |
+| `fileName` / `filePath` | 文件名 / 文件路径 |
+| `bizNumber` | 业务流水号 |
+
+### 任务状态
+
+`ExportTaskStatusEnum` 定义的状态流转如下：
+
+| 状态 | 值 | 说明 |
+|---|---|---|
+| `PENDING` | 0 | 待执行 |
+| `EXECUTING` | 10 | 执行中 |
+| `SUCCESS` | 20 | 成功，可下载 |
+| `FAILED` | 30 | 失败，等待重试 |
+| `DISCARD` | 40 | 废弃（超过最大重试次数），需人工重试 |
+
+### 失败重试
+
+框架对 `FAILED` 任务按重试策略自动调度重试，超过最大重试次数后转为 `DISCARD`。
+
+`DISCARD` 状态的任务可通过 `ExportTaskExecutor` 人工重试：
+
+```java
+exportTaskExecutor.retryById(taskId);            // 通过主键重试
+exportTaskExecutor.retryByBizNumber(bizNumber);  // 通过业务流水号重试
+```
+
+### 定时任务配置
+
+在 XXL-JOB 管理后台配置定时任务：
+
+- 任务名称：`exportTask`
+- 运行模式：分片广播
+- Cron 表达式：按业务需要配置（如 `0/10 * * * * ?` 每 10 秒执行一次）
+
+定时任务会遍历内置的任务处理器（当前为重试任务 `RETRY_JOB`），按分片参数驱动未完成任务执行。
+
+### 配置项
+
+```yaml
+export-task:
+  enabled: true          # 模块总开关（默认 true）
+  job:
+    enabled: true                  # 是否启用内置任务（默认 true）
+    max-loop-count: 100            # 单次调度最大循环次数（默认 100）
+  web:
+    enabled: true        # 内置查询/下载接口开关（默认 true）
+    path: admin/report/exportTask   # 内置接口基础路径（默认 admin/report/exportTask）
+  max-page-size: 10                # 定时任务分页每页条数（默认 10）
+  timeout-seconds: 120             # 任务执行最大时长，超时将被重置（默认 120）
+  oss:
+    enabled: false                 # 是否上传 OSS（默认 false，使用本地文件存储）
+    type: MINIO                    # OSS 类型（默认 MINIO）
+    code: minio                    # OSS 配置编码（可选，不配置使用默认策略）
+    bucket-name: your-bucket       # 空间名（启用 OSS 时必填）
+    access-domain: https://oss.example.com   # 访问域名（可选）
+    relative-path-prefix: export-task/       # 相对路径前缀（可选）
+  retry:
+    frequency: 1m,2m,5m,10m        # 重试频率（默认 1m,2m,5m,10m）
+    enabled-unlimited-retry: false # 是否无限重试（默认 false）
+    max-attempts: 10               # 最大重试次数（默认 10）
+```
+
+## Excel 同步导入导出（ExcelsUtil）
+
+同步导入导出由 `iwindplus-base-util` 模块的 `ExcelsUtil` 提供，本模块通过依赖传递可直接使用。
+
+### 行对象基类
+
+行对象必须继承 `ExcelImportResultBaseVO`，它提供两个框架字段：
+
+| 字段 | 说明 |
+|---|---|
+| `rowNum` | Excel 行号，读取时由监听器自动填充，从 1 开始 |
+| `errorMsg` | 当前行的校验错误信息 |
 
 ```java
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class UserImportDTO extends ExcelImportResultDTO {
+public class UserImportVO extends ExcelImportResultBaseVO {
 
     @NotBlank(message = "用户名不能为空")
     private String username;
@@ -28,327 +254,121 @@ public class UserImportDTO extends ExcelImportResultDTO {
 }
 ```
 
-`ExcelImportResultDTO` 提供两个框架字段：
+业务字段可继续使用 Jakarta Validation 注解，也可通过 `EasyExcelImportVerifyHandler` 编写跨字段或数据库校验。
 
-| 字段 | 说明 |
-|---|---|
-| `rowNum` | Excel 行号，读取时由监听器自动填充，从 1 开始 |
-| `errorMsg` | 当前行的校验错误信息 |
-
-业务字段可以继续使用 Jakarta Validation 注解，也可以通过 `EasyExcelImportVerifyHandler` 编写跨字段或数据库校验。
-
-## 导入 Excel
-
-### 基础导入
+### 导入
 
 ```java
 try (InputStream inputStream = file.getInputStream()) {
-    EasyExcelListener<UserImportDTO> listener = EasyExcelUtil.importExcel(
+    ExcelImportResultVO<UserImportVO> result = ExcelsUtil.importExcel(
         inputStream,
-        UserImportDTO.class,
+        UserImportVO.class,
         null,
         1
     );
 
-    List<UserImportDTO> allRows = listener.getList();
-    List<UserImportDTO> validRows = listener.getRightList();
-    List<UserImportDTO> invalidRows = listener.getFailList();
+    List<UserImportVO> allRows = result.getList();        // 全部行
+    List<UserImportVO> validRows = result.getRightList(); // 校验通过行
+    List<UserImportVO> invalidRows = result.getFailList(); // 校验失败行
 }
+```
+
+导入有两个重载：
+
+```java
+// 基础导入
+importExcel(InputStream inputStream, Class<?> pojoClass,
+    EasyExcelImportVerifyHandler<T> verifyHandler, Integer headRowNumber)
+
+// 带 Bean Validation 的导入
+importExcel(InputStream inputStream, Validator validator, Class<?>[] groups,
+    Class<?> pojoClass, EasyExcelImportVerifyHandler<T> verifyHandler, Integer headRowNumber)
 ```
 
 参数说明：
 
 - `inputStream`：Excel 输入流，必填；
+- `validator` / `groups`：Bean Validation 校验器和校验分组（可选，分组为空时使用 `Default` 分组）；
 - `pojoClass`：行对象类型，同时用于表头校验；
 - `verifyHandler`：自定义校验器，可为空；
 - `headRowNumber`：表头行数，传 `null` 时默认为 `1`。
 
-### 使用 Bean Validation
+### 自定义行校验
 
-需要将 `Validator` 和校验分组传入：
-
-```java
-EasyExcelListener<UserImportDTO> listener = EasyExcelUtil.importExcel(
-    inputStream,
-    validator,
-    new Class<?>[]{SaveGroup.class},
-    UserImportDTO.class,
-    null,
-    1
-);
-```
-
-校验分组为空时，监听器使用 Jakarta Validation 的 `Default` 分组。
-
-### 使用自定义行校验
+`EasyExcelImportVerifyHandler` 是函数式接口，返回 `ExcelVerifyResultVO`：
 
 ```java
-EasyExcelImportVerifyHandler<UserImportDTO> verifyHandler = row -> {
+EasyExcelImportVerifyHandler<UserImportVO> verifyHandler = row -> {
     if (userService.existsByUsername(row.getUsername())) {
-        return ExcelVerifyResultVO.fail("用户名已存在");
+        return ExcelVerifyResultVO.builder().success(false).msg("用户名已存在").build();
     }
-    return ExcelVerifyResultVO.success();
+    return ExcelVerifyResultVO.builder().success(true).build();
 };
 
-EasyExcelListener<UserImportDTO> listener = EasyExcelUtil.importExcel(
+ExcelImportResultVO<UserImportVO> result = ExcelsUtil.importExcel(
     inputStream,
     validator,
     new Class<?>[]{SaveGroup.class},
-    UserImportDTO.class,
+    UserImportVO.class,
     verifyHandler,
     1
 );
 ```
 
-自定义校验返回失败时，错误信息会写入 `errorMsg`，该行进入 `failList`；成功行进入 `rightList`。Bean Validation 错误和自定义校验错误会合并。
+自定义校验失败时，`msg` 会写入 `errorMsg`，该行进入 `failList`；成功行进入 `rightList`。Bean Validation 错误和自定义校验错误会合并。
 
-### 表头校验
-
-传入 `pojoClass` 后，监听器会通过 `ExcelsUtil.listHeadByAnnotation(pojoClass)` 获取模型表头，并检查 Excel 表头是否包含模型定义的表头。
-
-表头不匹配时会抛出 `BizCodeEnum.EXCEL_TEMPLATE_ERROR` 对应的 `BizException`。
-
-注意：当前实现检查的是“Excel 表头是否包含模型表头”，不是对任意列顺序都进行强制等值校验。
-
-### 忽略空行
-
-空对象和 EasyExcel 判定的空行会被直接忽略，不会进入 `list`、`rightList` 或 `failList`。
-
-## 导入结果处理
-
-```java
-List<UserImportDTO> allRows = listener.getList();
-List<UserImportDTO> successRows = listener.getRightList();
-List<UserImportDTO> failedRows = listener.getFailList();
-
-for (UserImportDTO row : failedRows) {
-    log.warn("第 {} 行导入失败：{}", row.getRowNum(), row.getErrorMsg());
-}
-
-userService.batchSave(successRows);
-```
-
-推荐只将 `rightList` 写入数据库。`failList` 可以返回给前端，或作为带错误信息的 Excel 再次导出。
-
-## 导出 Excel
-
-### 默认样式导出
+### 导出
 
 ```java
 @GetMapping("/export")
 public void export(HttpServletResponse response) {
-    List<UserImportDTO> rows = userService.listForExport();
-    EasyExcelUtil.exportExcel(
-        response,
-        rows,
-        UserImportDTO.class,
-        "user.xlsx",
-        null
-    );
+    List<UserImportVO> rows = userService.listForExport();
+    ExcelsUtil.exportExcel(response, rows, UserImportVO.class, "user.xlsx", null);
 }
 ```
 
-当 `sheetName` 不单独传入时，默认使用文件名作为 Sheet 名称。
-
-### 指定 Sheet 名称
+导出有两个重载：
 
 ```java
-EasyExcelUtil.exportExcel(
-    response,
-    rows,
-    UserImportDTO.class,
-    "user.xlsx",
-    "用户数据",
-    null
-);
+// 默认 Sheet 名称（取文件名主名）
+exportExcel(HttpServletResponse response, List<T> data, Class<?> pojoClass,
+    String fileName, HorizontalCellStyleStrategy horizontalCellStyleStrategy)
+
+// 指定 Sheet 名称
+exportExcel(HttpServletResponse response, List<T> data, Class<?> pojoClass,
+    String fileName, String sheetName, HorizontalCellStyleStrategy horizontalCellStyleStrategy)
 ```
 
-### 自定义样式
+导出文件名必须带 `FileTypeEnum` 支持的 Excel 后缀（如 `.xls`、`.xlsx`、`.xlsm`、`.csv`），无法识别的后缀会抛出 Excel 格式错误业务异常。未传样式策略时使用默认样式（表头宋体 14 号、内容宋体 12 号、水平和垂直居中）。
 
-```java
-HorizontalCellStyleStrategy styleStrategy = new HorizontalCellStyleStrategy(
-    headWriteCellStyle,
-    contentWriteCellStyle
-);
+### 表头校验
 
-EasyExcelUtil.exportExcel(
-    response,
-    rows,
-    UserImportDTO.class,
-    "user.xlsx",
-    "用户数据",
-    styleStrategy
-);
-```
-
-没有传入样式策略时，模块使用默认样式：表头宋体 14 号、内容宋体 12 号，水平和垂直居中。
+传入 `pojoClass` 后，监听器会通过 `ExcelsUtil.listHeadByAnnotation(pojoClass)` 获取模型表头，并检查 Excel 表头是否包含模型定义的表头。表头不匹配时抛出 `BizCodeEnum.EXCEL_TEMPLATE_ERROR` 对应的 `BizException`。
 
 ### 导出失败行
 
-如果导出数据中存在非空 `errorMsg`，工具会自动注册 `EasyExcelErrorRowWriteHandler`，在导出结果中增加错误信息列并标记失败行。
-
-这适合将 `listener.getList()` 原样导出给用户，让用户看到哪些行失败以及失败原因：
+导出数据中存在非空 `errorMsg` 时，工具会自动注册 `EasyExcelErrorRowWriteHandler`，在导出结果中增加错误信息列并标记失败行，适合将导入失败行原样导出给用户查看：
 
 ```java
-EasyExcelUtil.exportExcel(
-    response,
-    listener.getList(),
-    UserImportDTO.class,
-    "user-import-result.xlsx",
-    "导入结果",
-    null
-);
-```
-
-## 文件格式和响应处理
-
-导出文件名必须带有支持的 Excel 后缀，例如 `.xls` 或 `.xlsx`。无法识别的后缀会抛出 Excel 格式错误业务异常。
-
-工具会自动：
-
-1. 根据文件名设置下载响应头；
-2. 根据文件后缀设置 Content-Type；
-3. 创建 EasyExcel Writer；
-4. 写入 Sheet 和数据；
-5. Flush 输出流并刷新响应缓冲区。
-
-Controller 不要再重复设置相同的响应头，避免文件名编码或 Content-Type 被覆盖。
-
-## 推荐导入流程
-
-```text
-上传文件
-   ↓
-EasyExcelUtil.importExcel
-   ↓
-表头校验
-   ↓
-Bean Validation
-   ↓
-自定义业务校验
-   ↓
-┌──────────────┬──────────────┐
-│ rightList    │ failList     │
-│ 批量入库     │ 返回错误信息 │
-└──────────────┴──────────────┘
+ExcelsUtil.exportExcel(response, result.getList(), UserImportVO.class,
+    "user-import-result.xlsx", "导入结果", null);
 ```
 
 ## 注意事项
 
-1. 导入对象必须继承 `ExcelImportResultDTO`，否则不能使用当前泛型入口。
-2. `headRowNumber` 是表头行数，不是数据起始行的任意偏移量。
-3. `rightList` 只代表框架校验通过，不代表数据库写入已经成功。
-4. 自定义校验器中不要执行不可控的高频远程请求，建议提前批量加载校验数据。
-5. 大文件导入时不要长期持有 `getList()` 的全部数据，应结合业务控制文件大小和批量处理策略。
-6. 导出数据中含有错误信息时会自动增加错误处理列，前端导入模板不要直接把结果文件当作原始模板使用。
-7. `exportExcel` 捕获输出过程中的 `IOException` 并记录日志，业务层需要结合响应状态和日志做好失败监控。
-8. 导入流使用完毕后由调用方关闭，推荐使用 try-with-resources。
-
-## 异步导出
-
-对于大数据量导出，推荐使用异步导出功能，避免前端长时间等待。
-
-### 数据库表结构
-
-表名：`export_task`
-
-详见：`src/main/resources/sql/export_task.sql`
-
-### 实现导出任务处理器
-
-为每个业务类型实现 `ExportTaskHandler` 接口：
-
-```java
-@Component
-public class OrderExportHandler implements ExportTaskHandler {
-
-    @Override
-    public String getBizType() {
-        return "ORDER_EXPORT";
-    }
-
-    @Override
-    public Integer getTotalCount(ExportTaskVO task) {
-        // 根据查询参数查询总数
-        Map<String, Object> queryParam = task.getQueryParam();
-        return orderService.count(queryParam);
-    }
-
-    @Override
-    public List<?> getDataList(ExportTaskVO task, int offset, int limit) {
-        // 根据查询参数分页查询数据
-        Map<String, Object> queryParam = task.getQueryParam();
-        return orderService.listByPage(queryParam, offset, limit);
-    }
-
-    @Override
-    public Class<?> getDataClass() {
-        return OrderExportDTO.class;
-    }
-}
-```
-
-### 创建导出任务
-
-```java
-@PostMapping("export")
-public Long export(@RequestBody OrderQueryDTO query) {
-    ExportTaskDTO taskDTO = ExportTaskDTO.builder()
-        .bizName("订单导出")
-        .bizKey("ORDER")
-        .bizType("ORDER_EXPORT")
-        .fileName("订单导出_" + System.currentTimeMillis() + ".xlsx")
-        .queryParam(BeanUtil.beanToMap(query))
-        .build();
-    
-    return exportTaskService.createTask(taskDTO);
-}
-```
-
-### 查询导出进度
-
-```java
-@GetMapping("export/progress/{taskId}")
-public ExportTaskVO getProgress(@PathVariable Long taskId) {
-    return exportTaskService.getById(taskId);
-}
-```
-
-返回的 `ExportTaskVO` 包含：
-- `status`: 任务状态（PENDING、EXECUTING、SUCCESS、FAILED、DISCARD）
-- `progress`: 进度比例（0-100）
-- `exportedCount`: 已导出数量
-- `totalCount`: 总数量
-- `errorMsg`: 错误信息（如果失败）
-
-### 下载导出文件
-
-```java
-@GetMapping("export/download/{taskId}")
-public void download(@PathVariable Long taskId, HttpServletResponse response) {
-    exportTaskController.download(taskId, response);
-}
-```
-
-### 定时任务配置
-
-在 XXL-JOB 管理后台配置定时任务：
-
-- 任务名称：`exportTask`
-- Cron表达式：`0/10 * * * * ?`（每10秒执行一次）
-- 运行模式：分片广播
-
-### 异步导出注意事项
-
-1. **业务类型唯一性**：每个业务类型（bizType）只能有一个处理器
-2. **查询参数序列化**：查询参数会被序列化为 JSON 存储，确保参数对象可序列化
-3. **文件路径**：导出文件默认存储在系统临时目录，需要定期清理
-4. **并发控制**：定时任务使用分片广播，多个实例会分片处理任务
-5. **性能优化**：建议分批查询数据（默认每批1000条），避免内存溢出
+1. 异步导出的查询参数会被序列化为 JSON 存储，需确保参数对象可序列化。
+2. 异步导出默认每批 `EXPORT_BATCH_SIZE` 条分页写入，避免一次性加载全部数据导致内存溢出。
+3. 导出文件默认写入系统临时目录（`java.io.tmpdir`），未启用 OSS 时需自行关注临时文件清理；分布式部署建议启用 `document.oss` 上传到 OSS。
+4. 提交任务时 `executorClass` 与 `ExportTaskHandler` 实现类必须一一对应，框架按执行器名称（默认类名）定位处理器。
+5. 同步导入的 `rightList` 只代表框架校验通过，不代表数据库写入成功。
+6. 自定义校验器中不要执行不可控的高频远程请求，建议提前批量加载校验数据。
+7. 同步导入流使用完毕后由调用方关闭，推荐使用 try-with-resources。
 
 ## 相关模块
 
-- `iwindplus-base-domain`：提供 `ExcelImportResultDTO`、`ExcelVerifyResultVO`、校验分组和业务异常。
-- `iwindplus-base-util`：提供 `ExcelsUtil`、`FilesUtil`、`ValidUtil` 等基础工具。
-- `iwindplus-base-oss`：处理导入文件上传和导出文件存储。
+- `iwindplus-base-domain`：提供 `ExcelImportResultBaseVO`、`ExcelVerifyResultVO`、`DbPageDTO`、`DbPageVO` 等基础对象。
+- `iwindplus-base-util`：提供 `ExcelsUtil`、`FilesUtil` 等基础工具。
+- `iwindplus-base-mybatis`：提供分页查询等持久化能力。
+- `iwindplus-base-oss`：提供导出文件上传 OSS 的能力。
+- `iwindplus-base-xxl-job`：提供 XXL-JOB 定时调度能力。
 - `iwindplus-base-web`：提供统一 Web 请求和文件响应能力。

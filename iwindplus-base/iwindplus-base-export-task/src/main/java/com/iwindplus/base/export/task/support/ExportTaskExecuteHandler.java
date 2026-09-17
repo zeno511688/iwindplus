@@ -7,6 +7,7 @@
 
 package com.iwindplus.base.export.task.support;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.text.CharSequenceUtil;
@@ -15,10 +16,12 @@ import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.iwindplus.base.domain.constant.CommonConstant.FileConstant;
 import com.iwindplus.base.domain.dto.DbPageDTO;
+import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.domain.vo.DbPageVO;
 import com.iwindplus.base.domain.vo.UploadVO;
 import com.iwindplus.base.export.task.domain.constant.ExportTaskConstant;
 import com.iwindplus.base.export.task.domain.dto.ExportTaskStatusEditDTO;
+import com.iwindplus.base.export.task.domain.enums.ExportTaskCodeEnum;
 import com.iwindplus.base.export.task.domain.enums.ExportTaskStatusEnum;
 import com.iwindplus.base.export.task.domain.property.ExportTaskProperty;
 import com.iwindplus.base.export.task.domain.vo.ExportTaskVO;
@@ -97,14 +100,15 @@ public record ExportTaskExecuteHandler(
         task.setFileName(fileName);
         final String tempFilePath = this.buildTempFilePath(fileName);
         final Long batchSize = ExportTaskConstant.EXPORT_BATCH_SIZE;
+        final Class<?> rowClass = this.getRowClass(handler);
 
-        try (ExcelWriter excelWriter = EasyExcel.write(tempFilePath, handler.getRowClass()).build()) {
+        try (ExcelWriter excelWriter = EasyExcel.write(tempFilePath, rowClass).build()) {
             WriteSheet writeSheet = EasyExcel.writerSheet(handler.getSheetName()).build();
             DbPageDTO queryPageDTO = this.buildQueryPageDTO(handler, task, batchSize);
 
             // 写入第一页数据
             DbPageVO<?> dataPage = handler.pageByCondition(queryPageDTO);
-            Long exportedCount = this.writeFirstPage(excelWriter, writeSheet, dataPage, task);
+            Long exportedCount = this.writeFirstPage(excelWriter, writeSheet, handler, dataPage, task);
             if (exportedCount == null) {
                 return;
             }
@@ -227,6 +231,20 @@ public record ExportTaskExecuteHandler(
     }
 
     /**
+     * 获取Excel行模型类型.
+     *
+     * @param handler 导出任务助手
+     * @return Excel行模型类型
+     */
+    private Class<?> getRowClass(ExportTaskHandler handler) {
+        final Class<?> rowClass = handler.getRowClass();
+        if (rowClass == null) {
+            throw new BizException(ExportTaskCodeEnum.EXPORT_ROW_CLASS_NOT_CONFIGURED);
+        }
+        return rowClass;
+    }
+
+    /**
      * 构建查询参数.
      *
      * @param handler   导出任务助手
@@ -235,7 +253,16 @@ public record ExportTaskExecuteHandler(
      * @return 查询参数
      */
     private DbPageDTO buildQueryPageDTO(ExportTaskHandler handler, ExportTaskVO task, Long batchSize) {
-        DbPageDTO queryPageDTO = (DbPageDTO) JacksonUtil.parseObject(task.getQueryParam(), handler.getQueryClass());
+        final Class<?> queryClass = handler.getQueryClass();
+        if (queryClass == null) {
+            throw new BizException(ExportTaskCodeEnum.EXPORT_QUERY_CLASS_NOT_CONFIGURED);
+        }
+
+        final Object queryParam = JacksonUtil.parseObject(task.getQueryParam(), queryClass);
+        if (!(queryParam instanceof DbPageDTO queryPageDTO)) {
+            throw new BizException(ExportTaskCodeEnum.EXPORT_QUERY_PARAM_PARSE_FAILED);
+        }
+
         queryPageDTO.setCurrent(ExportTaskConstant.FIRST_PAGE_INDEX);
         queryPageDTO.setSize(batchSize);
         return queryPageDTO;
@@ -251,13 +278,13 @@ public record ExportTaskExecuteHandler(
      * @return 已导出数量，如果无数据则返回null
      */
     private Long writeFirstPage(ExcelWriter excelWriter,
-        WriteSheet writeSheet, DbPageVO<?> dataPage, ExportTaskVO task) {
+        WriteSheet writeSheet, ExportTaskHandler handler, DbPageVO<?> dataPage, ExportTaskVO task) {
         List<?> dataList = dataPage.getRecords();
         if (CollUtil.isEmpty(dataList)) {
             return null;
         }
 
-        excelWriter.write(dataList, writeSheet);
+        excelWriter.write(this.convertToRowList(handler, dataList), writeSheet);
         Long exportedCount = (long) dataList.size();
 
         // 更新进度
@@ -290,12 +317,36 @@ public record ExportTaskExecuteHandler(
                 break;
             }
 
-            excelWriter.write(dataList, writeSheet);
+            excelWriter.write(this.convertToRowList(handler, dataList), writeSheet);
             exportedCount += dataList.size();
 
             // 更新进度
             this.updateProgress(task, firstDataPage.getTotal(), exportedCount);
         }
+    }
+
+    /**
+     * 将分页查询结果转换为导出行数据.
+     *
+     * <p>分页查询返回的是业务视图对象，与Excel行模型（getRowClass）可能不一致，
+     * 直接写入会导致EasyExcel按实际类型查找Converter失败，因此统一转换为行模型后再写入。</p>
+     *
+     * @param handler  导出任务助手
+     * @param dataList 分页查询结果
+     * @return 导出行数据
+     */
+    private List<?> convertToRowList(ExportTaskHandler handler, List<?> dataList) {
+        final Class<?> rowClass = this.getRowClass(handler);
+        if (CollUtil.isEmpty(dataList)) {
+            return dataList;
+        }
+
+        // 类型一致时无需转换
+        if (rowClass.isInstance(dataList.get(0))) {
+            return dataList;
+        }
+
+        return BeanUtil.copyToList(dataList, rowClass);
     }
 
     /**

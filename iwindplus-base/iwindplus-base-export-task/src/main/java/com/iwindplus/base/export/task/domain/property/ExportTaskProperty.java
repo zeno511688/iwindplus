@@ -17,7 +17,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
- * Document配置.
+ * 导出配置.
  *
  * @author zengdegui
  * @since 2025/9/14
@@ -26,7 +26,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@ConfigurationProperties(prefix = "document")
+@ConfigurationProperties(prefix = "export-task")
 public class ExportTaskProperty {
 
     /**
