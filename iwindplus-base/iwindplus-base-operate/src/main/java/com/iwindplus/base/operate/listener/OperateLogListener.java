@@ -9,7 +9,6 @@ package com.iwindplus.base.operate.listener;
 
 import cn.hutool.extra.spring.SpringUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.http.client.factory.HttpClientExecuteHandlerFactory;
 import com.iwindplus.base.operate.domain.dto.OperateLogDTO;
 import com.iwindplus.base.operate.domain.event.OperateLogEvent;
@@ -57,7 +56,7 @@ public class OperateLogListener {
                 cfg.getUrl(),
                 logData,
                 null,
-                new TypeReference<ResultVO<Boolean>>() {
+                new TypeReference<>() {
                 }
             );
         log.info("{} 操作日志发送成功", SpringUtil.getApplicationName());
