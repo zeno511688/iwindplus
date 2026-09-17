@@ -22,6 +22,7 @@ import com.iwindplus.base.domain.vo.FilePathVO;
 import com.iwindplus.base.domain.vo.PreUploadVO;
 import com.iwindplus.base.domain.vo.UploadVO;
 import com.iwindplus.base.oss.domain.constant.OssConstant;
+import com.iwindplus.base.oss.domain.constant.OssConstant.MinioConstant;
 import com.iwindplus.base.oss.domain.dto.OssCloudDownloadDTO;
 import com.iwindplus.base.oss.domain.dto.OssCloudGetSignUrlDTO;
 import com.iwindplus.base.oss.domain.dto.OssCloudListSignUrlDTO;
@@ -81,7 +82,7 @@ public class MinioOssExecuteHandler extends AbstractOssBaseServiceImpl<MinioConf
      */
     public MinioOssExecuteHandler(
         MultipartProperties multipartProperties,
-        OssProperty.MinioConfig config,
+        MinioConfig config,
         ObjectProvider<OkHttpClient> okHttpClientProvider) {
         super(multipartProperties);
         super.setConfig(config);
@@ -340,32 +341,33 @@ public class MinioOssExecuteHandler extends AbstractOssBaseServiceImpl<MinioConf
             return false;
         }
         JsonNode rootNode = JacksonUtil.parseTree(policyJson);
-        JsonNode statements = rootNode.get("Statement");
+        JsonNode statements = rootNode.get(MinioConstant.POLICY_STATEMENT);
         if (statements == null || statements.isEmpty()) {
             return false;
         }
         for (JsonNode statement : statements) {
-            if (statement.get("Effect") == null || !statement.get("Effect").asText().equals("Allow")) {
+            if (statement.get(MinioConstant.POLICY_EFFECT) == null
+                || !statement.get(MinioConstant.POLICY_EFFECT).asText().equals(MinioConstant.POLICY_EFFECT_ALLOW)) {
                 continue;
             }
-            JsonNode principal = statement.get("Principal");
+            JsonNode principal = statement.get(MinioConstant.POLICY_PRINCIPAL);
             if (principal == null) {
                 continue;
             }
             // 处理 Principal 为 * 或 {"AWS":"*"}
-            if (principal.isTextual() && "*".equals(principal.asText())) {
+            if (principal.isTextual() && MinioConstant.POLICY_PRINCIPAL_WILDCARD.equals(principal.asText())) {
                 return true;
             }
             if (principal.isObject()) {
-                JsonNode aws = principal.get("AWS");
-                if (aws != null && "*".equals(aws.asText())) {
+                JsonNode aws = principal.get(MinioConstant.POLICY_PRINCIPAL_AWS);
+                if (aws != null && MinioConstant.POLICY_PRINCIPAL_WILDCARD.equals(aws.asText())) {
                     return true;
                 }
             }
-            JsonNode actions = statement.get("Action");
+            JsonNode actions = statement.get(MinioConstant.POLICY_ACTION);
             if (actions != null && actions.isArray()) {
                 for (JsonNode action : actions) {
-                    if ("s3:GetObject".equals(action.asText())) {
+                    if (MinioConstant.POLICY_ACTION_GET_OBJECT.equals(action.asText())) {
                         return true;
                     }
                 }
@@ -375,7 +377,7 @@ public class MinioOssExecuteHandler extends AbstractOssBaseServiceImpl<MinioConf
     }
 
     private MinioClient getMinioClient() {
-        OssProperty.MinioConfig config = this.getConfig();
+        MinioConfig config = this.getConfig();
 
         MinioClient.Builder builder = MinioClient.builder()
             .endpoint(config.getEndpoint())

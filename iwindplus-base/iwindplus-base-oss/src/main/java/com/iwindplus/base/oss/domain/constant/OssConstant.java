@@ -100,5 +100,45 @@ public final class OssConstant {
          */
         public static final String BACKUP_CODE = "minio-backup";
 
+        /**
+         * 存储桶策略 Statement 字段.
+         */
+        public static final String POLICY_STATEMENT = "Statement";
+
+        /**
+         * 存储桶策略 Effect 字段.
+         */
+        public static final String POLICY_EFFECT = "Effect";
+
+        /**
+         * 存储桶策略 Effect 允许值.
+         */
+        public static final String POLICY_EFFECT_ALLOW = "Allow";
+
+        /**
+         * 存储桶策略 Principal 字段.
+         */
+        public static final String POLICY_PRINCIPAL = "Principal";
+
+        /**
+         * 存储桶策略 Principal 通配符.
+         */
+        public static final String POLICY_PRINCIPAL_WILDCARD = "*";
+
+        /**
+         * 存储桶策略 Principal AWS 字段.
+         */
+        public static final String POLICY_PRINCIPAL_AWS = "AWS";
+
+        /**
+         * 存储桶策略 Action 字段.
+         */
+        public static final String POLICY_ACTION = "Action";
+
+        /**
+         * 存储桶策略 Action 读取对象值.
+         */
+        public static final String POLICY_ACTION_GET_OBJECT = "s3:GetObject";
+
     }
 }
