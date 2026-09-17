@@ -15,7 +15,6 @@ import com.alibaba.excel.write.metadata.WriteSheet;
 import com.iwindplus.base.domain.constant.CommonConstant.FileConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.domain.dto.DbPageDTO;
-import com.iwindplus.base.domain.dto.FileBaseDTO;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.domain.vo.DbPageVO;
 import com.iwindplus.base.export.task.domain.constant.ExportTaskConstant;
@@ -55,7 +54,7 @@ public record ExportTaskExecuteHandler(
      * @param entity 导出任务实体
      */
     public void execute(ExportTaskVO entity) {
-        ExportTaskHandler handler = this.getTaskHandler(entity.getExecuteName());
+        final ExportTaskHandler handler = this.getTaskHandler(entity.getExecuteName());
         final long start = System.currentTimeMillis();
 
         try {
@@ -117,7 +116,8 @@ public record ExportTaskExecuteHandler(
         }
 
         // 导出成功，回写文件路径供下载使用
-        this.resolveFilePath(task, tempFilePath);
+        task.setFilePath(tempFilePath);
+        this.resolveFilePath(task);
     }
 
     /**
@@ -138,23 +138,16 @@ public record ExportTaskExecuteHandler(
      *
      * <p>启用OSS时上传到OSS并返回访问URL，否则使用本地文件路径。</p>
      *
-     * @param task         导出任务
-     * @param tempFilePath 本地临时文件路径
+     * @param task 导出任务
      */
-    private void resolveFilePath(ExportTaskVO task, String tempFilePath) {
+    private void resolveFilePath(ExportTaskVO task) {
         final ExportTaskProperty.OssConfig ossConfig = this.property.getOss();
         if (ossConfig == null || Boolean.FALSE.equals(ossConfig.getEnabled())) {
-            // 未启用OSS，使用本地文件路径
-            task.setFilePath(tempFilePath);
             return;
         }
 
-        // 发布上传文件事件
-        final FileBaseDTO entity = FileBaseDTO.builder()
-            .fileName(task.getFileName())
-            .filePath(tempFilePath)
-            .build();
-        this.publisher.publishEvent(new ExportTaskUploadFileEvent(this, entity));
+        // 发布上传文件事件，上传成功后回写相对路径到 task.filePath
+        this.publisher.publishEvent(new ExportTaskUploadFileEvent(this, task));
     }
 
     /**
@@ -294,9 +287,9 @@ public record ExportTaskExecuteHandler(
     /**
      * 按最大条数限制截断数据列表.
      *
-     * @param task          导出任务
-     * @param dataList      原始数据列表
-     * @param exportedCount 已导出数量
+     * @param task           导出任务
+     * @param dataList       原始数据列表
+     * @param exportedCount  已导出数量
      * @param maxExportCount 最大条数限制
      * @return 截断后的数据列表
      */
@@ -359,10 +352,10 @@ public record ExportTaskExecuteHandler(
     /**
      * 更新导出进度（仅当进度值发生变化时才写库，避免重复更新）.
      *
-     * @param task           导出任务
-     * @param totalCount     总数
-     * @param exportedCount  已导出数量
-     * @param lastProgress   上次已写入的进度值
+     * @param task          导出任务
+     * @param totalCount    总数
+     * @param exportedCount 已导出数量
+     * @param lastProgress  上次已写入的进度值
      * @return 本次实际写入的进度值，未变化时返回上次进度值
      */
     private int updateProgress(ExportTaskVO task, Long totalCount, Long exportedCount, int lastProgress) {

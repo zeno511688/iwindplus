@@ -7,7 +7,7 @@
 
 package com.iwindplus.base.export.task.domain.event;
 
-import com.iwindplus.base.domain.dto.FileBaseDTO;
+import com.iwindplus.base.export.task.domain.vo.ExportTaskVO;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 
@@ -20,9 +20,9 @@ import org.springframework.context.ApplicationEvent;
 @Getter
 public class ExportTaskUploadFileEvent extends ApplicationEvent {
 
-    private FileBaseDTO entity;
+    private ExportTaskVO entity;
 
-    public ExportTaskUploadFileEvent(Object source, FileBaseDTO entity) {
+    public ExportTaskUploadFileEvent(Object source, ExportTaskVO entity) {
         super(source);
         this.entity = entity;
     }
