@@ -15,6 +15,7 @@ import com.iwindplus.base.export.task.executor.impl.ExportTaskExecutorImpl;
 import com.iwindplus.base.export.task.factory.ExportTaskHandlerFactory;
 import com.iwindplus.base.export.task.factory.ExportTaskJobHandlerFactory;
 import com.iwindplus.base.export.task.jobhandler.ExportTaskJob;
+import com.iwindplus.base.export.task.listener.ExportTaskUploadFileListener;
 import com.iwindplus.base.export.task.service.ExportTaskService;
 import com.iwindplus.base.export.task.service.impl.ExportTaskServiceImpl;
 import com.iwindplus.base.export.task.support.ExportTaskBizProcessor;
@@ -23,7 +24,7 @@ import com.iwindplus.base.export.task.support.ExportTaskHandler;
 import com.iwindplus.base.export.task.support.ExportTaskJobHandler;
 import com.iwindplus.base.export.task.support.ExportTaskStateSupport;
 import com.iwindplus.base.export.task.support.impl.RetryExportTaskJobHandler;
-import com.iwindplus.base.oss.factory.OssExecuteHandlerFactory;
+import com.iwindplus.base.http.client.factory.HttpClientExecuteHandlerFactory;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -54,6 +56,9 @@ public class ExportTaskConfiguration {
     @Resource(name = ExportTaskConstant.THREAD_POOL_BEAN_NAME)
     private DtpExecutor threadPoolExecutor;
 
+    @Resource
+    private ApplicationEventPublisher publisher;
+
     @PostConstruct
     public void init() {
         log.info("ExportTaskConfiguration is loaded.");
@@ -72,7 +77,7 @@ public class ExportTaskConfiguration {
         ExportTaskService exportTaskService,
         ExportTaskBizProcessor exportTaskBizProcessor,
         ExportTaskHandlerFactory exportTaskHandlerFactory) {
-        ExportTaskExecutor exportTaskExecutor = new ExportTaskExecutorImpl(
+        final ExportTaskExecutor exportTaskExecutor = new ExportTaskExecutorImpl(
             exportTaskService, exportTaskBizProcessor, exportTaskHandlerFactory);
         log.info("ExportTaskExecutor={}", exportTaskExecutor);
         return exportTaskExecutor;
@@ -164,13 +169,10 @@ public class ExportTaskConfiguration {
         ExportTaskProperty property,
         ExportTaskHandlerFactory exportTaskHandlerFactory,
         ExportTaskStateSupport exportTaskStateSupport,
-        ExportTaskService exportTaskService,
-        ObjectProvider<OssExecuteHandlerFactory> ossExecuteHandlerFactoryProvider) {
-        ExportTaskExecuteHandler handler = new ExportTaskExecuteHandler(
+        ExportTaskService exportTaskService) {
+        return new ExportTaskExecuteHandler(
             property, exportTaskHandlerFactory, exportTaskStateSupport,
-            exportTaskService, ossExecuteHandlerFactoryProvider);
-        log.info("ExportTaskExecuteHandler={}", handler);
-        return handler;
+            exportTaskService, publisher);
     }
 
     /**
@@ -206,7 +208,7 @@ public class ExportTaskConfiguration {
         ExportTaskService exportTaskService,
         ExportTaskStateSupport exportTaskStateSupport,
         ExportTaskExecuteHandler exportTaskExecuteHandler) {
-        ExportTaskBizProcessor exportTaskBizProcessor = new ExportTaskBizProcessor(
+        final ExportTaskBizProcessor exportTaskBizProcessor = new ExportTaskBizProcessor(
             property, exportTaskService, exportTaskStateSupport,
             exportTaskExecuteHandler, threadPoolExecutor);
         return exportTaskBizProcessor;
@@ -222,8 +224,22 @@ public class ExportTaskConfiguration {
     @Bean
     public ExportTaskJob exportTaskTaskJob(
         ExportTaskJobHandlerFactory factory) {
-        ExportTaskJob exportTaskTaskJob = new ExportTaskJob(factory);
+        final ExportTaskJob exportTaskTaskJob = new ExportTaskJob(factory);
         log.info("ExportTaskTaskJob={}", exportTaskTaskJob);
         return exportTaskTaskJob;
+    }
+
+    /**
+     * 创建 ExportTaskUploadFileListener.
+     *
+     * @param property                        property
+     * @param httpClientExecuteHandlerFactory httpClientExecuteHandlerFactory
+     * @return ExportTaskUploadFileListener
+     */
+    @Bean
+    public ExportTaskUploadFileListener exportTaskUploadFileListener(ExportTaskProperty property,
+        HttpClientExecuteHandlerFactory httpClientExecuteHandlerFactory) {
+        return new ExportTaskUploadFileListener(
+            property, httpClientExecuteHandlerFactory);
     }
 }

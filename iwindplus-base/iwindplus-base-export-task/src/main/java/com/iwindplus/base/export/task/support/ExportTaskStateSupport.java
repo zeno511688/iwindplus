@@ -7,7 +7,6 @@
 
 package com.iwindplus.base.export.task.support;
 
-import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.export.task.dal.repository.ExportTaskRepository;
 import com.iwindplus.base.export.task.domain.constant.ExportTaskConstant;
 import com.iwindplus.base.export.task.domain.dto.ExportTaskStatusEditDTO;
@@ -138,6 +137,7 @@ public record ExportTaskStateSupport(
                 .from(ExportTaskStatusEnum.EXECUTING)
                 .to(ExportTaskStatusEnum.SUCCESS)
                 .costTime(costTime)
+                .fileName(entity.getFileName())
                 .filePath(entity.getFilePath())
                 .build()),
             () -> {

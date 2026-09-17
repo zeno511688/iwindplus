@@ -33,6 +33,7 @@ import com.iwindplus.base.oss.domain.property.OssProperty.QiniuConfig;
 import com.iwindplus.base.oss.service.impl.AbstractOssBaseServiceImpl;
 import com.iwindplus.base.oss.support.OssExecuteHandler;
 import com.iwindplus.base.util.FilesUtil;
+import com.iwindplus.base.util.HttpsUtil;
 import com.iwindplus.base.util.IosUtil;
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
@@ -44,10 +45,9 @@ import com.qiniu.storage.model.BucketInfo;
 import com.qiniu.storage.persistent.FileRecorder;
 import com.qiniu.util.Auth;
 import com.qiniu.util.StringMap;
-import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -76,7 +76,7 @@ public class QiniuOssExecuteHandler extends AbstractOssBaseServiceImpl<QiniuConf
      */
     public QiniuOssExecuteHandler(
         MultipartProperties multipartProperties,
-        OssProperty.QiniuConfig config) {
+        QiniuConfig config) {
         super(multipartProperties);
         super.setConfig(config);
     }
@@ -150,9 +150,10 @@ public class QiniuOssExecuteHandler extends AbstractOssBaseServiceImpl<QiniuConf
         if (Objects.isNull(data)) {
             throw new BizException(BizCodeEnum.FILE_NOT_FOUND);
         }
-        try (InputStream inputStream = new BufferedInputStream(new URI(data.getAbsolutePath()).toURL().openStream())) {
+        final byte[] bytes = HttpsUtil.downloadBytes(data.getAbsolutePath());
+        try (InputStream inputStream = new ByteArrayInputStream(bytes)) {
             FilesUtil.downloadFile(inputStream, super.getNewFileName(request.getRelativePath(), request.getFileName()), request.getResponse());
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             log.error(ExceptionConstant.IO_EXCEPTION, ex);
 
             throw new BizException(BizCodeEnum.FILE_DOWNLOAD_ERROR);

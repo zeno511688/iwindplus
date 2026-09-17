@@ -41,6 +41,12 @@ public class ExportTaskExtDTO implements Serializable {
     private Boolean enabledUnlimitedRetry;
 
     /**
+     * 导出数据最大条数限制（可选，未配置时使用系统默认配置）.
+     */
+    @Schema(description = "导出数据最大条数限制")
+    private Long maxExportCount;
+
+    /**
      * 扩展字段（用于存储其他自定义配置）.
      */
     @Schema(description = "扩展字段")

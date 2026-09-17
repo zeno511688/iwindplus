@@ -102,6 +102,9 @@ public class ExportTaskRepository extends CrudRepository<ExportTaskMapper, Expor
         if (entity.getTotalCount() != null) {
             builder.totalCount(entity.getTotalCount());
         }
+        if (CharSequenceUtil.isNotBlank(entity.getFileName())) {
+            builder.fileName(entity.getFileName());
+        }
         if (CharSequenceUtil.isNotBlank(entity.getFilePath())) {
             builder.filePath(entity.getFilePath());
         }
@@ -148,6 +151,9 @@ public class ExportTaskRepository extends CrudRepository<ExportTaskMapper, Expor
         }
         if (Objects.isNull(ext.getEnabledUnlimitedRetry())) {
             ext.setEnabledUnlimitedRetry(this.property.getRetry().getEnabledUnlimitedRetry());
+        }
+        if (Objects.isNull(ext.getMaxExportCount())) {
+            ext.setMaxExportCount(this.property.getMaxExportCount());
         }
         entity.setExt(ext);
 

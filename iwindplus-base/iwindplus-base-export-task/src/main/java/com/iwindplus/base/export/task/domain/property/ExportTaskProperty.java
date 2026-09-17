@@ -7,7 +7,7 @@
 
 package com.iwindplus.base.export.task.domain.property;
 
-import com.iwindplus.base.domain.enums.OssTypeEnum;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -52,6 +52,12 @@ public class ExportTaskProperty {
      */
     @Builder.Default
     private Integer maxPageSize = 10;
+
+    /**
+     * 导出数据最大条数限制（默认：10万行）.
+     */
+    @Builder.Default
+    private Long maxExportCount = 100000L;
 
     /**
      * 任务执行最大时间，超过这个时间任务将被重置
@@ -106,25 +112,33 @@ public class ExportTaskProperty {
         private Boolean enabled = Boolean.FALSE;
 
         /**
-         * OSS类型.
+         * 配置编码（必填）.
          */
-        @Builder.Default
-        private OssTypeEnum type = OssTypeEnum.MINIO;
-
-        /**
-         * OSS配置编码（可选，不配置时使用默认策略）.
-         */
+        @Schema(description = "配置编码")
         private String code;
 
         /**
-         * 空间名（必填，启用OSS上传时）.
+         * 模板编码（必填）.
          */
-        private String bucketName;
+        @Schema(description = "模板编码")
+        private String tplCode;
 
         /**
-         * 访问域名（可选，自定义域名）.
+         * 存储导出文件的URL.
          */
-        private String accessDomain;
+        @Builder.Default
+        private String uploadUrl = "lb://iwindplus-integr/inner/oss/uploadFile";
+
+        /**
+         * 签名访问路径的URL.
+         */
+        @Builder.Default
+        private String listSignUrl = "lb://iwindplus-integr/inner/oss/listSignUrl";
+
+        /**
+         * 签名过期时间（可选，单位：分钟，默认：1）.
+         */
+        private Integer signTimeout = 1;
 
         /**
          * 相对路径前缀（可选，如：export-task/）.

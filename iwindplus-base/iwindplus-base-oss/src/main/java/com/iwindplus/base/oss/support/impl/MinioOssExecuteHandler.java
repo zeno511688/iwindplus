@@ -58,6 +58,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
+import org.bouncycastle.util.Iterable;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
 import org.springframework.http.HttpHeaders;
@@ -83,7 +84,7 @@ public class MinioOssExecuteHandler extends AbstractOssBaseServiceImpl<MinioConf
      */
     public MinioOssExecuteHandler(
         MultipartProperties multipartProperties,
-        OssProperty.MinioConfig config,
+        MinioConfig config,
         ObjectProvider<OkHttpClient> okHttpClientProvider) {
         super(multipartProperties);
         super.setConfig(config);
@@ -386,7 +387,7 @@ public class MinioOssExecuteHandler extends AbstractOssBaseServiceImpl<MinioConf
     }
 
     private MinioClient getMinioClient() {
-        OssProperty.MinioConfig config = this.getConfig();
+        MinioConfig config = this.getConfig();
 
         MinioClient.Builder builder = MinioClient.builder()
             .endpoint(config.getEndpoint())

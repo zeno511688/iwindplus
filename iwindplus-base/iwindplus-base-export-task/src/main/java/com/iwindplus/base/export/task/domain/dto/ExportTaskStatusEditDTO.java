@@ -94,6 +94,12 @@ public class ExportTaskStatusEditDTO {
     private Integer progress;
 
     /**
+     * 文件名.
+     */
+    @Schema(description = "文件名")
+    private String fileName;
+
+    /**
      * 文件路径（可选，导出成功后回写）.
      */
     @Schema(description = "文件路径")

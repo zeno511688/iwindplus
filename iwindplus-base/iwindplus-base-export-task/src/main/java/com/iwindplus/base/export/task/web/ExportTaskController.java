@@ -7,28 +7,34 @@
 
 package com.iwindplus.base.export.task.web;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.base.domain.vo.FilePathVO;
+import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.export.task.domain.enums.ExportTaskStatusEnum;
 import com.iwindplus.base.export.task.domain.property.ExportTaskProperty;
 import com.iwindplus.base.export.task.domain.vo.ExportTaskVO;
 import com.iwindplus.base.export.task.service.ExportTaskService;
-import com.iwindplus.base.oss.domain.dto.OssCloudDownloadDTO;
-import com.iwindplus.base.oss.factory.OssExecuteHandlerFactory;
-import com.iwindplus.base.oss.support.OssExecuteHandler;
+import com.iwindplus.base.http.client.factory.HttpClientExecuteHandlerFactory;
 import com.iwindplus.base.util.FilesUtil;
+import com.iwindplus.base.util.HttpsUtil;
 import com.iwindplus.base.web.controller.BaseController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -57,7 +63,7 @@ public class ExportTaskController extends BaseController {
 
     private final ExportTaskProperty property;
     private final ExportTaskService exportTaskService;
-    private final ObjectProvider<OssExecuteHandlerFactory> ossExecuteHandlerFactoryProvider;
+    private final HttpClientExecuteHandlerFactory httpClientExecuteHandlerFactory;
 
     /**
      * 查询导出任务进度.
@@ -84,25 +90,38 @@ public class ExportTaskController extends BaseController {
 
         final ExportTaskProperty.OssConfig ossConfig = this.property.getOss();
         if (ossConfig == null || Boolean.FALSE.equals(ossConfig.getEnabled())) {
-            this.downloadFile(id, response, task);
+            this.downloadLocalFile(response, task);
             return;
         }
 
-        final OssExecuteHandlerFactory factory = this.ossExecuteHandlerFactoryProvider.getIfAvailable();
-        final OssExecuteHandler ossHandler = this.resolveOssHandler(factory, ossConfig.getCode());
-        if (ossHandler == null) {
-            this.downloadFile(id, response, task);
-            return;
+        final String filePath = task.getFilePath();
+        if (CharSequenceUtil.isBlank(filePath)) {
+            throw new BizException(BizCodeEnum.FILE_NOT_FOUND);
         }
 
-        final OssCloudDownloadDTO request = OssCloudDownloadDTO.builder()
-            .bucketName(ossConfig.getBucketName())
-            .accessDomain(ossConfig.getAccessDomain())
-            .response(response)
-            .relativePath(task.getFilePath())
-            .fileName(task.getFileName())
-            .build();
-        ossHandler.downloadFile(request);
+        final Map<String, Object> query = Map.of(
+            "code", ossConfig.getCode(),
+            "tplCode", ossConfig.getTplCode(),
+            "relativePaths", List.of(filePath),
+            "timeout", ossConfig.getSignTimeout()
+        );
+
+        final ResultVO<List<FilePathVO>> responseResult = httpClientExecuteHandlerFactory
+            .getDefaultHandler()
+            .get(
+                ossConfig.getListSignUrl(),
+                query,
+                null,
+                new TypeReference<>() {
+                }
+            );
+        responseResult.errorThrow();
+        final List<FilePathVO> dataList = responseResult.getBizData();
+        if (CollUtil.isEmpty(dataList)) {
+            throw new BizException(BizCodeEnum.FILE_NOT_FOUND);
+        }
+        final FilePathVO filePathVO = dataList.get(0);
+        this.downloadRemoteFile(response, task, filePathVO);
     }
 
     private ExportTaskVO getExportTaskVO(Long id) {
@@ -119,7 +138,7 @@ public class ExportTaskController extends BaseController {
         return task;
     }
 
-    private void downloadFile(Long id, HttpServletResponse response, ExportTaskVO task) {
+    private void downloadLocalFile(HttpServletResponse response, ExportTaskVO task) {
         final File file = new File(task.getFilePath());
         if (!file.exists() || !file.isFile()) {
             throw new BizException(BizCodeEnum.FILE_NOT_FOUND);
@@ -128,18 +147,22 @@ public class ExportTaskController extends BaseController {
         try (InputStream inputStream = new FileInputStream(file)) {
             FilesUtil.downloadFile(inputStream, task.getFileName(), response);
         } catch (FileNotFoundException ex) {
-            log.error("exportTask download file not found. id={} filePath={}", id, task.getFilePath(), ex);
+            log.error("exportTask download file not found. filePath={}", task.getFilePath(), ex);
             throw new BizException(BizCodeEnum.FILE_NOT_FOUND);
         } catch (Exception ex) {
-            log.error("exportTask download file failed. id={} filePath={}", id, task.getFilePath(), ex);
+            log.error("exportTask download file failed. filePath={}", task.getFilePath(), ex);
             throw new BizException(BizCodeEnum.FILE_DOWNLOAD_ERROR);
         }
     }
 
-    private OssExecuteHandler resolveOssHandler(OssExecuteHandlerFactory factory, String code) {
-        if (CharSequenceUtil.isBlank(code)) {
-            return factory.getDefaultHandler();
+    public void downloadRemoteFile(HttpServletResponse response, ExportTaskVO task, FilePathVO filePath) {
+        final byte[] bytes = HttpsUtil.downloadBytes(filePath.getAbsolutePath());
+        try (InputStream inputStream = new ByteArrayInputStream(bytes)) {
+            FilesUtil.downloadFile(inputStream, task.getFileName(), response);
+        } catch (IOException ex) {
+            log.error("exportTask download file failed. filePath={}", filePath.getAbsolutePath(), ex);
+
+            throw new BizException(BizCodeEnum.FILE_DOWNLOAD_ERROR);
         }
-        return factory.getHandler(property.getOss().getType(), code);
     }
 }

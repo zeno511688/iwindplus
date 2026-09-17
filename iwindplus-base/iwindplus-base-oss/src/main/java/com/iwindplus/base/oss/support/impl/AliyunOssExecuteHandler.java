@@ -88,7 +88,7 @@ public class AliyunOssExecuteHandler extends AbstractOssBaseServiceImpl<AliyunCo
      */
     public AliyunOssExecuteHandler(
         MultipartProperties multipartProperties,
-        OssProperty.AliyunConfig config) {
+        AliyunConfig config) {
         super(multipartProperties);
         super.setConfig(config);
     }
@@ -421,7 +421,7 @@ public class AliyunOssExecuteHandler extends AbstractOssBaseServiceImpl<AliyunCo
         if (CharSequenceUtil.isNotBlank(accessDomain)) {
             return accessDomain;
         }
-        final OssProperty.AliyunConfig cfg = this.getConfig();
+        final AliyunConfig cfg = this.getConfig();
         return new StringBuilder(CommonConstant.NetWorkConstant.HTTPS_PREFIX)
             .append(bucketName)
             .append(CommonConstant.SymbolConstant.POINT).append(cfg.getEndpoint()).toString();
@@ -431,7 +431,7 @@ public class AliyunOssExecuteHandler extends AbstractOssBaseServiceImpl<AliyunCo
         ClientBuilderConfiguration conf = new ClientBuilderConfiguration();
         conf.setSupportCname(true);
         conf.setProtocol(Protocol.HTTPS);
-        final OssProperty.AliyunConfig config = this.getConfig();
+        final AliyunConfig config = this.getConfig();
         final StsTokenDTO sts = config.getSts();
         if (Objects.nonNull(sts) && Boolean.TRUE.equals(sts.getEnabled())) {
             refreshStsTokenIfNeeded(config, sts);

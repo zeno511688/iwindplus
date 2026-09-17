@@ -71,7 +71,7 @@ public class AliyunVodExecuteHandler extends AbstractVodBaseServiceImpl<AliyunCo
      */
     public AliyunVodExecuteHandler(
         MultipartProperties multipartProperties,
-        VodProperty.AliyunConfig config) {
+        AliyunConfig config) {
         super(multipartProperties);
         super.setConfig(config);
     }
@@ -298,7 +298,7 @@ public class AliyunVodExecuteHandler extends AbstractVodBaseServiceImpl<AliyunCo
     }
 
     private DefaultAcsClient initVodClient() {
-        final VodProperty.AliyunConfig aliyun = super.getConfig();
+        final AliyunConfig aliyun = super.getConfig();
         AkSkDTO akSk = new AkSkDTO(aliyun.getAccessKey(), aliyun.getSecretKey());
         return super.initAcsClient(aliyun.getRegion(), akSk, aliyun.getSts());
     }

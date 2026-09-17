@@ -53,7 +53,7 @@ public interface VodExecuteHandler extends BaseService {
      * 获取播放凭证.
      *
      * @param videoId 视频标识（必填）
-     * @param timeout 过期时间（可选，单位：分钟，默认：60）
+     * @param timeout 过期时间（可选，单位：分钟，默认：1）
      * @return String
      */
     String getPlayAuth(String videoId, Long timeout);
