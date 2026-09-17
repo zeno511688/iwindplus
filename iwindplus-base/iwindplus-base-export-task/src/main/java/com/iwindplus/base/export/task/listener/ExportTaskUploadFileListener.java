@@ -58,6 +58,8 @@ public class ExportTaskUploadFileListener {
         try {
             // 发布上传文件事件
             final ExportTaskUploadFileDTO uploadParam = ExportTaskUploadFileDTO.builder()
+                .code(cfg.getCode())
+                .tplCode(cfg.getTplCode())
                 .data(FileUtil.readBytes(entity.getFilePath()))
                 .relativePath(relativePath)
                 .sourceFileName(entity.getFileName())

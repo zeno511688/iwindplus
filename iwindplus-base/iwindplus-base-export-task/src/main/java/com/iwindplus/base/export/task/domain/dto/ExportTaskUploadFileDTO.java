@@ -28,6 +28,18 @@ import lombok.experimental.SuperBuilder;
 public class ExportTaskUploadFileDTO implements Serializable {
 
     /**
+     * 配置编码（必填）.
+     */
+    @Schema(description = "配置编码")
+    private String code;
+
+    /**
+     * 模板编码（必填）.
+     */
+    @Schema(description = "模板编码")
+    private String tplCode;
+
+    /**
      * 字节数组.
      */
     @Schema(description = "字节数组")
