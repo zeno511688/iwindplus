@@ -138,13 +138,11 @@ public record ExportTaskStateSupport(
                 .from(ExportTaskStatusEnum.EXECUTING)
                 .to(ExportTaskStatusEnum.SUCCESS)
                 .costTime(costTime)
-                .progress(NumberConstant.NUMBER_ONE_HUNDRED)
                 .filePath(entity.getFilePath())
                 .build()),
             () -> {
                 this.syncStatus(entity, ExportTaskStatusEnum.SUCCESS);
                 entity.setCostTime(costTime);
-                entity.setProgress(NumberConstant.NUMBER_ONE_HUNDRED);
             }
         );
 
