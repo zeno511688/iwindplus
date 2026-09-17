@@ -138,6 +138,7 @@ public class ExportTaskProperty {
         /**
          * 签名过期时间（可选，单位：分钟，默认：1）.
          */
+        @Builder.Default
         private Integer signTimeout = 1;
 
         /**
