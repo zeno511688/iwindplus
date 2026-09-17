@@ -61,7 +61,7 @@ public interface OssApi {
      * @param code          配置编码（必填）
      * @param tplCode       模板编码（必填）
      * @param relativePaths 相对路径集合（必填）
-     * @param timeout       过期时间（单位：分钟，默认：60）
+     * @param timeout       过期时间（单位：分钟，默认：1）
      * @return ResultVO<List < FilePathVO>>
      */
     @Operation(summary = "获取访问路径")

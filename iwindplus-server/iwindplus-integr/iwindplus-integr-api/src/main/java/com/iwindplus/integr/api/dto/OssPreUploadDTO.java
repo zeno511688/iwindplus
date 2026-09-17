@@ -54,7 +54,7 @@ public class OssPreUploadDTO implements Serializable {
     private String contentType;
 
     /**
-     * 过期时间（可选，单位：分钟，默认：60）.
+     * 过期时间（可选，单位：分钟，默认：1）.
      */
     @Schema(description = "过期时间（分钟）")
     private Integer timeout;

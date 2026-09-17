@@ -143,7 +143,7 @@ public interface UserApi {
      * 获取用户oss访问路径（路径集合为头像等）.
      *
      * @param relativePaths 相对路径集合（必填）
-     * @param timeout       过期时间（单位：分钟，默认：60）
+     * @param timeout       过期时间（单位：分钟，默认：1）
      * @return ResultVO<List < FilePathVO>>
      */
     @Operation(summary = "获取用户oss访问路径（路径集合为头像等）")

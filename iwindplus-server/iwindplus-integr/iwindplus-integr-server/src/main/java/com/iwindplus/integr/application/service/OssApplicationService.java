@@ -7,6 +7,7 @@
 
 package com.iwindplus.integr.application.service;
 
+import com.alibaba.nacos.api.common.Constants.Exception;
 import com.iwindplus.base.domain.vo.FilePathVO;
 import com.iwindplus.base.domain.vo.PreUploadVO;
 import com.iwindplus.base.domain.vo.UploadVO;
@@ -123,7 +124,7 @@ public class OssApplicationService {
      * @param code          配置编码（必填）
      * @param tplCode       模板编码（必填）
      * @param relativePaths 相对路径集合（必填）
-     * @param timeout       过期时间（单位：分钟，默认：60）
+     * @param timeout       过期时间（单位：分钟，默认：1）
      * @return List<FilePathVO>
      */
     public List<FilePathVO> listSignUrl(String code, String tplCode, List<String> relativePaths, Integer timeout) {
