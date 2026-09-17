@@ -15,6 +15,7 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.iwindplus.base.domain.constant.CommonConstant.FileConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.domain.dto.DbPageDTO;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.domain.vo.DbPageVO;
@@ -357,7 +358,13 @@ public record ExportTaskExecuteHandler(
      * @param exportedCount 已导出数量
      */
     private void updateProgress(ExportTaskVO task, Long totalCount, Long exportedCount) {
-        int progress = (int) ((exportedCount * ExportTaskConstant.PROGRESS_PERCENT_BASE) / totalCount);
+        final long safeTotal = Optional.ofNullable(totalCount).orElse(0L);
+        final long safeExported = Optional.ofNullable(exportedCount).orElse(0L);
+        int progress = 0;
+        if (safeTotal > 0) {
+            progress = (int) ((safeExported * ExportTaskConstant.PROGRESS_PERCENT_BASE) / safeTotal);
+            progress = Math.min(progress, NumberConstant.NUMBER_ONE_HUNDRED);
+        }
         final ExportTaskStatusEditDTO build = ExportTaskStatusEditDTO
             .builder()
             .id(task.getId())
