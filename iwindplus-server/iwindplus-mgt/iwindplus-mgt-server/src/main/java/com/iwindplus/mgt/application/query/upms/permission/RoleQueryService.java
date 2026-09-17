@@ -9,15 +9,13 @@ package com.iwindplus.mgt.application.query.upms.permission;
 
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
+import com.iwindplus.mgt.api.upms.vo.RoleBaseVO;
 import com.iwindplus.mgt.application.query.upms.permission.vo.RoleBaseCheckedVO;
 import com.iwindplus.mgt.application.query.upms.permission.vo.RoleExtendVO;
 import com.iwindplus.mgt.application.query.upms.permission.vo.RolePageVO;
 import com.iwindplus.mgt.application.service.upms.permission.dto.RoleSearchDTO;
 import com.iwindplus.mgt.common.constant.MgtConstant.RedisCacheConstant;
-import com.iwindplus.mgt.infrastructure.persistence.upms.permission.RoleDO;
 import com.iwindplus.mgt.infrastructure.persistence.upms.permission.RoleRepository;
-import com.iwindplus.mgt.api.upms.vo.RoleBaseVO;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -42,11 +40,14 @@ public class RoleQueryService {
 
     private final RoleRepository roleRepository;
 
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
     public IPage<RolePageVO> page(RoleSearchDTO entity) {
-        PageDTO<RoleDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
-        page.setOptimizeCountSql(Boolean.FALSE);
-        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
-        return this.roleRepository.getBaseMapper().selectPageByCondition(page, entity);
+        return this.roleRepository.page(entity);
     }
 
     @Cacheable(key = "#root.methodName + '_' + #p0", condition = "#p0 != null", unless = "#result == null")

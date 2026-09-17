@@ -7,26 +7,20 @@
 
 package com.iwindplus.mgt.application.query.upms.permission;
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.text.CharSequenceUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
+import com.iwindplus.mgt.api.upms.vo.ResourceBaseExtendVO;
+import com.iwindplus.mgt.api.upms.vo.ResourceBaseVO;
 import com.iwindplus.mgt.application.query.upms.permission.vo.ResourceExtendVO;
 import com.iwindplus.mgt.application.query.upms.permission.vo.ResourcePageVO;
 import com.iwindplus.mgt.application.service.upms.permission.dto.ResourceSearchDTO;
 import com.iwindplus.mgt.common.constant.MgtConstant.RedisCacheConstant;
 import com.iwindplus.mgt.infrastructure.persistence.upms.permission.ResourceDO;
 import com.iwindplus.mgt.infrastructure.persistence.upms.permission.ResourceRepository;
-import com.iwindplus.mgt.api.upms.vo.ResourceBaseExtendVO;
-import com.iwindplus.mgt.api.upms.vo.ResourceBaseVO;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -49,32 +43,14 @@ public class ResourceQueryService {
 
     private final ResourceRepository resourceRepository;
 
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
     public IPage<ResourcePageVO> page(ResourceSearchDTO entity) {
-        PageDTO<ResourceDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
-        page.setOptimizeCountSql(Boolean.FALSE);
-        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
-        LambdaQueryWrapper<ResourceDO> queryWrapper = Wrappers.lambdaQuery(ResourceDO.class)
-            .eq(ResourceDO::getMenuId, entity.getMenuId())
-            .orderByDesc(ResourceDO::getModifiedTimestamp);
-        if (Objects.nonNull(entity.getStatus())) {
-            queryWrapper.eq(ResourceDO::getStatus, entity.getStatus());
-        }
-        if (Objects.nonNull(entity.getResourceType())) {
-            queryWrapper.eq(ResourceDO::getResourceType, entity.getResourceType());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getCode())) {
-            queryWrapper.eq(ResourceDO::getCode, entity.getCode().trim());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getName())) {
-            queryWrapper.like(ResourceDO::getName, entity.getName().trim());
-        }
-        queryWrapper.select(ResourceDO::getId, ResourceDO::getCreatedTimestamp, ResourceDO::getCreatedBy,
-            ResourceDO::getModifiedTimestamp, ResourceDO::getModifiedBy, ResourceDO::getVersion, ResourceDO::getStatus,
-            ResourceDO::getCode, ResourceDO::getName, ResourceDO::getBuildInFlag, ResourceDO::getResourceType, ResourceDO::getRequestMethod,
-            ResourceDO::getApiUrl, ResourceDO::getSeq, ResourceDO::getMenuId
-        );
-        final PageDTO<ResourceDO> modelPage = this.resourceRepository.page(page, queryWrapper);
-        return modelPage.convert(model -> BeanUtil.copyProperties(model, ResourcePageVO.class));
+        return this.resourceRepository.page(entity);
     }
 
     @Cacheable(key = "#root.methodName + '_' + #p0 + '_' + #p1", condition = "#p0 != null && #p1 != null", unless = "#result == null")

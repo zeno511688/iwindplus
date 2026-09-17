@@ -7,13 +7,20 @@
 
 package com.iwindplus.mgt.infrastructure.persistence.system.security;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.github.yulichang.repository.JoinCrudRepository;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.mgt.application.query.system.security.dto.ApiWhiteListSearchDTO;
+import com.iwindplus.mgt.application.query.system.security.vo.ApiWhiteListPageVO;
 import com.iwindplus.mgt.common.enums.MgtCodeEnum;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import org.springframework.stereotype.Repository;
@@ -26,6 +33,31 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class ApiWhiteListRepository extends JoinCrudRepository<ApiWhiteListMapper, ApiWhiteListDO> {
+
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
+    public IPage<ApiWhiteListPageVO> page(ApiWhiteListSearchDTO entity) {
+        PageDTO<ApiWhiteListDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
+        page.setOptimizeCountSql(Boolean.FALSE);
+        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
+        LambdaQueryWrapper<ApiWhiteListDO> queryWrapper = Wrappers.lambdaQuery(ApiWhiteListDO.class)
+            .orderByDesc(ApiWhiteListDO::getModifiedTimestamp);
+        if (Objects.nonNull(entity.getStatus())) {
+            queryWrapper.eq(ApiWhiteListDO::getStatus, entity.getStatus());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getName())) {
+            queryWrapper.eq(ApiWhiteListDO::getName, entity.getName().trim());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getApiUrl())) {
+            queryWrapper.like(ApiWhiteListDO::getApiUrl, entity.getApiUrl().trim());
+        }
+        final PageDTO<ApiWhiteListDO> modelPage = super.page(page, queryWrapper);
+        return modelPage.convert(model -> BeanUtil.copyProperties(model, ApiWhiteListPageVO.class));
+    }
 
     /**
      * 检查名称是否存在.
@@ -67,5 +99,4 @@ public class ApiWhiteListRepository extends JoinCrudRepository<ApiWhiteListMappe
         Integer data = super.getObj(queryWrapper, function);
         return Optional.ofNullable(data).map(x -> x + 1).orElse(1);
     }
-
 }

@@ -7,16 +7,21 @@
 
 package com.iwindplus.mgt.infrastructure.persistence.system.server;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.github.yulichang.repository.JoinCrudRepository;
 import com.iwindplus.base.domain.constant.CommonConstant.GatewayRouteConstant;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.mgt.api.system.dto.ServerRouteParamDTO;
+import com.iwindplus.mgt.application.query.system.server.dto.ServerSearchDTO;
+import com.iwindplus.mgt.application.query.system.server.vo.ServerPageVO;
 import com.iwindplus.mgt.common.enums.MgtCodeEnum;
 import java.util.List;
 import java.util.Objects;
@@ -32,6 +37,36 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class ServerRepository extends JoinCrudRepository<ServerMapper, ServerDO> {
+
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
+    public IPage<ServerPageVO> page(ServerSearchDTO entity) {
+        PageDTO<ServerDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
+        page.setOptimizeCountSql(Boolean.FALSE);
+        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
+        LambdaQueryWrapper<ServerDO> queryWrapper = Wrappers.lambdaQuery(ServerDO.class)
+            .orderByDesc(ServerDO::getModifiedTimestamp);
+        if (Objects.nonNull(entity.getStatus())) {
+            queryWrapper.eq(ServerDO::getStatus, entity.getStatus());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getName())) {
+            queryWrapper.eq(ServerDO::getName, entity.getName().trim());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getRouteId())) {
+            queryWrapper.eq(ServerDO::getRouteId, entity.getRouteId().trim());
+        }
+        queryWrapper.select(ServerDO::getId, ServerDO::getCreatedTimestamp, ServerDO::getCreatedBy,
+            ServerDO::getModifiedTimestamp, ServerDO::getModifiedBy,
+            ServerDO::getVersion, ServerDO::getStatus, ServerDO::getName, ServerDO::getRouteId, ServerDO::getUri, ServerDO::getHideFlag,
+            ServerDO::getBuildInFlag
+        );
+        final PageDTO<ServerDO> modelPage = super.page(page, queryWrapper);
+        return modelPage.convert(model -> BeanUtil.copyProperties(model, ServerPageVO.class));
+    }
 
     /**
      * 根据路由ID查询主键.

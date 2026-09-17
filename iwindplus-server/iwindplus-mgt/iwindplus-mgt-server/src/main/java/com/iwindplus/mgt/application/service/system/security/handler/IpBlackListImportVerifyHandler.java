@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * IP黑名单置导入校验.
+ * IP黑名单导入校验.
  *
  * @author zengdegui
  * @since 2023/08/23 21:46

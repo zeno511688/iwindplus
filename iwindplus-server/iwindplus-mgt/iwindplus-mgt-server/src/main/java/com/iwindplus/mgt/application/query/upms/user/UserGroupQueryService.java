@@ -46,10 +46,7 @@ public class UserGroupQueryService {
      * @return 分页结果
      */
     public IPage<UserGroupPageVO> page(UserGroupSearchDTO entity) {
-        PageDTO<UserGroupDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
-        page.setOptimizeCountSql(Boolean.FALSE);
-        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
-        return this.userGroupRepository.getBaseMapper().selectPageByCondition(page, entity);
+        return this.userGroupRepository.page(entity);
     }
 
     /**
@@ -66,7 +63,7 @@ public class UserGroupQueryService {
     /**
      * 根据组织id和用户id查询列表(扩展).
      *
-     * @param orgId 组织id
+     * @param orgId  组织id
      * @param userId 用户id
      * @return 列表
      */
@@ -88,7 +85,7 @@ public class UserGroupQueryService {
     /**
      * 根据组织id和角色id查询列表(扩展).
      *
-     * @param orgId 组织id
+     * @param orgId  组织id
      * @param roleId 角色id
      * @return 列表
      */
@@ -110,7 +107,7 @@ public class UserGroupQueryService {
     /**
      * 根据组织id和用户id查询列表(扩展).
      *
-     * @param allList 所有列表
+     * @param allList     所有列表
      * @param checkedList 已选列表
      * @return 列表
      */

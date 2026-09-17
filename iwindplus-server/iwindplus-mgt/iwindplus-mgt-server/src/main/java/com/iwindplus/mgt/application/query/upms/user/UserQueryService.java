@@ -14,7 +14,6 @@ import cn.hutool.core.util.IdcardUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.google.common.collect.Lists;
 import com.iwindplus.base.domain.constant.CommonConstant.BeanConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
@@ -31,23 +30,7 @@ import com.iwindplus.base.util.YubikeyUtil;
 import com.iwindplus.integr.client.OssClient;
 import com.iwindplus.log.client.MailCaptchaLogClient;
 import com.iwindplus.log.client.SmsCaptchaLogClient;
-import com.iwindplus.mgt.application.query.upms.user.vo.UserLoginExtendVO;
-import com.iwindplus.mgt.application.query.upms.user.vo.UserLoginVO;
-import com.iwindplus.mgt.application.query.upms.user.vo.UserPageVO;
-import com.iwindplus.mgt.application.service.upms.organization.OrgApplicationService;
-import com.iwindplus.mgt.application.service.upms.user.dto.UserSearchDTO;
-import com.iwindplus.mgt.common.constant.MgtConstant.RedisCacheConstant;
 import com.iwindplus.mgt.api.upms.dto.UserBaseQueryDTO;
-import com.iwindplus.mgt.infrastructure.configuration.MgtProperty;
-import com.iwindplus.mgt.infrastructure.persistence.upms.permission.ResourceRepository;
-import com.iwindplus.mgt.infrastructure.persistence.upms.permission.RoleRepository;
-import com.iwindplus.mgt.infrastructure.persistence.upms.user.UserDO;
-import com.iwindplus.mgt.infrastructure.persistence.upms.user.UserExtendYubikeyDO;
-import com.iwindplus.mgt.infrastructure.persistence.upms.user.UserExtendYubikeyRepository;
-import com.iwindplus.mgt.infrastructure.persistence.upms.user.UserOrgRepository;
-import com.iwindplus.mgt.infrastructure.persistence.upms.user.UserRepository;
-import com.iwindplus.mgt.common.enums.MgtCodeEnum;
-import com.iwindplus.mgt.common.enums.YubikeyBizTypeEnum;
 import com.iwindplus.mgt.api.upms.vo.ResourceBaseVO;
 import com.iwindplus.mgt.api.upms.vo.RoleBaseVO;
 import com.iwindplus.mgt.api.upms.vo.UserDepartmentInfoVO;
@@ -56,6 +39,22 @@ import com.iwindplus.mgt.api.upms.vo.UserExtendVO;
 import com.iwindplus.mgt.api.upms.vo.UserInfoVO;
 import com.iwindplus.mgt.api.upms.vo.UserOrgInfoVO;
 import com.iwindplus.mgt.api.upms.vo.UserVO;
+import com.iwindplus.mgt.application.query.upms.user.vo.UserLoginExtendVO;
+import com.iwindplus.mgt.application.query.upms.user.vo.UserLoginVO;
+import com.iwindplus.mgt.application.query.upms.user.vo.UserPageVO;
+import com.iwindplus.mgt.application.service.upms.organization.OrgApplicationService;
+import com.iwindplus.mgt.application.service.upms.user.dto.UserSearchDTO;
+import com.iwindplus.mgt.common.constant.MgtConstant.RedisCacheConstant;
+import com.iwindplus.mgt.common.enums.MgtCodeEnum;
+import com.iwindplus.mgt.common.enums.YubikeyBizTypeEnum;
+import com.iwindplus.mgt.infrastructure.configuration.MgtProperty;
+import com.iwindplus.mgt.infrastructure.persistence.upms.permission.ResourceRepository;
+import com.iwindplus.mgt.infrastructure.persistence.upms.permission.RoleRepository;
+import com.iwindplus.mgt.infrastructure.persistence.upms.user.UserDO;
+import com.iwindplus.mgt.infrastructure.persistence.upms.user.UserExtendYubikeyDO;
+import com.iwindplus.mgt.infrastructure.persistence.upms.user.UserExtendYubikeyRepository;
+import com.iwindplus.mgt.infrastructure.persistence.upms.user.UserOrgRepository;
+import com.iwindplus.mgt.infrastructure.persistence.upms.user.UserRepository;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -98,10 +97,7 @@ public class UserQueryService {
      * @return 分页查询结果
      */
     public IPage<UserPageVO> page(UserSearchDTO entity) {
-        final PageDTO<UserPageVO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
-        page.setOptimizeCountSql(Boolean.FALSE);
-        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
-        return this.userRepository.getBaseMapper().selectPageByCondition(page, entity);
+        return this.userRepository.page(entity);
     }
 
     /**
@@ -174,7 +170,8 @@ public class UserQueryService {
         List<FilePathVO> filePaths = OrgApplicationService.getFilePaths(
             this.property.getOss().getCode(),
             this.property.getOss().getTplCode(), relativePaths, this.ossClient);
-        return voList.stream().peek(data -> this.buildImage(filePaths, data, data.getAvatar(), data.getIdCardFront(), data.getIdCardBack())).collect(Collectors.toCollection(ArrayList::new));
+        return voList.stream().peek(data -> this.buildImage(filePaths, data, data.getAvatar(), data.getIdCardFront(), data.getIdCardBack()))
+            .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**

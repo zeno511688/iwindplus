@@ -21,9 +21,9 @@ import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.util.HttpsUtil;
 import com.iwindplus.mgt.application.query.system.i18n.dto.I18nMsgQueryDTO;
 import com.iwindplus.mgt.application.query.system.i18n.dto.I18nMsgSearchDTO;
-import com.iwindplus.mgt.common.enums.MgtCodeEnum;
 import com.iwindplus.mgt.application.query.system.i18n.vo.I18nMsgExtendVO;
 import com.iwindplus.mgt.application.query.system.i18n.vo.I18nMsgPageVO;
+import com.iwindplus.mgt.common.enums.MgtCodeEnum;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,36 +43,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 @RequiredArgsConstructor
 public class I18nMsgRepository extends JoinCrudRepository<I18nMsgMapper, I18nMsgDO> {
-
-    /**
-     * 获取编码是否已存在.
-     *
-     * @param code      编码
-     * @param projectId 项目主键
-     */
-    public void getCodeIsExist(String code, Long projectId) {
-        boolean result = SqlHelper.retBool(super.count(Wrappers.lambdaQuery(I18nMsgDO.class)
-            .eq(I18nMsgDO::getProjectId, projectId)
-            .eq(I18nMsgDO::getCode, code)));
-        if (Boolean.TRUE.equals(result)) {
-            throw new BizException(MgtCodeEnum.CODE_EXIST);
-        }
-    }
-
-    /**
-     * 查询下一个排序号.
-     *
-     * @param projectId 项目主键
-     * @return Integer
-     */
-    public Integer getNextSeq(Long projectId) {
-        QueryWrapper<I18nMsgDO> queryWrapper = new QueryWrapper<>();
-        queryWrapper.lambda().eq(I18nMsgDO::getProjectId, projectId);
-        queryWrapper.select("max(seq) as seq");
-        Function<Object, Integer> function = val -> Integer.valueOf(val.toString());
-        Integer data = super.getObj(queryWrapper, function);
-        return Optional.ofNullable(data).map(x -> x + 1).orElse(1);
-    }
 
     /**
      * 分页查询.
@@ -189,5 +159,35 @@ public class I18nMsgRepository extends JoinCrudRepository<I18nMsgMapper, I18nMsg
                 && EnableStatusEnum.ENABLE.equals(item.getStatus()))
             .map(item -> item.getCode().trim() + SymbolConstant.EQUAL + item.getValue().trim())
             .collect(Collectors.joining(SymbolConstant.NEWLINE));
+    }
+
+    /**
+     * 获取编码是否已存在.
+     *
+     * @param code      编码
+     * @param projectId 项目主键
+     */
+    public void getCodeIsExist(String code, Long projectId) {
+        boolean result = SqlHelper.retBool(super.count(Wrappers.lambdaQuery(I18nMsgDO.class)
+            .eq(I18nMsgDO::getProjectId, projectId)
+            .eq(I18nMsgDO::getCode, code)));
+        if (Boolean.TRUE.equals(result)) {
+            throw new BizException(MgtCodeEnum.CODE_EXIST);
+        }
+    }
+
+    /**
+     * 查询下一个排序号.
+     *
+     * @param projectId 项目主键
+     * @return Integer
+     */
+    public Integer getNextSeq(Long projectId) {
+        QueryWrapper<I18nMsgDO> queryWrapper = new QueryWrapper<>();
+        queryWrapper.lambda().eq(I18nMsgDO::getProjectId, projectId);
+        queryWrapper.select("max(seq) as seq");
+        Function<Object, Integer> function = val -> Integer.valueOf(val.toString());
+        Integer data = super.getObj(queryWrapper, function);
+        return Optional.ofNullable(data).map(x -> x + 1).orElse(1);
     }
 }

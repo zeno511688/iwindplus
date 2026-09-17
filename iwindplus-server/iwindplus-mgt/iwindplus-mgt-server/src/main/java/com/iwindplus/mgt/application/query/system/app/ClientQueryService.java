@@ -8,20 +8,17 @@
 package com.iwindplus.mgt.application.query.system.app;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.text.CharSequenceUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.mgt.api.system.vo.ClientVO;
 import com.iwindplus.mgt.application.query.system.app.dto.ClientSearchDTO;
 import com.iwindplus.mgt.application.query.system.app.vo.ClientPageVO;
 import com.iwindplus.mgt.common.constant.MgtConstant.RedisCacheConstant;
 import com.iwindplus.mgt.infrastructure.persistence.system.app.ClientDO;
 import com.iwindplus.mgt.infrastructure.persistence.system.app.ClientRepository;
-import com.iwindplus.mgt.api.system.vo.ClientVO;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheConfig;
@@ -41,26 +38,14 @@ public class ClientQueryService {
 
     private final ClientRepository clientRepository;
 
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
     public IPage<ClientPageVO> page(ClientSearchDTO entity) {
-        PageDTO<ClientDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
-        page.setOptimizeCountSql(Boolean.FALSE);
-        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
-        LambdaQueryWrapper<ClientDO> queryWrapper = Wrappers.lambdaQuery(ClientDO.class)
-            .orderByDesc(ClientDO::getModifiedTimestamp);
-        if (Objects.nonNull(entity.getStatus())) {
-            queryWrapper.eq(ClientDO::getStatus, entity.getStatus());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getClientId())) {
-            queryWrapper.eq(ClientDO::getClientId, entity.getClientId().trim());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getClientName())) {
-            queryWrapper.eq(ClientDO::getClientName, entity.getClientName().trim());
-        }
-        queryWrapper.select(ClientDO::getId, ClientDO::getCreatedBy, ClientDO::getCreatedTimestamp, ClientDO::getModifiedTimestamp,
-            ClientDO::getModifiedBy, ClientDO::getVersion, ClientDO::getStatus, ClientDO::getClientId, ClientDO::getClientName,
-            ClientDO::getClientIdIssuedAt, ClientDO::getClientSecretExpiresAt);
-        final PageDTO<ClientDO> modelPage = this.clientRepository.page(page, queryWrapper);
-        return modelPage.convert(model -> BeanUtil.copyProperties(model, ClientPageVO.class));
+        return this.clientRepository.page(entity);
     }
 
     @Cacheable(key = "#root.methodName + '_' + #p0", condition = "#p0 != null", unless = "#result == null")

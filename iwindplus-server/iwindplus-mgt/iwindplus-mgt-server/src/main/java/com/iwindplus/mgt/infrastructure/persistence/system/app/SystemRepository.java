@@ -7,13 +7,20 @@
 
 package com.iwindplus.mgt.infrastructure.persistence.system.app;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.github.yulichang.repository.JoinCrudRepository;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.mgt.application.query.system.app.vo.SystemPageVO;
+import com.iwindplus.mgt.application.service.system.app.dto.SystemSearchDTO;
 import com.iwindplus.mgt.common.enums.MgtCodeEnum;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import org.springframework.stereotype.Repository;
@@ -26,6 +33,32 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class SystemRepository extends JoinCrudRepository<SystemMapper, SystemDO> {
+
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
+    public IPage<SystemPageVO> page(SystemSearchDTO entity) {
+        PageDTO<SystemDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
+        page.setOptimizeCountSql(Boolean.FALSE);
+        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
+        final LambdaQueryWrapper<SystemDO> queryWrapper = Wrappers.lambdaQuery(SystemDO.class)
+            .orderByDesc(SystemDO::getModifiedTimestamp);
+        if (Objects.nonNull(entity.getStatus())) {
+            queryWrapper.eq(SystemDO::getStatus, entity.getStatus());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getName())) {
+            queryWrapper.eq(SystemDO::getName, entity.getName().trim());
+        }
+        queryWrapper.select(SystemDO::getId, SystemDO::getCreatedTimestamp, SystemDO::getCreatedBy,
+            SystemDO::getModifiedTimestamp, SystemDO::getModifiedBy,
+            SystemDO::getVersion, SystemDO::getStatus, SystemDO::getName, SystemDO::getHideFlag, SystemDO::getBuildInFlag
+        );
+        final PageDTO<SystemDO> modelPage = super.page(page, queryWrapper);
+        return modelPage.convert(model -> BeanUtil.copyProperties(model, SystemPageVO.class));
+    }
 
     /**
      * 获取名称是否已存在.

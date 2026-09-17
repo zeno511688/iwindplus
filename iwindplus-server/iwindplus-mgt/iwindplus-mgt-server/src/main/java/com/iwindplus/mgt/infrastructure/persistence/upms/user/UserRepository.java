@@ -7,10 +7,14 @@
 
 package com.iwindplus.mgt.infrastructure.persistence.upms.user;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.github.yulichang.repository.JoinCrudRepository;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.mgt.application.query.upms.user.vo.UserPageVO;
+import com.iwindplus.mgt.application.service.upms.user.dto.UserSearchDTO;
 import com.iwindplus.mgt.common.enums.MgtCodeEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -48,6 +52,19 @@ public class UserRepository extends JoinCrudRepository<UserMapper, UserDO> {
         param.setVersion(data.getVersion());
         super.updateById(param);
         return Boolean.TRUE;
+    }
+
+    /**
+     * 分页查询用户列表
+     *
+     * @param entity 查询条件
+     * @return 分页查询结果
+     */
+    public IPage<UserPageVO> page(UserSearchDTO entity) {
+        final PageDTO<UserPageVO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
+        page.setOptimizeCountSql(Boolean.FALSE);
+        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
+        return super.getBaseMapper().selectPageByCondition(page, entity);
     }
 
     /**

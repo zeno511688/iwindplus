@@ -10,11 +10,15 @@ package com.iwindplus.mgt.infrastructure.persistence.upms.user;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.github.yulichang.repository.JoinCrudRepository;
 import com.google.common.collect.Maps;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.mgt.application.query.upms.user.dto.UserGroupSearchDTO;
+import com.iwindplus.mgt.application.query.upms.user.vo.UserGroupPageVO;
 import com.iwindplus.mgt.common.constant.MgtConstant;
 import com.iwindplus.mgt.application.service.upms.user.dto.UserGroupDTO;
 import com.iwindplus.mgt.common.enums.MgtCodeEnum;
@@ -111,6 +115,19 @@ public class UserGroupRepository extends JoinCrudRepository<UserGroupMapper, Use
         final List<UserGroupDO> newList = BeanUtil.copyToList(voList, UserGroupDO.class);
         this.buildIdMap(idMap, entities, newList);
         return idMap;
+    }
+
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询条件
+     * @return 分页结果
+     */
+    public IPage<UserGroupPageVO> page(UserGroupSearchDTO entity) {
+        PageDTO<UserGroupDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
+        page.setOptimizeCountSql(Boolean.FALSE);
+        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
+        return super.getBaseMapper().selectPageByCondition(page, entity);
     }
 
     /**

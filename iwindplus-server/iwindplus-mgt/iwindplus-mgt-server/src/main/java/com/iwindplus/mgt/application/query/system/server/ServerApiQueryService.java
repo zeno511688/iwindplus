@@ -9,13 +9,10 @@ package com.iwindplus.mgt.application.query.system.server;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.text.CharSequenceUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.mgt.api.system.vo.ServerApiBaseVO;
 import com.iwindplus.mgt.application.query.system.server.dto.ServerApiSearchDTO;
 import com.iwindplus.mgt.application.query.system.server.vo.ServerApiGroupVO;
 import com.iwindplus.mgt.application.query.system.server.vo.ServerApiGroupVO.ApiVO;
@@ -24,7 +21,6 @@ import com.iwindplus.mgt.application.query.system.server.vo.ServerApiVO;
 import com.iwindplus.mgt.common.constant.MgtConstant.RedisCacheConstant;
 import com.iwindplus.mgt.infrastructure.persistence.system.server.ServerApiDO;
 import com.iwindplus.mgt.infrastructure.persistence.system.server.ServerApiRepository;
-import com.iwindplus.mgt.api.system.vo.ServerApiBaseVO;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -54,26 +50,14 @@ public class ServerApiQueryService {
 
     private final ServerApiRepository serverApiRepository;
 
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
     public IPage<ServerApiPageVO> page(ServerApiSearchDTO entity) {
-        PageDTO<ServerApiDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
-        page.setOptimizeCountSql(Boolean.FALSE);
-        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
-        LambdaQueryWrapper<ServerApiDO> queryWrapper = Wrappers.lambdaQuery(ServerApiDO.class)
-            .orderByDesc(ServerApiDO::getModifiedTimestamp);
-        if (CharSequenceUtil.isNotBlank(entity.getAppName())) {
-            queryWrapper.eq(ServerApiDO::getAppName, entity.getAppName().trim());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getControllerName())) {
-            queryWrapper.like(ServerApiDO::getControllerName, entity.getControllerName().trim());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getApiName())) {
-            queryWrapper.like(ServerApiDO::getApiName, entity.getApiName().trim());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getApiUrl())) {
-            queryWrapper.like(ServerApiDO::getApiUrl, entity.getApiUrl().trim());
-        }
-        final PageDTO<ServerApiDO> modelPage = this.serverApiRepository.page(page, queryWrapper);
-        return modelPage.convert(model -> BeanUtil.copyProperties(model, ServerApiPageVO.class));
+        return this.serverApiRepository.page(entity);
     }
 
     @Cacheable(key = "#root.methodName", unless = "#result == null")

@@ -38,6 +38,12 @@ public class I18nMsgQueryService {
 
     private final I18nMsgRepository i18nMsgRepository;
 
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
     public IPage<I18nMsgPageVO> page(I18nMsgSearchDTO entity) {
         return this.i18nMsgRepository.selectPageByCondition(entity);
     }

@@ -9,11 +9,9 @@ package com.iwindplus.mgt.application.query.system.i18n;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.exception.BizException;
@@ -50,31 +48,14 @@ public class I18nProjectQueryService {
     private final I18nProjectRepository i18nProjectRepository;
     private final I18nMsgRepository i18nMsgRepository;
 
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
     public IPage<I18nProjectPageVO> page(I18nProjectSearchDTO entity) {
-        PageDTO<I18nProjectDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
-        page.setOptimizeCountSql(Boolean.FALSE);
-        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
-        LambdaQueryWrapper<I18nProjectDO> queryWrapper = Wrappers.lambdaQuery(I18nProjectDO.class)
-            .orderByDesc(I18nProjectDO::getModifiedTimestamp);
-        if (Objects.nonNull(entity.getStatus())) {
-            queryWrapper.eq(I18nProjectDO::getStatus, entity.getStatus());
-        }
-        if (Objects.nonNull(entity.getPlatformType())) {
-            queryWrapper.eq(I18nProjectDO::getPlatformType, entity.getPlatformType());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getName())) {
-            queryWrapper.eq(I18nProjectDO::getName, entity.getName().trim());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getFileName())) {
-            queryWrapper.like(I18nProjectDO::getFileName, entity.getFileName().trim());
-        }
-        queryWrapper.select(I18nProjectDO::getId, I18nProjectDO::getCreatedTimestamp, I18nProjectDO::getCreatedBy,
-            I18nProjectDO::getModifiedTimestamp, I18nProjectDO::getModifiedBy, I18nProjectDO::getVersion,
-            I18nProjectDO::getStatus,
-            I18nProjectDO::getPlatformType, I18nProjectDO::getName, I18nProjectDO::getFileName, I18nProjectDO::getSeq, I18nProjectDO::getBuildInFlag
-        );
-        final PageDTO<I18nProjectDO> modelPage = this.i18nProjectRepository.page(page, queryWrapper);
-        return modelPage.convert(model -> BeanUtil.copyProperties(model, I18nProjectPageVO.class));
+        return this.i18nProjectRepository.page(entity);
     }
 
     @Cacheable(key = "#root.methodName + '_' + #p0", condition = "#p0 != null", unless = "#result == null")

@@ -8,19 +8,17 @@
 package com.iwindplus.mgt.application.query.upms.user;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.mgt.application.query.upms.user.dto.UserExtendYubikeySearchDTO;
 import com.iwindplus.mgt.application.query.upms.user.vo.UserExtendYubikeyPageVO;
 import com.iwindplus.mgt.application.query.upms.user.vo.UserExtendYubikeyVO;
 import com.iwindplus.mgt.common.constant.MgtConstant.RedisCacheConstant;
+import com.iwindplus.mgt.common.enums.YubikeyBizTypeEnum;
 import com.iwindplus.mgt.infrastructure.persistence.upms.user.UserExtendYubikeyDO;
 import com.iwindplus.mgt.infrastructure.persistence.upms.user.UserExtendYubikeyRepository;
-import com.iwindplus.mgt.common.enums.YubikeyBizTypeEnum;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheConfig;
@@ -47,13 +45,7 @@ public class UserExtendYubikeyQueryService {
      * @return 分页查询结果
      */
     public IPage<UserExtendYubikeyPageVO> pageByUserId(UserExtendYubikeySearchDTO entity) {
-        final PageDTO<UserExtendYubikeyDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
-        page.setOptimizeCountSql(Boolean.FALSE);
-        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
-        final LambdaQueryWrapper<UserExtendYubikeyDO> queryWrapper = Wrappers.lambdaQuery(UserExtendYubikeyDO.class)
-            .eq(UserExtendYubikeyDO::getUserId, entity.getUserId());
-        return this.userYubikeyRepository.page(page, queryWrapper)
-            .convert(model -> BeanUtil.copyProperties(model, UserExtendYubikeyPageVO.class));
+        return this.userYubikeyRepository.pageByUserId(entity);
     }
 
     /**

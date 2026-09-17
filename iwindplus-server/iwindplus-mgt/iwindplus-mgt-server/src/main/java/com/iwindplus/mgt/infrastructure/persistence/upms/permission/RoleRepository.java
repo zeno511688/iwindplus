@@ -11,11 +11,15 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.github.yulichang.repository.JoinCrudRepository;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.mgt.application.query.upms.permission.vo.RolePageVO;
+import com.iwindplus.mgt.application.service.upms.permission.dto.RoleSearchDTO;
 import com.iwindplus.mgt.common.constant.MgtConstant;
 import com.iwindplus.mgt.application.service.upms.permission.dto.RoleDTO;
 import com.iwindplus.mgt.common.enums.MgtCodeEnum;
@@ -113,6 +117,19 @@ public class RoleRepository extends JoinCrudRepository<RoleMapper, RoleDO> {
         final List<RoleDO> doList = BeanUtil.copyToList(newList, RoleDO.class);
         this.buildIdMap(idMap, entities, doList);
         return idMap;
+    }
+
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
+    public IPage<RolePageVO> page(RoleSearchDTO entity) {
+        PageDTO<RoleDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
+        page.setOptimizeCountSql(Boolean.FALSE);
+        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
+        return super.getBaseMapper().selectPageByCondition(page, entity);
     }
 
     /**

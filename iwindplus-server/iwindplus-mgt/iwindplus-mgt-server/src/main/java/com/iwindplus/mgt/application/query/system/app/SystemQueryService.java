@@ -12,10 +12,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
-import com.iwindplus.base.domain.constant.CommonConstant.DbConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.exception.BizException;
@@ -54,36 +51,14 @@ public class SystemQueryService {
     private final OssClient ossClient;
     private final MgtProperty property;
 
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
     public IPage<SystemPageVO> page(SystemSearchDTO entity) {
-        PageDTO<SystemDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
-        page.setOptimizeCountSql(Boolean.FALSE);
-        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
-        final LambdaQueryWrapper<SystemDO> queryWrapper = Wrappers.lambdaQuery(SystemDO.class);
-        if (Objects.nonNull(entity.getStatus())) {
-            queryWrapper.eq(SystemDO::getStatus, entity.getStatus());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getName())) {
-            queryWrapper.eq(SystemDO::getName, entity.getName().trim());
-        }
-        // 排序
-        List<OrderItem> orders = page.getOrders();
-        if (CollUtil.isEmpty(orders)) {
-            orders = new ArrayList<>(10);
-            OrderItem item = OrderItem.desc(DbConstant.MODIFIED_TIMESTAMP);
-            orders.add(item);
-        }
-        orders.forEach(order -> {
-            String column = order.getColumn();
-            String underline = CharSequenceUtil.toUnderlineCase(column);
-            order.setColumn(underline);
-        });
-        page.setOrders(orders);
-        queryWrapper.select(SystemDO::getId, SystemDO::getCreatedTimestamp, SystemDO::getCreatedBy,
-            SystemDO::getModifiedTimestamp, SystemDO::getModifiedBy,
-            SystemDO::getVersion, SystemDO::getStatus, SystemDO::getName, SystemDO::getHideFlag, SystemDO::getBuildInFlag
-        );
-        final PageDTO<SystemDO> modelPage = this.systemRepository.page(page, queryWrapper);
-        return modelPage.convert(model -> BeanUtil.copyProperties(model, SystemPageVO.class));
+        return this.systemRepository.page(entity);
     }
 
     @Cacheable(key = "#root.methodName", unless = "#result == null")

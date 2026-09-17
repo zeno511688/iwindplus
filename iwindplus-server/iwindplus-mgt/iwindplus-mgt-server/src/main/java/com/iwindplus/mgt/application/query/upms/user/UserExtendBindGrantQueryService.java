@@ -8,12 +8,10 @@
 package com.iwindplus.mgt.application.query.upms.user;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.mgt.application.query.upms.user.dto.UserExtendBindGrantSearchDTO;
 import com.iwindplus.mgt.application.query.upms.user.vo.UserExtendBindGrantPageVO;
 import com.iwindplus.mgt.application.query.upms.user.vo.UserExtendBindGrantVO;
 import com.iwindplus.mgt.common.constant.MgtConstant.RedisCacheConstant;
-import com.iwindplus.mgt.infrastructure.persistence.upms.user.UserExtendBindGrantDO;
 import com.iwindplus.mgt.infrastructure.persistence.upms.user.UserExtendBindGrantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,10 +40,7 @@ public class UserExtendBindGrantQueryService {
      * @return 分页查询结果
      */
     public IPage<UserExtendBindGrantPageVO> page(UserExtendBindGrantSearchDTO entity) {
-        PageDTO<UserExtendBindGrantDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
-        page.setOptimizeCountSql(Boolean.FALSE);
-        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
-        return this.userExtendBindGrantRepository.getBaseMapper().selectPageByCondition(page, entity);
+        return this.userExtendBindGrantRepository.page(entity);
     }
 
     /**

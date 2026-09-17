@@ -7,15 +7,21 @@
 
 package com.iwindplus.mgt.infrastructure.persistence.upms.organization;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.github.yulichang.repository.JoinCrudRepository;
 import com.iwindplus.base.domain.exception.BizException;
-import com.iwindplus.mgt.common.enums.MgtCodeEnum;
 import com.iwindplus.mgt.api.upms.vo.OrgBaseCheckedVO;
+import com.iwindplus.mgt.application.query.upms.organization.dto.OrgSearchDTO;
+import com.iwindplus.mgt.application.query.upms.organization.vo.OrgPageVO;
+import com.iwindplus.mgt.common.enums.MgtCodeEnum;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -32,6 +38,42 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class OrgRepository extends JoinCrudRepository<OrgMapper, OrgDO> {
+
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
+    public IPage<OrgPageVO> page(OrgSearchDTO entity) {
+        final PageDTO<OrgDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
+        page.setOptimizeCountSql(Boolean.FALSE);
+        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
+        final LambdaQueryWrapper<OrgDO> queryWrapper = Wrappers.lambdaQuery(OrgDO.class)
+            .orderByDesc(OrgDO::getModifiedTimestamp);
+        if (Objects.nonNull(entity.getStatus())) {
+            queryWrapper.eq(OrgDO::getStatus, entity.getStatus());
+        }
+        if (Objects.nonNull(entity.getAuditStatus())) {
+            queryWrapper.eq(OrgDO::getAuditStatus, entity.getAuditStatus());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getCode())) {
+            queryWrapper.eq(OrgDO::getCode, entity.getCode().trim());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getName())) {
+            queryWrapper.eq(OrgDO::getName, entity.getName().trim());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getAbbr())) {
+            queryWrapper.eq(OrgDO::getAbbr, entity.getAbbr().trim());
+        }
+        queryWrapper.select(OrgDO::getId, OrgDO::getCreatedTimestamp, OrgDO::getCreatedBy,
+            OrgDO::getModifiedTimestamp, OrgDO::getModifiedBy, OrgDO::getVersion, OrgDO::getStatus, OrgDO::getAuditStatus, OrgDO::getCode,
+            OrgDO::getName, OrgDO::getAbbr, OrgDO::getUscc, OrgDO::getCountry, OrgDO::getProvince, OrgDO::getCity, OrgDO::getDistrict,
+            OrgDO::getBuildInFlag
+        );
+        final PageDTO<OrgDO> modelPage = super.page(page, queryWrapper);
+        return modelPage.convert(model -> BeanUtil.copyProperties(model, OrgPageVO.class));
+    }
 
     /**
      * 检查名称是否存在.

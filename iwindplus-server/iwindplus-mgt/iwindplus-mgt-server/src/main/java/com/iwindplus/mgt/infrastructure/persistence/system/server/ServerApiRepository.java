@@ -7,12 +7,18 @@
 
 package com.iwindplus.mgt.infrastructure.persistence.system.server;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.github.yulichang.repository.JoinCrudRepository;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.mgt.application.query.system.server.dto.ServerApiSearchDTO;
+import com.iwindplus.mgt.application.query.system.server.vo.ServerApiPageVO;
 import com.iwindplus.mgt.common.enums.MgtCodeEnum;
 import java.util.Optional;
 import java.util.function.Function;
@@ -26,6 +32,34 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class ServerApiRepository extends JoinCrudRepository<ServerApiMapper, ServerApiDO>  {
+
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
+    public IPage<ServerApiPageVO> page(ServerApiSearchDTO entity) {
+        PageDTO<ServerApiDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
+        page.setOptimizeCountSql(Boolean.FALSE);
+        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
+        LambdaQueryWrapper<ServerApiDO> queryWrapper = Wrappers.lambdaQuery(ServerApiDO.class)
+            .orderByDesc(ServerApiDO::getModifiedTimestamp);
+        if (CharSequenceUtil.isNotBlank(entity.getAppName())) {
+            queryWrapper.eq(ServerApiDO::getAppName, entity.getAppName().trim());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getControllerName())) {
+            queryWrapper.like(ServerApiDO::getControllerName, entity.getControllerName().trim());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getApiName())) {
+            queryWrapper.like(ServerApiDO::getApiName, entity.getApiName().trim());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getApiUrl())) {
+            queryWrapper.like(ServerApiDO::getApiUrl, entity.getApiUrl().trim());
+        }
+        final PageDTO<ServerApiDO> modelPage = super.page(page, queryWrapper);
+        return modelPage.convert(model -> BeanUtil.copyProperties(model, ServerApiPageVO.class));
+    }
 
     /**
      * 获取控制器名称是否存在

@@ -47,20 +47,14 @@ public class IpBlackListQueryService {
 
     private final IpBlackListRepository ipBlackListRepository;
 
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
     public IPage<IpBlackListPageVO> page(IpBlackListSearchDTO entity) {
-        PageDTO<IpBlackListDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
-        page.setOptimizeCountSql(Boolean.FALSE);
-        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
-        LambdaQueryWrapper<IpBlackListDO> queryWrapper = Wrappers.lambdaQuery(IpBlackListDO.class)
-            .orderByDesc(IpBlackListDO::getModifiedTimestamp);
-        if (Objects.nonNull(entity.getStatus())) {
-            queryWrapper.eq(IpBlackListDO::getStatus, entity.getStatus());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getIp())) {
-            queryWrapper.like(IpBlackListDO::getIp, entity.getIp().trim());
-        }
-        final PageDTO<IpBlackListDO> modelPage = this.ipBlackListRepository.page(page, queryWrapper);
-        return modelPage.convert(model -> BeanUtil.copyProperties(model, IpBlackListPageVO.class));
+        return this.ipBlackListRepository.page(entity);
     }
 
     @Cacheable(key = "#root.methodName", unless = "#result == null")

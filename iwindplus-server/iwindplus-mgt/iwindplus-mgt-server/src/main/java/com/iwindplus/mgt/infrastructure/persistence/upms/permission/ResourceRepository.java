@@ -7,13 +7,19 @@
 
 package com.iwindplus.mgt.infrastructure.persistence.upms.permission;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.github.yulichang.repository.JoinCrudRepository;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.mgt.application.query.upms.permission.vo.ResourcePageVO;
+import com.iwindplus.mgt.application.service.upms.permission.dto.ResourceSearchDTO;
 import com.iwindplus.mgt.common.enums.MgtCodeEnum;
 import com.iwindplus.mgt.common.enums.ResourceTypeEnum;
 import com.iwindplus.mgt.api.upms.vo.ResourceBaseExtendVO;
@@ -22,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -35,6 +42,40 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class ResourceRepository extends JoinCrudRepository<ResourceMapper, ResourceDO> {
+
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
+    public IPage<ResourcePageVO> page(ResourceSearchDTO entity) {
+        PageDTO<ResourceDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
+        page.setOptimizeCountSql(Boolean.FALSE);
+        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
+        LambdaQueryWrapper<ResourceDO> queryWrapper = Wrappers.lambdaQuery(ResourceDO.class)
+            .eq(ResourceDO::getMenuId, entity.getMenuId())
+            .orderByDesc(ResourceDO::getModifiedTimestamp);
+        if (Objects.nonNull(entity.getStatus())) {
+            queryWrapper.eq(ResourceDO::getStatus, entity.getStatus());
+        }
+        if (Objects.nonNull(entity.getResourceType())) {
+            queryWrapper.eq(ResourceDO::getResourceType, entity.getResourceType());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getCode())) {
+            queryWrapper.eq(ResourceDO::getCode, entity.getCode().trim());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getName())) {
+            queryWrapper.like(ResourceDO::getName, entity.getName().trim());
+        }
+        queryWrapper.select(ResourceDO::getId, ResourceDO::getCreatedTimestamp, ResourceDO::getCreatedBy,
+            ResourceDO::getModifiedTimestamp, ResourceDO::getModifiedBy, ResourceDO::getVersion, ResourceDO::getStatus,
+            ResourceDO::getCode, ResourceDO::getName, ResourceDO::getBuildInFlag, ResourceDO::getResourceType, ResourceDO::getRequestMethod,
+            ResourceDO::getApiUrl, ResourceDO::getSeq, ResourceDO::getMenuId
+        );
+        final PageDTO<ResourceDO> modelPage = super.page(page, queryWrapper);
+        return modelPage.convert(model -> BeanUtil.copyProperties(model, ResourcePageVO.class));
+    }
 
     /**
      * 获取名称是否存在.

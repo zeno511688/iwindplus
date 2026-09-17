@@ -10,29 +10,23 @@ package com.iwindplus.mgt.application.query.upms.organization;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.metadata.OrderItem;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.google.common.collect.Lists;
-import com.iwindplus.base.domain.constant.CommonConstant.DbConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.domain.vo.FilePathVO;
 import com.iwindplus.integr.client.OssClient;
+import com.iwindplus.mgt.api.upms.vo.OrgBaseCheckedVO;
+import com.iwindplus.mgt.api.upms.vo.OrgVO;
 import com.iwindplus.mgt.application.query.upms.organization.dto.OrgSearchDTO;
 import com.iwindplus.mgt.application.query.upms.organization.vo.OrgExtendVO;
 import com.iwindplus.mgt.application.query.upms.organization.vo.OrgPageVO;
 import com.iwindplus.mgt.application.service.upms.organization.OrgApplicationService;
 import com.iwindplus.mgt.common.constant.MgtConstant.RedisCacheConstant;
+import com.iwindplus.mgt.common.enums.MgtCodeEnum;
 import com.iwindplus.mgt.infrastructure.configuration.MgtProperty;
-import com.iwindplus.mgt.infrastructure.persistence.upms.organization.OrgDO;
 import com.iwindplus.mgt.infrastructure.persistence.upms.organization.OrgExtendRepository;
 import com.iwindplus.mgt.infrastructure.persistence.upms.organization.OrgRepository;
-import com.iwindplus.mgt.common.enums.MgtCodeEnum;
-import com.iwindplus.mgt.api.upms.vo.OrgBaseCheckedVO;
-import com.iwindplus.mgt.api.upms.vo.OrgVO;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -60,46 +54,14 @@ public class OrgQueryService {
     private final OrgRepository orgRepository;
     private final MgtProperty property;
 
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
     public IPage<OrgPageVO> page(OrgSearchDTO entity) {
-        final PageDTO<OrgDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
-        page.setOptimizeCountSql(Boolean.FALSE);
-        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
-        final LambdaQueryWrapper<OrgDO> queryWrapper = Wrappers.lambdaQuery(OrgDO.class);
-        if (Objects.nonNull(entity.getStatus())) {
-            queryWrapper.eq(OrgDO::getStatus, entity.getStatus());
-        }
-        if (Objects.nonNull(entity.getAuditStatus())) {
-            queryWrapper.eq(OrgDO::getAuditStatus, entity.getAuditStatus());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getCode())) {
-            queryWrapper.eq(OrgDO::getCode, entity.getCode().trim());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getName())) {
-            queryWrapper.eq(OrgDO::getName, entity.getName().trim());
-        }
-        if (CharSequenceUtil.isNotBlank(entity.getAbbr())) {
-            queryWrapper.eq(OrgDO::getAbbr, entity.getAbbr().trim());
-        }
-        // 排序
-        List<OrderItem> orders = page.getOrders();
-        if (CollUtil.isEmpty(orders)) {
-            orders = new ArrayList<>(10);
-            OrderItem item = OrderItem.desc(DbConstant.MODIFIED_TIMESTAMP);
-            orders.add(item);
-        }
-        orders.forEach(order -> {
-            String column = order.getColumn();
-            String underline = CharSequenceUtil.toUnderlineCase(column);
-            order.setColumn(underline);
-        });
-        page.setOrders(orders);
-        queryWrapper.select(OrgDO::getId, OrgDO::getCreatedTimestamp, OrgDO::getCreatedBy,
-            OrgDO::getModifiedTimestamp, OrgDO::getModifiedBy, OrgDO::getVersion, OrgDO::getStatus, OrgDO::getAuditStatus, OrgDO::getCode,
-            OrgDO::getName, OrgDO::getAbbr, OrgDO::getUscc, OrgDO::getCountry, OrgDO::getProvince, OrgDO::getCity, OrgDO::getDistrict,
-            OrgDO::getBuildInFlag
-        );
-        final PageDTO<OrgDO> modelPage = this.orgRepository.page(page, queryWrapper);
-        return modelPage.convert(model -> BeanUtil.copyProperties(model, OrgPageVO.class));
+        return this.orgRepository.page(entity);
     }
 
     @Cacheable(key = "#root.methodName + '_' + #p0", condition = "#p0 != null", unless = "#result == null")

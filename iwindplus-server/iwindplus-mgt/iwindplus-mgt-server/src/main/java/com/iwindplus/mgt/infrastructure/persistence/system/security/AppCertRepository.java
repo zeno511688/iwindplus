@@ -7,14 +7,21 @@
 
 package com.iwindplus.mgt.infrastructure.persistence.system.security;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.github.yulichang.repository.JoinCrudRepository;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.domain.enums.AppCertTypeEnum;
+import com.iwindplus.mgt.application.query.system.security.dto.AppCertSearchDTO;
+import com.iwindplus.mgt.application.query.system.security.vo.AppCertPageVO;
 import com.iwindplus.mgt.common.enums.MgtCodeEnum;
+import java.util.Objects;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -25,6 +32,35 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class AppCertRepository extends JoinCrudRepository<AppCertMapper, AppCertDO> {
+
+    /**
+     * 分页查询.
+     *
+     * @param entity 查询参数
+     * @return 分页查询结果
+     */
+    public IPage<AppCertPageVO> page(AppCertSearchDTO entity) {
+        PageDTO<AppCertDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
+        page.setOptimizeCountSql(Boolean.FALSE);
+        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
+        LambdaQueryWrapper<AppCertDO> queryWrapper = Wrappers.lambdaQuery(AppCertDO.class)
+            .orderByDesc(AppCertDO::getModifiedTimestamp);
+        if (Objects.nonNull(entity.getStatus())) {
+            queryWrapper.eq(AppCertDO::getStatus, entity.getStatus());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getName())) {
+            queryWrapper.eq(AppCertDO::getName, entity.getName().trim());
+        }
+        if (CharSequenceUtil.isNotBlank(entity.getAccessKey())) {
+            queryWrapper.like(AppCertDO::getAccessKey, entity.getAccessKey().trim());
+        }
+        queryWrapper.select(AppCertDO::getId, AppCertDO::getCreatedTimestamp, AppCertDO::getCreatedBy,
+            AppCertDO::getModifiedTimestamp, AppCertDO::getModifiedBy, AppCertDO::getVersion, AppCertDO::getStatus,
+            AppCertDO::getName, AppCertDO::getAccessKey, AppCertDO::getTimeout, AppCertDO::getCertType, AppCertDO::getBuildInFlag
+        );
+        final PageDTO<AppCertDO> modelPage = super.page(page, queryWrapper);
+        return modelPage.convert(model -> BeanUtil.copyProperties(model, AppCertPageVO.class));
+    }
 
     /**
      * 检查名称是否存在.
