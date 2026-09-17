@@ -48,7 +48,6 @@ import io.minio.http.Method;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -337,58 +336,39 @@ public class MinioOssExecuteHandler extends AbstractOssBaseServiceImpl<MinioConf
      * @return true 表示 public，false 表示 private
      */
     private boolean isPublicBucket(String policyJson) {
+        if (StrUtil.isBlank(policyJson)) {
+            return false;
+        }
         JsonNode rootNode = JacksonUtil.parseTree(policyJson);
-        if (rootNode == null) {
+        JsonNode statements = rootNode.get("Statement");
+        if (statements == null || statements.isEmpty()) {
             return false;
         }
-
-        JsonNode statementsNode = rootNode.get("Statement");
-
-        if (statementsNode == null || !statementsNode.isArray()) {
-            return false;
-        }
-
-        for (JsonNode statement : statementsNode) {
-            JsonNode principalNode = statement.get("Principal");
-            if (principalNode == null || !principalNode.isObject()) {
+        for (JsonNode statement : statements) {
+            if (statement.get("Effect") == null || !statement.get("Effect").asText().equals("Allow")) {
                 continue;
             }
-
-            JsonNode awsNode = principalNode.get("AWS");
-            if (awsNode == null) {
+            JsonNode principal = statement.get("Principal");
+            if (principal == null) {
                 continue;
             }
-
-            boolean isAnonymous = awsNode.isTextual() && "*".equals(awsNode.asText())
-                || awsNode.isArray() && hasWildcard(awsNode);
-
-            if (!isAnonymous) {
-                continue;
-            }
-
-            JsonNode actionNode = statement.get("Action");
-            if (null != actionNode && actionNode.isArray() && containsGetObject(actionNode)) {
+            // 处理 Principal 为 * 或 {"AWS":"*"}
+            if (principal.isTextual() && "*".equals(principal.asText())) {
                 return true;
             }
-        }
-
-        return false;
-    }
-
-    private static boolean hasWildcard(JsonNode awsNode) {
-        for (JsonNode node : awsNode) {
-            if ("*".equals(node.asText())) {
-                return true;
+            if (principal.isObject()) {
+                JsonNode aws = principal.get("AWS");
+                if (aws != null && "*".equals(aws.asText())) {
+                    return true;
+                }
             }
-        }
-        return false;
-    }
-
-    private boolean containsGetObject(JsonNode actionNode) {
-        Iterator<JsonNode> elements = actionNode.elements();
-        while (elements.hasNext()) {
-            if ("s3:GetObject".equals(elements.next().asText())) {
-                return true;
+            JsonNode actions = statement.get("Action");
+            if (actions != null && actions.isArray()) {
+                for (JsonNode action : actions) {
+                    if ("s3:GetObject".equals(action.asText())) {
+                        return true;
+                    }
+                }
             }
         }
         return false;
