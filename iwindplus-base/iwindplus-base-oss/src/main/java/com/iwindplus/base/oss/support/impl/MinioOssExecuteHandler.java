@@ -55,10 +55,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
-import org.bouncycastle.util.Iterable;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
 import org.springframework.http.HttpHeaders;
@@ -84,7 +82,7 @@ public class MinioOssExecuteHandler extends AbstractOssBaseServiceImpl<MinioConf
      */
     public MinioOssExecuteHandler(
         MultipartProperties multipartProperties,
-        MinioConfig config,
+        OssProperty.MinioConfig config,
         ObjectProvider<OkHttpClient> okHttpClientProvider) {
         super(multipartProperties);
         super.setConfig(config);
@@ -134,23 +132,33 @@ public class MinioOssExecuteHandler extends AbstractOssBaseServiceImpl<MinioConf
 
     @Override
     public boolean removeFiles(OssCloudRemoveDTO request) {
-        List<DeleteObject> deleteObjects = request.getRelativePaths().stream()
-            .parallel().map(m -> new DeleteObject(m)).collect(Collectors.toList());
-        RemoveObjectsArgs build = RemoveObjectsArgs.builder()
-            .bucket(request.getBucketName())
-            .objects(deleteObjects)
-            .build();
+        List<DeleteObject> objects = request.getRelativePaths().stream()
+            .map(DeleteObject::new)
+            .toList();
+
         MinioClient minioClient = null;
         try {
             minioClient = this.getMinioClient();
-            final Iterable<Result<DeleteError>> results = minioClient.removeObjects(build);
+
+            Iterable<Result<DeleteError>> results = minioClient.removeObjects(
+                RemoveObjectsArgs.builder()
+                    .bucket(request.getBucketName())
+                    .objects(objects)
+                    .build()
+            );
+
+            boolean success = true;
             for (Result<DeleteError> result : results) {
-                result.get();
+                DeleteError error = result.get();
+                if (error.code() != null) {
+                    success = false;
+                    log.error("MinIO 删除失败: object={}, code={}, message={}",
+                        error.objectName(), error.code(), error.message());
+                }
             }
-            return Boolean.TRUE;
+            return success;
         } catch (Exception ex) {
             log.error(ExceptionConstant.EXCEPTION, ex);
-
             throw new BizException(BizCodeEnum.FILE_DELETE_ERROR);
         } finally {
             this.closeMinioClient(minioClient);
@@ -387,7 +395,7 @@ public class MinioOssExecuteHandler extends AbstractOssBaseServiceImpl<MinioConf
     }
 
     private MinioClient getMinioClient() {
-        MinioConfig config = this.getConfig();
+        OssProperty.MinioConfig config = this.getConfig();
 
         MinioClient.Builder builder = MinioClient.builder()
             .endpoint(config.getEndpoint())
