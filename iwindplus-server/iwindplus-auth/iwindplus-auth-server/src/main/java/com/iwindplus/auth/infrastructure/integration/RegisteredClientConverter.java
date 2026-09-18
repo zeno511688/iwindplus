@@ -7,10 +7,10 @@
 
 package com.iwindplus.auth.infrastructure.integration;
 
+import com.iwindplus.auth.infrastructure.model.vo.ClientSettingVO;
+import com.iwindplus.auth.infrastructure.model.vo.ClientVO;
+import com.iwindplus.auth.infrastructure.model.vo.TokenSettingVO;
 import com.iwindplus.base.domain.enums.TimeToLiveUnitEnum;
-import com.iwindplus.mgt.api.system.dto.ClientSettingDTO;
-import com.iwindplus.mgt.api.system.dto.TokenSettingDTO;
-import com.iwindplus.mgt.api.system.vo.ClientVO;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
@@ -113,8 +113,8 @@ public class RegisteredClientConverter {
         return builder.build();
     }
 
-    static ClientSettingDTO resolveClientSettings(ClientSettings clientSettings) {
-        ClientSettingDTO model = new ClientSettingDTO();
+    static ClientSettingVO resolveClientSettings(ClientSettings clientSettings) {
+        ClientSettingVO model = new ClientSettingVO();
         if (null == clientSettings) {
             return model;
         }
@@ -128,7 +128,7 @@ public class RegisteredClientConverter {
         return model;
     }
 
-    static ClientSettings resolveOauthClientSettings(ClientSettingDTO clientSettings, Set<String> clientAuthenticationMethods) {
+    static ClientSettings resolveOauthClientSettings(ClientSettingVO clientSettings, Set<String> clientAuthenticationMethods) {
         ClientSettings.Builder builder = ClientSettings.builder();
         if (null == clientSettings) {
             return builder.build();
@@ -161,8 +161,8 @@ public class RegisteredClientConverter {
         return builder.build();
     }
 
-    static TokenSettingDTO resolveTokenSettings(TokenSettings tokenSettings) {
-        TokenSettingDTO model = new TokenSettingDTO();
+    static TokenSettingVO resolveTokenSettings(TokenSettings tokenSettings) {
+        TokenSettingVO model = new TokenSettingVO();
         if (null == tokenSettings) {
             return model;
         }
@@ -193,7 +193,7 @@ public class RegisteredClientConverter {
         return model;
     }
 
-    static TokenSettings resolveOauthTokenSettings(TokenSettingDTO tokenSettings) {
+    static TokenSettings resolveOauthTokenSettings(TokenSettingVO tokenSettings) {
         TokenSettings.Builder builder = TokenSettings.builder();
         if (null == tokenSettings) {
             return builder.build();

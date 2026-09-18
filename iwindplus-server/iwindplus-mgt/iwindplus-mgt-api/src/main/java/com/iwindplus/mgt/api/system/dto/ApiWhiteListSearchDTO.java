@@ -5,10 +5,10 @@
  *
  */
 
-package com.iwindplus.mgt.application.query.system.security.vo;
+package com.iwindplus.mgt.api.system.dto;
 
+import com.iwindplus.base.domain.dto.DbPageDTO;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
-import com.iwindplus.base.domain.vo.DbVersionBaseVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,18 +17,18 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
- * API白名单分页视图对象.
+ * API白名单搜索数据传输对象.
  *
  * @author zengdegui
- * @since 2021/9/23
+ * @since 2018/9/1
  */
-@Schema(description = "API白名单分页视图对象")
+@Schema(description = "API白名单搜索数据传输对象")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ApiWhiteListPageVO extends DbVersionBaseVO {
+public class ApiWhiteListSearchDTO extends DbPageDTO {
 
     /**
      * 状态（DISABLE：禁用，ENABLE：启用，LOCKED：锁定）.
@@ -47,16 +47,4 @@ public class ApiWhiteListPageVO extends DbVersionBaseVO {
      */
     @Schema(description = "API路径")
     private String apiUrl;
-
-    /**
-     * 排序号.
-     */
-    @Schema(description = "排序号")
-    private Integer seq;
-
-    /**
-     * 是否内置（false：否，true：是）.
-     */
-    @Schema(description = "是否内置（false：否，true：是）")
-    private Boolean buildInFlag;
 }

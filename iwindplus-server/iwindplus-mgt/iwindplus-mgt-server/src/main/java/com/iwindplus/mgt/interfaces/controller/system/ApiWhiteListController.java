@@ -13,19 +13,15 @@ import com.iwindplus.base.domain.validation.EditGroup;
 import com.iwindplus.base.domain.validation.SaveGroup;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.domain.vo.UserBaseVO;
-import com.iwindplus.base.export.task.domain.dto.ExportTaskSubmitDTO;
-import com.iwindplus.base.export.task.domain.vo.ExportTaskSubmitVO;
-import com.iwindplus.base.export.task.executor.ExportTaskExecutor;
 import com.iwindplus.base.operate.domain.annotation.OperateLog;
 import com.iwindplus.base.operate.domain.annotation.OperateValid;
 import com.iwindplus.base.web.controller.BaseController;
+import com.iwindplus.mgt.api.system.dto.ApiWhiteListSearchDTO;
+import com.iwindplus.mgt.api.system.vo.ApiWhiteListPageVO;
 import com.iwindplus.mgt.application.query.system.security.ApiWhiteListQueryService;
-import com.iwindplus.mgt.application.query.system.security.dto.ApiWhiteListSearchDTO;
-import com.iwindplus.mgt.application.query.system.security.vo.ApiWhiteListPageVO;
 import com.iwindplus.mgt.application.query.system.security.vo.ApiWhiteListVO;
 import com.iwindplus.mgt.application.service.system.security.ApiWhiteListApplicationService;
 import com.iwindplus.mgt.application.service.system.security.dto.ApiWhiteListDTO;
-import com.iwindplus.mgt.application.service.system.security.handler.ApiWhiteListExportTaskHandler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -60,7 +56,6 @@ public class ApiWhiteListController extends BaseController {
 
     private final ApiWhiteListApplicationService apiWhiteListApplicationService;
     private final ApiWhiteListQueryService apiWhiteListQueryService;
-    private final ExportTaskExecutor exportTaskExecutor;
 
     /**
      * 添加.
@@ -183,24 +178,5 @@ public class ApiWhiteListController extends BaseController {
     public void importByTemplate(@RequestPart MultipartFile file, HttpServletResponse response) {
         UserBaseVO userInfo = this.getUserInfo();
         this.apiWhiteListApplicationService.importByTemplate(file, userInfo, response);
-    }
-
-    /**
-     * 提交导出任务.
-     *
-     * @param entity 对象
-     * @return ResultVO<ExportTaskSubmitVO>
-     */
-    @Operation(summary = "提交导出任务")
-    @PostMapping("exportTask")
-    public ResultVO<ExportTaskSubmitVO> exportTask(@RequestBody @Validated ApiWhiteListSearchDTO entity) {
-        final ExportTaskSubmitDTO param = ExportTaskSubmitDTO
-            .builder()
-            .executorClass(ApiWhiteListExportTaskHandler.class)
-            .build();
-        param.setQueryParam(entity);
-
-        final ExportTaskSubmitVO data = this.exportTaskExecutor.submit(param);
-        return ResultVO.success(data);
     }
 }

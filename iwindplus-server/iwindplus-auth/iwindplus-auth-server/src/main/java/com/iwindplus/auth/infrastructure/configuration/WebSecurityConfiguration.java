@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,7 +41,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @Slf4j
 @Configuration
 @EnableWebSecurity
-@EnableConfigurationProperties({AuthProperty.class})
 public class WebSecurityConfiguration {
 
     @Resource

@@ -28,6 +28,10 @@ operate:
     enabled-mail: false
     # 是否开启短信校验
     enabled-sms: false
+http:
+  client:
+    # 是否启用限流熔断
+    enabled-circuit-breaker: true
 auth:
   # 是否启用校验访问token过期
   enabled-token-expired-valid: false
@@ -43,6 +47,7 @@ auth:
 dynamictp:
   executors:
     - threadPoolName: asyncThreadPool
+      threadNamePrefix: async
       threadPoolAliasName: 异步线程池
       executorType: eager
       corePoolSize: 2
@@ -51,6 +56,7 @@ dynamictp:
       runTimeout: 5000
       platformIds: [ 1 ]
     - threadPoolName: i18nThreadPool
+      threadNamePrefix: i18n
       threadPoolAliasName: 国际化线程池
       executorType: eager
       corePoolSize: 2
@@ -59,6 +65,7 @@ dynamictp:
       runTimeout: 5000
       platformIds: [ 1 ]
     - threadPoolName: idempotentSchedulerThreadPool
+      threadNamePrefix: idempotent-scheduler
       threadPoolAliasName: 幂等调度线程池
       executorType: scheduled
       corePoolSize: 2
@@ -66,6 +73,7 @@ dynamictp:
       runTimeout: 5000
       platformIds: [ 1 ]
     - threadPoolName: httpClientThreadPool
+      threadNamePrefix: http-client
       threadPoolAliasName: http调用客户端线程池
       executorType: eager
       corePoolSize: 16
@@ -74,6 +82,7 @@ dynamictp:
       runTimeout: 5000
       platformIds: [ 1 ]
     - threadPoolName: kafkaListerThreadPool
+      threadNamePrefix: kafka-listener
       threadPoolAliasName: kafka默认集群监听线程池
       executorType: eager
       corePoolSize: 8
@@ -83,6 +92,7 @@ dynamictp:
       queueTimeout: 0
       platformIds: [ 1 ]
     - threadPoolName: disruptorThreadPool
+      threadNamePrefix: disruptor
       threadPoolAliasName: disruptor线程池
       executorType: eager
       corePoolSize: 16

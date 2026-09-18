@@ -9,16 +9,21 @@ package com.iwindplus.auth.infrastructure.client;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
-import com.iwindplus.auth.infrastructure.client.dto.OauthUserDTO;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.iwindplus.auth.infrastructure.model.dto.OauthUserDTO;
+import com.iwindplus.auth.infrastructure.model.vo.UserDetailVO;
 import com.iwindplus.auth.infrastructure.configuration.AuthProperty;
 import com.iwindplus.auth.infrastructure.configuration.AuthProperty.MailConfig;
 import com.iwindplus.auth.infrastructure.configuration.AuthProperty.SmsConfig;
+import com.iwindplus.auth.infrastructure.configuration.ServerApiProperty;
+import com.iwindplus.auth.infrastructure.configuration.ServerApiProperty.LogApiConfig;
+import com.iwindplus.auth.infrastructure.configuration.ServerApiProperty.MgtApiConfig;
 import com.iwindplus.base.domain.vo.ResultVO;
-import com.iwindplus.log.client.MailCaptchaLogClient;
-import com.iwindplus.mgt.api.upms.vo.UserDetailVO;
-import com.iwindplus.mgt.client.upms.UserClient;
+import com.iwindplus.base.http.client.domain.enums.HttpClientTypeEnum;
+import com.iwindplus.base.http.client.factory.HttpClientExecuteHandlerFactory;
+import com.iwindplus.base.http.client.support.HttpClientExecuteHandler;
+import java.util.Map;
 import java.util.Set;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -31,12 +36,27 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class LoginAuthClient {
 
-    private final UserClient userClient;
-    private final MailCaptchaLogClient mailCaptchaLogClient;
     private final AuthProperty property;
+    private final ServerApiProperty serverApiProperty;
+    private final HttpClientExecuteHandler httpClientExecuteHandler;
+
+    /**
+     * 构造函数.
+     *
+     * @param property          配置
+     * @param serverApiProperty 服务配置
+     * @param factory           factory
+     */
+    public LoginAuthClient(
+        AuthProperty property,
+        ServerApiProperty serverApiProperty,
+        HttpClientExecuteHandlerFactory factory) {
+        this.property = property;
+        this.serverApiProperty = serverApiProperty;
+        this.httpClientExecuteHandler = factory.getHandler(HttpClientTypeEnum.REST_CLIENT);
+    }
 
     /**
      * 用户名认证方式.
@@ -45,7 +65,7 @@ public class LoginAuthClient {
      * @return UserDetails
      */
     public UserDetails loadUserByUsername(String username) {
-        return this.getUserDetails(userClient, username);
+        return this.getUserDetailsByParam(username);
     }
 
     /**
@@ -55,9 +75,21 @@ public class LoginAuthClient {
      * @return UserDetails
      */
     public UserDetails loadUserByCode(String code) {
-        ResultVO<UserDetailVO> result = this.userClient.getLoginByCode(code);
-        result.errorThrow();
-        final UserDetailVO data = result.getBizData();
+        final MgtApiConfig mgtApiConfig = this.serverApiProperty.getMgt();
+        final String url = serverApiProperty.resolveUrl(mgtApiConfig.getUserLoginByCodeUrl());
+        final Map<String, String> query = Map.of(
+            "code", code
+        );
+        final ResultVO<UserDetailVO> response = httpClientExecuteHandler
+            .get(
+                url,
+                query,
+                null,
+                new TypeReference<>() {
+                }
+            );
+        response.errorThrow();
+        final UserDetailVO data = response.getBizData();
         return this.getUserDetails(data);
     }
 
@@ -68,7 +100,17 @@ public class LoginAuthClient {
      * @return UserDetails
      */
     public UserDetails loadUserByMail(String mail) {
-        return this.getUserDetails(userClient, mail);
+        return this.getUserDetailsByParam(mail);
+    }
+
+    /**
+     * 手机号码认证方式.
+     *
+     * @param mobile 手机号
+     * @return UserDetails
+     */
+    public UserDetails loadUserByMobile(String mobile) {
+        return this.getUserDetailsByParam(mobile);
     }
 
     /**
@@ -79,21 +121,25 @@ public class LoginAuthClient {
      * @return boolean
      */
     public boolean validateCaptchaByMail(String mail, String captcha) {
+        final LogApiConfig logApiConfig = this.serverApiProperty.getLog();
         final MailConfig mailConfig = this.property.getMail();
         final String tplCode = mailConfig.getTplCode();
-        ResultVO<Boolean> result = this.mailCaptchaLogClient.validate(tplCode, mail, captcha);
-        result.errorThrow();
-        return result.getBizData();
-    }
-
-    /**
-     * 手机号码认证方式.
-     *
-     * @param mobile 手机号
-     * @return UserDetails
-     */
-    public UserDetails loadUserByMobile(String mobile) {
-        return this.getUserDetails(userClient, mobile);
+        final String url = serverApiProperty.resolveUrl(logApiConfig.getMailCaptchaLogValidateUrl());
+        final Map<String, String> query = Map.of(
+            "tplCode", tplCode,
+            "mail", mail,
+            "captcha", captcha
+        );
+        final ResultVO<Boolean> response = httpClientExecuteHandler
+            .get(
+                url,
+                query,
+                null,
+                new TypeReference<>() {
+                }
+            );
+        response.errorThrow();
+        return response.getBizData();
     }
 
     /**
@@ -104,24 +150,49 @@ public class LoginAuthClient {
      * @return boolean
      */
     public boolean validateCaptchaByMobile(String mobile, String captcha) {
+        final LogApiConfig logApiConfig = this.serverApiProperty.getLog();
         final SmsConfig smsConfig = this.property.getSms();
         final String tplCode = smsConfig.getTplCode();
-        ResultVO<Boolean> result = this.mailCaptchaLogClient.validate(tplCode, mobile, captcha);
-        result.errorThrow();
-        return result.getBizData();
+        final String url = serverApiProperty.resolveUrl(logApiConfig.getSmsCaptchaLogValidateUrl());
+        final Map<String, String> query = Map.of(
+            "tplCode", tplCode,
+            "mobile", mobile,
+            "captcha", captcha
+        );
+        final ResultVO<Boolean> response = httpClientExecuteHandler
+            .get(
+                url,
+                query,
+                null,
+                new TypeReference<>() {
+                }
+            );
+        response.errorThrow();
+        return response.getBizData();
     }
 
     /**
      * UserDetails.
      *
-     * @param userClient userClient
-     * @param param      param
+     * @param param param
      * @return UserDetails
      */
-    private UserDetails getUserDetails(UserClient userClient, String param) {
-        ResultVO<UserDetailVO> result = userClient.getLoginByParam(param);
-        result.errorThrow();
-        final UserDetailVO data = result.getBizData();
+    private UserDetails getUserDetailsByParam(String param) {
+        final MgtApiConfig mgtApiConfig = this.serverApiProperty.getMgt();
+        final String url = serverApiProperty.resolveUrl(mgtApiConfig.getUserLoginByParamUrl());
+        final Map<String, String> query = Map.of(
+            "param", param
+        );
+        final ResultVO<UserDetailVO> response = httpClientExecuteHandler
+            .get(
+                url,
+                query,
+                null,
+                new TypeReference<>() {
+                }
+            );
+        response.errorThrow();
+        final UserDetailVO data = response.getBizData();
         return this.getUserDetails(data);
     }
 

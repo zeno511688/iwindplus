@@ -8,6 +8,7 @@ import cn.hutool.core.lang.Validator;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
+import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.domain.vo.ExcelVerifyResultVO;
 import com.iwindplus.base.domain.vo.UserBaseVO;
 import com.iwindplus.base.util.support.EasyExcelImportVerifyHandler;
@@ -49,17 +50,17 @@ public class ApiWhiteListImportVerifyHandler implements EasyExcelImportVerifyHan
             .filter(Objects::nonNull)
             .anyMatch(m -> CharSequenceUtil.isNotBlank(m.getName()) && Objects.equals(data.getName().trim(), m.getName().trim()));
         if (Boolean.TRUE.equals(izNameRepeat)) {
-            msg.append(MgtCodeEnum.NAME_EXIST_IN_TABLE + ";");
+            msg.append(MgtCodeEnum.NAME_EXIST_IN_TABLE + SymbolConstant.SEMICOLON);
         }
         if (CharSequenceUtil.isNotBlank(data.getApiUrl()) && !Validator.isUrl(data.getApiUrl().trim())) {
-            msg.append(MgtCodeEnum.API_URL_FORMAT_ERROR + ";");
+            msg.append(MgtCodeEnum.API_URL_FORMAT_ERROR + SymbolConstant.SEMICOLON);
         }
         // 校验API路径在表格中是否重复
         final boolean izRepeat = CharSequenceUtil.isNotBlank(data.getApiUrl()) && this.dataList.stream()
             .filter(Objects::nonNull)
             .anyMatch(m -> CharSequenceUtil.isNotBlank(m.getApiUrl()) && Objects.equals(data.getApiUrl().trim(), m.getApiUrl().trim()));
         if (Boolean.TRUE.equals(izRepeat)) {
-            msg.append(MgtCodeEnum.API_URL_EXIST_IN_TABLE + ";");
+            msg.append(MgtCodeEnum.API_URL_EXIST_IN_TABLE + SymbolConstant.SEMICOLON);
         }
         if (CharSequenceUtil.isNotBlank(data.getName())) {
             this.checkNameExist(data, msg);
@@ -82,7 +83,7 @@ public class ApiWhiteListImportVerifyHandler implements EasyExcelImportVerifyHan
         long count = this.apiWhiteListRepository.count(Wrappers.lambdaQuery(ApiWhiteListDO.class)
             .eq(ApiWhiteListDO::getName, data.getName().trim()));
         if (Boolean.TRUE.equals(SqlHelper.retBool(count))) {
-            msg.append(MgtCodeEnum.NAME_EXIST + ";");
+            msg.append(MgtCodeEnum.NAME_EXIST + SymbolConstant.SEMICOLON);
         }
     }
 
@@ -90,7 +91,7 @@ public class ApiWhiteListImportVerifyHandler implements EasyExcelImportVerifyHan
         long count = this.apiWhiteListRepository.count(Wrappers.lambdaQuery(ApiWhiteListDO.class)
             .eq(ApiWhiteListDO::getApiUrl, data.getApiUrl().trim()));
         if (Boolean.TRUE.equals(SqlHelper.retBool(count))) {
-            msg.append(MgtCodeEnum.API_URL_EXIST);
+            msg.append(MgtCodeEnum.API_URL_EXIST + SymbolConstant.SEMICOLON);
         }
     }
 }

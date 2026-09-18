@@ -13,19 +13,15 @@ import com.iwindplus.base.domain.validation.EditGroup;
 import com.iwindplus.base.domain.validation.SaveGroup;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.domain.vo.UserBaseVO;
-import com.iwindplus.base.export.task.domain.dto.ExportTaskSubmitDTO;
-import com.iwindplus.base.export.task.domain.vo.ExportTaskSubmitVO;
-import com.iwindplus.base.export.task.executor.ExportTaskExecutor;
 import com.iwindplus.base.operate.domain.annotation.OperateLog;
 import com.iwindplus.base.operate.domain.annotation.OperateValid;
 import com.iwindplus.base.web.controller.BaseController;
+import com.iwindplus.mgt.api.system.dto.IpBlackListSearchDTO;
+import com.iwindplus.mgt.api.system.vo.IpBlackListPageVO;
 import com.iwindplus.mgt.application.query.system.security.IpBlackListQueryService;
-import com.iwindplus.mgt.application.query.system.security.dto.IpBlackListSearchDTO;
-import com.iwindplus.mgt.application.query.system.security.vo.IpBlackListPageVO;
 import com.iwindplus.mgt.application.query.system.security.vo.IpBlackListVO;
 import com.iwindplus.mgt.application.service.system.security.IpBlackListApplicationService;
 import com.iwindplus.mgt.application.service.system.security.dto.IpBlackListDTO;
-import com.iwindplus.mgt.application.service.system.security.handler.IpBlackListExportTaskHandler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -60,7 +56,6 @@ public class IpBlackListController extends BaseController {
 
     private final IpBlackListApplicationService ipBlackListApplicationService;
     private final IpBlackListQueryService ipBlackListQueryService;
-    private final ExportTaskExecutor exportTaskExecutor;
 
     /**
      * 添加.
@@ -183,24 +178,5 @@ public class IpBlackListController extends BaseController {
     public void importByTemplate(@RequestPart MultipartFile file, HttpServletResponse response) {
         UserBaseVO userInfo = this.getUserInfo();
         this.ipBlackListApplicationService.importByTemplate(file, userInfo, response);
-    }
-
-    /**
-     * 提交导出任务.
-     *
-     * @param entity 对象
-     * @return ResultVO<ExportTaskSubmitVO>
-     */
-    @Operation(summary = "提交导出任务")
-    @PostMapping("exportTask")
-    public ResultVO<ExportTaskSubmitVO> exportTask(@RequestBody @Validated IpBlackListSearchDTO entity) {
-        final ExportTaskSubmitDTO param = ExportTaskSubmitDTO
-            .builder()
-            .executorClass(IpBlackListExportTaskHandler.class)
-            .build();
-        param.setQueryParam(entity);
-
-        final ExportTaskSubmitVO data = this.exportTaskExecutor.submit(param);
-        return ResultVO.success(data);
     }
 }

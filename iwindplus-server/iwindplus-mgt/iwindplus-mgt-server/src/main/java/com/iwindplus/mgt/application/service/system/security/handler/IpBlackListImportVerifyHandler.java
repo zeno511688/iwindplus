@@ -7,6 +7,7 @@ package com.iwindplus.mgt.application.service.system.security.handler;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
+import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.domain.vo.ExcelVerifyResultVO;
 import com.iwindplus.base.domain.vo.UserBaseVO;
 import com.iwindplus.base.util.support.EasyExcelImportVerifyHandler;
@@ -48,7 +49,7 @@ public class IpBlackListImportVerifyHandler implements EasyExcelImportVerifyHand
             .filter(Objects::nonNull)
             .anyMatch(m -> CharSequenceUtil.isNotBlank(m.getIp()) && Objects.equals(data.getIp().trim(), m.getIp().trim()));
         if (Boolean.TRUE.equals(izIpRepeat)) {
-            msg.append(MgtCodeEnum.IP_EXIST_IN_TABLE + ";");
+            msg.append(MgtCodeEnum.IP_EXIST_IN_TABLE + SymbolConstant.SEMICOLON);
         }
         if (CharSequenceUtil.isNotBlank(data.getIp())) {
             this.checkIpExist(data, msg);
@@ -68,7 +69,7 @@ public class IpBlackListImportVerifyHandler implements EasyExcelImportVerifyHand
         long count = this.ipBlackListRepository.count(Wrappers.lambdaQuery(IpBlackListDO.class)
             .eq(IpBlackListDO::getIp, data.getIp().trim()));
         if (Boolean.TRUE.equals(SqlHelper.retBool(count))) {
-            msg.append(MgtCodeEnum.IP_EXIST + ";");
+            msg.append(MgtCodeEnum.IP_EXIST + SymbolConstant.SEMICOLON);
         }
     }
 }

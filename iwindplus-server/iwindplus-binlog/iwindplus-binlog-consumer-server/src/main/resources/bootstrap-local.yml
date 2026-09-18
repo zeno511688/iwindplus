@@ -29,6 +29,7 @@ operate:
 dynamictp:
   executors:
     - threadPoolName: asyncThreadPool
+      threadNamePrefix: async
       threadPoolAliasName: 异步线程池
       executorType: eager
       corePoolSize: 2
@@ -37,6 +38,7 @@ dynamictp:
       runTimeout: 5000
       platformIds: [ 1 ]
     - threadPoolName: i18nThreadPool
+      threadNamePrefix: i18n
       threadPoolAliasName: 国际化线程池
       executorType: eager
       corePoolSize: 2
@@ -45,6 +47,7 @@ dynamictp:
       runTimeout: 5000
       platformIds: [ 1 ]
     - threadPoolName: httpClientThreadPool
+      threadNamePrefix: http-client
       threadPoolAliasName: http调用客户端线程池
       executorType: eager
       corePoolSize: 16
@@ -53,6 +56,7 @@ dynamictp:
       runTimeout: 5000
       platformIds: [ 1 ]
     - threadPoolName: binlogThreadPool
+      threadNamePrefix: binlog
       threadPoolAliasName: binlog线程池
       executorType: eager
       corePoolSize: 16
@@ -60,15 +64,8 @@ dynamictp:
       queueCapacity: 100
       runTimeout: 5000
       platformIds: [ 1 ]
-    - threadPoolName: httpClientThreadPool
-      threadPoolAliasName: http调用客户端线程池
-      executorType: eager
-      corePoolSize: 16
-      maximumPoolSize: 32
-      queueCapacity: 100
-      runTimeout: 5000
-      platformIds: [ 1 ]
     - threadPoolName: kafkaListerThreadPool
+      threadNamePrefix: kafka-listener
       threadPoolAliasName: kafka默认集群监听线程池
       executorType: eager
       corePoolSize: 8
@@ -78,6 +75,7 @@ dynamictp:
       queueTimeout: 0
       platformIds: [ 1 ]
     - threadPoolName: disruptorThreadPool
+      threadNamePrefix: disruptor
       threadPoolAliasName: disruptor线程池
       executorType: eager
       corePoolSize: 16

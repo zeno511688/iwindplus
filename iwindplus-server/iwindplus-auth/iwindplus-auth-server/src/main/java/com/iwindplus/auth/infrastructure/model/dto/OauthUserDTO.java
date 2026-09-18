@@ -5,7 +5,7 @@
  *
  */
 
-package com.iwindplus.auth.infrastructure.client.dto;
+package com.iwindplus.auth.infrastructure.model.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Comparator;

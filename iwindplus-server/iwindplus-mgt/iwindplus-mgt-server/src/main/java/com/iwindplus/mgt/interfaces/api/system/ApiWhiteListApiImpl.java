@@ -7,8 +7,12 @@
 
 package com.iwindplus.mgt.interfaces.api.system;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.iwindplus.base.domain.vo.DbPageVO;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.mgt.api.system.ApiWhiteListApi;
+import com.iwindplus.mgt.api.system.dto.ApiWhiteListSearchDTO;
+import com.iwindplus.mgt.api.system.vo.ApiWhiteListPageVO;
 import com.iwindplus.mgt.application.query.system.security.ApiWhiteListQueryService;
 import com.iwindplus.mgt.application.service.system.security.ApiWhiteListApplicationService;
 import java.util.List;
@@ -38,5 +42,13 @@ public class ApiWhiteListApiImpl implements ApiWhiteListApi {
     public ResultVO<List<String>> listApi() {
         List<String> data = this.apiWhiteListQueryService.listApi();
         return ResultVO.success(data);
+    }
+
+    @Override
+    public ResultVO<DbPageVO<ApiWhiteListPageVO>> page(ApiWhiteListSearchDTO entity) {
+        IPage<ApiWhiteListPageVO> data = this.apiWhiteListQueryService.page(entity);
+        final DbPageVO<ApiWhiteListPageVO> result = new DbPageVO<>(data.getCurrent(), data.getSize(), data.getTotal(),
+            data.getRecords());
+        return ResultVO.success(result);
     }
 }

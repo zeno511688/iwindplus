@@ -5,9 +5,9 @@
  *
  */
 
-package com.iwindplus.auth.infrastructure.event;
+package com.iwindplus.auth.infrastructure.model.event;
 
-import com.iwindplus.log.api.dto.LoginLogDTO;
+import com.iwindplus.auth.infrastructure.model.dto.LoginLogDTO;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 

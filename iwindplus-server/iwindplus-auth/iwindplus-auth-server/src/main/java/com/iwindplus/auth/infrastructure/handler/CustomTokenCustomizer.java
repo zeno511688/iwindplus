@@ -10,7 +10,7 @@ package com.iwindplus.auth.infrastructure.handler;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
-import com.iwindplus.auth.infrastructure.client.dto.OauthUserDTO;
+import com.iwindplus.auth.infrastructure.model.dto.OauthUserDTO;
 import com.iwindplus.base.domain.constant.CommonConstant.UserConstant;
 import java.util.Objects;
 import java.util.Set;

@@ -8,10 +8,10 @@
 package com.iwindplus.auth.infrastructure.integration;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.iwindplus.auth.infrastructure.client.ClientClient;
+import com.iwindplus.auth.infrastructure.model.dto.ClientDTO;
+import com.iwindplus.auth.infrastructure.model.vo.ClientVO;
 import com.iwindplus.base.domain.vo.ResultVO;
-import com.iwindplus.mgt.api.system.dto.ClientDTO;
-import com.iwindplus.mgt.api.system.vo.ClientVO;
-import com.iwindplus.mgt.client.system.ClientClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;

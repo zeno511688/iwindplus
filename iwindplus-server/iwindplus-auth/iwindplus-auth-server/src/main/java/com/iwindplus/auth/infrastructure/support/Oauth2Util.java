@@ -7,7 +7,7 @@
 
 package com.iwindplus.auth.infrastructure.support;
 
-import com.iwindplus.auth.infrastructure.client.dto.OauthUserDTO;
+import com.iwindplus.auth.infrastructure.model.dto.OauthUserDTO;
 import com.iwindplus.base.domain.constant.CommonConstant;
 import com.iwindplus.base.util.HttpsUtil;
 import com.iwindplus.base.util.JacksonUtil;

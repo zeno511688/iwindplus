@@ -8,7 +8,7 @@
 package com.iwindplus.auth.interfaces.api;
 
 import com.iwindplus.auth.api.AuthorizationApi;
-import com.iwindplus.auth.infrastructure.client.dto.OauthUserDTO;
+import com.iwindplus.auth.infrastructure.model.dto.OauthUserDTO;
 import com.iwindplus.auth.infrastructure.support.Oauth2Util;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.domain.vo.UserBaseVO;

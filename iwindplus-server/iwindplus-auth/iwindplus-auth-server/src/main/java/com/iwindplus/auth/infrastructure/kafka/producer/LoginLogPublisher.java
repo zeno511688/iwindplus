@@ -7,13 +7,13 @@
 
 package com.iwindplus.auth.infrastructure.kafka.producer;
 
-import com.iwindplus.auth.infrastructure.event.LoginLogEvent;
+import com.iwindplus.auth.infrastructure.model.event.LoginLogEvent;
+import com.iwindplus.auth.infrastructure.model.dto.LoginLogDTO;
 import com.iwindplus.base.domain.dto.MessageBaseDTO;
 import com.iwindplus.base.domain.enums.OperateTypeEnum;
 import com.iwindplus.base.kafka.core.KafkaTemplateRouter;
 import com.iwindplus.base.kafka.domain.property.KafkaMultiProperty;
 import com.iwindplus.base.util.JacksonUtil;
-import com.iwindplus.log.api.dto.LoginLogDTO;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -47,8 +47,6 @@ public class LoginLogPublisher {
     @Async
     @EventListener(LoginLogEvent.class)
     public void onApplicationEvent(LoginLogEvent event) {
-        log.info("登陆日志发布事件");
-
         final MessageBaseDTO<LoginLogDTO> messageDTO = new MessageBaseDTO();
         messageDTO.setOperateType(OperateTypeEnum.ADD.getValue());
         messageDTO.setBizType("loginLog");

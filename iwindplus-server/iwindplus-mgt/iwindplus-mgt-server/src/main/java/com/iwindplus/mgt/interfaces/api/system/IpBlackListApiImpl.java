@@ -7,8 +7,12 @@
 
 package com.iwindplus.mgt.interfaces.api.system;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.iwindplus.base.domain.vo.DbPageVO;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.mgt.api.system.IpBlackListApi;
+import com.iwindplus.mgt.api.system.dto.IpBlackListSearchDTO;
+import com.iwindplus.mgt.api.system.vo.IpBlackListPageVO;
 import com.iwindplus.mgt.application.query.system.security.IpBlackListQueryService;
 import com.iwindplus.mgt.application.service.system.security.IpBlackListApplicationService;
 import java.util.List;
@@ -38,5 +42,13 @@ public class IpBlackListApiImpl implements IpBlackListApi {
     public ResultVO<List<String>> listIp() {
         List<String> data = this.ipBlackListQueryService.listIp();
         return ResultVO.success(data);
+    }
+
+    @Override
+    public ResultVO<DbPageVO<IpBlackListPageVO>> page(IpBlackListSearchDTO entity) {
+        IPage<IpBlackListPageVO> data = this.ipBlackListQueryService.page(entity);
+        final DbPageVO<IpBlackListPageVO> result = new DbPageVO<>(data.getCurrent(), data.getSize(), data.getTotal(),
+            data.getRecords());
+        return ResultVO.success(result);
     }
 }

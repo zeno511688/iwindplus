@@ -20,12 +20,12 @@ public enum ExcelImportTplEnum implements BaseEnum<String> {
     /**
      * IP黑名单模板.
      */
-    IP_BLACK_LIST_TPL("static/excel/ip_black_list.xlsx", "IP黑名单模板"),
+    IP_BLACK_LIST_TPL("static/excel/import_ip_black_list.xlsx", "IP黑名单模板"),
 
     /**
      * API白名单模板.
      */
-    API_WHITE_LIST_TPL("static/excel/api_white_list.xlsx", "API白名单模板"),
+    API_WHITE_LIST_TPL("static/excel/import_api_white_list.xlsx", "API白名单模板"),
 
     ;
 

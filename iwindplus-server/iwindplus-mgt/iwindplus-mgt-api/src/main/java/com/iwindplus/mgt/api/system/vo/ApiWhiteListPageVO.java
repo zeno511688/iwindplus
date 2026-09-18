@@ -5,7 +5,7 @@
  *
  */
 
-package com.iwindplus.mgt.application.query.system.security.vo;
+package com.iwindplus.mgt.api.system.vo;
 
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.vo.DbVersionBaseVO;
@@ -17,18 +17,18 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
- * IP黑名单分页视图对象.
+ * API白名单分页视图对象.
  *
  * @author zengdegui
- * @since 2020/4/14
+ * @since 2021/9/23
  */
-@Schema(description = "IP黑名单分页视图对象")
+@Schema(description = "API白名单分页视图对象")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class IpBlackListPageVO extends DbVersionBaseVO {
+public class ApiWhiteListPageVO extends DbVersionBaseVO {
 
     /**
      * 状态（DISABLE：禁用，ENABLE：启用，LOCKED：锁定）.
@@ -37,10 +37,16 @@ public class IpBlackListPageVO extends DbVersionBaseVO {
     private EnableStatusEnum status;
 
     /**
-     * ip.
+     * 名称.
      */
-    @Schema(description = "ip")
-    private String ip;
+    @Schema(description = "名称")
+    private String name;
+
+    /**
+     * API路径.
+     */
+    @Schema(description = "API路径")
+    private String apiUrl;
 
     /**
      * 排序号.

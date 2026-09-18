@@ -9,16 +9,14 @@ package com.iwindplus.mgt.application.query.system.security;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.exception.BizException;
-import com.iwindplus.mgt.application.query.system.security.dto.IpBlackListSearchDTO;
-import com.iwindplus.mgt.application.query.system.security.vo.IpBlackListPageVO;
+import com.iwindplus.mgt.api.system.dto.IpBlackListSearchDTO;
+import com.iwindplus.mgt.api.system.vo.IpBlackListPageVO;
 import com.iwindplus.mgt.application.query.system.security.vo.IpBlackListVO;
 import com.iwindplus.mgt.common.constant.MgtConstant.RedisCacheConstant;
 import com.iwindplus.mgt.infrastructure.persistence.system.security.IpBlackListDO;

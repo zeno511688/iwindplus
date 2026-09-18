@@ -75,7 +75,12 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
  */
 @Slf4j
 @Configuration
-@EnableConfigurationProperties({AuthProperty.class})
+@EnableConfigurationProperties(
+    {
+        AuthProperty.class,
+        ServerApiProperty.class,
+    }
+)
 public class AuthorizationServerConfiguration {
 
     @Resource

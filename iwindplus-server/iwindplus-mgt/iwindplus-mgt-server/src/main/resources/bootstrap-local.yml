@@ -54,12 +54,16 @@ async-task:
   # 是否开启job
   job:
     enabled: true
+    # 单次执行最大循环次数
+    max-loop-count: 100
   web:
+    enabled: true
     # 接口路径
     path: admin/mgt/asyncTask
 dynamictp:
   executors:
     - threadPoolName: asyncThreadPool
+      threadNamePrefix: async
       threadPoolAliasName: 异步线程池
       executorType: eager
       corePoolSize: 2
@@ -68,6 +72,7 @@ dynamictp:
       runTimeout: 5000
       platformIds: [ 1 ]
     - threadPoolName: i18nThreadPool
+      threadNamePrefix: i18n
       threadPoolAliasName: 国际化线程池
       executorType: eager
       corePoolSize: 2
@@ -76,6 +81,7 @@ dynamictp:
       runTimeout: 5000
       platformIds: [ 1 ]
     - threadPoolName: idempotentSchedulerThreadPool
+      threadNamePrefix: idempotent-scheduler
       threadPoolAliasName: 幂等调度线程池
       executorType: scheduled
       corePoolSize: 2
@@ -83,6 +89,7 @@ dynamictp:
       platformIds: [ 1 ]
       runTimeout: 5000
     - threadPoolName: asyncTaskThreadPool
+      threadNamePrefix: async-task
       threadPoolAliasName: 异步任务线程池
       executorType: eager
       corePoolSize: 8
@@ -91,6 +98,7 @@ dynamictp:
       runTimeout: 5000
       platformIds: [ 1 ]
     - threadPoolName: asyncTaskSubThreadPool
+      threadNamePrefix: async-task-sub
       threadPoolAliasName: 异步任务子线程池
       executorType: eager
       corePoolSize: 16
@@ -99,6 +107,7 @@ dynamictp:
       runTimeout: 5000
       platformIds: [ 1 ]
     - threadPoolName: httpClientThreadPool
+      threadNamePrefix: http-client
       threadPoolAliasName: http调用客户端线程池
       executorType: eager
       corePoolSize: 16
@@ -107,6 +116,7 @@ dynamictp:
       runTimeout: 5000
       platformIds: [ 1 ]
     - threadPoolName: kafkaListerThreadPool
+      threadNamePrefix: kafka-listener
       threadPoolAliasName: kafka默认集群监听线程池
       executorType: eager
       corePoolSize: 8
@@ -116,6 +126,7 @@ dynamictp:
       queueTimeout: 0
       platformIds: [ 1 ]
     - threadPoolName: disruptorThreadPool
+      threadNamePrefix: disruptor
       threadPoolAliasName: disruptor线程池
       executorType: eager
       corePoolSize: 16

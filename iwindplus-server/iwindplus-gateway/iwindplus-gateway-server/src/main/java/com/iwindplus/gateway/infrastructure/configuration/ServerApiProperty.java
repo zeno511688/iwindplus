@@ -35,12 +35,12 @@ public class ServerApiProperty {
     /**
      * mgt服务名前缀占位符.
      */
-    public static final String MGT_SERVER_PREFIX = "${iwindplus.mgt.server.name:lb://iwindplus-mgt}";
+    public static final String MGT_SERVER_PREFIX = "${gateway.server-api.mgt-server-name:lb://iwindplus-mgt}";
 
     /**
      * auth服务名前缀占位符.
      */
-    public static final String AUTH_SERVER_PREFIX = "${iwindplus.auth.server.name:lb://iwindplus-auth}";
+    public static final String AUTH_SERVER_PREFIX = "${gateway.server-api.auth-server-name:lb://iwindplus-auth}";
 
     /**
      * 环境（用于解析占位符）.

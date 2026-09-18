@@ -10,7 +10,7 @@ package com.iwindplus.auth.infrastructure.extension;
 import cn.hutool.core.lang.Assert;
 import com.iwindplus.auth.common.enums.AuthCodeEnum;
 import com.iwindplus.auth.infrastructure.client.LoginAuthClient;
-import com.iwindplus.auth.infrastructure.client.dto.OauthUserDTO;
+import com.iwindplus.auth.infrastructure.model.dto.OauthUserDTO;
 import com.iwindplus.auth.infrastructure.exception.CustomOauth2AuthenticationException;
 import com.iwindplus.auth.infrastructure.extension.constant.GrantTypeConstant;
 import com.iwindplus.auth.infrastructure.support.Oauth2Util;
