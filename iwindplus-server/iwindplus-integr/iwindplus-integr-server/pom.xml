@@ -145,10 +145,6 @@
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
-            <artifactId>iwindplus-base-export-task</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-monitor</artifactId>
         </dependency>
         <dependency>
