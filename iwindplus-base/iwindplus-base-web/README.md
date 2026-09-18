@@ -304,7 +304,7 @@ spring:
         queue-capacity: 1000  # 队列容量
         keep-alive: 60s  # 空闲线程存活时间
         allow-core-thread-timeout: true  # 允许核心线程超时
-      thread-name-prefix: async-  # 线程名前缀
+        threadNamePrefix: async  # 线程名前缀
 ```
 
 #### 使用示例
