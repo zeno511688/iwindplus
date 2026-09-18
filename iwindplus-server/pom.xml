@@ -26,5 +26,6 @@
         <module>iwindplus-binlog</module>
         <module>iwindplus-dtx</module>
         <module>iwindplus-integr</module>
+        <module>iwindplus-report</module>
     </modules>
 </project>

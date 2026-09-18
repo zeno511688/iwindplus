@@ -1,0 +1,171 @@
+server:
+  # 配置启动的接口
+  port: 9013
+  servlet:
+    application-display-name: 报表服务
+cross:
+  # 是否开启跨域
+  enabled: false
+operate:
+  enabled: true
+  log:
+    # 是否开启操作日志审计
+    enabled: true
+    # 是否启用获取请求参数
+    enabled-request-param: true
+    # 是否启用获取请求体
+    enabled-request-body: true
+    # 是否启用获取响应体
+    enabled-response-body: true
+  valid:
+    # 是否开启操作配置校验
+    enabled: true
+    # 是否开启GA校验
+    enabled-ga: true
+    # 是否开启邮箱校验
+    enabled-mail: false
+    # 是否开启短信校验
+    enabled-sms: false
+swagger:
+  server-api:
+    # 是否启用API注册
+    enabled: true
+    # 最大重试次数
+    maxRetry: 5
+    # 重试间隔时间（单位：秒）
+    retryInterval: 3
+export-task:
+  # 是否开启导出任务
+  enabled: true
+  # 是否开启异常信息截取
+  enabled-exception-capture: true
+  # 异常信息截取长度
+  exception-capture-length: 4000
+  # 是否开启OSS
+  oss:
+    enabled: true
+    code: minio-main
+    tpl-code: c3f67fd355dd6098156053f68385ba34
+  # 是否开启job
+  job:
+    enabled: true
+    # 单次执行最大循环次数
+    max-loop-count: 100
+  web:
+    enabled: true
+    # 接口路径
+    path: admin/report/exportTask
+dynamictp:
+  executors:
+    - threadPoolName: asyncThreadPool
+      threadPoolAliasName: 异步线程池
+      executorType: eager
+      corePoolSize: 2
+      maximumPoolSize: 4
+      queueCapacity: 50
+      runTimeout: 5000
+      platformIds: [ 1 ]
+    - threadPoolName: i18nThreadPool
+      threadPoolAliasName: 国际化线程池
+      executorType: eager
+      corePoolSize: 2
+      maximumPoolSize: 4
+      queueCapacity: 50
+      runTimeout: 5000
+      platformIds: [ 1 ]
+    - threadPoolName: idempotentSchedulerThreadPool
+      threadPoolAliasName: 幂等调度线程池
+      executorType: scheduled
+      corePoolSize: 2
+      maximumPoolSize: 4
+      platformIds: [ 1 ]
+      runTimeout: 5000
+    - threadPoolName: httpClientThreadPool
+      threadPoolAliasName: http调用客户端线程池
+      executorType: eager
+      corePoolSize: 16
+      maximumPoolSize: 32
+      queueCapacity: 100
+      runTimeout: 5000
+      platformIds: [ 1 ]
+    - threadPoolName: exportTaskThreadPool
+      threadNamePrefix: export-task
+      threadPoolAliasName: 导出任务线程池
+      executorType: eager
+      corePoolSize: 8
+      maximumPoolSize: 32
+      queueCapacity: 100
+      runTimeout: 0
+      queueTimeout: 0
+      platformIds: [ 1 ]
+spring:
+  # 初始化数据库
+  flyway:
+    enabled: true
+    placeholder-replacement: false
+    baseline-on-migrate: true
+    locations: classpath:db
+    table: flyway_schema_history
+    url: ${spring.datasource.url}
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+  datasource:
+    # 数据库url
+    url: jdbc:mysql://127.0.0.1:3317/iwindplus-report?useUnicode=true&autoReconnect=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
+    # 数据库用户名
+    username: root
+    # 数据库密码
+    password: ${mysql-password}
+    # Hikari 连接池配置
+    hikari:
+      # 数据库连接超时时间
+      connectionTimeout: 30000
+      # 最小空闲连接数量
+      minimumIdle: 5
+      # 连接池最大连接数，默认是10
+      maximumPoolSize: 20
+      # 此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
+      maxLifetime: 1800000
+      connectionTestQuery: SELECT 1
+  cache:
+    redis:
+      time-to-live: 0
+  redis:
+    # 序列化类型
+    serialize-type: PROTOBUF
+    idempotent:
+      # 是否开启redis幂等（防重复提交）
+      enabled: true
+    lock:
+      # 是否开启redis锁
+      enabled: true
+    rate-limiter:
+      # 是否开启redis限流
+      enabled: true
+    redisson:
+      config: |
+        singleServerConfig:
+          address: redis://127.0.0.1:6379
+          password: ${redis-password}
+          database: 6
+          connectionMinimumIdleSize: 1
+          connectionPoolSize: 2
+          subscriptionConnectionMinimumIdleSize: 1
+          subscriptionConnectionPoolSize: 2
+xxl-job:
+  enabled: true
+  admin:
+    addresses: http://127.0.0.1:9880/xxl-job-admin
+    access-token: ${xxl-job-access-token}
+  executor:
+    log-path: logs/job
+    log-retention-days: 30
+    app-name: ${spring.application.name}
+    ip: host.docker.internal
+springdoc:
+  packagesToScan:
+    - com.iwindplus.report.server.web
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
