@@ -7,7 +7,6 @@
 
 package com.iwindplus.integr.application.service;
 
-import com.alibaba.nacos.api.common.Constants.Exception;
 import com.iwindplus.base.domain.vo.FilePathVO;
 import com.iwindplus.base.domain.vo.PreUploadVO;
 import com.iwindplus.base.domain.vo.UploadVO;
