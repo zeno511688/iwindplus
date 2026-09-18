@@ -12,6 +12,7 @@ import java.io.Serializable;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -24,6 +25,7 @@ import lombok.experimental.SuperBuilder;
 @Schema(description = "数据库分页视图对象")
 @Data
 @SuperBuilder
+@NoArgsConstructor
 @AllArgsConstructor
 public class DbPageVO<T> implements Serializable {
 
