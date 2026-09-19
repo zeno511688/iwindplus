@@ -164,7 +164,7 @@ public final class PathMatchUtil {
                 // ** 匹配结束，进入 ** 的子节点继续匹配后续段
                 for (Node child : ds.children.values()) {
                     if (child != ds) {
-                        stack.addLast(getDfsStatus(dfsPool, child, idx));
+                        stack.addLast(getDfsStatus(dfsPool, child, idx + 1));
                     }
                 }
             }
