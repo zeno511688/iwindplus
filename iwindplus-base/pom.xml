@@ -48,11 +48,9 @@
         <maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
         <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
 
-        <spring-boot.version>3.3.10</spring-boot.version>
-        <spring-cloud.version>2023.0.2</spring-cloud.version>
+        <spring-boot.version>3.4.5</spring-boot.version>
+        <spring-cloud.version>2024.0.2</spring-cloud.version>
         <spring-cloud-alibaba.version>2023.0.1.2</spring-cloud-alibaba.version>
-        <spring-cloud-bootstrap.version>4.3.0</spring-cloud-bootstrap.version>
-        <spring-ai.version>1.0.0-M6</spring-ai.version>
         <debezium.version>3.3.1.Final</debezium.version>
         <spring-boot-admin.version>3.3.6</spring-boot-admin.version>
         <spring-security-oauth2-authorization-server.version>1.5.3</spring-security-oauth2-authorization-server.version>
@@ -98,7 +96,7 @@
         <easy-es.version>3.0.1</easy-es.version>
         <tio.version>3.6.2.v20200808-RELEASE</tio.version>
         <swagger-annotations.version>2.2.40</swagger-annotations.version>
-        <knife4j.version>4.5.0</knife4j.version>
+        <knife4j.version>5.0.5</knife4j.version>
         <IJPay.version>2.9.12</IJPay.version>
         <itextpdf.version>5.5.13.4</itextpdf.version>
         <html2pdf.version>6.3.0</html2pdf.version>
@@ -246,7 +244,7 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>com.github.xiaoymin</groupId>
+                <groupId>com.baizhukui</groupId>
                 <artifactId>knife4j-dependencies</artifactId>
                 <version>${knife4j.version}</version>
                 <type>pom</type>
@@ -256,13 +254,6 @@
                 <groupId>cn.hutool</groupId>
                 <artifactId>hutool-bom</artifactId>
                 <version>${hutool.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.ai</groupId>
-                <artifactId>spring-ai-bom</artifactId>
-                <version>${spring-ai.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -296,11 +287,6 @@
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java-util</artifactId>
                 <version>${protobuf-google.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-starter-bootstrap</artifactId>
-                <version>${spring-cloud-bootstrap.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.yulichang</groupId>

@@ -136,11 +136,6 @@ public class MgtConstant {
         public static final String CACHE_USER = "user";
 
         /**
-         * 服务缓存名称.
-         */
-        public static final String CACHE_SERVER = "server";
-
-        /**
          * 角色菜单关系缓存名称.
          */
         public static final String CACHE_ROLE_MENU = "roleMenu";
@@ -189,11 +184,6 @@ public class MgtConstant {
          * IP黑名单缓存名称.
          */
         public static final String CACHE_IP_BLACK_LIST = "ipBlackList";
-
-        /**
-         * 服务API缓存名称.
-         */
-        public static final String CACHE_SERVER_API = "serverApi";
 
         /**
          * 用户扩展绑定授权缓存名称.

@@ -180,8 +180,8 @@ binlog:
       code: feishu-main
       webhook-code: binlog-alert
 springdoc:
-  packagesToScan:
-    - com.iwindplus.binlog.consumer.server.web
+  packages-to-scan:
+    - com.iwindplus.binlog.consumer.interfaces.controller
 knife4j:
   enable: true
   setting:

@@ -10,15 +10,13 @@ package com.iwindplus.gateway.infrastructure.gateway.route.listener;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.alibaba.cloud.nacos.NacosConfigManager;
-import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.iwindplus.base.domain.constant.CommonConstant.GatewayRouteConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.util.CryptoUtil;
 import com.iwindplus.base.util.JacksonUtil;
-import com.iwindplus.gateway.infrastructure.client.MgtClient;
 import com.iwindplus.gateway.infrastructure.client.vo.ServerRouteDefinitionVO;
+import com.iwindplus.gateway.infrastructure.configuration.GatewayRouteProperty;
 import com.iwindplus.gateway.infrastructure.constant.GatewayConstant;
 import com.iwindplus.gateway.infrastructure.gateway.route.GatewayRouteManager;
 import com.iwindplus.gateway.infrastructure.gateway.route.RouteDefinitionConverter;
@@ -53,13 +51,13 @@ import reactor.core.scheduler.Schedulers;
 public class GatewayRouteListener {
 
     @Resource
+    private GatewayRouteProperty gatewayRouteProperty;
+
+    @Resource
     private NacosConfigManager nacosConfigManager;
 
     @Resource(name = GatewayConstant.THREAD_POOL_BEAN_NAME)
     private DtpExecutor threadPoolExecutor;
-
-    @Resource
-    private MgtClient mgtClient;
 
     @Resource
     private GatewayRouteManager gatewayRouteManager;
@@ -74,7 +72,9 @@ public class GatewayRouteListener {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void onAppReady() {
-        this.fetchRoutes()
+        this.getConfigFromNacos()
+            .filter(CharSequenceUtil::isNotBlank)
+            .map(this::parse)
             .flatMap(this::loadRouteIfChanged)
             .then(registerNacosListener())
             .subscribe(
@@ -86,46 +86,16 @@ public class GatewayRouteListener {
     }
 
     /**
-     * 获取路由：先读 Nacos，为空则读 DB 并回写 Nacos
-     */
-    private Mono<List<ServerRouteDefinitionVO>> fetchRoutes() {
-        return getConfigFromNacos()
-            .filter(CharSequenceUtil::isNotBlank)
-            .map(this::parse)
-            .switchIfEmpty(
-                mgtClient.listRouteDefinition()
-                    .defaultIfEmpty(Collections.emptyList())
-                    .flatMap(this::publishToNacos)
-            );
-    }
-
-    /**
      * 读取 Nacos 配置
      */
     private Mono<String> getConfigFromNacos() {
         return Mono.fromCallable(() ->
             nacosConfigManager.getConfigService()
                 .getConfig(
-                    GatewayRouteConstant.GATEWAY_ROUTE_FILE_NAME,
-                    GatewayRouteConstant.GATEWAY_GROUP,
+                    gatewayRouteProperty.getFileName(),
+                    gatewayRouteProperty.getGroup(),
                     NumberConstant.NUMBER_THREE_THOUSAND)
         ).subscribeOn(Schedulers.boundedElastic());
-    }
-
-    /**
-     * 将 DB 路由推送到 Nacos
-     */
-    private Mono<List<ServerRouteDefinitionVO>> publishToNacos(List<ServerRouteDefinitionVO> routes) {
-        return Mono.fromCallable(() -> {
-            String json = JacksonUtil.toJsonStr(routes);
-            nacosConfigManager.getConfigService()
-                .publishConfig(
-                    GatewayRouteConstant.GATEWAY_ROUTE_FILE_NAME,
-                    GatewayRouteConstant.GATEWAY_GROUP,
-                    json,
-                    ConfigType.JSON.getType());
-            return routes;
-        }).subscribeOn(Schedulers.boundedElastic());
     }
 
     /**
@@ -135,8 +105,8 @@ public class GatewayRouteListener {
         return Mono.fromCallable(() -> {
             nacosConfigManager.getConfigService()
                 .addListener(
-                    GatewayRouteConstant.GATEWAY_ROUTE_FILE_NAME,
-                    GatewayRouteConstant.GATEWAY_GROUP,
+                    gatewayRouteProperty.getFileName(),
+                    gatewayRouteProperty.getGroup(),
                     buildListener());
             return Mono.empty();
         }).then();

@@ -54,7 +54,6 @@ public class ResourceApplicationService {
     @Caching(
         evict = {
             @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_RESOURCE}, allEntries = true),
-            @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_SERVER}, allEntries = true),
             @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_MENU}, allEntries = true),
         }
     )
@@ -80,7 +79,6 @@ public class ResourceApplicationService {
     @Caching(
         evict = {
             @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_RESOURCE}, allEntries = true),
-            @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_SERVER}, allEntries = true),
             @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_MENU}, allEntries = true),
         }
     )
@@ -101,7 +99,6 @@ public class ResourceApplicationService {
     @Caching(
         evict = {
             @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_RESOURCE}, allEntries = true),
-            @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_SERVER}, allEntries = true),
             @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_MENU}, allEntries = true),
         }
     )
@@ -134,7 +131,6 @@ public class ResourceApplicationService {
     @Caching(
         evict = {
             @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_RESOURCE}, allEntries = true),
-            @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_SERVER}, allEntries = true),
             @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_MENU}, allEntries = true),
         }
     )
@@ -160,7 +156,6 @@ public class ResourceApplicationService {
     @Caching(
         evict = {
             @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_RESOURCE}, allEntries = true),
-            @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_SERVER}, allEntries = true),
             @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_MENU}, allEntries = true),
         }
     )

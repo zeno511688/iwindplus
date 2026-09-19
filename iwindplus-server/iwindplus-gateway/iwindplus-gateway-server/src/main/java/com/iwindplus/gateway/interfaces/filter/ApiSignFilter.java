@@ -57,7 +57,7 @@ public class ApiSignFilter extends BaseGatewayFilter {
         List.of(
             "/static/**",
             "/api-docs",
-            "/doc.html",
+            "/swagger-ui/index.html",
             "/actuator/**",
             "/api/imWs/ws",
             "/oauth2/token",

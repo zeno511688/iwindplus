@@ -26,6 +26,7 @@ import reactor.core.publisher.Mono;
 @Configuration
 @EnableConfigurationProperties(
     {
+        GatewayRouteProperty.class,
         ServerApiProperty.class,
         BaseProperty.class,
         RateLimiterProperty.class,

@@ -187,8 +187,8 @@ mybatis-plus:
       # 密钥
       key: ${mybatis-field-crypto-key:}
 springdoc:
-  packagesToScan:
-    - com.iwindplus.flow.server.web
+  packages-to-scan:
+    - com.iwindplus.flow.interfaces.controller
 knife4j:
   enable: true
   setting:

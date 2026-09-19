@@ -133,8 +133,8 @@ mybatis-plus:
       # 密钥
       key: ${mybatis-field-crypto-key:}
 springdoc:
-  packagesToScan:
-    - com.iwindplus.dtx.server.web
+  packages-to-scan:
+    - com.iwindplus.dtx.interfaces.controller
 knife4j:
   enable: true
   setting:

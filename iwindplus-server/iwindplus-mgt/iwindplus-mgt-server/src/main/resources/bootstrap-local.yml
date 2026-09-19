@@ -417,8 +417,8 @@ mgt:
     # 微信小程序回调成功地址（授权登陆用）
     ma-callback-success-url: https://www.iwindplus.com/bindMaUser
 springdoc:
-  packagesToScan:
-    - com.iwindplus.mgt.server.web
+  packages-to-scan:
+    - com.iwindplus.mgt.interfaces.controller
 knife4j:
   enable: true
   setting:

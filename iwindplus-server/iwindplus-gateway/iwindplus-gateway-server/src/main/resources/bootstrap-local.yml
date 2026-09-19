@@ -7,21 +7,6 @@ cross:
   # 是否开启跨域
   enabled: true
 gateway:
-  rate-limiter:
-    # 是否开启限流过滤器
-    enabled: false
-    # 最大缓存数量
-    maxSize: 1000
-    # 缓存超时时间
-    cache-timeout: 10m
-    # 缓存刷新时间
-    cache-refresh: 15m
-    # 限流类型（可选，默认：OVERALL）
-    rate-type: OVERALL
-    # 限流次数，每个时间窗口允许请求数量（可选，默认：1000）
-    rate: 2000
-    # 限流速率（可选，默认：1s）
-    rate-interval: 1s
   base:
     # 是否开启基础过滤器
     enabled: true
@@ -71,6 +56,7 @@ gateway:
     ignored-api:
       - /static/**
       - /doc.html
+      - /swagger-ui/index.html
       - /api-docs
       - /inner/**
       - /actuator/**

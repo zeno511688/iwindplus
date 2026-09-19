@@ -201,15 +201,33 @@ public class EsQueryWrapper {
      * 范围查询
      */
     public EsQueryWrapper between(String field, Object from, Object to) {
-        bool.must(m -> m.range(r -> r.field(field)
-            .gte(JsonData.of(from))
-            .lte(JsonData.of(to))
+        if (from == null || to == null) {
+            return this;
+        }
+
+        bool.must(m -> m.range(r -> r
+            .untyped(u -> u
+                .field(field)
+                .gte(JsonData.of(from))
+                .lte(JsonData.of(to))
+            )
         ));
+
         return this;
     }
 
     public EsQueryWrapper gt(String field, Object value) {
-        bool.must(m -> m.range(r -> r.field(field).gt(JsonData.of(value))));
+        if (value == null) {
+            return this;
+        }
+
+        bool.must(m -> m.range(r -> r
+            .untyped(u -> u
+                .field(field)
+                .gt(JsonData.of(value))
+            )
+        ));
+
         return this;
     }
 
@@ -217,12 +235,29 @@ public class EsQueryWrapper {
         if (value == null) {
             return this;
         }
-        bool.must(m -> m.range(r -> r.field(field).gte(JsonData.of(value))));
+
+        bool.must(m -> m.range(r -> r
+            .untyped(u -> u
+                .field(field)
+                .gte(JsonData.of(value))
+            )
+        ));
+
         return this;
     }
 
     public EsQueryWrapper lt(String field, Object value) {
-        bool.must(m -> m.range(r -> r.field(field).lt(JsonData.of(value))));
+        if (value == null) {
+            return this;
+        }
+
+        bool.must(m -> m.range(r -> r
+            .untyped(u -> u
+                .field(field)
+                .lt(JsonData.of(value))
+            )
+        ));
+
         return this;
     }
 
@@ -230,7 +265,14 @@ public class EsQueryWrapper {
         if (value == null) {
             return this;
         }
-        bool.must(m -> m.range(r -> r.field(field).lte(JsonData.of(value))));
+
+        bool.must(m -> m.range(r -> r
+            .untyped(u -> u
+                .field(field)
+                .lte(JsonData.of(value))
+            )
+        ));
+
         return this;
     }
 

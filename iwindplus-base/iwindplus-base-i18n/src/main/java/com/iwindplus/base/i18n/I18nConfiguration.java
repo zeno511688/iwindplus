@@ -60,7 +60,7 @@ public class I18nConfiguration {
             .maxCacheSize(this.property.getMaxCacheSize())
             .threadPoolExecutor(this.threadPoolExecutor)
             .build();
-        messageSource.setBasenames(this.property.getBasename());
+        messageSource.setBasenames(this.property.getBasename().toArray(new String[0]));
         if (Objects.isNull(this.property.getEncoding())) {
             messageSource.setDefaultEncoding(Charset.defaultCharset().name());
         } else {

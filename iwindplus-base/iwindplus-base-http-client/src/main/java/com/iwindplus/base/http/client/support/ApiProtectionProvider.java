@@ -48,9 +48,16 @@ public record ApiProtectionProvider(
 
     private static final List<String> DEFAULT_IGNORED_APIS =
         List.of(
+            "/favicon.ico",
             "/actuator/**",
             "/health",
-            "/metrics"
+            "/metrics",
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/webjars/**",
+            "/swagger-resources/**",
+            "/webjars/swagger-ui/**",
+            "/doc.html"
         );
 
     private static final Cache<AppCertTypeEnum, BaseSignVO> APP_CERT_CACHE =

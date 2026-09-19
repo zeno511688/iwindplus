@@ -184,8 +184,8 @@ binlog:
     replication-factor: -1
     num-partitions: -1
 springdoc:
-  packagesToScan:
-    - com.iwindplus.binlog.producer.server.web
+  packages-to-scan:
+    - com.iwindplus.binlog.producer.interfaces.controller
 knife4j:
   enable: true
   setting:

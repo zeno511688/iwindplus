@@ -157,8 +157,16 @@ public final class PathMatchUtil {
 
             Node ds = node.children.get(DOUBLE_STAR);
             if (ds != null) {
+                // ** 吞掉当前段，继续停留在 ** 节点
                 stack.addLast(getDfsStatus(dfsPool, ds, idx));
+                // ** 匹配零段，继续停留在 ** 节点（跳过当前段）
                 stack.addLast(getDfsStatus(dfsPool, ds, idx + 1));
+                // ** 匹配结束，进入 ** 的子节点继续匹配后续段
+                for (Node child : ds.children.values()) {
+                    if (child != ds) {
+                        stack.addLast(getDfsStatus(dfsPool, child, idx));
+                    }
+                }
             }
         }
         return false;

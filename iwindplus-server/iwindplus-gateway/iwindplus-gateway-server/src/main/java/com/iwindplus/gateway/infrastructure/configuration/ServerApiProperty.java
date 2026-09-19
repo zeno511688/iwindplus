@@ -85,12 +85,6 @@ public class ServerApiProperty {
     public static class MgtApiConfig {
 
         /**
-         * 获取路由定义的url.
-         */
-        @Builder.Default
-        private String serverListRouteDefinitionUrl = MGT_SERVER_PREFIX + "/inner/server/listRouteDefinition";
-
-        /**
          * 获取应用凭证api签名信息.
          */
         @Builder.Default
@@ -125,12 +119,6 @@ public class ServerApiProperty {
          */
         @Builder.Default
         private String userCheckExtendFunctionByUserIdUrl = MGT_SERVER_PREFIX + "/inner/user/checkExtendFunctionByUserId";
-
-        /**
-         * 获取所有服务API.
-         */
-        @Builder.Default
-        private String serverApiListApiUrl = MGT_SERVER_PREFIX + "/inner/serverApi/listApi";
     }
 
     /**

@@ -17,8 +17,6 @@ import com.iwindplus.base.http.client.domain.enums.HttpClientTypeEnum;
 import com.iwindplus.base.http.client.factory.HttpClientExecuteHandlerFactory;
 import com.iwindplus.base.http.client.support.HttpClientExecuteHandler;
 import com.iwindplus.gateway.infrastructure.client.vo.ResourceVO;
-import com.iwindplus.gateway.infrastructure.client.vo.ServerApiVO;
-import com.iwindplus.gateway.infrastructure.client.vo.ServerRouteDefinitionVO;
 import com.iwindplus.gateway.infrastructure.configuration.ServerApiProperty;
 import com.iwindplus.gateway.infrastructure.configuration.ServerApiProperty.MgtApiConfig;
 import java.io.Serializable;
@@ -61,18 +59,6 @@ public class MgtClient {
      */
     private MgtApiConfig getCfg() {
         return serverApiProperty.getMgt();
-    }
-
-    /**
-     * 获取所有路由定义.
-     *
-     * @return Mono<List < ServerRouteDefinitionVO>>
-     */
-    public Mono<List<ServerRouteDefinitionVO>> listRouteDefinition() {
-        final String url = serverApiProperty.resolveUrl(this.getCfg().getServerListRouteDefinitionUrl());
-        return Mono.fromCompletionStage(
-            httpClientExecuteHandler.getAsync(url, null, null, new TypeReference<ResultVO<List<ServerRouteDefinitionVO>>>() {
-            })).flatMap(ResultVO::unwrap);
     }
 
     /**
@@ -155,18 +141,6 @@ public class MgtClient {
         final String url = serverApiProperty.resolveUrl(this.getCfg().getUserCheckExtendFunctionByUserIdUrl());
         return Mono.fromCompletionStage(
             httpClientExecuteHandler.postAsync(url, entity, null, new TypeReference<ResultVO<UserExtendFunctionValidVO>>() {
-            })).flatMap(ResultVO::unwrap);
-    }
-
-    /**
-     * 获取所有服务API.
-     *
-     * @return Mono<List < ServerApiBaseVO>>
-     */
-    public Mono<List<ServerApiVO>> listServerApi() {
-        final String url = serverApiProperty.resolveUrl(this.getCfg().getServerApiListApiUrl());
-        return Mono.fromCompletionStage(
-            httpClientExecuteHandler.getAsync(url, null, null, new TypeReference<ResultVO<List<ServerApiVO>>>() {
             })).flatMap(ResultVO::unwrap);
     }
 }

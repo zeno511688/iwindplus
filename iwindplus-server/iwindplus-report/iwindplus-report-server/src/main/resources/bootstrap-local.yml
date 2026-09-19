@@ -163,8 +163,8 @@ xxl-job:
     app-name: ${spring.application.name}
     ip: host.docker.internal
 springdoc:
-  packagesToScan:
-    - com.iwindplus.report.server.web
+  packages-to-scan:
+    - com.iwindplus.report.interfaces.controller
 knife4j:
   enable: true
   setting:

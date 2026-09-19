@@ -7,12 +7,9 @@
 
 package com.iwindplus.base.swagger;
 
-import com.iwindplus.base.swagger.domain.property.SwaggerProperty;
-import com.iwindplus.base.swagger.listener.SwaggerListener;
 import com.iwindplus.base.swagger.service.SwaggerService;
 import com.iwindplus.base.swagger.service.impl.SwaggerServiceImpl;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -24,7 +21,6 @@ import org.springframework.context.annotation.Configuration;
  */
 @Slf4j
 @Configuration
-@EnableConfigurationProperties(SwaggerProperty.class)
 public class SwaggerConfiguration {
 
     /**
@@ -37,17 +33,5 @@ public class SwaggerConfiguration {
         final SwaggerService swaggerService = new SwaggerServiceImpl();
         log.info("SwaggerService={}", swaggerService);
         return swaggerService;
-    }
-
-    /**
-     * 创建 SwaggerListener.
-     *
-     * @return SwaggerListener
-     */
-    @Bean
-    public SwaggerListener swaggerListener() {
-        final SwaggerListener swaggerListener = new SwaggerListener();
-        log.info("SwaggerListener={}", swaggerListener);
-        return swaggerListener;
     }
 }

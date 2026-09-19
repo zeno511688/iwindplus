@@ -33,11 +33,6 @@ public class GatewayFilterConstant {
     public static final Integer FILTER_REQUEST_BODY_ORDER = Ordered.HIGHEST_PRECEDENCE + 5;
 
     /**
-     * 限流过滤器顺序.
-     */
-    public static final Integer RATE_LIMITER_ORDER = Ordered.HIGHEST_PRECEDENCE + 10;
-
-    /**
      * 基础过滤器顺序.
      */
     public static final Integer FILTER_BASE_ORDER = Ordered.HIGHEST_PRECEDENCE + 15;

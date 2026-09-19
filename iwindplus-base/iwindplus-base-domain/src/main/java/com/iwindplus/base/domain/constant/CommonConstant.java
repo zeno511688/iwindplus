@@ -649,36 +649,6 @@ public final class CommonConstant {
     }
 
     /**
-     * 网关路由相关常数.
-     */
-    public static class GatewayRouteConstant {
-
-        private GatewayRouteConstant() {
-            throw new IllegalStateException(CommonConstant.UTILITY_CLASS);
-        }
-
-        /**
-         * 网关服务路由文件名.
-         */
-        public static final String GATEWAY_ROUTE_FILE_NAME = "gateway-route.json";
-
-        /**
-         * 网关服务路由分组.
-         */
-        public static final String GATEWAY_GROUP = "GATEWAY_GROUP";
-
-        /**
-         * 路径.
-         */
-        public static final String PATH = "Path";
-
-        /**
-         * 动态路由key.
-         */
-        public static final String GENKEY_0 = "_genkey_0";
-    }
-
-    /**
      * 元数据相关常数.
      */
     public final class MetadataConstant {

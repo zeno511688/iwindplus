@@ -187,8 +187,8 @@ kafka:
             # 是否自动创建
             auto-create: true
 springdoc:
-  packagesToScan:
-    - com.iwindplus.auth.server.web
+  packages-to-scan:
+    - com.iwindplus.auth.interfaces.controller
 knife4j:
   enable: true
   setting:
