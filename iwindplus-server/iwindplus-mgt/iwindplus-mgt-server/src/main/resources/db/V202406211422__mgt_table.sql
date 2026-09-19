@@ -662,13 +662,6 @@ CREATE TABLE `user_org`
     KEY `idx_org_id` (`org_id`) COMMENT '普通索引（组织主键）'
 ) COMMENT ='用户组织关系表';
 
-/*
- *
- *  * Copyright (c) iwindplus Technologies Co., Ltd.2024-2030, All rights reserved.
- *
- *
- */
-
 -- ----------------------------
 -- Table structure for user_department
 -- ----------------------------
