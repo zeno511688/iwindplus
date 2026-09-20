@@ -46,7 +46,7 @@ public class LoginAttemptService {
      * @return true表示需要验证码
      */
     public boolean needCaptcha(String username) {
-        if (this.getEnabled()) {
+        if (!this.getEnabled()) {
             return false;
         }
         Integer attemptCount = this.getAttemptCount(username);
@@ -63,12 +63,12 @@ public class LoginAttemptService {
      * @return 剩余锁定时间（毫秒），null表示未锁定
      */
     public Long getRemainingLockTime(String username) {
-        if (this.getEnabled()) {
+        if (!this.getEnabled()) {
             return null;
         }
         String lockKey = this.buildLockKey(username);
         Long ttl = this.redisTemplate.getExpire(lockKey, TimeUnit.MILLISECONDS);
-        if (ttl > 0) {
+        if (ttl != null && ttl > 0) {
             return ttl;
         }
         return null;
@@ -83,11 +83,11 @@ public class LoginAttemptService {
      * @return 当前失败次数
      */
     public Integer recordFailedAttempt(String username) {
-        if (this.getEnabled()) {
+        if (!this.getEnabled()) {
             return 0;
         }
         String attemptKey = this.buildAttemptKey(username);
-        Integer attemptCount = (Integer) this.redisTemplate.opsForValue().get(attemptKey);
+        Integer attemptCount = this.getAttemptCount(username);
         attemptCount = attemptCount + 1;
 
         LoginSecurityConfig config = this.authProperty.getLoginSecurity();
@@ -117,7 +117,7 @@ public class LoginAttemptService {
      * @param username 用户名
      */
     public void recordSuccess(String username) {
-        if (this.getEnabled()) {
+        if (!this.getEnabled()) {
             return;
         }
         String attemptKey = this.buildAttemptKey(username);
@@ -134,7 +134,8 @@ public class LoginAttemptService {
      */
     public Integer getAttemptCount(String username) {
         String attemptKey = this.buildAttemptKey(username);
-        return (Integer) this.redisTemplate.opsForValue().get(attemptKey);
+        Integer count = (Integer) this.redisTemplate.opsForValue().get(attemptKey);
+        return count != null ? count : 0;
     }
 
     /**
@@ -145,11 +146,14 @@ public class LoginAttemptService {
      * @return true表示验证通过
      */
     public boolean validateCaptcha(String captchaKey, String captcha) {
-        if (this.getEnabled()) {
+        if (!this.getEnabled()) {
             return true;
         }
         String key = this.authProperty.getLoginSecurity().getCaptchaKeyPrefix() + captchaKey;
         Object storedCaptcha = this.redisTemplate.opsForValue().get(key);
+        if (Objects.isNull(storedCaptcha)) {
+            return false;
+        }
         return CharSequenceUtil.equalsIgnoreCase(storedCaptcha.toString(), captcha);
     }
 
@@ -159,7 +163,7 @@ public class LoginAttemptService {
      * @param captchaKey 验证码key
      */
     public void deleteCaptcha(String captchaKey) {
-        if (this.getEnabled()) {
+        if (!this.getEnabled()) {
             return;
         }
         String key = this.authProperty.getLoginSecurity().getCaptchaKeyPrefix() + captchaKey;
@@ -168,7 +172,7 @@ public class LoginAttemptService {
 
     private boolean getEnabled() {
         LoginSecurityConfig config = this.authProperty.getLoginSecurity();
-        return !Objects.nonNull(config) || !Boolean.TRUE.equals(config.getEnabled());
+        return Objects.nonNull(config) && Boolean.TRUE.equals(config.getEnabled());
     }
 
     private String buildAttemptKey(String username) {
