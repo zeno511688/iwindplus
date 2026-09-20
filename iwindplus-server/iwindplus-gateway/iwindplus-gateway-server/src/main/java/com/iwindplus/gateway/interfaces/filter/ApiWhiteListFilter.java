@@ -53,7 +53,7 @@ public class ApiWhiteListFilter extends BaseGatewayFilter {
         "/api/auth/oauth2/jwks",
         "/api/auth/oauth2/consent",
         "/doc.html",
-        "/**/v3/api-docs",
+        "**/v3/api-docs",
         "/webjars/**",
         "/swagger-resources/**",
         "/swagger-ui/**",
