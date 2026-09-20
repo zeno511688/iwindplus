@@ -200,117 +200,109 @@ public final class PathMatchUtil {
             Node node = state.node;
             int index = state.index;
 
-            /*
-             * path 已经全部消费。
-             *
-             * 只有 terminal 才能表示完整规则匹配。
-             */
             if (index == segments.length) {
-                if (node.terminal) {
+                if (handlePathConsumed(node, stack, index)) {
                     return true;
                 }
-
-                /*
-                 * 当前节点后面存在 **：
-                 *
-                 * ** 可以匹配 0 个 segment，
-                 * 因此继续尝试 **。
-                 */
-                Node doubleStar = node.children.get(DOUBLE_STAR);
-                if (doubleStar != null) {
-                    stack.addLast(new DfsStatus(doubleStar, index));
-                }
-
                 continue;
             }
 
-            /*
-             * 当前节点是 **。
-             */
             if (node.doubleStar) {
-
-                /*
-                 * ** 匹配当前 segment。
-                 *
-                 * 消费一个 segment，但仍然停留在 **。
-                 */
-                stack.addLast(
-                    new DfsStatus(node, index + 1)
-                );
-
-                /*
-                 * ** 匹配 0 个 segment。
-                 *
-                 * 不消费当前 segment，
-                 * 进入 ** 后面的子节点继续匹配当前 segment。
-                 *
-                 * 注意：
-                 * 只有与当前 segment 匹配的子节点才会被进入，
-                 * 避免跳过中间节点导致误匹配。
-                 */
-                String seg = segments[index];
-                Node exact = node.children.get(seg);
-                if (exact != null) {
-                    stack.addLast(
-                        new DfsStatus(exact, index + 1)
-                    );
-                }
-
-                Node star = node.children.get(STAR);
-                if (star != null) {
-                    stack.addLast(
-                        new DfsStatus(star, index + 1)
-                    );
-                }
-
-                Node ds = node.children.get(DOUBLE_STAR);
-                if (ds != null) {
-                    stack.addLast(
-                        new DfsStatus(ds, index)
-                    );
-                }
-
+                handleDoubleStarNode(node, stack, segments, index);
                 continue;
             }
 
-            String segment = segments[index];
-
-            /*
-             * 精确匹配。
-             */
-            Node exact = node.children.get(segment);
-            if (exact != null) {
-                stack.addLast(
-                    new DfsStatus(exact, index + 1)
-                );
-            }
-
-            /*
-             * * 匹配一个 path segment。
-             */
-            Node star = node.children.get(STAR);
-            if (star != null) {
-                stack.addLast(
-                    new DfsStatus(star, index + 1)
-                );
-            }
-
-            /*
-             * ** 从当前节点开始匹配。
-             *
-             * 注意：
-             * 这里不能消费当前 segment，
-             * 因为 ** 可以匹配 0 个 segment。
-             */
-            Node doubleStar = node.children.get(DOUBLE_STAR);
-            if (doubleStar != null) {
-                stack.addLast(
-                    new DfsStatus(doubleStar, index)
-                );
-            }
+            handleNormalNode(node, stack, segments[index], index);
         }
 
         return false;
+    }
+
+    /**
+     * 处理路径已全部消费的情况.
+     *
+     * <p>只有 terminal 才能表示完整规则匹配；
+     * 若当前节点后面存在 **，** 可以匹配 0 个 segment，继续尝试。
+     *
+     * @param node  当前节点
+     * @param stack DFS 栈
+     * @param index 当前索引
+     * @return 是否匹配成功
+     */
+    private static boolean handlePathConsumed(Node node, ArrayDeque<DfsStatus> stack, int index) {
+        if (node.terminal) {
+            return true;
+        }
+
+        Node doubleStar = node.children.get(DOUBLE_STAR);
+        if (doubleStar != null) {
+            stack.addLast(new DfsStatus(doubleStar, index));
+        }
+
+        return false;
+    }
+
+    /**
+     * 处理 ** 节点的匹配.
+     *
+     * <p>** 可以消费一个 segment（仍停留在 **），也可以匹配 0 个 segment
+     * 并进入子节点继续匹配当前 segment。
+     *
+     * @param node     ** 节点
+     * @param stack    DFS 栈
+     * @param segments path segments
+     * @param index    当前索引
+     */
+    private static void handleDoubleStarNode(Node node, ArrayDeque<DfsStatus> stack, String[] segments, int index) {
+        // ** 匹配当前 segment，消费一个但仍然停留在 **
+        stack.addLast(new DfsStatus(node, index + 1));
+
+        // ** 匹配 0 个 segment，进入子节点继续匹配当前 segment
+        String seg = segments[index];
+        Node exact = node.children.get(seg);
+        if (exact != null) {
+            stack.addLast(new DfsStatus(exact, index + 1));
+        }
+
+        Node star = node.children.get(STAR);
+        if (star != null) {
+            stack.addLast(new DfsStatus(star, index + 1));
+        }
+
+        Node ds = node.children.get(DOUBLE_STAR);
+        if (ds != null) {
+            stack.addLast(new DfsStatus(ds, index));
+        }
+    }
+
+    /**
+     * 处理普通节点的匹配.
+     *
+     * <p>依次尝试精确匹配、* 匹配一个 segment、** 从当前节点开始匹配（不消费当前 segment）。
+     *
+     * @param node    当前节点
+     * @param stack   DFS 栈
+     * @param segment 当前 path segment
+     * @param index   当前索引
+     */
+    private static void handleNormalNode(Node node, ArrayDeque<DfsStatus> stack, String segment, int index) {
+        // 精确匹配
+        Node exact = node.children.get(segment);
+        if (exact != null) {
+            stack.addLast(new DfsStatus(exact, index + 1));
+        }
+
+        // * 匹配一个 path segment
+        Node star = node.children.get(STAR);
+        if (star != null) {
+            stack.addLast(new DfsStatus(star, index + 1));
+        }
+
+        // ** 从当前节点开始匹配（不消费当前 segment，因为 ** 可以匹配 0 个 segment）
+        Node doubleStar = node.children.get(DOUBLE_STAR);
+        if (doubleStar != null) {
+            stack.addLast(new DfsStatus(doubleStar, index));
+        }
     }
 
     /**
@@ -376,15 +368,7 @@ public final class PathMatchUtil {
     /**
      * DFS 状态.
      */
-    private static final class DfsStatus {
+    private record DfsStatus(Node node, int index) {
 
-        private final Node node;
-
-        private final int index;
-
-        private DfsStatus(Node node, int index) {
-            this.node = node;
-            this.index = index;
-        }
     }
 }
