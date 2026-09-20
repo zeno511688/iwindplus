@@ -46,6 +46,15 @@ auth:
   log:
     # 是否开启登录日志审计
     enabled: true
+  login-security:
+    # 是否启用登录安全策略
+    enabled: true
+    # 触发图形验证码的错误次数（1次错误即弹出验证码）
+    captcha-threshold: 1
+    # 触发账号锁定的最大错误次数
+    max-attempt-count: 5
+    # 指数退避锁定频率：第5次错误锁定5分钟，第6次锁定10分钟，第7次锁定20分钟，第8次锁定30分钟
+    lock-frequency: 5m,10m,20m,30m
 dynamictp:
   executors:
     - threadPoolName: asyncThreadPool

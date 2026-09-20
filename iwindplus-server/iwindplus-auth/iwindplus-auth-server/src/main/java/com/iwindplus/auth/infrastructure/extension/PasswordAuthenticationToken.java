@@ -43,6 +43,16 @@ public class PasswordAuthenticationToken extends OAuth2AuthorizationGrantAuthent
     private final Set<String> scopes;
 
     /**
+     * 图形验证码key.
+     */
+    private final String captchaKey;
+
+    /**
+     * 图形验证码.
+     */
+    private final String captcha;
+
+    /**
      * 密码模式身份验证令牌.
      *
      * @param clientPrincipal      客户端信息
@@ -50,16 +60,22 @@ public class PasswordAuthenticationToken extends OAuth2AuthorizationGrantAuthent
      * @param scopes               令牌申请访问范围
      * @param username             用户名
      * @param password             密码
+     * @param captchaKey           图形验证码key
+     * @param captcha              图形验证码
      */
     public PasswordAuthenticationToken(
         Authentication clientPrincipal,
         Map<String, Object> additionalParameters,
         Set<String> scopes,
         String username,
-        String password) {
+        String password,
+        String captchaKey,
+        String captcha) {
         super(GrantTypeConstant.PASSWORD, clientPrincipal, additionalParameters);
         this.scopes = Collections.unmodifiableSet(null != scopes ? new HashSet<>(scopes) : Collections.emptySet());
         this.username = username;
         this.password = password;
+        this.captchaKey = captchaKey;
+        this.captcha = captcha;
     }
 }

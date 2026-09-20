@@ -93,7 +93,17 @@ public enum AuthCodeEnum implements CommonException {
     /**
      * 用户身份校验失败.
      */
-    IDENTITY_VERIFICATION_FAILED( "identity_verification_failed", "用户身份校验失败");
+    IDENTITY_VERIFICATION_FAILED( "identity_verification_failed", "用户身份校验失败"),
+
+    /**
+     * 需要图形验证码.
+     */
+    NEED_CAPTCHA("need_captcha", "需要图形验证码"),
+
+    /**
+     * 账号已锁定，请稍后重试.
+     */
+    LOGIN_LOCKED("login_locked", "账号已锁定，请{0}秒后重试");
 
     /**
      * 业务编码.

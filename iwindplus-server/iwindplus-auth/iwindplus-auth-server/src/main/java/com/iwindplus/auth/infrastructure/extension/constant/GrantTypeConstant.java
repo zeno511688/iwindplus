@@ -61,4 +61,14 @@ public final class GrantTypeConstant {
      * 编码.
      */
     public static final String CODE = "code";
+
+    /**
+     * 图形验证码key.
+     */
+    public static final String GRAPHIC_CAPTCHA_KEY = "graphicCaptchaKey";
+
+    /**
+     * 图形验证码.
+     */
+    public static final String GRAPHIC_CAPTCHA = "graphicCaptcha";
 }

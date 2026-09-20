@@ -8,11 +8,10 @@
 package com.iwindplus.auth.infrastructure.extension;
 
 import cn.hutool.core.lang.Assert;
-import com.iwindplus.auth.common.enums.AuthCodeEnum;
 import com.iwindplus.auth.infrastructure.client.LoginAuthClient;
-import com.iwindplus.auth.infrastructure.model.dto.OauthUserDTO;
-import com.iwindplus.auth.infrastructure.exception.CustomOauth2AuthenticationException;
 import com.iwindplus.auth.infrastructure.extension.constant.GrantTypeConstant;
+import com.iwindplus.auth.infrastructure.model.dto.OauthUserDTO;
+import com.iwindplus.auth.infrastructure.persistence.LoginAttemptService;
 import com.iwindplus.auth.infrastructure.support.Oauth2Util;
 import java.util.Objects;
 import java.util.Set;
@@ -43,7 +42,8 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 public record SmsCodeAuthenticationProvider(
     OAuth2AuthorizationService authorizationService,
     OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator,
-    LoginAuthClient loginAuthClient) implements AuthenticationProvider {
+    LoginAuthClient loginAuthClient,
+    LoginAttemptService loginAttemptService) implements AuthenticationProvider {
 
     /**
      * 构造方法.
@@ -51,11 +51,13 @@ public record SmsCodeAuthenticationProvider(
      * @param authorizationService the authorization service
      * @param tokenGenerator       the token generator
      * @param loginAuthClient      loginAuthClient
+     * @param loginAttemptService  loginAttemptService
      */
     public SmsCodeAuthenticationProvider {
         Assert.notNull(authorizationService, "authorizationService cannot be null");
         Assert.notNull(tokenGenerator, "tokenGenerator cannot be null");
         Assert.notNull(loginAuthClient, "loginAuthClient cannot be null");
+        Assert.notNull(loginAttemptService, "loginAttemptService cannot be null");
     }
 
     @Override
@@ -83,6 +85,13 @@ public record SmsCodeAuthenticationProvider(
         String captcha = smsCodeAuthenticationToken.getCaptcha();
         Assert.notNull(mobile, "mobile cannot be null");
         Assert.notNull(captcha, "captcha cannot be null");
+
+        // 登录前安全检查：检查账号锁定状态和图形验证码
+        PasswordAuthenticationProvider.checkLoginSecurity(
+            this.loginAttemptService, mobile,
+            smsCodeAuthenticationToken.getCaptchaKey(),
+            smsCodeAuthenticationToken.getGraphicCaptcha());
+
         // 根据手机号获取信息
         UserDetails userDetails = null;
         try {
@@ -92,8 +101,11 @@ public record SmsCodeAuthenticationProvider(
             PasswordAuthenticationProvider.convertException(ex);
         }
         if (Objects.isNull(userDetails)) {
-            throw new CustomOauth2AuthenticationException(AuthCodeEnum.IDENTITY_VERIFICATION_FAILED);
+            PasswordAuthenticationProvider.handleAuthFailure(this.loginAttemptService, mobile);
         }
+
+        // 登录成功，清除尝试记录
+        this.loginAttemptService.recordSuccess(mobile);
 
         OauthUserDTO userInfo = (OauthUserDTO) userDetails;
         String id = PasswordAuthenticationProvider.buildKey(userInfo.getUserId());

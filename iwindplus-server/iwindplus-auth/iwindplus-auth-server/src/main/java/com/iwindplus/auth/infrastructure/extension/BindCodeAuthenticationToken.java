@@ -38,20 +38,36 @@ public class BindCodeAuthenticationToken extends OAuth2AuthorizationGrantAuthent
     private final Set<String> scopes;
 
     /**
+     * 图形验证码key.
+     */
+    private final String captchaKey;
+
+    /**
+     * 图形验证码.
+     */
+    private final String graphicCaptcha;
+
+    /**
      * 绑定授权模式身份验证令牌.
      *
      * @param clientPrincipal      客户端信息
      * @param additionalParameters 自定义额外参数
      * @param scopes               令牌申请访问范围
      * @param code                 编码
+     * @param captchaKey           图形验证码key
+     * @param graphicCaptcha       图形验证码
      */
     protected BindCodeAuthenticationToken(
         Authentication clientPrincipal,
         Map<String, Object> additionalParameters,
         Set<String> scopes,
-        String code) {
+        String code,
+        String captchaKey,
+        String graphicCaptcha) {
         super(GrantTypeConstant.BIND_CODE, clientPrincipal, additionalParameters);
         this.scopes = Collections.unmodifiableSet(null != scopes ? new HashSet<>(scopes) : Collections.emptySet());
         this.code = code;
+        this.captchaKey = captchaKey;
+        this.graphicCaptcha = graphicCaptcha;
     }
 }

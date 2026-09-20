@@ -43,24 +43,39 @@ public class SmsCodeAuthenticationToken extends OAuth2AuthorizationGrantAuthenti
     private final Set<String> scopes;
 
     /**
+     * 图形验证码key.
+     */
+    private final String captchaKey;
+
+    /**
+     * 图形验证码.
+     */
+    private final String graphicCaptcha;
+
+    /**
      * 短信模式身份验证令牌.
      *
      * @param clientPrincipal      客户端信息
      * @param scopes               令牌申请访问范围
      * @param additionalParameters 自定义额外参数
-     * @param code                 编码
      * @param mobile               手机
-     * @param captcha              验证码
+     * @param captcha              短信验证码
+     * @param captchaKey           图形验证码key
+     * @param graphicCaptcha       图形验证码
      */
     protected SmsCodeAuthenticationToken(
         Authentication clientPrincipal,
         Map<String, Object> additionalParameters,
         Set<String> scopes,
         String mobile,
-        String captcha) {
+        String captcha,
+        String captchaKey,
+        String graphicCaptcha) {
         super(GrantTypeConstant.SMS_CODE, clientPrincipal, additionalParameters);
         this.scopes = Collections.unmodifiableSet(null != scopes ? new HashSet<>(scopes) : Collections.emptySet());
         this.mobile = mobile;
         this.captcha = captcha;
+        this.captchaKey = captchaKey;
+        this.graphicCaptcha = graphicCaptcha;
     }
 }

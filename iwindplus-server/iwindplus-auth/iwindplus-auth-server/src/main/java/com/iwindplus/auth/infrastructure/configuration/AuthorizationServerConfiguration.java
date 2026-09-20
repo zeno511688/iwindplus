@@ -16,6 +16,7 @@ import com.iwindplus.auth.infrastructure.extension.MailCodeAuthenticationConvert
 import com.iwindplus.auth.infrastructure.extension.MailCodeAuthenticationProvider;
 import com.iwindplus.auth.infrastructure.extension.PasswordAuthenticationConverter;
 import com.iwindplus.auth.infrastructure.extension.PasswordAuthenticationProvider;
+import com.iwindplus.auth.infrastructure.persistence.LoginAttemptService;
 import com.iwindplus.auth.infrastructure.extension.RefreshTokenAuthenticationConverter;
 import com.iwindplus.auth.infrastructure.extension.RefreshTokenAuthenticationProvider;
 import com.iwindplus.auth.infrastructure.extension.SmsCodeAuthenticationConverter;
@@ -112,7 +113,8 @@ public class AuthorizationServerConfiguration {
     public SecurityFilterChain authorizationServerSecurityFilterChain(
         HttpSecurity http,
         OAuth2AuthorizationService authorizationService,
-        OAuth2TokenGenerator<?> tokenGenerator) throws Exception {
+        OAuth2TokenGenerator<?> tokenGenerator,
+        LoginAttemptService loginAttemptService) throws Exception {
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = OAuth2AuthorizationServerConfigurer.authorizationServer();
         http.securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
             .with(authorizationServerConfigurer, serverConfigurer -> {
@@ -167,10 +169,10 @@ public class AuthorizationServerConfiguration {
                         authenticationProviders.remove(1);
                         authenticationProviders.addAll(
                             List.of(
-                                new PasswordAuthenticationProvider(authorizationService, tokenGenerator, loginAuthClient, passwordEncoder),
-                                new SmsCodeAuthenticationProvider(authorizationService, tokenGenerator, loginAuthClient),
-                                new MailCodeAuthenticationProvider(authorizationService, tokenGenerator, loginAuthClient),
-                                new BindCodeAuthenticationProvider(authorizationService, tokenGenerator, loginAuthClient),
+                                new PasswordAuthenticationProvider(authorizationService, tokenGenerator, loginAuthClient, passwordEncoder, loginAttemptService),
+                                new SmsCodeAuthenticationProvider(authorizationService, tokenGenerator, loginAuthClient, loginAttemptService),
+                                new MailCodeAuthenticationProvider(authorizationService, tokenGenerator, loginAuthClient, loginAttemptService),
+                                new BindCodeAuthenticationProvider(authorizationService, tokenGenerator, loginAuthClient, loginAttemptService),
                                 new RefreshTokenAuthenticationProvider(authorizationService, tokenGenerator, authProperty)
                             )
                         );

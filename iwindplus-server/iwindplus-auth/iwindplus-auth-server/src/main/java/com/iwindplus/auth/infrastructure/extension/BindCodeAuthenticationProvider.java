@@ -13,6 +13,7 @@ import com.iwindplus.auth.infrastructure.client.LoginAuthClient;
 import com.iwindplus.auth.infrastructure.model.dto.OauthUserDTO;
 import com.iwindplus.auth.infrastructure.exception.CustomOauth2AuthenticationException;
 import com.iwindplus.auth.infrastructure.extension.constant.GrantTypeConstant;
+import com.iwindplus.auth.infrastructure.persistence.LoginAttemptService;
 import com.iwindplus.auth.infrastructure.support.Oauth2Util;
 import java.util.Objects;
 import java.util.Set;
@@ -43,19 +44,22 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 public record BindCodeAuthenticationProvider(
     OAuth2AuthorizationService authorizationService,
     OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator,
-    LoginAuthClient loginAuthClient) implements AuthenticationProvider {
+    LoginAuthClient loginAuthClient,
+    LoginAttemptService loginAttemptService) implements AuthenticationProvider {
 
     /**
      * 构造方法.
      *
-     * @param authorizationService   the authorization service
-     * @param tokenGenerator         the token generator
-     * @param loginAuthClient loginAuthClient
+     * @param authorizationService the authorization service
+     * @param tokenGenerator       the token generator
+     * @param loginAuthClient      loginAuthClient
+     * @param loginAttemptService  loginAttemptService
      */
     public BindCodeAuthenticationProvider {
         Assert.notNull(authorizationService, "authorizationService cannot be null");
         Assert.notNull(tokenGenerator, "tokenGenerator cannot be null");
         Assert.notNull(loginAuthClient, "loginAuthClient cannot be null");
+        Assert.notNull(loginAttemptService, "loginAttemptService cannot be null");
     }
 
     @Override
@@ -81,6 +85,13 @@ public record BindCodeAuthenticationProvider(
 
         String code = bindCodeAuthenticationToken.getCode();
         Assert.notNull(code, "code cannot be null");
+
+        // 登录前安全检查：检查账号锁定状态和图形验证码
+        PasswordAuthenticationProvider.checkLoginSecurity(
+            this.loginAttemptService, code,
+            bindCodeAuthenticationToken.getCaptchaKey(),
+            bindCodeAuthenticationToken.getGraphicCaptcha());
+
         // 根据绑定编码获取信息
         UserDetails userDetails = null;
         try {
@@ -89,8 +100,11 @@ public record BindCodeAuthenticationProvider(
             PasswordAuthenticationProvider.convertException(ex);
         }
         if (Objects.isNull(userDetails)) {
-            throw new CustomOauth2AuthenticationException(AuthCodeEnum.IDENTITY_VERIFICATION_FAILED);
+            PasswordAuthenticationProvider.handleAuthFailure(this.loginAttemptService, code);
         }
+
+        // 登录成功，清除尝试记录
+        this.loginAttemptService.recordSuccess(code);
 
         OauthUserDTO userInfo = (OauthUserDTO) userDetails;
         String id = PasswordAuthenticationProvider.buildKey(userInfo.getUserId());

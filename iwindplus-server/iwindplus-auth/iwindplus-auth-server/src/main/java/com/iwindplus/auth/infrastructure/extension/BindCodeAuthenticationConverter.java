@@ -59,12 +59,18 @@ public class BindCodeAuthenticationConverter implements AuthenticationConverter 
                 Oauth2Util.ERROR_URI);
         }
 
+        // 图形验证码key和验证码（可选，触发安全策略时必需）
+        String graphicCaptchaKey = parameters.getFirst(GrantTypeConstant.GRAPHIC_CAPTCHA_KEY);
+        String graphicCaptcha = parameters.getFirst(GrantTypeConstant.GRAPHIC_CAPTCHA);
+
         // 附加参数
         Map<String, Object> additionalParameters = new HashMap<>(16);
         parameters.forEach((key, value) -> {
             if (!key.equals(OAuth2ParameterNames.GRANT_TYPE)
                 && !key.equals(OAuth2ParameterNames.SCOPE)
-                && !key.equals(GrantTypeConstant.CODE)) {
+                && !key.equals(GrantTypeConstant.CODE)
+                && !key.equals(GrantTypeConstant.GRAPHIC_CAPTCHA_KEY)
+                && !key.equals(GrantTypeConstant.GRAPHIC_CAPTCHA)) {
                 additionalParameters.put(key, (value.size() == 1) ? value.get(0) : value.toArray(new String[0]));
             }
         });
@@ -73,7 +79,9 @@ public class BindCodeAuthenticationConverter implements AuthenticationConverter 
             clientPrincipal,
             additionalParameters,
             requestedScopes,
-            code
+            code,
+            graphicCaptchaKey,
+            graphicCaptcha
         );
     }
 }

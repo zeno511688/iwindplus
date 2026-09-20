@@ -46,20 +46,20 @@ import reactor.core.publisher.Mono;
 public class ApiWhiteListFilter extends BaseGatewayFilter {
 
     private static final List<String> DEFAULT_IGNORED_APIS = List.of(
-        "/api/auth/oauth2/token",
-        "/api/auth/oauth2/authorize",
-        "/api/auth/oauth2/introspect",
-        "/api/auth/oauth2/revoke",
-        "/api/auth/oauth2/jwks",
-        "/api/auth/oauth2/consent",
-        "/doc.html",
+        "**/oauth2/token",
+        "**/oauth2/authorize",
+        "**/oauth2/introspect",
+        "**/oauth2/revoke",
+        "**/oauth2/jwks",
+        "**/oauth2/consent",
+        "**/doc.html",
         "**/v3/api-docs",
-        "/webjars/**",
-        "/swagger-resources/**",
-        "/swagger-ui/**",
-        "/actuator/**",
-        "/favicon.ico",
-        "/api/imWs/ws"
+        "**/webjars/**",
+        "**/swagger-resources/**",
+        "**/swagger-ui/**",
+        "**/actuator/**",
+        "**/favicon.ico",
+        "**/api/imWs/ws"
     );
 
     private final ApiWhiteListProperty property;

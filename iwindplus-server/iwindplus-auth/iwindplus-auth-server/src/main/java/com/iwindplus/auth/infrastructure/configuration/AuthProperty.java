@@ -76,6 +76,13 @@ public class AuthProperty {
     private LogConfig log = new LogConfig();
 
     /**
+     * 登录安全配置.
+     */
+    @Builder.Default
+    @NestedConfigurationProperty
+    private LoginSecurityConfig loginSecurity = new LoginSecurityConfig();
+
+    /**
      * 邮件相关属性.
      *
      * @author zengdegui
@@ -194,5 +201,62 @@ public class AuthProperty {
          */
         @Builder.Default
         private Boolean enabledLogout = Boolean.TRUE;
+    }
+
+    /**
+     * 登录安全配置.
+     *
+     * @author zengdegui
+     * @since 2026/09/20
+     */
+    @Data
+    @SuperBuilder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class LoginSecurityConfig {
+
+        /**
+         * 是否启用登录安全策略.
+         */
+        @Builder.Default
+        private Boolean enabled = Boolean.TRUE;
+
+        /**
+         * 触发图形验证码的错误次数（默认1次）.
+         */
+        @Builder.Default
+        private Integer captchaThreshold = 1;
+
+        /**
+         * 触发账号锁定的最大错误次数（默认5次）.
+         */
+        @Builder.Default
+        private Integer maxAttemptCount = 5;
+
+        /**
+         * 指数退避频率配置，超过最大错误次数后按此频率锁定.
+         * <p>
+         * 例如 "5m,10m,20m,30m"，第5次错误锁定5分钟，第6次锁定10分钟，依此类推.
+         */
+        @Builder.Default
+        private String lockFrequency = "5m,10m,20m,30m";
+
+        /**
+         * 登录尝试记录缓存key前缀.
+         */
+        @Builder.Default
+        private String attemptKeyPrefix = "login:attempt:";
+
+        /**
+         * 账号锁定缓存key前缀.
+         */
+        @Builder.Default
+        private String lockKeyPrefix = "login:lock:";
+
+        /**
+         * 图形验证码缓存key前缀.
+         */
+        @Builder.Default
+        private String captchaKeyPrefix = "login:captcha:";
     }
 }
