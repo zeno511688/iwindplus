@@ -8,6 +8,7 @@
 package com.iwindplus.base.web.filter;
 
 import cn.hutool.core.text.CharSequenceUtil;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.extra.servlet.JakartaServletUtil;
 import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.base.domain.context.HeaderContextHolder;
@@ -27,7 +28,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -83,7 +83,7 @@ public class RequestFilter extends OncePerRequestFilter {
     }
 
     private void buildRequestedId(Map<String, String> headers) {
-        String requestedId = getOrPutHeader(headers, HeaderConstant.X_REQUESTED_ID, UUID.randomUUID().toString());
+        String requestedId = getOrPutHeader(headers, HeaderConstant.X_REQUESTED_ID, IdUtil.simpleUUID());
         MDC.put(HeaderConstant.X_REQUESTED_ID, requestedId);
     }
 

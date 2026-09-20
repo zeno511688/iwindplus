@@ -7,12 +7,12 @@
 
 package com.iwindplus.gateway.interfaces.filter;
 
+import cn.hutool.core.util.IdUtil;
 import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.base.util.ReactorUtil;
 import com.iwindplus.gateway.infrastructure.constant.GatewayFilterConstant;
 import com.iwindplus.gateway.infrastructure.constant.GatewayWebExchangeConstant;
 import com.iwindplus.gateway.infrastructure.support.GatewayUtil;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -67,7 +67,7 @@ public class TimingGatewayFilter implements Ordered, GlobalFilter {
             return exchange;
         }
 
-        String generatedRequestId = UUID.randomUUID().toString();
+        String generatedRequestId = IdUtil.simpleUUID();
         return exchange.mutate()
             .request(builder -> builder.header(HeaderConstant.X_REQUESTED_ID, generatedRequestId))
             .build();
