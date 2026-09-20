@@ -242,11 +242,31 @@ public final class PathMatchUtil {
                  * ** 匹配 0 个 segment。
                  *
                  * 不消费当前 segment，
-                 * 进入 ** 后面的子节点。
+                 * 进入 ** 后面的子节点继续匹配当前 segment。
+                 *
+                 * 注意：
+                 * 只有与当前 segment 匹配的子节点才会被进入，
+                 * 避免跳过中间节点导致误匹配。
                  */
-                for (Node child : node.children.values()) {
+                String seg = segments[index];
+                Node exact = node.children.get(seg);
+                if (exact != null) {
                     stack.addLast(
-                        new DfsStatus(child, index)
+                        new DfsStatus(exact, index + 1)
+                    );
+                }
+
+                Node star = node.children.get(STAR);
+                if (star != null) {
+                    stack.addLast(
+                        new DfsStatus(star, index + 1)
+                    );
+                }
+
+                Node ds = node.children.get(DOUBLE_STAR);
+                if (ds != null) {
+                    stack.addLast(
+                        new DfsStatus(ds, index)
                     );
                 }
 
