@@ -83,6 +83,18 @@ public final class PathMatchUtil {
             .build();
 
     /**
+     * 规则缓存 key 缓存.
+     *
+     * <p>使用 weakKeys 以集合身份（identity）比较，允许 GC 回收。
+     */
+    private static final Cache<Collection<String>, String> PATTERNS_KEY_CACHE =
+        Caffeine.newBuilder()
+            .weakKeys()
+            .maximumSize(DEFAULT_CACHE_SIZE)
+            .expireAfterAccess(Duration.ofMinutes(NumberConstant.NUMBER_THIRTY))
+            .build();
+
+    /**
      * 匹配路径.
      *
      * @param patterns 路径规则列表
@@ -114,16 +126,21 @@ public final class PathMatchUtil {
      * 生成规则缓存 key.
      *
      * <p>排序后生成 key，保证规则顺序不同但内容相同的集合 使用相同的 Trie。
+     * 使用 weakKeys 缓存避免重复计算。
      *
      * @param patterns 路径规则
      * @return cache key
      */
     private static String patternsKey(Collection<String> patterns) {
+        String key = PATTERNS_KEY_CACHE.getIfPresent(patterns);
+        if (key != null) {
+            return key;
+        }
         List<String> list = new ArrayList<>(patterns);
         Collections.sort(list);
-
-        String join = String.join(",", list);
-        return CryptoUtil.encryptBySm3(join);
+        key = CryptoUtil.encryptBySm3(String.join(",", list));
+        PATTERNS_KEY_CACHE.put(patterns, key);
+        return key;
     }
 
     /**
@@ -133,7 +150,7 @@ public final class PathMatchUtil {
      * @return Trie 根节点
      */
     private static Node buildTrie(Collection<String> patterns) {
-        Node root = new Node(Math.max(16, patterns.size()));
+        Node root = new Node();
 
         for (String pattern : patterns) {
             if (pattern == null || pattern.isEmpty()) {
@@ -158,14 +175,7 @@ public final class PathMatchUtil {
         Node current = root;
 
         for (String segment : segments) {
-            Node child = current.children.get(segment);
-
-            if (child == null) {
-                child = new Node(4);
-                current.children.put(segment, child);
-            }
-
-            current = child;
+            current = current.getOrCreateChild(segment);
 
             if (DOUBLE_STAR.equals(segment)) {
                 current.doubleStar = true;
@@ -234,7 +244,7 @@ public final class PathMatchUtil {
             return true;
         }
 
-        Node doubleStar = node.children.get(DOUBLE_STAR);
+        Node doubleStar = node.getChild(DOUBLE_STAR);
         if (doubleStar != null) {
             stack.addLast(new DfsStatus(doubleStar, index));
         }
@@ -259,17 +269,17 @@ public final class PathMatchUtil {
 
         // ** 匹配 0 个 segment，进入子节点继续匹配当前 segment
         String seg = segments[index];
-        Node exact = node.children.get(seg);
+        Node exact = node.getChild(seg);
         if (exact != null) {
             stack.addLast(new DfsStatus(exact, index + 1));
         }
 
-        Node star = node.children.get(STAR);
+        Node star = node.getChild(STAR);
         if (star != null) {
             stack.addLast(new DfsStatus(star, index + 1));
         }
 
-        Node ds = node.children.get(DOUBLE_STAR);
+        Node ds = node.getChild(DOUBLE_STAR);
         if (ds != null) {
             stack.addLast(new DfsStatus(ds, index));
         }
@@ -287,19 +297,19 @@ public final class PathMatchUtil {
      */
     private static void handleNormalNode(Node node, ArrayDeque<DfsStatus> stack, String segment, int index) {
         // 精确匹配
-        Node exact = node.children.get(segment);
+        Node exact = node.getChild(segment);
         if (exact != null) {
             stack.addLast(new DfsStatus(exact, index + 1));
         }
 
         // * 匹配一个 path segment
-        Node star = node.children.get(STAR);
+        Node star = node.getChild(STAR);
         if (star != null) {
             stack.addLast(new DfsStatus(star, index + 1));
         }
 
         // ** 从当前节点开始匹配（不消费当前 segment，因为 ** 可以匹配 0 个 segment）
-        Node doubleStar = node.children.get(DOUBLE_STAR);
+        Node doubleStar = node.getChild(DOUBLE_STAR);
         if (doubleStar != null) {
             stack.addLast(new DfsStatus(doubleStar, index));
         }
@@ -321,29 +331,47 @@ public final class PathMatchUtil {
         int length = path.length();
         int start = path.charAt(0) == SLASH_CHAR ? 1 : 0;
 
-        List<String> segments = new ArrayList<>(10);
-
+        // 先计数 segment 数量
+        int count = 0;
         for (int i = start; i < length; i++) {
-            if (path.charAt(i) == SLASH_CHAR) {
-                if (start < i) {
-                    segments.add(path.substring(start, i));
-                }
-
-                start = i + 1;
+            if (path.charAt(i) == SLASH_CHAR && start < i) {
+                count++;
             }
         }
-
         if (start < length) {
-            segments.add(path.substring(start));
+            count++;
+        }
+        if (count == 0) {
+            return new String[0];
         }
 
-        return segments.toArray(new String[0]);
+        // 直接填充数组，避免 ArrayList 中间层
+        String[] segments = new String[count];
+        int idx = 0;
+        int segStart = start;
+        for (int i = start; i < length; i++) {
+            if (path.charAt(i) == SLASH_CHAR) {
+                if (segStart < i) {
+                    segments[idx++] = path.substring(segStart, i);
+                }
+                segStart = i + 1;
+            }
+        }
+        if (segStart < length) {
+            segments[idx] = path.substring(segStart);
+        }
+        return segments;
     }
 
     /**
      * Trie 节点.
+     *
+     * <p>子节点存储采用渐进式结构：子节点数 ≤ {@link #ARRAY_THRESHOLD} 时用数组线性查找，
+     * 超过阈值后自动升级为 HashMap，兼顾内存占用与查找效率。
      */
     private static final class Node {
+
+        private static final int ARRAY_THRESHOLD = NumberConstant.NUMBER_FOUR;
 
         /**
          * 是否为规则终点.
@@ -356,12 +384,81 @@ public final class PathMatchUtil {
         private boolean doubleStar;
 
         /**
-         * 子节点.
+         * 子节点存储：null、Object[]（key-node 交替）或 Map.
          */
-        private final Map<String, Node> children;
+        private Object children;
 
-        private Node(int initialCapacity) {
-            this.children = new HashMap<>(initialCapacity);
+        /**
+         * 子节点数量.
+         */
+        private int childCount;
+
+        private Node() {
+        }
+
+        /**
+         * 获取子节点.
+         *
+         * @param segment 路径段
+         * @return 子节点，不存在返回 null
+         */
+        @SuppressWarnings("unchecked")
+        private Node getChild(String segment) {
+            if (this.children == null) {
+                return null;
+            }
+            if (this.children instanceof Map) {
+                return ((Map<String, Node>) this.children).get(segment);
+            }
+            Object[] arr = (Object[]) this.children;
+            for (int i = 0; i < this.childCount * 2; i += 2) {
+                if (segment.equals(arr[i])) {
+                    return (Node) arr[i + 1];
+                }
+            }
+            return null;
+        }
+
+        /**
+         * 获取或创建子节点.
+         *
+         * <p>子节点数未超阈值时用数组存储，超过阈值后升级为 HashMap。
+         *
+         * @param segment 路径段
+         * @return 子节点
+         */
+        @SuppressWarnings("unchecked")
+        private Node getOrCreateChild(String segment) {
+            Node existing = this.getChild(segment);
+            if (existing != null) {
+                return existing;
+            }
+
+            Node child = new Node();
+
+            if (this.children == null) {
+                this.children = new Object[ARRAY_THRESHOLD * 2];
+            }
+
+            if (this.children instanceof Map) {
+                ((Map<String, Node>) this.children).put(segment, child);
+            } else if (this.childCount < ARRAY_THRESHOLD) {
+                Object[] arr = (Object[]) this.children;
+                arr[this.childCount * 2] = segment;
+                arr[this.childCount * 2 + 1] = child;
+            } else {
+                // 超过阈值，升级为 HashMap
+                Map<String, Node> map = new HashMap<>(ARRAY_THRESHOLD * 2);
+                Object[] arr = (Object[]) this.children;
+                for (int i = 0; i < this.childCount * 2; i += 2) {
+                    map.put((String) arr[i], (Node) arr[i + 1]);
+                }
+                map.put(segment, child);
+                this.children = map;
+            }
+
+            this.childCount++;
+            return child;
         }
     }
 
