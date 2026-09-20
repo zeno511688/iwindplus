@@ -426,6 +426,21 @@ public class JacksonUtil {
     }
 
     /**
+     * 判断 JSON 是否有效.
+     *
+     * @param json JSON 字符串
+     * @return true 表示有效
+     */
+    public static boolean isValidJson(String json) {
+        if (CharSequenceUtil.isBlank(json)) {
+            return false;
+        }
+
+        parseTree(json);
+        return true;
+    }
+
+    /**
      * 创建默认 ObjectMapper.
      *
      * @return ObjectMapper
