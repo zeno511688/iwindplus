@@ -121,6 +121,9 @@ public final class PathMatchUtil {
         int estimatedChildren = Math.max(segments.length, 4);
         for (String seg : segments) {
             cur = cur.children.computeIfAbsent(seg, k -> new Node(estimatedChildren));
+            if (DOUBLE_STAR.equals(seg)) {
+                cur.doubleStar = true;
+            }
         }
         cur.terminal = true;
     }
@@ -137,8 +140,19 @@ public final class PathMatchUtil {
             recycleDfsStatus(dfsPool, state);
 
             if (idx == segments.length) {
-                if (node.terminal || node.children.containsKey(DOUBLE_STAR)) {
+                if (node.terminal || node.doubleStar) {
                     return true;
+                }
+                continue;
+            }
+
+            // ** 节点自身可吞掉任意多段
+            if (node.doubleStar) {
+                // ** 吞掉当前段，继续停留在 ** 节点
+                stack.addLast(getDfsStatus(dfsPool, node, idx + 1));
+                // ** 匹配零段，由 ** 的子节点匹配当前段
+                for (Node child : node.children.values()) {
+                    stack.addLast(getDfsStatus(dfsPool, child, idx + 1));
                 }
                 continue;
             }
@@ -157,16 +171,8 @@ public final class PathMatchUtil {
 
             Node ds = node.children.get(DOUBLE_STAR);
             if (ds != null) {
-                // ** 吞掉当前段，继续停留在 ** 节点
+                // 转移到 ** 节点，由 ** 节点处理当前段（吞段或子节点匹配）
                 stack.addLast(getDfsStatus(dfsPool, ds, idx));
-                // ** 匹配零段，继续停留在 ** 节点（跳过当前段）
-                stack.addLast(getDfsStatus(dfsPool, ds, idx + 1));
-                // ** 匹配结束，进入 ** 的子节点继续匹配后续段
-                for (Node child : ds.children.values()) {
-                    if (child != ds) {
-                        stack.addLast(getDfsStatus(dfsPool, child, idx + 1));
-                    }
-                }
             }
         }
         return false;
@@ -214,6 +220,12 @@ public final class PathMatchUtil {
     private static final class Node {
 
         private boolean terminal = false;
+
+        /**
+         * 是否为 ** 通配符节点.
+         */
+        private boolean doubleStar = false;
+
         private final Map<String, Node> children;
 
         Node(int initialCapacity) {
