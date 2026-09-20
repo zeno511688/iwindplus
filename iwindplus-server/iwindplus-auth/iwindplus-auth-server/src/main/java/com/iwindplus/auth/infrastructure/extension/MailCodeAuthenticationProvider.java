@@ -8,28 +8,20 @@
 package com.iwindplus.auth.infrastructure.extension;
 
 import cn.hutool.core.lang.Assert;
-import com.iwindplus.auth.common.enums.AuthCodeEnum;
 import com.iwindplus.auth.infrastructure.client.LoginAuthClient;
-import com.iwindplus.auth.infrastructure.model.dto.OauthUserDTO;
-import com.iwindplus.auth.infrastructure.exception.CustomOauth2AuthenticationException;
 import com.iwindplus.auth.infrastructure.extension.constant.GrantTypeConstant;
 import com.iwindplus.auth.infrastructure.persistence.LoginAttemptService;
-import com.iwindplus.auth.infrastructure.support.Oauth2Util;
 import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.OAuth2Token;
-import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
-import org.springframework.security.oauth2.server.authorization.context.AuthorizationServerContextHolder;
-import org.springframework.security.oauth2.server.authorization.token.DefaultOAuth2TokenContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 
 /**
@@ -64,17 +56,9 @@ public record MailCodeAuthenticationProvider(
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         MailCodeAuthenticationToken mailCodeAuthenticationToken = (MailCodeAuthenticationToken) authentication;
 
-        OAuth2ClientAuthenticationToken clientPrincipal = Oauth2Util
-            .getAuthenticatedClientElseThrowInvalidClient(mailCodeAuthenticationToken);
+        OAuth2ClientAuthenticationToken clientPrincipal = PasswordAuthenticationProvider
+            .validateClient(mailCodeAuthenticationToken, GrantTypeConstant.MAIL_CODE);
         RegisteredClient registeredClient = clientPrincipal.getRegisteredClient();
-        if (Objects.isNull(registeredClient)) {
-            throw new CustomOauth2AuthenticationException(AuthCodeEnum.INVALID_CLIENT);
-        }
-
-        // 验证客户端是否支持授权类型(grant_type=mail_code)
-        if (!registeredClient.getAuthorizationGrantTypes().contains(GrantTypeConstant.MAIL_CODE)) {
-            throw new CustomOauth2AuthenticationException(AuthCodeEnum.INVALID_GRANT);
-        }
 
         // 验证申请访问范围(Scope)
         Set<String> authorizedScopes = registeredClient.getScopes();
@@ -86,11 +70,8 @@ public record MailCodeAuthenticationProvider(
         Assert.notNull(mail, "mail cannot be null");
         Assert.notNull(captcha, "captcha cannot be null");
 
-        // 登录前安全检查：检查账号锁定状态和图形验证码
-        PasswordAuthenticationProvider.checkLoginSecurity(
-            this.loginAttemptService, mail,
-            mailCodeAuthenticationToken.getCaptchaKey(),
-            mailCodeAuthenticationToken.getGraphicCaptcha());
+        // 登录前安全检查：检查账号锁定状态
+        PasswordAuthenticationProvider.checkAccountLocked(this.loginAttemptService, mail);
 
         // 根据邮箱获取信息
         UserDetails userDetails = null;
@@ -101,28 +82,15 @@ public record MailCodeAuthenticationProvider(
             PasswordAuthenticationProvider.convertException(ex);
         }
         if (Objects.isNull(userDetails)) {
-            PasswordAuthenticationProvider.handleAuthFailure(this.loginAttemptService, mail);
+            PasswordAuthenticationProvider.handleCodeAuthFailure(this.loginAttemptService, mail);
         }
 
         // 登录成功，清除尝试记录
         this.loginAttemptService.recordSuccess(mail);
 
-        OauthUserDTO userInfo = (OauthUserDTO) userDetails;
-        String id = PasswordAuthenticationProvider.buildKey(userInfo.getUserId());
-
-        Authentication usernamePasswordAuthentication = new UsernamePasswordAuthenticationToken(userDetails, userDetails.getPassword());
-        // 访问令牌(Access Token) 构造器
-        DefaultOAuth2TokenContext.Builder tokenContextBuilder = DefaultOAuth2TokenContext.builder()
-            .registeredClient(registeredClient)
-            .principal(usernamePasswordAuthentication)
-            .authorizationServerContext(AuthorizationServerContextHolder.getContext())
-            .authorizedScopes(authorizedScopes)
-            .authorizationGrantType(GrantTypeConstant.MAIL_CODE)
-            .authorizationGrant(mailCodeAuthenticationToken);
-        OAuth2Authorization.Builder authorizationBuilder = PasswordAuthenticationProvider.buildAuthorizationBuilder(registeredClient, id,
-            authorizedScopes, userDetails.getUsername(), GrantTypeConstant.MAIL_CODE, usernamePasswordAuthentication);
-        return PasswordAuthenticationProvider.buildAuthenticationToken(clientPrincipal, registeredClient, requestedScopes, tokenContextBuilder,
-            tokenGenerator, authorizationBuilder, authorizationService, id);
+        return PasswordAuthenticationProvider.buildTokenResponse(clientPrincipal, registeredClient, authorizedScopes,
+            requestedScopes, userDetails, GrantTypeConstant.MAIL_CODE, mailCodeAuthenticationToken, tokenGenerator,
+            authorizationService);
     }
 
     @Override

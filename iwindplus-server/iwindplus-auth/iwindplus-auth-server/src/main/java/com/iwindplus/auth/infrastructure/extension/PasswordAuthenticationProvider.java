@@ -97,17 +97,9 @@ public record PasswordAuthenticationProvider(
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         PasswordAuthenticationToken passwordAuthenticationToken = (PasswordAuthenticationToken) authentication;
 
-        OAuth2ClientAuthenticationToken clientPrincipal = Oauth2Util
-            .getAuthenticatedClientElseThrowInvalidClient(passwordAuthenticationToken);
+        OAuth2ClientAuthenticationToken clientPrincipal = PasswordAuthenticationProvider
+            .validateClient(passwordAuthenticationToken, GrantTypeConstant.PASSWORD);
         RegisteredClient registeredClient = clientPrincipal.getRegisteredClient();
-        if (Objects.isNull(registeredClient)) {
-            throw new CustomOauth2AuthenticationException(AuthCodeEnum.INVALID_CLIENT);
-        }
-
-        // 验证客户端是否支持授权类型(grant_type=password)
-        if (!registeredClient.getAuthorizationGrantTypes().contains(GrantTypeConstant.PASSWORD)) {
-            throw new CustomOauth2AuthenticationException(AuthCodeEnum.INVALID_GRANT);
-        }
 
         // 验证申请访问范围(Scope)
         Set<String> authorizedScopes = registeredClient.getScopes();
@@ -120,30 +112,9 @@ public record PasswordAuthenticationProvider(
         Assert.notNull(username, "username cannot be null");
         Assert.notNull(password, "password cannot be null");
 
-        // 检查账号是否被锁定
-        Long remainingLockTime = this.loginAttemptService.getRemainingLockTime(username);
-        if (Objects.nonNull(remainingLockTime)) {
-            throw new CustomOauth2AuthenticationException(
-                AuthCodeEnum.LOGIN_LOCKED.getBizCode(),
-                AuthCodeEnum.LOGIN_LOCKED.getBizMessage().replace("{0}", String.valueOf(remainingLockTime / 1000)));
-        }
-
-        // 检查是否需要图形验证码
-        boolean needCaptcha = this.loginAttemptService.needCaptcha(username);
-        if (needCaptcha) {
-            String captchaKey = passwordAuthenticationToken.getCaptchaKey();
-            String captcha = passwordAuthenticationToken.getCaptcha();
-            if (CharSequenceUtil.isBlank(captchaKey) || CharSequenceUtil.isBlank(captcha)) {
-                throw new CustomOauth2AuthenticationException(AuthCodeEnum.NEED_CAPTCHA);
-            }
-            // 校验图形验证码
-            boolean captchaValid = this.loginAttemptService.validateCaptcha(captchaKey, captcha);
-            if (!captchaValid) {
-                throw new CustomOauth2AuthenticationException(BizCodeEnum.CAPTCHA_ERROR);
-            }
-            // 验证码使用后删除
-            this.loginAttemptService.deleteCaptcha(captchaKey);
-        }
+        final String captchaKey = passwordAuthenticationToken.getCaptchaKey();
+        final String captcha = passwordAuthenticationToken.getCaptcha();
+        checkLoginSecurity(loginAttemptService, username, captchaKey, captcha);
 
         // 根据邮箱获取信息
         UserDetails userDetails = null;
@@ -152,46 +123,15 @@ public record PasswordAuthenticationProvider(
         } catch (Exception ex) {
             PasswordAuthenticationProvider.convertException(ex);
         }
-        if (Objects.isNull(userDetails)) {
-            this.loginAttemptService.recordFailedAttempt(username);
-            throw new CustomOauth2AuthenticationException(AuthCodeEnum.IDENTITY_VERIFICATION_FAILED);
-        }
-        boolean matches = this.passwordEncoder.matches(password, userDetails.getPassword());
-        if (Boolean.FALSE.equals(matches)) {
-            this.loginAttemptService.recordFailedAttempt(username);
-            // 如果失败次数达到阈值，提示需要验证码
-            if (this.loginAttemptService.needCaptcha(username)) {
-                throw new CustomOauth2AuthenticationException(AuthCodeEnum.NEED_CAPTCHA);
-            }
-            // 如果被锁定了，提示锁定信息
-            Long lockTime = this.loginAttemptService.getRemainingLockTime(username);
-            if (Objects.nonNull(lockTime)) {
-                throw new CustomOauth2AuthenticationException(
-                    AuthCodeEnum.LOGIN_LOCKED.getBizCode(),
-                    AuthCodeEnum.LOGIN_LOCKED.getBizMessage().replace("{0}", String.valueOf(lockTime / 1000)));
-            }
-            throw new CustomOauth2AuthenticationException(BizCodeEnum.PASSWORD_ERROR);
-        }
+
+        handleAuthFailure(username, password, userDetails);
 
         // 登录成功，清除尝试记录
         this.loginAttemptService.recordSuccess(username);
 
-        OauthUserDTO userInfo = (OauthUserDTO) userDetails;
-        String id = PasswordAuthenticationProvider.buildKey(userInfo.getUserId());
-
-        Authentication usernamePasswordAuthentication = new UsernamePasswordAuthenticationToken(userDetails, userDetails.getPassword());
-        DefaultOAuth2TokenContext.Builder tokenContextBuilder = DefaultOAuth2TokenContext.builder()
-            .registeredClient(registeredClient)
-            .principal(usernamePasswordAuthentication)
-            .authorizationServerContext(AuthorizationServerContextHolder.getContext())
-            .authorizedScopes(authorizedScopes)
-            .authorizationGrantType(GrantTypeConstant.PASSWORD)
-            .authorizationGrant(passwordAuthenticationToken);
-
-        OAuth2Authorization.Builder authorizationBuilder = PasswordAuthenticationProvider.buildAuthorizationBuilder(registeredClient, id,
-            authorizedScopes, userDetails.getUsername(), GrantTypeConstant.PASSWORD, usernamePasswordAuthentication);
-        return PasswordAuthenticationProvider.buildAuthenticationToken(clientPrincipal, registeredClient, requestedScopes, tokenContextBuilder,
-            tokenGenerator, authorizationBuilder, authorizationService, id);
+        return PasswordAuthenticationProvider.buildTokenResponse(clientPrincipal, registeredClient, authorizedScopes,
+            requestedScopes, userDetails, GrantTypeConstant.PASSWORD, passwordAuthenticationToken, tokenGenerator,
+            authorizationService);
     }
 
     @Override
@@ -426,6 +366,88 @@ public record PasswordAuthenticationProvider(
     }
 
     /**
+     * 验证客户端和授权类型.
+     *
+     * <p>校验客户端身份、注册信息及授权类型支持情况。
+     *
+     * @param authentication 身份验证令牌
+     * @param grantType      授权类型
+     * @return 客户端身份验证令牌
+     */
+    public static OAuth2ClientAuthenticationToken validateClient(Authentication authentication, AuthorizationGrantType grantType) {
+        OAuth2ClientAuthenticationToken clientPrincipal = Oauth2Util
+            .getAuthenticatedClientElseThrowInvalidClient(authentication);
+        RegisteredClient registeredClient = clientPrincipal.getRegisteredClient();
+        if (Objects.isNull(registeredClient)) {
+            throw new CustomOauth2AuthenticationException(AuthCodeEnum.INVALID_CLIENT);
+        }
+        if (!registeredClient.getAuthorizationGrantTypes().contains(grantType)) {
+            throw new CustomOauth2AuthenticationException(AuthCodeEnum.INVALID_GRANT);
+        }
+        return clientPrincipal;
+    }
+
+    /**
+     * 构建令牌响应.
+     *
+     * <p>根据用户信息和授权类型构建访问令牌、刷新令牌并返回身份验证令牌。
+     *
+     * @param clientPrincipal      客户端身份验证令牌
+     * @param registeredClient     注册客户端
+     * @param authorizedScopes     已授权访问范围
+     * @param requestedScopes      请求的访问范围
+     * @param userDetails          用户详情
+     * @param grantType            授权类型
+     * @param grantAuthentication  授权身份验证
+     * @param tokenGenerator       令牌生成器
+     * @param authorizationService 授权服务
+     * @return OAuth2AccessTokenAuthenticationToken
+     */
+    public static OAuth2AccessTokenAuthenticationToken buildTokenResponse(
+        OAuth2ClientAuthenticationToken clientPrincipal,
+        RegisteredClient registeredClient,
+        Set<String> authorizedScopes,
+        Set<String> requestedScopes,
+        UserDetails userDetails,
+        AuthorizationGrantType grantType,
+        Authentication grantAuthentication,
+        OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator,
+        OAuth2AuthorizationService authorizationService) {
+        OauthUserDTO userInfo = (OauthUserDTO) userDetails;
+        String id = PasswordAuthenticationProvider.buildKey(userInfo.getUserId());
+
+        Authentication usernamePasswordAuthentication = new UsernamePasswordAuthenticationToken(userDetails, userDetails.getPassword());
+        DefaultOAuth2TokenContext.Builder tokenContextBuilder = DefaultOAuth2TokenContext.builder()
+            .registeredClient(registeredClient)
+            .principal(usernamePasswordAuthentication)
+            .authorizationServerContext(AuthorizationServerContextHolder.getContext())
+            .authorizedScopes(authorizedScopes)
+            .authorizationGrantType(grantType)
+            .authorizationGrant(grantAuthentication);
+        OAuth2Authorization.Builder authorizationBuilder = PasswordAuthenticationProvider.buildAuthorizationBuilder(registeredClient, id,
+            authorizedScopes, userDetails.getUsername(), grantType, usernamePasswordAuthentication);
+        return PasswordAuthenticationProvider.buildAuthenticationToken(clientPrincipal, registeredClient, requestedScopes, tokenContextBuilder,
+            tokenGenerator, authorizationBuilder, authorizationService, id);
+    }
+
+    /**
+     * 登录前安全检查：检查账号锁定状态（不含图形验证码）.
+     *
+     * <p>适用于验证码登录方式（短信/邮箱/绑定），无需图形验证码校验。
+     *
+     * @param loginAttemptService 登录尝试服务
+     * @param identifier          用户标识（用户名/手机号/邮箱/编码）
+     */
+    public static void checkAccountLocked(LoginAttemptService loginAttemptService, String identifier) {
+        Long remainingLockTime = loginAttemptService.getRemainingLockTime(identifier);
+        if (Objects.nonNull(remainingLockTime)) {
+            throw new CustomOauth2AuthenticationException(
+                AuthCodeEnum.LOGIN_LOCKED.getBizCode(),
+                AuthCodeEnum.LOGIN_LOCKED.getBizMessage().replace("{0}", String.valueOf(remainingLockTime / 1000)));
+        }
+    }
+
+    /**
      * 登录前安全检查：检查账号锁定状态和图形验证码.
      *
      * @param loginAttemptService 登录尝试服务
@@ -449,25 +471,26 @@ public record PasswordAuthenticationProvider(
             if (CharSequenceUtil.isBlank(captchaKey) || CharSequenceUtil.isBlank(captcha)) {
                 throw new CustomOauth2AuthenticationException(AuthCodeEnum.NEED_CAPTCHA);
             }
+            // 校验图形验证码
             boolean captchaValid = loginAttemptService.validateCaptcha(captchaKey, captcha);
             if (!captchaValid) {
                 throw new CustomOauth2AuthenticationException(BizCodeEnum.CAPTCHA_ERROR);
             }
+            // 验证码使用后删除
             loginAttemptService.deleteCaptcha(captchaKey);
         }
     }
 
     /**
-     * 认证失败后记录尝试并抛出相应异常.
+     * 认证失败后记录尝试并抛出相应异常（不含图形验证码检查）.
+     *
+     * <p>适用于验证码登录方式（短信/邮箱/绑定），无需图形验证码校验。
      *
      * @param loginAttemptService 登录尝试服务
      * @param identifier          用户标识
      */
-    public static void handleAuthFailure(LoginAttemptService loginAttemptService, String identifier) {
+    public static void handleCodeAuthFailure(LoginAttemptService loginAttemptService, String identifier) {
         loginAttemptService.recordFailedAttempt(identifier);
-        if (loginAttemptService.needCaptcha(identifier)) {
-            throw new CustomOauth2AuthenticationException(AuthCodeEnum.NEED_CAPTCHA);
-        }
         Long lockTime = loginAttemptService.getRemainingLockTime(identifier);
         if (Objects.nonNull(lockTime)) {
             throw new CustomOauth2AuthenticationException(
@@ -475,5 +498,35 @@ public record PasswordAuthenticationProvider(
                 AuthCodeEnum.LOGIN_LOCKED.getBizMessage().replace("{0}", String.valueOf(lockTime / 1000)));
         }
         throw new CustomOauth2AuthenticationException(AuthCodeEnum.IDENTITY_VERIFICATION_FAILED);
+    }
+
+    /**
+     * 认证失败后记录尝试并抛出相应异常.
+     *
+     * @param username    用户名
+     * @param password    密码
+     * @param userDetails 用户详情
+     */
+    private void handleAuthFailure(String username, String password, UserDetails userDetails) {
+        if (Objects.isNull(userDetails)) {
+            this.loginAttemptService.recordFailedAttempt(username);
+            throw new CustomOauth2AuthenticationException(AuthCodeEnum.IDENTITY_VERIFICATION_FAILED);
+        }
+        boolean matches = this.passwordEncoder.matches(password, userDetails.getPassword());
+        if (Boolean.FALSE.equals(matches)) {
+            this.loginAttemptService.recordFailedAttempt(username);
+            // 如果失败次数达到阈值，提示需要验证码
+            if (this.loginAttemptService.needCaptcha(username)) {
+                throw new CustomOauth2AuthenticationException(AuthCodeEnum.NEED_CAPTCHA);
+            }
+            // 如果被锁定了，提示锁定信息
+            Long lockTime = this.loginAttemptService.getRemainingLockTime(username);
+            if (Objects.nonNull(lockTime)) {
+                throw new CustomOauth2AuthenticationException(
+                    AuthCodeEnum.LOGIN_LOCKED.getBizCode(),
+                    AuthCodeEnum.LOGIN_LOCKED.getBizMessage().replace("{0}", String.valueOf(lockTime / 1000)));
+            }
+            throw new CustomOauth2AuthenticationException(BizCodeEnum.PASSWORD_ERROR);
+        }
     }
 }

@@ -43,16 +43,6 @@ public class MailCodeAuthenticationToken extends OAuth2AuthorizationGrantAuthent
     private final Set<String> scopes;
 
     /**
-     * 图形验证码key.
-     */
-    private final String captchaKey;
-
-    /**
-     * 图形验证码.
-     */
-    private final String graphicCaptcha;
-
-    /**
      * 邮箱模式身份验证令牌.
      *
      * @param clientPrincipal      客户端信息
@@ -60,22 +50,16 @@ public class MailCodeAuthenticationToken extends OAuth2AuthorizationGrantAuthent
      * @param additionalParameters 自定义额外参数
      * @param mail                 邮箱
      * @param captcha              邮箱验证码
-     * @param captchaKey           图形验证码key
-     * @param graphicCaptcha       图形验证码
      */
     protected MailCodeAuthenticationToken(
         Authentication clientPrincipal,
         Map<String, Object> additionalParameters,
         Set<String> scopes,
         String mail,
-        String captcha,
-        String captchaKey,
-        String graphicCaptcha) {
+        String captcha) {
         super(GrantTypeConstant.MAIL_CODE, clientPrincipal, additionalParameters);
         this.scopes = Collections.unmodifiableSet(null != scopes ? new HashSet<>(scopes) : Collections.emptySet());
         this.mail = mail;
         this.captcha = captcha;
-        this.captchaKey = captchaKey;
-        this.graphicCaptcha = graphicCaptcha;
     }
 }

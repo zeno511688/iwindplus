@@ -8,28 +8,20 @@
 package com.iwindplus.auth.infrastructure.extension;
 
 import cn.hutool.core.lang.Assert;
-import com.iwindplus.auth.common.enums.AuthCodeEnum;
 import com.iwindplus.auth.infrastructure.client.LoginAuthClient;
-import com.iwindplus.auth.infrastructure.model.dto.OauthUserDTO;
-import com.iwindplus.auth.infrastructure.exception.CustomOauth2AuthenticationException;
 import com.iwindplus.auth.infrastructure.extension.constant.GrantTypeConstant;
 import com.iwindplus.auth.infrastructure.persistence.LoginAttemptService;
-import com.iwindplus.auth.infrastructure.support.Oauth2Util;
 import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.OAuth2Token;
-import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
-import org.springframework.security.oauth2.server.authorization.context.AuthorizationServerContextHolder;
-import org.springframework.security.oauth2.server.authorization.token.DefaultOAuth2TokenContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 
 /**
@@ -66,17 +58,9 @@ public record BindCodeAuthenticationProvider(
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         BindCodeAuthenticationToken bindCodeAuthenticationToken = (BindCodeAuthenticationToken) authentication;
 
-        OAuth2ClientAuthenticationToken clientPrincipal = Oauth2Util
-            .getAuthenticatedClientElseThrowInvalidClient(bindCodeAuthenticationToken);
+        OAuth2ClientAuthenticationToken clientPrincipal = PasswordAuthenticationProvider
+            .validateClient(bindCodeAuthenticationToken, GrantTypeConstant.BIND_CODE);
         RegisteredClient registeredClient = clientPrincipal.getRegisteredClient();
-        if (Objects.isNull(registeredClient)) {
-            throw new CustomOauth2AuthenticationException(AuthCodeEnum.INVALID_CLIENT);
-        }
-
-        // 验证客户端是否支持授权类型(grant_type=bind_code)
-        if (!registeredClient.getAuthorizationGrantTypes().contains(GrantTypeConstant.BIND_CODE)) {
-            throw new CustomOauth2AuthenticationException(AuthCodeEnum.INVALID_GRANT);
-        }
 
         // 验证申请访问范围(Scope)
         Set<String> authorizedScopes = registeredClient.getScopes();
@@ -86,11 +70,8 @@ public record BindCodeAuthenticationProvider(
         String code = bindCodeAuthenticationToken.getCode();
         Assert.notNull(code, "code cannot be null");
 
-        // 登录前安全检查：检查账号锁定状态和图形验证码
-        PasswordAuthenticationProvider.checkLoginSecurity(
-            this.loginAttemptService, code,
-            bindCodeAuthenticationToken.getCaptchaKey(),
-            bindCodeAuthenticationToken.getGraphicCaptcha());
+        // 登录前安全检查：检查账号锁定状态
+        PasswordAuthenticationProvider.checkAccountLocked(this.loginAttemptService, code);
 
         // 根据绑定编码获取信息
         UserDetails userDetails = null;
@@ -100,27 +81,15 @@ public record BindCodeAuthenticationProvider(
             PasswordAuthenticationProvider.convertException(ex);
         }
         if (Objects.isNull(userDetails)) {
-            PasswordAuthenticationProvider.handleAuthFailure(this.loginAttemptService, code);
+            PasswordAuthenticationProvider.handleCodeAuthFailure(this.loginAttemptService, code);
         }
 
         // 登录成功，清除尝试记录
         this.loginAttemptService.recordSuccess(code);
 
-        OauthUserDTO userInfo = (OauthUserDTO) userDetails;
-        String id = PasswordAuthenticationProvider.buildKey(userInfo.getUserId());
-
-        Authentication usernamePasswordAuthentication = new UsernamePasswordAuthenticationToken(userDetails, userDetails.getPassword());
-        DefaultOAuth2TokenContext.Builder tokenContextBuilder = DefaultOAuth2TokenContext.builder()
-            .registeredClient(registeredClient)
-            .principal(usernamePasswordAuthentication)
-            .authorizationServerContext(AuthorizationServerContextHolder.getContext())
-            .authorizedScopes(authorizedScopes)
-            .authorizationGrantType(GrantTypeConstant.SMS_CODE)
-            .authorizationGrant(bindCodeAuthenticationToken);
-        OAuth2Authorization.Builder authorizationBuilder = PasswordAuthenticationProvider.buildAuthorizationBuilder(registeredClient, id,
-            authorizedScopes, userDetails.getUsername(), GrantTypeConstant.SMS_CODE, usernamePasswordAuthentication);
-        return PasswordAuthenticationProvider.buildAuthenticationToken(clientPrincipal, registeredClient, requestedScopes, tokenContextBuilder,
-            tokenGenerator, authorizationBuilder, authorizationService, id);
+        return PasswordAuthenticationProvider.buildTokenResponse(clientPrincipal, registeredClient, authorizedScopes,
+            requestedScopes, userDetails, GrantTypeConstant.BIND_CODE, bindCodeAuthenticationToken, tokenGenerator,
+            authorizationService);
     }
 
     @Override
