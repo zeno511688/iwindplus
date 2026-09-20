@@ -23,7 +23,7 @@ import com.iwindplus.auth.infrastructure.extension.SmsCodeAuthenticationProvider
 import com.iwindplus.auth.infrastructure.handler.CustomAuthenticationFailureHandler;
 import com.iwindplus.auth.infrastructure.handler.CustomAuthenticationSuccessHandler;
 import com.iwindplus.auth.infrastructure.handler.CustomOpaqueTokenIntrospector;
-import com.iwindplus.auth.infrastructure.handler.CustomTokenCustomizer;
+import com.iwindplus.auth.infrastructure.handler.CustomJwtTokenCustomizer;
 import com.iwindplus.auth.infrastructure.handler.OpaqueAccessTokenGenerator;
 import com.iwindplus.auth.infrastructure.handler.OpaqueRefreshTokenGenerator;
 import com.iwindplus.auth.infrastructure.handler.TokenTypeRoutingTokenGenerator;
@@ -210,7 +210,7 @@ public class AuthorizationServerConfiguration {
     @Bean
     public OAuth2TokenGenerator<OAuth2Token> tokenGenerator() {
         JwtGenerator jwtGenerator = new JwtGenerator(new NimbusJwtEncoder(jwkSource()));
-        jwtGenerator.setJwtCustomizer(new CustomTokenCustomizer());
+        jwtGenerator.setJwtCustomizer(new CustomJwtTokenCustomizer());
         // OPAQUE模式：访问令牌和刷新令牌均使用不透明格式（UUID），JwtGenerator仅用于生成ID令牌
         if (AuthTokenModeEnum.OPAQUE.equals(this.authProperty.getTokenMode())) {
             OpaqueAccessTokenGenerator opaqueAccessTokenGenerator = new OpaqueAccessTokenGenerator();

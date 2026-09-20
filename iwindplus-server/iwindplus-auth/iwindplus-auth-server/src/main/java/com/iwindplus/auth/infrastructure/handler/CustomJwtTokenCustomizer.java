@@ -23,12 +23,12 @@ import org.springframework.security.oauth2.server.authorization.token.JwtEncodin
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 
 /**
- * 自定义token扩展信息处理器.
+ * 自定义jwt token扩展信息处理器.
  *
  * @author zengdegui
  * @since 2024/07/08 22:25
  */
-public class CustomTokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext> {
+public class CustomJwtTokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext> {
 
     @Override
     public void customize(JwtEncodingContext context) {
