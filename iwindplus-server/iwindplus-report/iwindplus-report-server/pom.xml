@@ -137,10 +137,6 @@
             <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-export-task</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.iwindplus.flow</groupId>
-            <artifactId>iwindplus-flow-client</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
