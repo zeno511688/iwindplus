@@ -55,13 +55,22 @@ public class ApiSignFilter extends BaseGatewayFilter {
 
     private static final List<String> DEFAULT_IGNORED_APIS =
         List.of(
-            "/static/**",
-            "/api-docs",
-            "/swagger-ui/index.html",
-            "/actuator/**",
-            "/api/imWs/ws",
-            "/oauth2/token",
-            "/inner/**"
+            "**/oauth2/token",
+            "**/oauth2/authorize",
+            "**/oauth2/introspect",
+            "**/oauth2/revoke",
+            "**/oauth2/jwks",
+            "**/oauth2/consent",
+            "**/static/**",
+            "**/doc.html",
+            "**/v3/api-docs",
+            "**/webjars/**",
+            "**/swagger-resources/**",
+            "**/swagger-ui/**",
+            "**/actuator/**",
+            "**/favicon.ico",
+            "**/api/imWs/ws",
+            "**/inner/**"
         );
 
     private final ApiSignProperty property;

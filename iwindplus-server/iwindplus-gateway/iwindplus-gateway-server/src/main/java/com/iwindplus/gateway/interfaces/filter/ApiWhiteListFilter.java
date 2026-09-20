@@ -52,6 +52,7 @@ public class ApiWhiteListFilter extends BaseGatewayFilter {
         "**/oauth2/revoke",
         "**/oauth2/jwks",
         "**/oauth2/consent",
+        "**/static/**",
         "**/doc.html",
         "**/v3/api-docs",
         "**/webjars/**",
