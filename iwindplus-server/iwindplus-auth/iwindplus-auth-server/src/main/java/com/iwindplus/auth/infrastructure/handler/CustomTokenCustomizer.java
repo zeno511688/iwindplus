@@ -7,7 +7,6 @@
 
 package com.iwindplus.auth.infrastructure.handler;
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.iwindplus.auth.infrastructure.model.dto.OauthUserDTO;
@@ -40,10 +39,22 @@ public class CustomTokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingC
             return;
         }
         OauthUserDTO userDetails = (OauthUserDTO) context.getPrincipal().getPrincipal();
-        BeanUtil.beanToMap(userDetails).entrySet().stream()
-            .filter(Objects::nonNull)
-            .filter(entry -> ObjectUtil.isNotEmpty(entry.getValue()) && !UserConstant.PASSWORD.equals(entry.getKey()))
-            .forEach(entry -> claims.claim(entry.getKey(), entry.getValue()));
+        // 白名单方式写入非敏感字段，避免手机、姓名、邮箱、身份证等敏感信息泄漏到JWT中
+        if (ObjectUtil.isNotNull(userDetails.getUserId())) {
+            claims.claim(UserConstant.USER_ID, userDetails.getUserId());
+        }
+        if (ObjectUtil.isNotNull(userDetails.getOrgId())) {
+            claims.claim(UserConstant.ORG_ID, userDetails.getOrgId());
+        }
+        if (ObjectUtil.isNotNull(userDetails.getJobNumber())) {
+            claims.claim(UserConstant.JOB_NUMBER, userDetails.getJobNumber());
+        }
+        if (ObjectUtil.isNotNull(userDetails.getUsername())) {
+            claims.claim(UserConstant.USERNAME, userDetails.getUsername());
+        }
+        if (ObjectUtil.isNotNull(userDetails.getNickName())) {
+            claims.claim(UserConstant.NICK_NAME, userDetails.getNickName());
+        }
         final Set<GrantedAuthority> authorities = userDetails.getAuthorities();
         if (CollUtil.isNotEmpty(authorities)) {
             Set<String> permissions = AuthorityUtils.authorityListToSet(authorities)
