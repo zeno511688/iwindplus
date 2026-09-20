@@ -8,13 +8,12 @@
 package com.iwindplus.auth.infrastructure.persistence;
 
 import com.iwindplus.auth.common.constant.AuthConstant;
-import java.util.Optional;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsent;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 /**
@@ -23,16 +22,20 @@ import org.springframework.util.Assert;
  * @author zengdegui
  * @since 2024-9-27
  */
-@Service
-@RequiredArgsConstructor
+@Slf4j
+@Component
 public class RedisOauth2AuthorizationConsentServiceImpl implements OAuth2AuthorizationConsentService {
 
     private final RedisTemplate<String, Object> redisTemplate;
 
+    public RedisOauth2AuthorizationConsentServiceImpl(
+        @Qualifier("oauth2RedisTemplate") RedisTemplate<String, Object> redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
+
     @Override
     public void save(OAuth2AuthorizationConsent authorizationConsent) {
         Assert.notNull(authorizationConsent, "authorizationConsent cannot be null");
-        this.buildRedisTemplate();
         String registeredClientId = authorizationConsent.getRegisteredClientId();
         String principalName = authorizationConsent.getPrincipalName();
         String key = this.buildAuthorizationKey(registeredClientId, principalName);
@@ -53,14 +56,8 @@ public class RedisOauth2AuthorizationConsentServiceImpl implements OAuth2Authori
     public OAuth2AuthorizationConsent findById(String registeredClientId, String principalName) {
         Assert.hasText(registeredClientId, "registeredClientId cannot be empty");
         Assert.hasText(principalName, "principalName cannot be empty");
-        this.buildRedisTemplate();
         String key = this.buildAuthorizationKey(registeredClientId, principalName);
-        return (OAuth2AuthorizationConsent) Optional.ofNullable(this.redisTemplate.opsForValue().get(key)).orElse(null);
-    }
-
-    private void buildRedisTemplate() {
-        this.redisTemplate.setKeySerializer(RedisSerializer.string());
-        this.redisTemplate.setValueSerializer(RedisSerializer.java());
+        return (OAuth2AuthorizationConsent) this.redisTemplate.opsForValue().get(key);
     }
 
     /**

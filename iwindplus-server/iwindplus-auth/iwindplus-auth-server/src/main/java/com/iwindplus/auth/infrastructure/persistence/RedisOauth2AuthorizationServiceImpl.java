@@ -14,11 +14,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2DeviceCode;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
@@ -30,7 +29,7 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationCode;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 /**
@@ -39,16 +38,20 @@ import org.springframework.util.Assert;
  * @author zengdegui
  * @since 2024-9-27
  */
-@Service
-@RequiredArgsConstructor
+@Slf4j
+@Component
 public class RedisOauth2AuthorizationServiceImpl implements OAuth2AuthorizationService {
 
     private final RedisTemplate<String, Object> redisTemplate;
 
+    public RedisOauth2AuthorizationServiceImpl(
+        @Qualifier("oauth2RedisTemplate") RedisTemplate<String, Object> redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
+
     @Override
     public void save(OAuth2Authorization authorization) {
         Assert.notNull(authorization, "authorization cannot be null");
-        this.buildRedisTemplate();
         final String idKey = RedisOauth2AuthorizationServiceImpl.buildAuthorizationKey(AuthConstant.OAUTH2_PARAMETER_NAME_ID, authorization.getId());
         this.redisTemplate.opsForValue().set(idKey, authorization);
         if (this.isState(authorization)) {
@@ -157,23 +160,16 @@ public class RedisOauth2AuthorizationServiceImpl implements OAuth2AuthorizationS
 
     @Override
     public OAuth2Authorization findById(String id) {
-        this.buildRedisTemplate();
         final String idKey = RedisOauth2AuthorizationServiceImpl.buildAuthorizationKey(AuthConstant.OAUTH2_PARAMETER_NAME_ID, id);
-        return (OAuth2Authorization) Optional.ofNullable(this.redisTemplate.opsForValue().get(idKey)).orElse(null);
+        return (OAuth2Authorization) this.redisTemplate.opsForValue().get(idKey);
     }
 
     @Override
     public OAuth2Authorization findByToken(String token, OAuth2TokenType tokenType) {
         Assert.hasText(token, "token cannot be empty");
         Assert.notNull(tokenType, "tokenType cannot be empty");
-        this.buildRedisTemplate();
         return (OAuth2Authorization) this.redisTemplate.opsForValue()
             .get(RedisOauth2AuthorizationServiceImpl.buildAuthorizationKey(tokenType.getValue(), token));
-    }
-
-    private void buildRedisTemplate() {
-        this.redisTemplate.setKeySerializer(RedisSerializer.string());
-        this.redisTemplate.setValueSerializer(RedisSerializer.java());
     }
 
     private boolean isState(OAuth2Authorization authorization) {
