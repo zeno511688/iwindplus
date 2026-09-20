@@ -21,15 +21,16 @@ import com.iwindplus.base.util.JacksonUtil;
 import com.iwindplus.base.util.PathMatchUtil;
 import com.iwindplus.base.util.ReactorUtil;
 import com.iwindplus.base.web.domain.property.FilterProperty;
-import com.iwindplus.gateway.interfaces.filter.base.BaseGatewayFilter;
 import com.iwindplus.gateway.infrastructure.client.AuthClient;
 import com.iwindplus.gateway.infrastructure.client.MgtClient;
 import com.iwindplus.gateway.infrastructure.client.vo.ResourceVO;
-import com.iwindplus.gateway.infrastructure.configuration.AuthProperty;
-import com.iwindplus.gateway.infrastructure.configuration.LogProperty;
-import com.iwindplus.gateway.infrastructure.constant.GatewayFilterConstant;
-import com.iwindplus.gateway.infrastructure.constant.GatewayWebExchangeConstant;
+import com.iwindplus.gateway.infrastructure.configuration.property.AuthProperty;
+import com.iwindplus.gateway.infrastructure.configuration.property.LogProperty;
+import com.iwindplus.gateway.infrastructure.configuration.constant.GatewayFilterConstant;
+import com.iwindplus.gateway.infrastructure.configuration.constant.GatewayWebExchangeConstant;
+import com.iwindplus.gateway.infrastructure.configuration.enums.AuthTokenModeEnum;
 import com.iwindplus.gateway.infrastructure.support.GatewayUtil;
+import com.iwindplus.gateway.interfaces.filter.base.BaseGatewayFilter;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -156,8 +157,12 @@ public class AuthFilter extends BaseGatewayFilter {
     }
 
     private Mono<UserBaseVO> resolveUser(String token, AuthProperty property) {
-        // 本地解析
-        if (Boolean.FALSE.equals(property.getEnabledRemoteToken())) {
+        // OPAQUE模式：不透明令牌无法本地解析，强制走远程校验
+        boolean useRemote = Boolean.TRUE.equals(property.getEnabledRemoteToken())
+            || AuthTokenModeEnum.OPAQUE.equals(property.getTokenMode());
+
+        // 本地解析（仅JWT模式）
+        if (!useRemote) {
             return Mono.justOrEmpty(HttpsUtil.getUserInfo(token))
                 .switchIfEmpty(Mono.error(
                     new BizException(BizCodeEnum.INVALID_ACCESS_TOKEN)));

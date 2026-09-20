@@ -33,6 +33,8 @@ http:
     # 是否启用限流熔断
     enabled-circuit-breaker: true
 auth:
+  # Token模式：JWT-生成jwt令牌（默认）；OPAQUE-只生成不透明令牌id，用户信息仅存储在redis中
+  token-mode: JWT
   # 是否启用校验访问token过期
   enabled-token-expired-valid: false
   mail:

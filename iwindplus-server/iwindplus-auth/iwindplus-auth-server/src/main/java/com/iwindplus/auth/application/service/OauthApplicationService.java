@@ -17,10 +17,12 @@ import com.iwindplus.auth.infrastructure.model.event.LoginLogEvent;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import jakarta.servlet.http.HttpServletRequest;
+import java.security.Principal;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -55,11 +57,14 @@ public class OauthApplicationService {
             return;
         }
         OAuth2AccessToken accessToken = authorization.getAccessToken().getToken();
+        Authentication authentication = authorization.getAttribute(Principal.class.getName());
 
         final LogConfig log = property.getLog();
         if (Boolean.TRUE.equals(log.getEnabled()) && Boolean.TRUE.equals(log.getEnabledLogout())) {
-            LoginLogDTO entity = CustomAuthenticationSuccessHandler.buildLoginLog(request, accessToken, AuthModuleEnum.LOGOUT.getValue(),
-                AuthModuleEnum.LOGOUT.getDesc());
+            LoginLogDTO entity = CustomAuthenticationSuccessHandler.buildLoginLog(
+                property,
+                request, accessToken, authentication,
+                AuthModuleEnum.LOGOUT.getValue(), AuthModuleEnum.LOGOUT.getDesc());
             // 日志发布事件
             if (Objects.nonNull(entity)) {
                 publisher.publishEvent(new LoginLogEvent(this, entity));

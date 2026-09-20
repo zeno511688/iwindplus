@@ -5,7 +5,7 @@
  *
  */
 
-package com.iwindplus.gateway.infrastructure.configuration;
+package com.iwindplus.gateway.infrastructure.configuration.property;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -8,7 +8,7 @@ package com.iwindplus.gateway.interfaces.filter;
 
 import com.iwindplus.base.util.ReactorUtil;
 import com.iwindplus.gateway.interfaces.filter.base.BaseGatewayFilter;
-import com.iwindplus.gateway.infrastructure.constant.GatewayFilterConstant;
+import com.iwindplus.gateway.infrastructure.configuration.constant.GatewayFilterConstant;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;

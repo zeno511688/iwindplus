@@ -5,8 +5,9 @@
  *
  */
 
-package com.iwindplus.gateway.infrastructure.configuration;
+package com.iwindplus.gateway.infrastructure.configuration.property;
 
+import com.iwindplus.gateway.infrastructure.configuration.enums.AuthTokenModeEnum;
 import java.time.Duration;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -36,6 +37,12 @@ public class AuthProperty {
      */
     @Builder.Default
     private Boolean enabled = Boolean.TRUE;
+
+    /**
+     * Token模式：JWT-生成jwt令牌（默认）；OPAQUE-只生成不透明令牌id，必须走远程校验.
+     */
+    @Builder.Default
+    private AuthTokenModeEnum tokenMode = AuthTokenModeEnum.JWT;
 
     /**
      * 是否启用远程token校验.

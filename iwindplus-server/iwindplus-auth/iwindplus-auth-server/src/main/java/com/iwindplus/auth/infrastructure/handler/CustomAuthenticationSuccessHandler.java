@@ -15,17 +15,20 @@ import cn.hutool.http.useragent.Platform;
 import cn.hutool.http.useragent.UserAgent;
 import cn.hutool.http.useragent.UserAgentUtil;
 import com.iwindplus.auth.common.enums.AuthModuleEnum;
+import com.iwindplus.auth.common.enums.AuthTokenModeEnum;
 import com.iwindplus.auth.infrastructure.configuration.AuthProperty;
 import com.iwindplus.auth.infrastructure.configuration.AuthProperty.CookieConfig;
 import com.iwindplus.auth.infrastructure.configuration.AuthProperty.LogConfig;
 import com.iwindplus.auth.infrastructure.extension.constant.GrantTypeConstant;
 import com.iwindplus.auth.infrastructure.model.dto.LoginLogDTO;
 import com.iwindplus.auth.infrastructure.model.dto.LoginLogDTO.LoginLogDTOBuilder;
+import com.iwindplus.auth.infrastructure.model.dto.OauthUserDTO;
 import com.iwindplus.auth.infrastructure.model.event.LoginLogEvent;
 import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.OauthConstant;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.domain.vo.UserBaseVO;
+import com.iwindplus.base.util.BeanCopierUtil;
 import com.iwindplus.base.util.HttpsUtil;
 import com.iwindplus.base.web.support.WebManager;
 import jakarta.servlet.http.HttpServletRequest;
@@ -104,10 +107,10 @@ public record CustomAuthenticationSuccessHandler(AuthProperty property
         webManager.responseData(response, HttpStatus.OK, result);
 
         // 记录登录日志
-        logRecord(request, accessToken);
+        logRecord(request, accessToken, authentication);
     }
 
-    private void logRecord(HttpServletRequest request, OAuth2AccessToken accessToken) {
+    private void logRecord(HttpServletRequest request, OAuth2AccessToken accessToken, Authentication authentication) {
         final LogConfig cfg = property.getLog();
         if (Boolean.FALSE.equals(cfg.getEnabled())) {
             return;
@@ -126,13 +129,17 @@ public record CustomAuthenticationSuccessHandler(AuthProperty property
             || GrantTypeConstant.MAIL_CODE.getValue().equals(grantType)
             || GrantTypeConstant.BIND_CODE.getValue().equals(grantType));
         if (flag) {
-            entity = CustomAuthenticationSuccessHandler.buildLoginLog(request, accessToken, AuthModuleEnum.LOGIN.getValue(),
+            entity = CustomAuthenticationSuccessHandler.buildLoginLog(
+                property,
+                request, accessToken, authentication, AuthModuleEnum.LOGIN.getValue(),
                 AuthModuleEnum.LOGIN.getDesc());
         }
 
         // 刷新token日志
         if (Boolean.TRUE.equals(cfg.getEnabledRefreshToken()) && OAuth2ParameterNames.REFRESH_TOKEN.equals(grantType)) {
-            entity = CustomAuthenticationSuccessHandler.buildLoginLog(request, accessToken, AuthModuleEnum.REFRESH_TOKEN.getValue(),
+            entity = CustomAuthenticationSuccessHandler.buildLoginLog(
+                property,
+                request, accessToken, authentication, AuthModuleEnum.REFRESH_TOKEN.getValue(),
                 AuthModuleEnum.REFRESH_TOKEN.getDesc());
         }
 
@@ -145,14 +152,31 @@ public record CustomAuthenticationSuccessHandler(AuthProperty property
     /**
      * LoginLogDTO.
      *
-     * @param request     request
-     * @param accessToken accessToken
-     * @param moduleName  moduleName
-     * @param moduleDesc  moduleDesc
+     * @param property       pro
+     * @param request        request
+     * @param accessToken    accessToken
+     * @param authentication authentication
+     * @param moduleName     moduleName
+     * @param moduleDesc     moduleDesc
      * @return LoginLogDTO
      */
-    public static LoginLogDTO buildLoginLog(HttpServletRequest request, OAuth2AccessToken accessToken, String moduleName, String moduleDesc) {
-        final UserBaseVO data = HttpsUtil.getUserInfo(accessToken.getTokenValue());
+    public static LoginLogDTO buildLoginLog(
+        AuthProperty property,
+        HttpServletRequest request,
+        OAuth2AccessToken accessToken,
+        Authentication authentication,
+        String moduleName, String moduleDesc) {
+        UserBaseVO data = null;
+        // JWT模式从token解析用户信息；OPAQUE模式从认证上下文获取
+        if (AuthTokenModeEnum.JWT.equals(property.getTokenMode())) {
+            data = HttpsUtil.getUserInfo(accessToken.getTokenValue());
+        }
+        if (AuthTokenModeEnum.OPAQUE.equals(property.getTokenMode())) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof OauthUserDTO oauthUser) {
+                data = BeanCopierUtil.copyProperties(oauthUser, UserBaseVO::new);
+            }
+        }
         if (Objects.isNull(data)) {
             return null;
         }

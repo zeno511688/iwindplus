@@ -5,7 +5,7 @@
  *
  */
 
-package com.iwindplus.gateway.infrastructure.constant;
+package com.iwindplus.gateway.infrastructure.configuration.constant;
 
 import com.iwindplus.base.domain.constant.CommonConstant;
 import org.springframework.core.Ordered;

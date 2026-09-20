@@ -7,6 +7,8 @@
 
 package com.iwindplus.auth.infrastructure.configuration;
 
+import com.iwindplus.auth.common.enums.AuthTokenModeEnum;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,8 +16,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
-
-import java.util.List;
 
 /**
  * 登录日志配置相关属性.
@@ -29,6 +29,12 @@ import java.util.List;
 @AllArgsConstructor
 @ConfigurationProperties(prefix = "auth")
 public class AuthProperty {
+
+    /**
+     * Token模式：JWT-生成jwt令牌（默认）；OPAQUE-只生成不透明令牌id，用户信息仅存储在redis中.
+     */
+    @Builder.Default
+    private AuthTokenModeEnum tokenMode = AuthTokenModeEnum.JWT;
 
     /**
      * 忽略的路径.

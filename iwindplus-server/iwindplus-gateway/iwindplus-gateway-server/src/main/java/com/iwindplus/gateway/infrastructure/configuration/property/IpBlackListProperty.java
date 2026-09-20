@@ -5,10 +5,9 @@
  *
  */
 
-package com.iwindplus.gateway.infrastructure.configuration;
+package com.iwindplus.gateway.infrastructure.configuration.property;
 
 import java.time.Duration;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +17,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 
 /**
- * API白名单配置.
+ * IP黑名单配置.
  *
  * @author zengdegui
  * @since 2026/09/14 20:21
@@ -28,8 +27,8 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
 @NoArgsConstructor
 @AllArgsConstructor
 @RefreshScope
-@ConfigurationProperties(prefix = "gateway.api-white-list")
-public class ApiWhiteListProperty {
+@ConfigurationProperties(prefix = "gateway.ip-black-list")
+public class IpBlackListProperty {
 
     /**
      * 是否启用.
@@ -54,9 +53,4 @@ public class ApiWhiteListProperty {
      */
     @Builder.Default
     private Duration cacheRefresh = Duration.ofMinutes(15L);
-
-    /**
-     * 忽略的API.
-     */
-    private List<String> ignoredApi;
 }

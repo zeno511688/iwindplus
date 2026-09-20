@@ -65,6 +65,8 @@ gateway:
   auth:
     # 是否开启权限过滤器
     enabled: true
+    # Token模式：JWT-本地解析jwt令牌（默认）；OPAQUE-强制走远程校验
+    token-mode: JWT
     # 是否启用远程token校验
     enabled-remote-token: false
     # 是否开启API权限过滤器

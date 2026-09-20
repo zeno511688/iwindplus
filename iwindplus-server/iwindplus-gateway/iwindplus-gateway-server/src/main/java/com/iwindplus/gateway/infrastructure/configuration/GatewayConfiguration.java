@@ -7,6 +7,15 @@
 
 package com.iwindplus.gateway.infrastructure.configuration;
 
+import com.iwindplus.gateway.infrastructure.configuration.property.ApiSignProperty;
+import com.iwindplus.gateway.infrastructure.configuration.property.ApiWhiteListProperty;
+import com.iwindplus.gateway.infrastructure.configuration.property.AuthProperty;
+import com.iwindplus.gateway.infrastructure.configuration.property.BaseProperty;
+import com.iwindplus.gateway.infrastructure.configuration.property.GatewayRouteProperty;
+import com.iwindplus.gateway.infrastructure.configuration.property.IpBlackListProperty;
+import com.iwindplus.gateway.infrastructure.configuration.property.LogProperty;
+import com.iwindplus.gateway.infrastructure.configuration.property.OperateExtendProperty;
+import com.iwindplus.gateway.infrastructure.configuration.property.ServerApiProperty;
 import com.iwindplus.gateway.infrastructure.support.GatewayUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -29,7 +38,6 @@ import reactor.core.publisher.Mono;
         GatewayRouteProperty.class,
         ServerApiProperty.class,
         BaseProperty.class,
-        RateLimiterProperty.class,
         ApiSignProperty.class,
         ApiWhiteListProperty.class,
         IpBlackListProperty.class,

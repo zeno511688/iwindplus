@@ -5,20 +5,20 @@
  *
  */
 
-package com.iwindplus.gateway.infrastructure.configuration;
+package com.iwindplus.gateway.infrastructure.configuration.property;
 
 import java.time.Duration;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.redisson.api.RateType;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 
 /**
- * 限流过滤器配置.
+ * API白名单配置.
  *
  * @author zengdegui
  * @since 2026/09/14 20:21
@@ -28,22 +28,14 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
 @NoArgsConstructor
 @AllArgsConstructor
 @RefreshScope
-@ConfigurationProperties(prefix = "gateway.rate-limiter")
-public class RateLimiterProperty {
+@ConfigurationProperties(prefix = "gateway.api-white-list")
+public class ApiWhiteListProperty {
 
     /**
      * 是否启用.
      */
     @Builder.Default
     private Boolean enabled = Boolean.TRUE;
-
-    /**
-     * 是否按路径限流（可选，默认：true）.
-     *
-     * @return boolean
-     */
-    @Builder.Default
-    private Boolean enabledLimitPath = Boolean.FALSE;
 
     /**
      * 最大缓存数量.
@@ -64,20 +56,7 @@ public class RateLimiterProperty {
     private Duration cacheRefresh = Duration.ofMinutes(15L);
 
     /**
-     * 限流类型（可选，默认：OVERALL）.
+     * 忽略的API.
      */
-    @Builder.Default
-    private RateType rateType = RateType.OVERALL;
-
-    /**
-     * 限流次数，每个时间窗口允许请求数量（可选，默认：2000）.
-     */
-    @Builder.Default
-    private Long rate = 2000L;
-
-    /**
-     * 限流速率（可选，默认：1s）.
-     */
-    @Builder.Default
-    private Duration rateInterval = Duration.ofSeconds(1);
+    private List<String> ignoredApi;
 }

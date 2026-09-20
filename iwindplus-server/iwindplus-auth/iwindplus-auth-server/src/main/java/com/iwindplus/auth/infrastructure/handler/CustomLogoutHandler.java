@@ -18,6 +18,7 @@ import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.web.support.WebManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.security.Principal;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -61,8 +62,11 @@ public record CustomLogoutHandler(OAuth2AuthorizationService authorizationServic
         // 记录登录日志
         final LogConfig log = authProperty.getLog();
         if (Boolean.TRUE.equals(log.getEnabled()) && Boolean.TRUE.equals(log.getEnabledLogout())) {
-            LoginLogDTO entity = CustomAuthenticationSuccessHandler.buildLoginLog(request, accessToken.getToken(), AuthModuleEnum.LOGOUT.getValue(),
-                AuthModuleEnum.LOGOUT.getDesc());
+            LoginLogDTO entity = CustomAuthenticationSuccessHandler.buildLoginLog(
+                authProperty,
+                request, accessToken.getToken(),
+                authorization.getAttribute(Principal.class.getName()),
+                AuthModuleEnum.LOGOUT.getValue(), AuthModuleEnum.LOGOUT.getDesc());
             // 日志发布事件
             if (Objects.nonNull(entity)) {
                 publisher.publishEvent(new LoginLogEvent(this, entity));
