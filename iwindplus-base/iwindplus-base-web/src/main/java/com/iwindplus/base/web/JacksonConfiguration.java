@@ -16,7 +16,6 @@ import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
-import org.springframework.boot.autoconfigure.jackson.JacksonProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,9 +34,6 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 @EnableConfigurationProperties(JacksonProperty.class)
 @ConditionalOnProperty(prefix = "jackson", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class JacksonConfiguration {
-
-    @Resource
-    private JacksonProperties jacksonProperties;
 
     @Resource
     private JacksonProperty property;
@@ -67,7 +63,6 @@ public class JacksonConfiguration {
     public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
         final Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer =
             JacksonUtil.jackson2ObjectMapperBuilderCustomizer(
-                jacksonProperties,
                 property.getSensitive().getEnabled(),
                 property.getMybatisPage().getEnabled());
         log.info("Jackson2ObjectMapperBuilderCustomizer={}", jackson2ObjectMapperBuilderCustomizer);

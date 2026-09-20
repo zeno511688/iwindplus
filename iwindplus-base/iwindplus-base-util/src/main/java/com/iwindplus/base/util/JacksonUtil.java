@@ -42,6 +42,7 @@ import com.iwindplus.base.util.support.PageSerializer;
 import com.iwindplus.base.util.support.SensitiveAnnotationIntrospect;
 import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -53,7 +54,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Function;
@@ -61,9 +61,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
-import org.springframework.boot.autoconfigure.jackson.JacksonProperties;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 /**
  * jackson工具类.
@@ -433,75 +431,81 @@ public class JacksonUtil {
      * @return ObjectMapper
      */
     public static ObjectMapper createDefaultObject() {
-        JacksonProperties properties = new JacksonProperties();
-        Jackson2ObjectMapperBuilderCustomizer customizer =
-            jackson2ObjectMapperBuilderCustomizer(
-                properties,
-                DEFAULT_SENSITIVE_ENABLED,
-                DEFAULT_MYBATIS_PAGE_ENABLED
-            );
-        Jackson2ObjectMapperBuilder builder = Jackson2ObjectMapperBuilder.json();
-        customizer.customize(builder);
-        return builder.build();
+        ObjectMapper mapper = new ObjectMapper();
+        configureObjectMapper(
+            mapper,
+            DEFAULT_SENSITIVE_ENABLED,
+            DEFAULT_MYBATIS_PAGE_ENABLED
+        );
+        return mapper;
     }
 
     /**
      * 创建 Jackson2ObjectMapperBuilderCustomizer.
      *
-     * @param jacksonProperties  jackson配置
      * @param sensitiveEnabled   是否开启敏感信息脱敏
      * @param mybatisPageEnabled 是否开启mybatis自定义分页响应
      * @return Jackson2ObjectMapperBuilderCustomizer
      */
     public static Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer(
-        JacksonProperties jacksonProperties,
         boolean sensitiveEnabled,
         boolean mybatisPageEnabled) {
-        return builder -> {
-            String dateFormat = Optional.ofNullable(jacksonProperties)
-                .map(JacksonProperties::getDateFormat)
-                .orElse(DatePattern.NORM_DATETIME_PATTERN);
-            Locale locale = Optional.ofNullable(jacksonProperties)
-                .map(JacksonProperties::getLocale)
-                .orElse(Locale.getDefault());
-            TimeZone timeZone = Optional.ofNullable(jacksonProperties)
-                .map(JacksonProperties::getTimeZone)
-                .orElse(TimeZone.getDefault());
+        return builder -> builder.postConfigurer(mapper ->
+            configureObjectMapper(mapper, sensitiveEnabled, mybatisPageEnabled));
+    }
 
-            builder.simpleDateFormat(dateFormat)
-                .locale(locale)
-                .timeZone(timeZone);
+    /**
+     * 配置 ObjectMapper.
+     *
+     * @param mapper             ObjectMapper
+     * @param sensitiveEnabled   是否开启敏感信息脱敏
+     * @param mybatisPageEnabled 是否开启mybatis自定义分页响应
+     */
+    private static void configureObjectMapper(
+        ObjectMapper mapper,
+        boolean sensitiveEnabled,
+        boolean mybatisPageEnabled) {
+        String dateFormat = DatePattern.NORM_DATETIME_PATTERN;
+        Locale locale = Locale.getDefault();
+        TimeZone timeZone = TimeZone.getDefault();
 
-            if (sensitiveEnabled) {
-                builder.annotationIntrospector(new SensitiveAnnotationIntrospect(true));
-            }
+        mapper.setDateFormat(new SimpleDateFormat(dateFormat));
+        mapper.setLocale(locale);
+        mapper.setTimeZone(timeZone);
 
-            final List<Module> modules = new ArrayList<>(4);
-            modules.add(buildTimeModule(dateFormat));
-            if (mybatisPageEnabled) {
-                modules.add(buildMybatisPageModule(true));
-            }
-            builder.modules(modules);
+        if (sensitiveEnabled) {
+            mapper.setAnnotationIntrospector(new SensitiveAnnotationIntrospect(true));
+        }
 
-            builder.serializationInclusion(JsonInclude.Include.NON_EMPTY)
-                .featuresToEnable(
-                    SerializationFeature.WRITE_ENUMS_USING_TO_STRING,
-                    JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN,
-                    SerializationFeature.WRITE_CHAR_ARRAYS_AS_JSON_ARRAYS,
-                    SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS,
-                    DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY,
-                    DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT,
-                    DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL,
-                    DeserializationFeature.READ_ENUMS_USING_TO_STRING,
-                    JsonWriteFeature.WRITE_NUMBERS_AS_STRINGS.mappedFeature()
-                )
-                .featuresToDisable(
-                    SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
-                    SerializationFeature.FAIL_ON_EMPTY_BEANS,
-                    DeserializationFeature.ACCEPT_FLOAT_AS_INT,
-                    DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
-                );
-        };
+        final List<Module> modules = new ArrayList<>(4);
+        modules.add(buildTimeModule(dateFormat));
+        if (mybatisPageEnabled) {
+            modules.add(buildMybatisPageModule(true));
+        }
+        modules.forEach(mapper::registerModule);
+
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+        mapper.enable(
+            SerializationFeature.WRITE_ENUMS_USING_TO_STRING,
+            SerializationFeature.WRITE_CHAR_ARRAYS_AS_JSON_ARRAYS,
+            SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS
+        );
+        mapper.enable(
+            DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY,
+            DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT,
+            DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL,
+            DeserializationFeature.READ_ENUMS_USING_TO_STRING
+        );
+        mapper.enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN);
+        mapper.enable(JsonWriteFeature.WRITE_NUMBERS_AS_STRINGS.mappedFeature());
+        mapper.disable(
+            SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
+            SerializationFeature.FAIL_ON_EMPTY_BEANS
+        );
+        mapper.disable(
+            DeserializationFeature.ACCEPT_FLOAT_AS_INT,
+            DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
+        );
     }
 
     private static Module buildTimeModule(String dateFormat) {
