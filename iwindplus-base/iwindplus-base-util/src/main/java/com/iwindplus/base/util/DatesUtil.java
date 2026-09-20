@@ -14,6 +14,7 @@ import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.ObjectUtil;
+import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import java.time.Duration;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -263,6 +265,36 @@ public class DatesUtil extends DateUtil {
     }
 
     /**
+     * 根据频率配置计算所有频率的总秒数.
+     * <p>
+     * 用于计算缓存上限等场景，例如频率 "5m,10m,20m,30m" 的总秒数为 3900（5*60+10*60+20*60+30*60）.
+     *
+     * @param frequency 频率字符串，例如 "5s,10s,20s,30s,1m,30m,1h"
+     * @param defaultSeconds 默认秒数（当频率为空或解析失败时返回）
+     * @return 总秒数
+     */
+    public static long calculateTotalSecondsByFrequency(String frequency, long defaultSeconds) {
+        if (CharSequenceUtil.isBlank(frequency)) {
+            return defaultSeconds;
+        }
+        long totalSeconds = 0;
+        for (String freq : CharSequenceUtil.splitTrim(frequency, SymbolConstant.COMMA)) {
+            final Matcher matcher = FREQUENCY_PATTERN.matcher(freq);
+            if (!matcher.matches()) {
+                continue;
+            }
+            final long amount = Long.parseLong(matcher.group(1));
+            final String unit = matcher.group(2);
+            final ChronoUnit chronoUnit = TIME_UNIT_MAP.get(unit);
+            if (Objects.isNull(chronoUnit)) {
+                continue;
+            }
+            totalSeconds += chronoUnit.getDuration().toSeconds() * amount;
+        }
+        return totalSeconds > 0 ? totalSeconds : defaultSeconds;
+    }
+
+    /**
      * 根据频率配置计算后续执行时间.
      *
      * <p>频率按照累计间隔计算。
@@ -289,7 +321,7 @@ public class DatesUtil extends DateUtil {
             return Collections.emptyList();
         }
 
-        final List<String> frequencies = CharSequenceUtil.splitTrim(frequency, ',');
+        final List<String> frequencies = CharSequenceUtil.splitTrim(frequency, SymbolConstant.COMMA);
         final List<Long> result = new ArrayList<>(frequencies.size());
 
         long timestamp = baseTimeMillis;
