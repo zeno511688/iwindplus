@@ -32,7 +32,7 @@ public class ImProperty {
      * 是否启用远程token校验.
      */
     @Builder.Default
-    private Boolean enabledRemoteToken = Boolean.FALSE;
+    private Boolean enabledRemoteToken = Boolean.TRUE;
 
     /**
      * 聊天群扫码加入地址.

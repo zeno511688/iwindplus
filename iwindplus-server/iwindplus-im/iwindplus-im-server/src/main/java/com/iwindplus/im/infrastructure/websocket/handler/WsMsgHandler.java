@@ -83,7 +83,7 @@ public class WsMsgHandler implements IWsMsgHandler {
         final String userInfoStr = httpRequest.getHeader(HeaderConstant.X_USER_INFO.toLowerCase());
         if (ObjectUtil.isEmpty(userInfoStr)) {
             // 为空则从token解析
-            userInfo = HttpsUtil.getUserInfo(token);
+            userInfo = this.getUserBaseVO(token);
         } else {
             userInfo = this.webManager.getUserInfo(userInfoStr);
         }
@@ -185,19 +185,25 @@ public class WsMsgHandler implements IWsMsgHandler {
                 return data;
             }
         } else {
-            if (this.property.getEnabledRemoteToken()) {
-                final ResultVO<UserBaseVO> response = this.authorizationClient.checkAccessToken(token);
-                response.errorThrow();
-                userInfo = response.getBizData();
-            } else {
-                userInfo = HttpsUtil.getUserInfo(token);
-            }
+            userInfo = this.getUserBaseVO(token);
         }
 
         if (Objects.nonNull(userInfo)) {
             UserContextHolder.setContext(userInfo);
         }
 
+        return userInfo;
+    }
+
+    private UserBaseVO getUserBaseVO(String token) {
+        UserBaseVO userInfo;
+        if (this.property.getEnabledRemoteToken()) {
+            final ResultVO<UserBaseVO> response = this.authorizationClient.checkAccessToken(token);
+            response.errorThrow();
+            userInfo = response.getBizData();
+        } else {
+            userInfo = HttpsUtil.getUserInfo(token);
+        }
         return userInfo;
     }
 
