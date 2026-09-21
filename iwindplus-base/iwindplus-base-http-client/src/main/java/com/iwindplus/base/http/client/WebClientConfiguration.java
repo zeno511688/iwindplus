@@ -285,7 +285,7 @@ public class WebClientConfiguration {
                 final URI uri = clientRequest.url();
                 final String host = uri.getHost();
                 final String path = uri.getPath();
-                log.info("WebClient request path={} host={}", path, host);
+                log.debug("WebClient request path={} host={}", path, host);
 
                 // 加载签名配置
                 final ApiSignGenerateDTO entity = this.apiProtectionProvider.buildSignGenerate(path, clientRequest.method().name());
