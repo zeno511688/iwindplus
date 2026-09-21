@@ -8,12 +8,13 @@
 package com.iwindplus.im.infrastructure.websocket.strategy.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.iwindplus.base.util.JacksonUtil;
 import com.iwindplus.im.api.dto.WsSendMsgDTO;
 import com.iwindplus.im.common.enums.CommandEnum;
 import com.iwindplus.im.common.enums.SendStatusEnum;
-import com.iwindplus.im.infrastructure.websocket.strategy.WsMsgExecuteHandler;
 import com.iwindplus.im.infrastructure.persistence.es.DirectMsgDO;
 import com.iwindplus.im.infrastructure.persistence.es.DirectMsgRepository;
+import com.iwindplus.im.infrastructure.websocket.strategy.WsMsgExecuteHandler;
 import com.iwindplus.mgt.client.upms.OrgClient;
 import jakarta.annotation.Resource;
 import java.util.Objects;
@@ -56,7 +57,8 @@ public class DirectMsgWsExecuteHandler extends AbstractWsMsgExecuteHandler imple
             return;
         }
 
-        DirectMsgDO param = BeanUtil.copyProperties(msg, DirectMsgDO.class);
+        DirectMsgDO param = BeanUtil.copyProperties(msg, DirectMsgDO.class, "content");
+        param.setContent(JacksonUtil.toJsonStr(msg.getContent()));
         param.setSenderId(msg.getSendUserId());
         param.setOrgId(msg.getSendOrgId());
         param.setReceiverId(msg.getReceiverId());

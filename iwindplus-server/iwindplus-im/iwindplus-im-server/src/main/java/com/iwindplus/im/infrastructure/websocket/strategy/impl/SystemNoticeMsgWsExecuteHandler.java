@@ -55,7 +55,8 @@ public class SystemNoticeMsgWsExecuteHandler extends AbstractWsMsgExecuteHandler
             msg.setSendOrgId(this.orgClient.getOrgId(msg.getSendUserId()).getBizData());
         }
 
-        SysNoticeMsgDO param = BeanUtil.copyProperties(msg, SysNoticeMsgDO.class);
+        SysNoticeMsgDO param = BeanUtil.copyProperties(msg, SysNoticeMsgDO.class, "content");
+        param.setContent(JacksonUtil.toJsonStr(msg.getContent()));
         param.setSenderId(msg.getSendUserId());
         param.setOrgId(msg.getSendOrgId());
         param.setSendStatus(SendStatusEnum.TO_BE_SENT);

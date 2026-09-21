@@ -8,6 +8,7 @@
 package com.iwindplus.im.infrastructure.websocket.strategy.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.iwindplus.base.util.JacksonUtil;
 import com.iwindplus.im.api.dto.WsSendMsgDTO;
 import com.iwindplus.im.common.enums.CommandEnum;
 import com.iwindplus.im.common.enums.SendStatusEnum;
@@ -56,7 +57,8 @@ public class AddFriendWsMsgExecuteHandler extends AbstractWsMsgExecuteHandler im
             return;
         }
 
-        AddFriendMsgDO param = BeanUtil.copyProperties(msg, AddFriendMsgDO.class);
+        AddFriendMsgDO param = BeanUtil.copyProperties(msg, AddFriendMsgDO.class, "content");
+        param.setContent(JacksonUtil.toJsonStr(msg.getContent()));
         param.setSenderId(msg.getSendUserId());
         param.setOrgId(msg.getSendOrgId());
         param.setReceiverId(msg.getReceiverId());

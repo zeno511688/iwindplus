@@ -60,7 +60,8 @@ public class GroupChatMsgWsExecuteHandler extends AbstractWsMsgExecuteHandler im
             return;
         }
 
-        GroupChatMsgDO param = BeanUtil.copyProperties(msg, GroupChatMsgDO.class);
+        GroupChatMsgDO param = BeanUtil.copyProperties(msg, GroupChatMsgDO.class, "content");
+        param.setContent(JacksonUtil.toJsonStr(msg.getContent()));
         param.setSenderId(msg.getSendUserId());
         param.setOrgId(msg.getSendOrgId());
         param.setSendStatus(SendStatusEnum.TO_BE_SENT);
