@@ -79,6 +79,19 @@
     <logger name="com.alibaba.nacos" level="WARN"/>
     <logger name="com.alibaba.csp.sentinel" level="WARN"/>
     <logger name="org.apache.kafka" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+    <logger name="org.apache.ibatis" level="WARN"/>
+    <logger name="com.baomidou.mybatisplus" level="WARN"/>
+    <logger name="org.apache.http" level="WARN"/>
+    <logger name="io.netty" level="WARN"/>
+    <logger name="org.redisson" level="WARN"/>
+    <logger name="io.lettuce" level="WARN"/>
+    <logger name="org.mongodb" level="WARN"/>
+    <logger name="io.swagger" level="WARN"/>
+    <logger name="org.apache.tomcat" level="WARN"/>
+    <logger name="org.apache.catalina" level="WARN"/>
+    <logger name="com.iwindplus" level="DEBUG"/>
 
     <root level="${rootLevel}">
         <!-- 控制台 -->
