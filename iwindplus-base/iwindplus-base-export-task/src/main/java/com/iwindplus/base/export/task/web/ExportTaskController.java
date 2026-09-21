@@ -9,13 +9,16 @@ package com.iwindplus.base.export.task.web;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.domain.vo.FilePathVO;
 import com.iwindplus.base.domain.vo.ResultVO;
+import com.iwindplus.base.export.task.domain.dto.ExportTaskSearchDTO;
 import com.iwindplus.base.export.task.domain.enums.ExportTaskStatusEnum;
 import com.iwindplus.base.export.task.domain.property.ExportTaskProperty;
+import com.iwindplus.base.export.task.domain.vo.ExportTaskPageVO;
 import com.iwindplus.base.export.task.domain.vo.ExportTaskVO;
 import com.iwindplus.base.export.task.service.ExportTaskService;
 import com.iwindplus.base.http.client.factory.HttpClientExecuteHandlerFactory;
@@ -64,6 +67,19 @@ public class ExportTaskController extends BaseController {
     private final ExportTaskProperty property;
     private final ExportTaskService exportTaskService;
     private final HttpClientExecuteHandlerFactory httpClientExecuteHandlerFactory;
+
+    /**
+     * 列表.
+     *
+     * @param entity 对象
+     * @return ResultVO<IPage < ExportTaskPageVO>>
+     */
+    @Operation(summary = "列表")
+    @GetMapping("page")
+    public ResultVO<IPage<ExportTaskPageVO>> page(@Validated ExportTaskSearchDTO entity) {
+        IPage<ExportTaskPageVO> data = this.exportTaskService.page(entity);
+        return ResultVO.success(data);
+    }
 
     /**
      * 查询导出任务进度.

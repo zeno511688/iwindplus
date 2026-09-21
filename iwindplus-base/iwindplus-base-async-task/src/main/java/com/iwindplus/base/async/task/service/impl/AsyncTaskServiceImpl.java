@@ -252,7 +252,7 @@ public class AsyncTaskServiceImpl implements AsyncTaskService {
         queryWrapper.select(AsyncTaskDO::getId, AsyncTaskDO::getCreatedTimestamp, AsyncTaskDO::getCreatedBy,
             AsyncTaskDO::getModifiedTimestamp, AsyncTaskDO::getModifiedBy, AsyncTaskDO::getVersion,
             AsyncTaskDO::getStatus, AsyncTaskDO::getEnv, AsyncTaskDO::getBizName, AsyncTaskDO::getBizKey, AsyncTaskDO::getBizType,
-            AsyncTaskDO::getExecuteName, AsyncTaskDO::getBizNumber, AsyncTaskDO::getExpireTime,
+            AsyncTaskDO::getExecuteName, AsyncTaskDO::getBizNumber, AsyncTaskDO::getExpireTime, AsyncTaskDO::getProgress,
             AsyncTaskDO::getRetryCount, AsyncTaskDO::getNextRetryTime, AsyncTaskDO::getSubTaskCount, AsyncTaskDO::getCostTime,
             AsyncTaskDO::getRemark
         );

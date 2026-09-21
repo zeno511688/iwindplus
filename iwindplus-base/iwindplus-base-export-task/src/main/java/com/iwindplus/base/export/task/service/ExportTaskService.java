@@ -7,9 +7,12 @@
 
 package com.iwindplus.base.export.task.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.iwindplus.base.export.task.domain.dto.ExportTaskDTO;
+import com.iwindplus.base.export.task.domain.dto.ExportTaskSearchDTO;
 import com.iwindplus.base.export.task.domain.dto.ExportTaskShardSearchDTO;
 import com.iwindplus.base.export.task.domain.dto.ExportTaskStatusEditDTO;
+import com.iwindplus.base.export.task.domain.vo.ExportTaskPageVO;
 import com.iwindplus.base.export.task.domain.vo.ExportTaskVO;
 import java.util.List;
 
@@ -43,6 +46,14 @@ public interface ExportTaskService {
      * @return boolean
      */
     boolean editStatusById(ExportTaskStatusEditDTO entity);
+
+    /**
+     * 分页查询导出任务列表.
+     *
+     * @param entity 查询参数
+     * @return 导出任务列表
+     */
+    IPage<ExportTaskPageVO> page(ExportTaskSearchDTO entity);
 
     /**
      * 分片查询导出任务列表.

@@ -9,21 +9,27 @@ package com.iwindplus.base.export.task.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.export.task.dal.model.ExportTaskDO;
 import com.iwindplus.base.export.task.dal.repository.ExportTaskRepository;
 import com.iwindplus.base.export.task.domain.dto.ExportTaskDTO;
+import com.iwindplus.base.export.task.domain.dto.ExportTaskSearchDTO;
 import com.iwindplus.base.export.task.domain.dto.ExportTaskShardSearchDTO;
 import com.iwindplus.base.export.task.domain.dto.ExportTaskStatusEditDTO;
 import com.iwindplus.base.export.task.domain.property.ExportTaskProperty;
+import com.iwindplus.base.export.task.domain.vo.ExportTaskPageVO;
 import com.iwindplus.base.export.task.domain.vo.ExportTaskVO;
 import com.iwindplus.base.export.task.service.ExportTaskService;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ThreadPoolExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +65,23 @@ public class ExportTaskServiceImpl implements ExportTaskService {
     @Override
     public boolean editStatusById(ExportTaskStatusEditDTO entity) {
         return this.exportTaskRepository.updateStatusById(entity);
+    }
+
+    @Override
+    public IPage<ExportTaskPageVO> page(ExportTaskSearchDTO entity) {
+        PageDTO<ExportTaskDO> page = new PageDTO<>(entity.getCurrent(), entity.getSize());
+        page.setOptimizeCountSql(Boolean.FALSE);
+        page.setOptimizeJoinOfCountSql(Boolean.FALSE);
+
+        LambdaQueryWrapper<ExportTaskDO> queryWrapper = Wrappers.lambdaQuery(ExportTaskDO.class)
+            .orderByDesc(ExportTaskDO::getModifiedTimestamp);
+
+        // 添加查询条件
+        this.addQueryConditions(queryWrapper, entity);
+        showField(queryWrapper);
+
+        final PageDTO<ExportTaskDO> modelPage = this.exportTaskRepository.page(page, queryWrapper);
+        return modelPage.convert(model -> BeanUtil.copyProperties(model, ExportTaskPageVO.class));
     }
 
     @Override
@@ -113,5 +136,42 @@ public class ExportTaskServiceImpl implements ExportTaskService {
             throw new BizException(BizCodeEnum.DATA_NOT_EXIST);
         }
         return BeanUtil.copyProperties(data, ExportTaskVO.class);
+    }
+
+    private void showField(LambdaQueryWrapper<ExportTaskDO> queryWrapper) {
+        queryWrapper.select(ExportTaskDO::getId, ExportTaskDO::getCreatedTimestamp, ExportTaskDO::getCreatedBy,
+            ExportTaskDO::getModifiedTimestamp, ExportTaskDO::getModifiedBy, ExportTaskDO::getVersion,
+            ExportTaskDO::getStatus, ExportTaskDO::getFileName, ExportTaskDO::getFilePath,
+            ExportTaskDO::getExecuteName, ExportTaskDO::getBizNumber, ExportTaskDO::getExpireTime,
+            ExportTaskDO::getRetryCount, ExportTaskDO::getNextRetryTime, ExportTaskDO::getCostTime,
+            ExportTaskDO::getTotalCount, ExportTaskDO::getExportedCount, ExportTaskDO::getProgress,
+            ExportTaskDO::getRemark
+        );
+    }
+
+    /**
+     * 添加查询条件.
+     *
+     * @param queryWrapper 查询包装器
+     * @param entity 查询参数
+     */
+    private void addQueryConditions(LambdaQueryWrapper<ExportTaskDO> queryWrapper, ExportTaskSearchDTO entity) {
+        Optional.ofNullable(entity.getStatus()).ifPresent(status -> queryWrapper.eq(ExportTaskDO::getStatus, status));
+
+        Optional.ofNullable(entity.getFileName())
+            .filter(CharSequenceUtil::isNotBlank)
+            .ifPresent(fileName -> queryWrapper.eq(ExportTaskDO::getFileName, fileName));
+
+        Optional.ofNullable(entity.getFilePath())
+            .filter(CharSequenceUtil::isNotBlank)
+            .ifPresent(filePath -> queryWrapper.eq(ExportTaskDO::getFilePath, filePath));
+
+        Optional.ofNullable(entity.getBizNumber())
+            .filter(CharSequenceUtil::isNotBlank)
+            .ifPresent(bizNumber -> queryWrapper.eq(ExportTaskDO::getBizNumber, bizNumber));
+
+        Optional.ofNullable(entity.getExecuteName())
+            .filter(CharSequenceUtil::isNotBlank)
+            .ifPresent(executeName -> queryWrapper.eq(ExportTaskDO::getExecuteName, executeName));
     }
 }
