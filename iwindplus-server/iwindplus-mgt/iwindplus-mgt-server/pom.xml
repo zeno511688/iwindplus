@@ -141,6 +141,10 @@
         </dependency>
         <dependency>
             <groupId>com.iwindplus.base</groupId>
+            <artifactId>iwindplus-base-oss</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iwindplus.base</groupId>
             <artifactId>iwindplus-base-operate</artifactId>
         </dependency>
         <dependency>
