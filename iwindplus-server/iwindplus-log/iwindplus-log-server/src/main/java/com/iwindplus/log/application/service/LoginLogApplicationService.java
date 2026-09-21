@@ -24,6 +24,7 @@ import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
 import com.iwindplus.base.es.support.EsWrappers;
+import com.iwindplus.base.util.MdcUtil;
 import com.iwindplus.log.api.dto.LoginLogDTO;
 import com.iwindplus.log.common.constant.LogConstant.RedisCacheConstant;
 import com.iwindplus.log.infrastructure.persistence.log.LoginLogDO;
@@ -34,7 +35,6 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpHeaders;
@@ -70,18 +70,18 @@ public class LoginLogApplicationService {
             String requestId = Optional.ofNullable(headerMap)
                 .map(map -> map.get(HeaderConstant.X_REQUESTED_ID))
                 .filter(CharSequenceUtil::isNotBlank)
-                .orElseGet(() -> MDC.get(HeaderConstant.X_REQUESTED_ID));
+                .orElseGet(() -> MdcUtil.get(HeaderConstant.X_REQUESTED_ID));
             entity.setRequestId(requestId);
         }
         if (CharSequenceUtil.isBlank(entity.getIp())) {
             String ip = Optional.ofNullable(headerMap)
                 .map(map -> map.get(HeaderConstant.X_REAL_IP))
                 .filter(CharSequenceUtil::isNotBlank)
-                .orElseGet(() -> MDC.get(HeaderConstant.X_REAL_IP));
+                .orElseGet(() -> MdcUtil.get(HeaderConstant.X_REAL_IP));
             entity.setIp(ip);
         }
         if (CharSequenceUtil.isBlank(entity.getBizTraceId())) {
-            entity.setBizTraceId(MDC.get(HeaderConstant.X_TRACE_ID));
+            entity.setBizTraceId(MdcUtil.get(HeaderConstant.X_TRACE_ID));
         }
         this.buildUserAgent(entity);
         this.buildDevice(entity);
@@ -106,18 +106,18 @@ public class LoginLogApplicationService {
                 if (CharSequenceUtil.isBlank(entity.getRequestId())) {
                     String requestId = Optional.ofNullable(headerMap)
                         .map(map -> map.get(HeaderConstant.X_REQUESTED_ID))
-                        .orElse(MDC.get(HeaderConstant.X_REQUESTED_ID));
+                        .orElse(MdcUtil.get(HeaderConstant.X_REQUESTED_ID));
                     entity.setRequestId(requestId);
                 }
                 if (CharSequenceUtil.isBlank(entity.getIp())) {
                     String ip = Optional.ofNullable(headerMap)
                         .map(map -> map.get(HeaderConstant.X_REAL_IP))
                         .filter(CharSequenceUtil::isNotBlank)
-                        .orElseGet(() -> MDC.get(HeaderConstant.X_REAL_IP));
+                        .orElseGet(() -> MdcUtil.get(HeaderConstant.X_REAL_IP));
                     entity.setIp(ip);
                 }
                 if (CharSequenceUtil.isBlank(entity.getBizTraceId())) {
-                    entity.setBizTraceId(MDC.get(HeaderConstant.X_TRACE_ID));
+                    entity.setBizTraceId(MdcUtil.get(HeaderConstant.X_TRACE_ID));
                 }
                 this.buildUserAgent(entity);
                 this.buildDevice(entity);

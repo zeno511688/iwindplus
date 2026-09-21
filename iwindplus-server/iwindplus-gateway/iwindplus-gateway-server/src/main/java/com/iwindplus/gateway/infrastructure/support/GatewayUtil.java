@@ -29,6 +29,7 @@ import com.iwindplus.base.domain.vo.UserBaseVO;
 import com.iwindplus.base.util.DatesUtil;
 import com.iwindplus.base.util.HttpsUtil;
 import com.iwindplus.base.util.JacksonUtil;
+import com.iwindplus.base.util.MdcUtil;
 import com.iwindplus.base.util.ReactorUtil;
 import com.iwindplus.base.util.domain.dto.ReactorRequestDTO;
 import com.iwindplus.gateway.infrastructure.client.dto.GatewayLogDTO;
@@ -45,7 +46,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
 import org.springframework.cloud.gateway.support.ipresolver.XForwardedRemoteAddressResolver;
@@ -195,7 +195,7 @@ public class GatewayUtil {
 
         final GatewayLogDTOBuilder<?, ?> builder = GatewayLogDTO.builder()
             .requestId(headers.getFirst(HeaderConstant.X_REQUESTED_ID))
-            .bizTraceId(MDC.get(HeaderConstant.X_TRACE_ID))
+            .bizTraceId(MdcUtil.get(HeaderConstant.X_TRACE_ID))
             .ip(headers.getFirst(HeaderConstant.X_REAL_IP))
             .requestSchema(request.getURI().getScheme())
             .requestPath(request.getPath().value())

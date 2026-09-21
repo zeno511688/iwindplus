@@ -17,6 +17,7 @@ import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.base.domain.context.HeaderContextHolder;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.exception.BizException;
+import com.iwindplus.base.util.MdcUtil;
 import com.iwindplus.log.api.dto.MailLogDTO;
 import com.iwindplus.log.common.constant.LogConstant.RedisCacheConstant;
 import com.iwindplus.log.infrastructure.persistence.log.MailLogDO;
@@ -27,7 +28,6 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -60,7 +60,7 @@ public class MailLogApplicationService {
             String requestId = Optional.ofNullable(headerMap)
                 .map(map -> map.get(HeaderConstant.X_REQUESTED_ID))
                 .filter(CharSequenceUtil::isNotBlank)
-                .orElseGet(() -> MDC.get(HeaderConstant.X_REQUESTED_ID));
+                .orElseGet(() -> MdcUtil.get(HeaderConstant.X_REQUESTED_ID));
             entity.setRequestId(requestId);
         }
         if (ObjectUtil.isEmpty(entity.getBizNumber())) {

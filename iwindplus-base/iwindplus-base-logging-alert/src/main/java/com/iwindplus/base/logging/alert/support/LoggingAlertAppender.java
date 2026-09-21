@@ -22,6 +22,7 @@ import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.logging.alert.domain.property.LoggingAlertProperty;
 import com.iwindplus.base.logging.alert.domain.property.LoggingAlertProperty.ChannelCfg;
 import com.iwindplus.base.util.HttpsUtil;
+import com.iwindplus.base.util.MdcUtil;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -30,7 +31,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.slf4j.MDC;
 import org.springframework.core.env.Environment;
 
 /**
@@ -182,7 +182,7 @@ public class LoggingAlertAppender extends AppenderBase<ILoggingEvent> {
             .append("Time：").append(DATE_FORMATTER.format(event.getInstant())).append('\n')
             .append("TimeStamp：").append(event.getTimeStamp()).append('\n')
             .append("Level: ").append(event.getLevel()).append("\n")
-            .append("TraceId: ").append(MDC.get(HeaderConstant.X_TRACE_ID)).append("\n")
+            .append("TraceId: ").append(MdcUtil.get(HeaderConstant.X_TRACE_ID)).append("\n")
             .append("Logger: ").append(event.getLoggerName()).append("\n")
             .append("Thread: ").append(event.getThreadName()).append("\n")
             .append("Message: ").append(event.getFormattedMessage()).append("\n");

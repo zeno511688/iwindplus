@@ -19,6 +19,7 @@ import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.es.support.EsLambdaQueryWrapper;
 import com.iwindplus.base.es.support.EsWrappers;
 import com.iwindplus.base.redis.executor.RedissonExecutor;
+import com.iwindplus.base.util.MdcUtil;
 import com.iwindplus.log.api.dto.MailCaptchaLogDTO;
 import com.iwindplus.log.api.dto.MailSendValidDTO;
 import com.iwindplus.log.common.constant.LogConstant.RedisCacheConstant;
@@ -38,7 +39,6 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -72,7 +72,7 @@ public class MailCaptchaLogApplicationService {
         if (CharSequenceUtil.isBlank(entity.getRequestId())) {
             String requestId = Optional.ofNullable(headerMap)
                 .map(map -> map.get(HeaderConstant.X_REQUESTED_ID))
-                .orElse(MDC.get(HeaderConstant.X_REQUESTED_ID));
+                .orElse(MdcUtil.get(HeaderConstant.X_REQUESTED_ID));
             entity.setRequestId(requestId);
         }
         entity.setUsed(false);

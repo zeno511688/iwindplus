@@ -18,6 +18,7 @@ import com.iwindplus.base.domain.vo.UserBaseVO;
 import com.iwindplus.base.util.CryptoUtil;
 import com.iwindplus.base.util.HttpsUtil;
 import com.iwindplus.base.util.JacksonUtil;
+import com.iwindplus.base.util.MdcUtil;
 import com.iwindplus.base.web.domain.property.FilterProperty;
 import com.iwindplus.base.web.domain.property.FilterProperty.FilterCryptoConfig;
 import jakarta.servlet.FilterChain;
@@ -30,7 +31,6 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -84,17 +84,17 @@ public class RequestFilter extends OncePerRequestFilter {
 
     private void buildRequestedId(Map<String, String> headers) {
         String requestedId = getOrPutHeader(headers, HeaderConstant.X_REQUESTED_ID, IdUtil.simpleUUID());
-        MDC.put(HeaderConstant.X_REQUESTED_ID, requestedId);
+        MdcUtil.set(HeaderConstant.X_REQUESTED_ID, requestedId);
     }
 
     private void buildLanguage(Map<String, String> headers) {
         String language = getOrPutHeader(headers, HttpHeaders.ACCEPT_LANGUAGE, HttpsUtil.buildDefaultLanguage());
-        MDC.put(HttpHeaders.ACCEPT_LANGUAGE, language);
+        MdcUtil.set(HttpHeaders.ACCEPT_LANGUAGE, language);
     }
 
     private void buildRealIp(Map<String, String> headers, HttpServletRequest request) {
         String realIp = getOrPutHeader(headers, HeaderConstant.X_REAL_IP, JakartaServletUtil.getClientIP(request));
-        MDC.put(HeaderConstant.X_REAL_IP, realIp);
+        MdcUtil.set(HeaderConstant.X_REAL_IP, realIp);
     }
 
     private void buildUserInfo(Map<String, String> headers) {
@@ -135,6 +135,9 @@ public class RequestFilter extends OncePerRequestFilter {
         UserContextHolder.remove();
         HeaderContextHolder.remove();
         TccContextHolder.remove();
-        MDC.clear();
+        MdcUtil.remove(HeaderConstant.X_REQUESTED_ID);
+        MdcUtil.remove(HeaderConstant.X_REAL_IP);
+        MdcUtil.remove(HeaderConstant.X_TRACE_ID);
+        MdcUtil.remove(HttpHeaders.ACCEPT_LANGUAGE);
     }
 }

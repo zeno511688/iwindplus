@@ -34,6 +34,7 @@ import com.iwindplus.base.util.DatesUtil;
 import com.iwindplus.base.util.ExpressionUtil;
 import com.iwindplus.base.util.HttpsUtil;
 import com.iwindplus.base.util.JacksonUtil;
+import com.iwindplus.base.util.MdcUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
@@ -50,7 +51,6 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.slf4j.MDC;
 import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.annotation.Order;
@@ -169,7 +169,7 @@ public class OperateLogAspect {
             .requestTime(DatesUtil.parseDate(beginMillis, DatePattern.NORM_DATETIME_MS_PATTERN))
             .responseTime(DatesUtil.parseDate(endMillis, DatePattern.NORM_DATETIME_MS_PATTERN))
             .executeTime(endMillis - beginMillis)
-            .bizTraceId(MDC.get(HeaderConstant.X_TRACE_ID))
+            .bizTraceId(MdcUtil.get(HeaderConstant.X_TRACE_ID))
             .userId(userId)
             .orgId(orgId)
             .createdBy(realName)

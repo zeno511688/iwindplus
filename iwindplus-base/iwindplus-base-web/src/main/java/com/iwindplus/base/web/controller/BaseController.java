@@ -83,7 +83,7 @@ public class BaseController {
      * @return String
      */
     protected String getTraceId() {
-        return MdcUtil.getTraceId();
+        return MdcUtil.get(HeaderConstant.X_TRACE_ID);
     }
 
     /**

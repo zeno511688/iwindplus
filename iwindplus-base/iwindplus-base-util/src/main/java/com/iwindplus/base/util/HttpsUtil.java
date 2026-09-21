@@ -58,7 +58,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.SetUtils;
-import org.slf4j.MDC;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.NettyDataBuffer;
@@ -412,7 +411,7 @@ public class HttpsUtil extends HttpUtil {
      * @return Map<String, String>
      */
     public static Map<String, String> getMdc() {
-        final Map<String, String> mdcMap = MDC.getCopyOfContextMap();
+        final Map<String, String> mdcMap = MdcUtil.getCopyOfContextMap();
         if (MapUtil.isEmpty(mdcMap)) {
             return null;
         }

@@ -9,6 +9,7 @@ package com.iwindplus.base.util;
 
 import cn.hutool.core.text.CharSequenceUtil;
 import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
+import java.util.Map;
 import org.slf4j.MDC;
 import reactor.core.publisher.Mono;
 
@@ -25,29 +26,44 @@ public class MdcUtil {
     }
 
     /**
-     * 获取跟踪唯一标识.
+     * 获取MDC值.
+     *
+     * @param key 键
+     * @return String
      */
-    public static String getTraceId() {
-        return MDC.get(HeaderConstant.X_TRACE_ID);
+    public static String get(String key) {
+        return MDC.get(key);
     }
 
     /**
-     * 设置跟踪唯一标识.
+     * 设置MDC值.
      *
-     * @param traceId 跟踪唯一标识
+     * @param key   键
+     * @param value 值
      */
-    public static void setTraceId(String traceId) {
-        if (CharSequenceUtil.isBlank(traceId)) {
+    public static void set(String key, String value) {
+        if (CharSequenceUtil.isBlank(value)) {
             return;
         }
-        MDC.put(HeaderConstant.X_TRACE_ID, traceId);
+        MDC.put(key, value);
     }
 
     /**
-     * 清理MDC.
+     * 移除MDC值.
+     *
+     * @param key 键
      */
-    public static void clearTraceId() {
-        MDC.remove(HeaderConstant.X_TRACE_ID);
+    public static void remove(String key) {
+        MDC.remove(key);
+    }
+
+    /**
+     * 获取MDC上下文副本.
+     *
+     * @return Map<String, String>
+     */
+    public static Map<String, String> getCopyOfContextMap() {
+        return MDC.getCopyOfContextMap();
     }
 
     /**
@@ -58,7 +74,7 @@ public class MdcUtil {
      * @return Mono<T>
      */
     public static <T> Mono<T> withTraceId(Mono<T> mono) {
-        String traceId = MdcUtil.getTraceId();
+        String traceId = MdcUtil.get(HeaderConstant.X_TRACE_ID);
 
         return Mono.deferContextual(ctxView -> {
             String ctxTraceId = ctxView.getOrDefault(HeaderConstant.X_TRACE_ID, traceId);
@@ -69,9 +85,9 @@ public class MdcUtil {
                     if (!signal.isOnComplete() && !signal.isOnError()) {
                         return;
                     }
-                    MdcUtil.setTraceId(ctxTraceId);
+                    MdcUtil.set(HeaderConstant.X_TRACE_ID, ctxTraceId);
                 })
-                .doFinally(signal -> MdcUtil.clearTraceId());
+                .doFinally(signal -> MdcUtil.remove(HeaderConstant.X_TRACE_ID));
         });
     }
 
@@ -82,16 +98,16 @@ public class MdcUtil {
      * @return Runnable
      */
     public static Runnable wrap(Runnable runnable) {
-        String traceId = MdcUtil.getTraceId();
+        String traceId = MdcUtil.get(HeaderConstant.X_TRACE_ID);
 
         return () -> {
             try {
                 if (traceId != null) {
-                    MdcUtil.setTraceId(traceId);
+                    MdcUtil.set(HeaderConstant.X_TRACE_ID, traceId);
                 }
                 runnable.run();
             } finally {
-                MdcUtil.clearTraceId();
+                MdcUtil.remove(HeaderConstant.X_TRACE_ID);
             }
         };
     }

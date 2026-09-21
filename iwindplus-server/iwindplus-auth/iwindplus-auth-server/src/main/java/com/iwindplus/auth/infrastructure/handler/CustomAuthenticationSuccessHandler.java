@@ -30,6 +30,7 @@ import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.base.domain.vo.UserBaseVO;
 import com.iwindplus.base.util.BeanCopierUtil;
 import com.iwindplus.base.util.HttpsUtil;
+import com.iwindplus.base.util.MdcUtil;
 import com.iwindplus.base.web.support.WebManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -38,7 +39,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpHeaders;
@@ -190,7 +190,7 @@ public record CustomAuthenticationSuccessHandler(AuthProperty property
         final LoginLogDTOBuilder<?, ?> builder = LoginLogDTO
             .builder()
             .requestId(request.getHeader(HeaderConstant.X_REQUESTED_ID))
-            .bizTraceId(MDC.get(HeaderConstant.X_TRACE_ID))
+            .bizTraceId(MdcUtil.get(HeaderConstant.X_TRACE_ID))
             .ip(request.getHeader(HeaderConstant.X_REAL_IP))
             .deviceNumber(request.getHeader(HeaderConstant.X_DEVICE_NUMBER))
             .deviceVersion(request.getHeader(HeaderConstant.X_DEVICE_VERSION))
