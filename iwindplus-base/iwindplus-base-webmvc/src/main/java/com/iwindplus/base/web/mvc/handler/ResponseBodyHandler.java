@@ -8,7 +8,10 @@
 package com.iwindplus.base.web.mvc.handler;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.text.CharSequenceUtil;
+import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.base.domain.vo.ResultVO;
+import com.iwindplus.base.util.MdcUtil;
 import com.iwindplus.base.web.domain.property.ResponseBodyProperty;
 import com.iwindplus.base.web.support.WebManager;
 import jakarta.annotation.Resource;
@@ -73,6 +76,12 @@ public class ResponseBodyHandler implements ResponseBodyAdvice<Object> {
         ServerHttpRequest serverHttpRequest, ServerHttpResponse serverHttpResponse) {
         HttpServletResponse httpServletResponse = ((ServletServerHttpResponse) serverHttpResponse).getServletResponse();
         int statusCode = httpServletResponse.getStatus();
+
+        // 响应头设置traceId
+        String traceId = MdcUtil.get(HeaderConstant.X_TRACE_ID);
+        if (CharSequenceUtil.isNotBlank(traceId)) {
+            serverHttpResponse.getHeaders().set(HeaderConstant.X_TRACE_ID, traceId);
+        }
 
         if (Objects.nonNull(body) && Objects.nonNull(mediaType) && mediaType.includes(MediaType.APPLICATION_JSON)) {
             ResultVO<Object> result = this.buildResultVO(body, statusCode);

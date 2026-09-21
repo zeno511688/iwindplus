@@ -9,10 +9,12 @@ package com.iwindplus.base.util;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.map.MapUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.PrimitiveArrayUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.URLUtil;
 import com.iwindplus.base.domain.constant.CommonConstant;
+import com.iwindplus.base.domain.constant.CommonConstant.HeaderConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.NumberConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.OauthConstant;
 import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
@@ -126,6 +128,12 @@ public class ReactorUtil {
             response.setStatusCode(httpStatusCode);
         }
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        // 响应头设置traceId
+        String traceId = MdcUtil.get(HeaderConstant.X_TRACE_ID);
+        if (CharSequenceUtil.isNotBlank(traceId)) {
+            response.getHeaders().set(HeaderConstant.X_TRACE_ID, traceId);
+        }
 
         return Mono.defer(() -> {
             byte[] bytes = JacksonUtil.toJsonBytes(data);
