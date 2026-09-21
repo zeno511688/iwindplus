@@ -10,7 +10,7 @@ package com.iwindplus.base.http.client.support;
 import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.AsyncCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.iwindplus.base.domain.enums.AppCertTypeEnum;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
@@ -18,6 +18,7 @@ import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.domain.vo.BaseSignExtendVO;
 import com.iwindplus.base.domain.vo.BaseSignVO;
 import com.iwindplus.base.domain.vo.ResultVO;
+import com.iwindplus.base.http.client.domain.enums.HttpClientTypeEnum;
 import com.iwindplus.base.http.client.domain.property.HttpClientProperty;
 import com.iwindplus.base.http.client.domain.property.HttpClientProperty.ApiProtectionConfig;
 import com.iwindplus.base.http.client.factory.HttpClientExecuteHandlerFactory;
@@ -32,6 +33,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -60,12 +63,12 @@ public record ApiProtectionProvider(
             "/doc.html"
         );
 
-    private static final Cache<AppCertTypeEnum, BaseSignVO> APP_CERT_CACHE =
+    private static final AsyncCache<AppCertTypeEnum, BaseSignVO> APP_CERT_CACHE =
         Caffeine.newBuilder()
             .initialCapacity(10)
             .maximumSize(100)
             .expireAfterWrite(Duration.ofMinutes(5))
-            .build();
+            .buildAsync();
 
     /**
      * 获取签名配置.
@@ -140,31 +143,35 @@ public record ApiProtectionProvider(
     }
 
     private BaseSignVO getRemoteCert(AppCertTypeEnum appCertType, ApiProtectionConfig cfg) {
-        // 远程凭证统一使用本地缓存
-        return APP_CERT_CACHE.get(
+        // 远程凭证统一使用本地缓存，AsyncCache 自动管理异步加载
+        CompletableFuture<BaseSignVO> future = APP_CERT_CACHE.get(
             appCertType,
-            key -> loadRemoteCert(appCertType, cfg)
+            (key, executor) -> loadRemoteCertAsync(appCertType, cfg)
         );
+        return future.join();
     }
 
-    private BaseSignVO loadRemoteCert(AppCertTypeEnum appCertType, ApiProtectionConfig cfg) {
+    private CompletableFuture<BaseSignVO> loadRemoteCertAsync(AppCertTypeEnum appCertType, ApiProtectionConfig cfg) {
         log.info("加载远程服务间调用应用凭证配置: {}", appCertType);
         final Map<String, ?> query = Map.of(
             "appCertType", appCertType
         );
-        final ResultVO<BaseSignVO> result = httpClientExecuteHandlerFactory
-            .getDefaultHandler()
-            .get(
+        // 使用 WebClient 异步请求，避免在 reactor 线程中触发 block() 异常
+        CompletionStage<ResultVO<BaseSignVO>> stage = httpClientExecuteHandlerFactory
+            .getHandler(HttpClientTypeEnum.WEB_CLIENT)
+            .getAsync(
                 cfg.getUrl(),
                 query,
                 null,
                 new TypeReference<>() {
                 }
             );
-        result.errorThrow();
-        BaseSignVO cert = result.getBizData();
-        validateBaseSignVO(cert);
-        return cert;
+        return stage.toCompletableFuture().thenApply(result -> {
+            result.errorThrow();
+            BaseSignVO cert = result.getBizData();
+            validateBaseSignVO(cert);
+            return cert;
+        });
     }
 
     private void validateBaseSignVO(BaseSignVO vo) {
