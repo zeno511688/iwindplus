@@ -13,6 +13,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.iwindplus.base.mybatis.domain.DbBaseDO;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -106,4 +107,11 @@ public class MenuDO extends DbBaseDO {
      */
     @Schema(description = "系统主键")
     private Long systemId;
+
+    /**
+     * 新功能标记过期时间（为空表示非新功能，当前时间小于过期时间时显示"新"图标）.
+     */
+    @Schema(description = "新功能标记过期时间")
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
+    private LocalDateTime newFeatureExpireTime;
 }

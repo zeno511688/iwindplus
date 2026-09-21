@@ -16,6 +16,7 @@
         <result property="iconStyle" column="bm_icon_style"/>
         <result property="iconUrlStr" column="bm_icon_url"/>
         <result property="routeUrl" column="bm_route_url"/>
+        <result property="newFeatureExpireTime" column="bm_new_feature_expire_time"/>
     </resultMap>
 
     <resultMap id="MenuBaseTreeCheckedAliasVO" extends="MenuBaseTreeAliasVO" type="com.iwindplus.base.domain.vo.BaseTreeCheckedVO">
@@ -45,12 +46,12 @@
 
     <sql id="menuTreeField">
         bm.id, bm.code, bm.name, bm.level, bm.seq, bm.parent_id,
-        bm.icon_style, bm.icon_url, bm.route_url
+        bm.icon_style, bm.icon_url, bm.route_url, bm.new_feature_expire_time
     </sql>
 
     <sql id="menuTreeAliasField">
         bm.id as bm_id, bm.code as bm_code, bm.name as bm_name, bm.level as bm_level, bm.seq as bm_seq, bm.parent_id as bm_parent_id,
-        bm.icon_style as bm_icon_style, bm.icon_url as bm_icon_url, bm.route_url as bm_route_url
+        bm.icon_style as bm_icon_style, bm.icon_url as bm_icon_url, bm.route_url as bm_route_url, bm.new_feature_expire_time as bm_new_feature_expire_time
     </sql>
 
     <select id="selectListEnabled" resultMap="MenuBaseListSystemAliasVO">

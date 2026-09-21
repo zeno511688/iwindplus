@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -119,7 +120,9 @@ public class MenuQueryService {
         if (Objects.isNull(data)) {
             throw new BizException(BizCodeEnum.DATA_NOT_EXIST);
         }
-        return BeanUtil.copyProperties(data, MenuVO.class);
+        MenuVO result = BeanUtil.copyProperties(data, MenuVO.class);
+        result.setNewFeature(this.isNewFeature(data.getNewFeatureExpireTime()));
+        return result;
     }
 
     public MenuExtendVO getDetailExtend(Long id) {
@@ -252,7 +255,12 @@ public class MenuQueryService {
             Optional.ofNullable(object.getIconStyle()).filter(CharSequenceUtil::isNotBlank)
                 .ifPresent(val -> tree.putExtra("iconStyle", val));
             tree.putExtra("routeUrl", object.getRouteUrl());
+            tree.putExtra("newFeature", this.isNewFeature(object.getNewFeatureExpireTime()));
         });
+    }
+
+    private boolean isNewFeature(LocalDateTime expireTime) {
+        return Objects.nonNull(expireTime) && LocalDateTime.now().isBefore(expireTime);
     }
 
     private List<BaseTreeCheckedVO> listWithChecked(List<BaseTreeCheckedVO> allList, List<BaseTreeCheckedVO> checkedList) {

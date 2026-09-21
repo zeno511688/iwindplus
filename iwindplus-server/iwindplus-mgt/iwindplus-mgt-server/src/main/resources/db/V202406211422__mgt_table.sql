@@ -321,6 +321,7 @@ CREATE TABLE `menu`
     `build_in_flag`      tinyint unsigned NOT NULL DEFAULT 0 COMMENT '是否内置（0：否，1：是）',
     `parent_id`          bigint unsigned  NOT NULL DEFAULT 0 COMMENT '父类主键',
     `system_id`          bigint unsigned  NOT NULL DEFAULT 0 COMMENT '系统主键',
+    `new_feature_expire_time` datetime NULL DEFAULT NULL COMMENT '新功能标记过期时间（为空表示非新功能，当前时间小于过期时间时显示新图标）',
     PRIMARY KEY (`id`),
     KEY `idx_code_system_id` (`code`, `system_id`) COMMENT '复合索引（编码，系统主键）',
     KEY `idx_name_system_id_parent_id` (`name`, `system_id`, `parent_id`) COMMENT '复合索引（名称，父类主键，系统主键）',

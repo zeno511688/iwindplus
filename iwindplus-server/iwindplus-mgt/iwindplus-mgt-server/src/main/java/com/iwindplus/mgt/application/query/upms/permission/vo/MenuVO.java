@@ -10,6 +10,7 @@ package com.iwindplus.mgt.application.query.upms.permission.vo;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.vo.DbVersionBaseVO;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -101,4 +102,16 @@ public class MenuVO extends DbVersionBaseVO {
      */
     @Schema(description = "系统主键")
     private Long systemId;
+
+    /**
+     * 新功能标记过期时间.
+     */
+    @Schema(description = "新功能标记过期时间")
+    private LocalDateTime newFeatureExpireTime;
+
+    /**
+     * 是否新功能（当前时间小于过期时间时为true）.
+     */
+    @Schema(description = "是否新功能")
+    private Boolean newFeature;
 }
