@@ -27,5 +27,6 @@
         <module>iwindplus-dtx</module>
         <module>iwindplus-integr</module>
         <module>iwindplus-report</module>
+        <module>iwindplus-user-center</module>
     </modules>
 </project>
