@@ -17,6 +17,8 @@ import com.iwindplus.base.domain.vo.UserBaseVO;
 import com.iwindplus.base.operate.domain.annotation.OperateLog;
 import com.iwindplus.base.operate.domain.annotation.OperateValid;
 import com.iwindplus.base.web.controller.BaseController;
+import com.iwindplus.mgt.api.upms.vo.RoleBaseVO;
+import com.iwindplus.mgt.api.upms.vo.UserOrgInfoVO;
 import com.iwindplus.mgt.application.query.upms.permission.RoleQueryService;
 import com.iwindplus.mgt.application.query.upms.permission.vo.RoleBaseCheckedVO;
 import com.iwindplus.mgt.application.query.upms.permission.vo.RoleExtendVO;
@@ -35,8 +37,6 @@ import com.iwindplus.mgt.application.service.upms.permission.dto.RoleSearchDTO;
 import com.iwindplus.mgt.application.service.upms.user.UserGroupRoleApplicationService;
 import com.iwindplus.mgt.infrastructure.configuration.MgtProperty;
 import com.iwindplus.mgt.infrastructure.configuration.MgtProperty.WsConfig;
-import com.iwindplus.mgt.api.upms.vo.RoleBaseVO;
-import com.iwindplus.mgt.api.upms.vo.UserOrgInfoVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -192,7 +192,7 @@ public class RoleController extends BaseController {
     public ResultVO<Boolean> editBatchResource(@RequestBody @Validated RoleGrantResourceDTO entity) {
         boolean data = this.roleResourceApplicationService.editBatchResource(entity.getRoleId(), entity.getResourceIds());
 
-        this.sendWsButtonPermission(entity);
+        this.sendWsResourcePermission(entity);
 
         return ResultVO.success(data);
     }
@@ -284,12 +284,12 @@ public class RoleController extends BaseController {
         return ResultVO.success(data);
     }
 
-    private void sendWsButtonPermission(RoleGrantResourceDTO entity) {
+    private void sendWsResourcePermission(RoleGrantResourceDTO entity) {
         final WsConfig ws = this.property.getWs();
         if (Boolean.FALSE.equals(ws.getEnabled())) {
             return;
         }
-        if (Boolean.FALSE.equals(ws.getEnabledRolePermission())) {
+        if (Boolean.FALSE.equals(ws.getEnabledResourcePermission())) {
             return;
         }
 
@@ -300,7 +300,7 @@ public class RoleController extends BaseController {
 
         final UserBaseVO userInfo = this.getUserInfo();
         userOrgInfoList.parallelStream().forEach(userOrgInfo ->
-            this.wsPushApplicationService.sendWsButtonPermission(userOrgInfo.getUserId(), userOrgInfo.getOrgId()
+            this.wsPushApplicationService.sendWsResourcePermission(userOrgInfo.getUserId(), userOrgInfo.getOrgId()
                 , userInfo.getOrgId(), userInfo.getUserId()));
     }
 }

@@ -10,7 +10,6 @@ package com.iwindplus.mgt.interfaces.api.upms;
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.mgt.api.upms.ResourceApi;
 import com.iwindplus.mgt.api.upms.vo.ResourceBaseExtendVO;
-import com.iwindplus.mgt.api.upms.vo.ResourceBaseVO;
 import com.iwindplus.mgt.application.query.upms.permission.ResourceQueryService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -35,20 +34,14 @@ public class ResourceApiImpl implements ResourceApi {
     private final ResourceQueryService resourceQueryService;
 
     @Override
-    public ResultVO<Boolean> checkApiByUserId(Long orgId, Long userId, String requestMethod, String path) {
-        final Boolean data = this.resourceQueryService.checkApiByUserId(orgId, userId, requestMethod, path);
+    public ResultVO<Boolean> checkApiByUserId(Long orgId, Long userId, String path) {
+        final Boolean data = this.resourceQueryService.checkApiByUserId(orgId, userId, path);
         return ResultVO.success(data);
     }
 
     @Override
     public ResultVO<List<ResourceBaseExtendVO>> listApiCheckedByUserId(Long orgId, Long userId) {
         final List<ResourceBaseExtendVO> data = this.resourceQueryService.listApiCheckedByUserId(orgId, userId);
-        return ResultVO.success(data);
-    }
-
-    @Override
-    public ResultVO<List<ResourceBaseVO>> listButtonCheckedByUserId(Long orgId, Long userId) {
-        final List<ResourceBaseVO> data = this.resourceQueryService.listButtonCheckedByUserId(orgId, userId);
         return ResultVO.success(data);
     }
 

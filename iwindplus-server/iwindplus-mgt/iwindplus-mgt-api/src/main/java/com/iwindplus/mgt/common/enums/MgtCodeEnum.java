@@ -219,16 +219,6 @@ public enum MgtCodeEnum implements CommonException {
     MENU_PREFIX_ERROR("menu_prefix_error", "菜单编码开头应为menu"),
 
     /**
-     * 按钮编码开头应为button.
-     */
-    BUTTON_PREFIX_ERROR("button_prefix_error", "按钮编码开头应为button"),
-
-    /**
-     * API编码开头应为api.
-     */
-    API_PREFIX_ERROR("api_prefix_error", "API编码开头应为api"),
-
-    /**
      * 路由路径已经存在.
      */
     ROUTE_URL_EXIST("route_url_exist", "路由路径已经存在"),

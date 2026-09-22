@@ -388,12 +388,12 @@ public class UserQueryService {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
             data.setRolePermissions(list);
         }
-        // 查询按钮权限
-        List<ResourceBaseVO> listButtonPermission = this.resourceRepository.listButtonCheckedByUserId(orgId, userId);
-        if (CollUtil.isNotEmpty(listButtonPermission)) {
-            final Set<ResourceBaseVO> list = listButtonPermission.stream().sorted(Comparator.comparing(ResourceBaseVO::getName))
+        // 查询资源权限
+        List<ResourceBaseVO> listResourcePermission = this.resourceRepository.listResourceCheckedByUserId(orgId, userId);
+        if (CollUtil.isNotEmpty(listResourcePermission)) {
+            final Set<ResourceBaseVO> list = listResourcePermission.stream().sorted(Comparator.comparing(ResourceBaseVO::getName))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
-            data.setButtonPermissions(list);
+            data.setResourcePermissions(list);
         }
         return data;
     }

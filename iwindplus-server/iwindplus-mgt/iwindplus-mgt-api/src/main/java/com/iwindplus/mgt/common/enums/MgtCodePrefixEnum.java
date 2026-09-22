@@ -61,6 +61,11 @@ public enum MgtCodePrefixEnum implements BaseEnum<String> {
     MENU_PREFIX("menu_", "菜单前缀"),
 
     /**
+     * 资源前缀.
+     */
+    RESOURCE_PREFIX("resource_", "资源前缀"),
+
+    /**
      * 用户组前缀.
      */
     USER_GROUP_PREFIX("userGroup_", "用户组前缀"),

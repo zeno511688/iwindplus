@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -77,6 +78,12 @@ public class MenuDTO extends DbVersionBaseDTO {
     @Schema(description = "路由路径")
     @Length(max = 100, message = "{routeUrl.length}", groups = {SaveGroup.class, EditGroup.class})
     private String routeUrl;
+
+    /**
+     * API路径集合（菜单固有的列表接口等）.
+     */
+    @Schema(description = "API路径集合")
+    private List<String> apiUrls;
 
     /**
      * 级别.

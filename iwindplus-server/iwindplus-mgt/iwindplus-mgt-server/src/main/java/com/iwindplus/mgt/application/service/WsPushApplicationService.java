@@ -12,6 +12,7 @@ import com.iwindplus.im.api.dto.WsMsgDTO;
 import com.iwindplus.im.client.WsMsgClient;
 import com.iwindplus.im.common.enums.MsgTypeEnum;
 import com.iwindplus.im.common.enums.SubMsgTypeEnum;
+import com.iwindplus.mgt.api.upms.vo.ResourceBaseExtendVO;
 import com.iwindplus.mgt.api.upms.vo.ResourceBaseVO;
 import com.iwindplus.mgt.api.upms.vo.RoleBaseVO;
 import com.iwindplus.mgt.application.query.upms.permission.ResourceQueryService;
@@ -65,19 +66,19 @@ public class WsPushApplicationService {
         }
     }
 
-    public void sendWsButtonPermission(Long orgId, Long userId, Long sendOrgId, Long sendUserId) {
-        List<ResourceBaseVO> listButtonPermission = this.resourceQueryService.listButtonCheckedByUserId(orgId, userId);
-        if (CollUtil.isEmpty(listButtonPermission)) {
+    public void sendWsResourcePermission(Long orgId, Long userId, Long sendOrgId, Long sendUserId) {
+        List<ResourceBaseExtendVO> listResourcePermission = this.resourceQueryService.listApiCheckedByUserId(orgId, userId);
+        if (CollUtil.isEmpty(listResourcePermission)) {
             return;
         }
 
-        final Set<ResourceBaseVO> list = listButtonPermission.stream().sorted(Comparator.comparing(ResourceBaseVO::getName))
+        final Set<ResourceBaseVO> list = listResourcePermission.stream().sorted(Comparator.comparing(ResourceBaseVO::getName))
             .collect(Collectors.toCollection(LinkedHashSet::new));
 
         final WsMsgDTO wsMsg = WsMsgDTO.builder()
             .msgType(MsgTypeEnum.TEXT)
-            .subMsgType(SubMsgTypeEnum.REFRESH_BUTTON_PERMISSION.getValue())
-            .title(SubMsgTypeEnum.REFRESH_BUTTON_PERMISSION.getDesc())
+            .subMsgType(SubMsgTypeEnum.REFRESH_RESOURCE_PERMISSION.getValue())
+            .title(SubMsgTypeEnum.REFRESH_RESOURCE_PERMISSION.getDesc())
             .content(list)
             .receiverId(userId)
             .sendUserId(sendUserId)

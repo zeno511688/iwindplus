@@ -10,10 +10,12 @@ package com.iwindplus.mgt.infrastructure.persistence.upms.permission;
 import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.iwindplus.base.mybatis.domain.DbBaseDO;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,7 +29,7 @@ import lombok.experimental.SuperBuilder;
  * @since 2019/6/12
  */
 @Schema(description = "菜单对象")
-@TableName(value = "`menu`")
+@TableName(value = "`menu`", autoResultMap = true)
 @Data
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
@@ -70,6 +72,13 @@ public class MenuDO extends DbBaseDO {
      */
     @Schema(description = "路由路径")
     private String routeUrl;
+
+    /**
+     * API路径集合（菜单固有的列表接口等）.
+     */
+    @Schema(description = "API路径集合")
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<String> apiUrls;
 
     /**
      * 级别.

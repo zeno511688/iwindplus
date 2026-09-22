@@ -9,8 +9,8 @@ package com.iwindplus.mgt.application.query.upms.permission.vo;
 
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.vo.DbVersionBaseVO;
-import com.iwindplus.mgt.common.enums.ResourceTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -38,12 +38,6 @@ public class ResourceVO extends DbVersionBaseVO {
     private EnableStatusEnum status;
 
     /**
-     * 类型（BUTTON：按钮，API：API）.
-     */
-    @Schema(description = "类型（BUTTON：按钮，API：API）")
-    private ResourceTypeEnum resourceType;
-
-    /**
      * 编码.
      */
     @Schema(description = "编码")
@@ -56,16 +50,10 @@ public class ResourceVO extends DbVersionBaseVO {
     private String name;
 
     /**
-     * 请求方式.
+     * API路径集合.
      */
-    @Schema(description = "请求方式")
-    private String requestMethod;
-
-    /**
-     * API路径.
-     */
-    @Schema(description = "API路径")
-    private String apiUrl;
+    @Schema(description = "API路径集合")
+    private List<String> apiUrls;
 
     /**
      * 排序号.

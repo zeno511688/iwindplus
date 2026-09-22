@@ -7,11 +7,13 @@
 
 package com.iwindplus.mgt.infrastructure.persistence.upms.permission;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.iwindplus.base.mybatis.domain.DbBaseDO;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
-import com.iwindplus.mgt.common.enums.ResourceTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,7 +27,7 @@ import lombok.experimental.SuperBuilder;
  * @since 2019/6/12
  */
 @Schema(description = "资源对象")
-@TableName(value = "`resource`")
+@TableName(value = "`resource`", autoResultMap = true)
 @Data
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
@@ -40,12 +42,6 @@ public class ResourceDO extends DbBaseDO {
     private EnableStatusEnum status;
 
     /**
-     * 类型（BUTTON：按钮，API：API）.
-     */
-    @Schema(description = "类型（BUTTON：按钮，API：API）")
-    private ResourceTypeEnum resourceType;
-
-    /**
      * 编码.
      */
     @Schema(description = "编码")
@@ -58,16 +54,11 @@ public class ResourceDO extends DbBaseDO {
     private String name;
 
     /**
-     * 请求方式.
+     * API路径集合.
      */
-    @Schema(description = "请求方式")
-    private String requestMethod;
-
-    /**
-     * 路径.
-     */
-    @Schema(description = "API路径")
-    private String apiUrl;
+    @Schema(description = "API路径集合")
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<String> apiUrls;
 
     /**
      * 排序号.

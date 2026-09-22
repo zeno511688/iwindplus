@@ -32,6 +32,14 @@
         <collection property="menus" resultMap="MenuTreeAliasVO"/>
     </resultMap>
 
+    <resultMap id="MenuApiUrlsMap" type="com.iwindplus.mgt.api.upms.vo.ResourceBaseExtendVO">
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="apiUrls" column="api_urls"
+          typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+    </resultMap>
+
     <sql id="menuBaseAliasField">
         bm.id as menu_id, bm.code as menu_code, bm.name as menu_name, bm.level as menu_level, bm.seq as menu_seq
     </sql>
@@ -44,14 +52,19 @@
         bm.id as bm_id, bm.code as bm_code, bm.name as bm_name, bm.level as bm_level, bm.seq as bm_seq, bm.parent_id as bm_parent_id
     </sql>
 
-    <sql id="menuTreeField">
-        bm.id, bm.code, bm.name, bm.level, bm.seq, bm.parent_id,
-        bm.icon_style, bm.icon_url, bm.route_url, bm.new_feature_expire_time
-    </sql>
-
     <sql id="menuTreeAliasField">
         bm.id as bm_id, bm.code as bm_code, bm.name as bm_name, bm.level as bm_level, bm.seq as bm_seq, bm.parent_id as bm_parent_id,
         bm.icon_style as bm_icon_style, bm.icon_url as bm_icon_url, bm.route_url as bm_route_url, bm.new_feature_expire_time as bm_new_feature_expire_time
+    </sql>
+
+    <sql id="menuApiUrlsField">
+        bm.id, bm.code, bm.name, bm.api_urls
+    </sql>
+
+    <sql id="menuApiFilter">
+        <if test="path != null and path != ''">
+            and JSON_CONTAINS(bm.api_urls, #{path})
+        </if>
     </sql>
 
     <select id="selectListEnabled" resultMap="MenuBaseListSystemAliasVO">
@@ -141,6 +154,52 @@
         union
         (
             <include refid="selectListByUserIdTwo"/>
+        )
+    </select>
+
+    <sql id="selectListCheckedByUserIdOne">
+        select
+            <include refid="menuApiUrlsField"/>
+        from `menu` bm
+        inner join `system` bs on bm.system_id = bs.id and bs.deleted = 0 and bs.status = 1 and bs.hide_flag = 0
+        inner join role_menu brm on bm.id = brm.menu_id and brm.deleted = 0
+        inner join `role` br on brm.role_id = br.id and br.deleted = 0 and br.status = 1
+        inner join `org` bo on br.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        inner join user_role bur on br.id = bur.role_id and bur.deleted = 0
+        inner join `user` bu on bur.user_id = bu.id and bu.deleted = 0 and bu.enabled = 1 and bu.locked = 0 and bu.account_expired = 0 and bu.credentials_expired = 0
+        where bm.deleted = 0 and bm.status = 1 and bm.hide_flag = 0
+        and bo.id = #{orgId}
+        and bu.id = #{userId}
+        <include refid="menuApiFilter"/>
+        order by bm.seq asc
+    </sql>
+
+    <sql id="selectListCheckedByUserIdTwo">
+        select
+            <include refid="menuApiUrlsField"/>
+        from `menu` bm
+        inner join `system` bs on bm.system_id = bs.id and bs.deleted = 0 and bs.status = 1 and bs.hide_flag = 0
+        inner join role_menu brm on bm.id = brm.menu_id and brm.deleted = 0
+        inner join `role` br on brm.role_id = br.id and br.deleted = 0 and br.status = 1
+        inner join `org` bo on br.org_id = bo.id and bo.deleted = 0 and bo.status = 1 and bo.audit_status = 2
+        inner join user_group_role bugr on br.id = bugr.role_id and bugr.deleted = 0
+        inner join user_group bug on bugr.user_group_id = bug.id and bug.deleted = 0 and bug.status = 1
+        inner join user_group_user bugu on bug.id = bugu.user_group_id and bugu.deleted = 0
+        inner join `user` bu on bugu.user_id = bu.id and bu.deleted = 0 and bu.enabled = 1 and bu.locked = 0 and bu.account_expired = 0 and bu.credentials_expired = 0
+        where bm.deleted = 0 and bm.status = 1 and bm.hide_flag = 0
+        and bo.id = #{orgId}
+        and bu.id = #{userId}
+        <include refid="menuApiFilter"/>
+        order by bm.seq asc
+    </sql>
+
+    <select id="selectListCheckedByUserId" resultMap="MenuApiUrlsMap">
+        (
+            <include refid="selectListCheckedByUserIdOne"/>
+        )
+        union
+        (
+            <include refid="selectListCheckedByUserIdTwo"/>
         )
     </select>
 

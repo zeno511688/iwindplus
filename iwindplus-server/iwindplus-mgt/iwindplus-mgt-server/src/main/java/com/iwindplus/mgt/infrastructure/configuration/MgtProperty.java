@@ -88,10 +88,10 @@ public class MgtProperty {
         private Boolean enabledRolePermission = true;
 
         /**
-         * 是否开启按钮权限推送.
+         * 是否开启资源权限推送.
          */
         @Builder.Default
-        private Boolean enabledButtonPermission = true;
+        private Boolean enabledResourcePermission = true;
     }
 
     /**

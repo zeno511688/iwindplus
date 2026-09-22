@@ -46,8 +46,6 @@ public class GatewayLogPublisher {
      */
     @Async
     public void publish(GatewayLogDTO dto) {
-        log.debug("网关日志发布事件");
-
         final MessageBaseDTO<GatewayLogDTO> messageDTO = new MessageBaseDTO();
         messageDTO.setOperateType(OperateTypeEnum.ADD.getValue());
         messageDTO.setBizType("gatewayLog");

@@ -9,7 +9,6 @@ package com.iwindplus.mgt.api.upms;
 
 import com.iwindplus.base.domain.vo.ResultVO;
 import com.iwindplus.mgt.api.upms.vo.ResourceBaseExtendVO;
-import com.iwindplus.mgt.api.upms.vo.ResourceBaseVO;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,17 +29,15 @@ public interface ResourceApi {
     /**
      * 校验用户API权限.
      *
-     * @param orgId         组织主键
-     * @param userId        用户主键
-     * @param requestMethod 请求方式
-     * @param path          路径
+     * @param orgId  组织主键
+     * @param userId 用户主键
+     * @param path   路径
      * @return ResultVO<Boolean>
      */
     @GetMapping(API_PREFIX + "checkApiByUserId")
     ResultVO<Boolean> checkApiByUserId(
         @RequestParam(value = "orgId") Long orgId,
         @RequestParam(value = "userId") Long userId,
-        @RequestParam(value = "requestMethod") String requestMethod,
         @RequestParam(value = "path") String path);
 
     /**
@@ -52,17 +49,6 @@ public interface ResourceApi {
      */
     @GetMapping(API_PREFIX + "listApiCheckedByUserId")
     ResultVO<List<ResourceBaseExtendVO>> listApiCheckedByUserId(@RequestParam(value = "orgId") Long orgId,
-        @RequestParam(value = "userId") Long userId);
-
-    /**
-     * 用户按钮权限.
-     *
-     * @param orgId  组织主键
-     * @param userId 用户主键
-     * @return ResultVO<List < ResourceBaseVO>>
-     */
-    @GetMapping(API_PREFIX + "listButtonCheckedByUserId")
-    ResultVO<List<ResourceBaseVO>> listButtonCheckedByUserId(@RequestParam(value = "orgId") Long orgId,
         @RequestParam(value = "userId") Long userId);
 
     /**

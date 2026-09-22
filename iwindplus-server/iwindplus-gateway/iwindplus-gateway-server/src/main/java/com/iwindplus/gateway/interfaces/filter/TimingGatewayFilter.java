@@ -49,7 +49,7 @@ public class TimingGatewayFilter implements Ordered, GlobalFilter {
             .doFinally(signal -> {
                 // 总耗时
                 final long cost = System.currentTimeMillis() - start;
-                log.info("[GatewayTotalTiming] execute cost={}ms", cost);
+                log.debug("[GatewayTotalTiming] execute cost={}ms", cost);
 
                 GatewayUtil.clearRequestParams(requestExchange);
             });

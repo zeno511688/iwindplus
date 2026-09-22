@@ -9,6 +9,7 @@ package com.iwindplus.gateway.infrastructure.client.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -46,14 +47,8 @@ public class ResourceVO implements Serializable {
     private String name;
 
     /**
-     * 请求方式.
+     * API路径集合.
      */
-    @Schema(description = "请求方式")
-    private String requestMethod;
-
-    /**
-     * API路径.
-     */
-    @Schema(description = "API路径")
-    private String apiUrl;
+    @Schema(description = "API路径集合")
+    private List<String> apiUrls;
 }

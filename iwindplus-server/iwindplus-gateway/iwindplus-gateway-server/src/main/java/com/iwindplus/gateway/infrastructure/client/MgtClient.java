@@ -117,15 +117,14 @@ public class MgtClient {
     /**
      * 校验用户API权限.
      *
-     * @param orgId         组织主键
-     * @param userId        用户主键
-     * @param requestMethod 请求方式
-     * @param path          路径
+     * @param orgId  组织主键
+     * @param userId 用户主键
+     * @param path   路径
      * @return Mono<Boolean>
      */
-    public Mono<Boolean> checkApiByUserId(Long orgId, Long userId, String requestMethod, String path) {
+    public Mono<Boolean> checkApiByUserId(Long orgId, Long userId, String path) {
         final String url = serverApiProperty.resolveUrl(this.getCfg().getResourceCheckApiByUserIdUrl());
-        final Map<String, ? extends Serializable> query = Map.of("orgId", orgId, "userId", userId, "requestMethod", requestMethod, "path", path);
+        final Map<String, ? extends Serializable> query = Map.of("orgId", orgId, "userId", userId, "path", path);
         return Mono.fromCompletionStage(
             httpClientExecuteHandler.getAsync(url, query, null, new TypeReference<ResultVO<Boolean>>() {
             })).flatMap(ResultVO::unwrap);

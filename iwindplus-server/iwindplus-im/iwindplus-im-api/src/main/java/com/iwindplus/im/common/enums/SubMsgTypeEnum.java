@@ -33,9 +33,9 @@ public enum SubMsgTypeEnum implements BaseEnum<String> {
     REFRESH_ROLE_PERMISSION("refresh_role_permission", "刷新角色权限"),
 
     /**
-     * 刷新按钮权限.
+     * 刷新资源权限.
      */
-    REFRESH_BUTTON_PERMISSION("refresh_button_permission", "刷新按钮权限"),
+    REFRESH_RESOURCE_PERMISSION("refresh_resource_permission", "刷新资源权限"),
 
     ;
 

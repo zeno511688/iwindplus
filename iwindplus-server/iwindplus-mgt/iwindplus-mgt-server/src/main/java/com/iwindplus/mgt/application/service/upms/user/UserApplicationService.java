@@ -732,14 +732,4 @@ public class UserApplicationService {
             this.property.getOss().getTplCode(), relativePaths);
     }
 
-    /**
-     * 通过职位ID集合获取部门ID集合.
-     *
-     * @param positionIds 职位ID集合
-     * @return 部门ID集合
-     */
-    private Set<Long> getPositionDepartmentIds(Set<Long> positionIds) {
-        return this.positionRepository.getDepartmentIdsByPositionIds(positionIds);
-    }
-
 }

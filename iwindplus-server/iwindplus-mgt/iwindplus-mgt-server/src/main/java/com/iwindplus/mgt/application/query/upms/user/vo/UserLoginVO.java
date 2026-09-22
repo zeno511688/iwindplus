@@ -45,8 +45,8 @@ public class UserLoginVO extends UserInfoVO {
     private Set<RoleBaseVO> rolePermissions;
 
     /**
-     * 按钮权限集合.
+     * 资源权限集合.
      */
-    @Schema(description = "按钮权限集合")
-    private Set<ResourceBaseVO> buttonPermissions;
+    @Schema(description = "资源权限集合")
+    private Set<ResourceBaseVO> resourcePermissions;
 }

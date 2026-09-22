@@ -33,10 +33,10 @@ import com.iwindplus.base.util.MdcUtil;
 import com.iwindplus.base.util.ReactorUtil;
 import com.iwindplus.base.util.domain.dto.ReactorRequestDTO;
 import com.iwindplus.gateway.infrastructure.client.dto.GatewayLogDTO;
-import com.iwindplus.gateway.infrastructure.configuration.property.LogProperty;
-import com.iwindplus.gateway.infrastructure.gateway.kafka.producer.GatewayLogPublisher;
 import com.iwindplus.gateway.infrastructure.client.dto.GatewayLogDTO.GatewayLogDTOBuilder;
 import com.iwindplus.gateway.infrastructure.configuration.constant.GatewayWebExchangeConstant;
+import com.iwindplus.gateway.infrastructure.configuration.property.LogProperty;
+import com.iwindplus.gateway.infrastructure.gateway.kafka.producer.GatewayLogPublisher;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -116,7 +116,7 @@ public class GatewayUtil {
         }
 
         long cost = System.currentTimeMillis() - start;
-        log.info("{} execute cost={} ms", filterName, cost);
+        log.debug("{} execute cost={} ms", filterName, cost);
     }
 
     /**

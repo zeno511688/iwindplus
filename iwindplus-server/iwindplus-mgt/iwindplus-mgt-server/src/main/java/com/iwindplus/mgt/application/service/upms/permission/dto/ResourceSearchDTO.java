@@ -9,7 +9,6 @@ package com.iwindplus.mgt.application.service.upms.permission.dto;
 
 import com.iwindplus.base.domain.dto.DbPageDTO;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
-import com.iwindplus.mgt.common.enums.ResourceTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -49,12 +48,6 @@ public class ResourceSearchDTO extends DbPageDTO {
      */
     @Schema(description = "名称")
     private String name;
-
-    /**
-     * 类型（BUTTON：按钮，API：API）.
-     */
-    @Schema(description = "类型（BUTTON：按钮，API：API）")
-    private ResourceTypeEnum resourceType;
 
     /**
      * 菜单主键（必填）.

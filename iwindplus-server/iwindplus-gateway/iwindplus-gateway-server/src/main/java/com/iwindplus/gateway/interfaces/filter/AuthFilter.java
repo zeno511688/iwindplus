@@ -219,12 +219,10 @@ public class AuthFilter extends BaseGatewayFilter {
         }
 
         String userKey = buildUserKey(user.getOrgId(), user.getUserId());
-        String apiKey = exchange.getRequest().getMethod().name()
-            + SymbolConstant.COLON + path;
 
         return Mono.fromFuture(userPermissionCache.get(userKey))
             .flatMap(perms ->
-                perms.contains(apiKey)
+                perms.contains(path)
                     ? Mono.empty()
                     : buildErrorInfo(exchange)
             );
@@ -241,10 +239,13 @@ public class AuthFilter extends BaseGatewayFilter {
     }
 
     private Set<String> buildPermissionSet(List<ResourceVO> list) {
-        Set<String> set = ConcurrentHashMap.newKeySet(list.size());
+        Set<String> set = ConcurrentHashMap.newKeySet();
         for (ResourceVO r : list) {
-            set.add(r.getRequestMethod()
-                + SymbolConstant.COLON + r.getApiUrl());
+            if (CollUtil.isNotEmpty(r.getApiUrls())) {
+                for (String apiUrl : r.getApiUrls()) {
+                    set.add(apiUrl);
+                }
+            }
         }
         return set;
     }

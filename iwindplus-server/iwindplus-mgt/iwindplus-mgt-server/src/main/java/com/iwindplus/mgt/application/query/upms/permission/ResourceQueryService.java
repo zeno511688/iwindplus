@@ -15,6 +15,7 @@ import com.iwindplus.mgt.application.query.upms.permission.vo.ResourceExtendVO;
 import com.iwindplus.mgt.application.query.upms.permission.vo.ResourcePageVO;
 import com.iwindplus.mgt.application.service.upms.permission.dto.ResourceSearchDTO;
 import com.iwindplus.mgt.common.constant.MgtConstant.RedisCacheConstant;
+import com.iwindplus.mgt.infrastructure.persistence.upms.permission.MenuRepository;
 import com.iwindplus.mgt.infrastructure.persistence.upms.permission.ResourceDO;
 import com.iwindplus.mgt.infrastructure.persistence.upms.permission.ResourceRepository;
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ import org.springframework.stereotype.Service;
 public class ResourceQueryService {
 
     private final ResourceRepository resourceRepository;
+    private final MenuRepository menuRepository;
 
     /**
      * 分页查询.
@@ -54,13 +56,17 @@ public class ResourceQueryService {
     }
 
     @Cacheable(key = "#root.methodName + '_' + #p0 + '_' + #p1", condition = "#p0 != null && #p1 != null", unless = "#result == null")
-    public List<ResourceBaseVO> listButtonCheckedByUserId(Long orgId, Long userId) {
-        return this.resourceRepository.listButtonCheckedByUserId(orgId, userId);
-    }
-
-    @Cacheable(key = "#root.methodName + '_' + #p0 + '_' + #p1", condition = "#p0 != null && #p1 != null", unless = "#result == null")
     public List<ResourceBaseExtendVO> listApiCheckedByUserId(Long orgId, Long userId) {
-        return this.resourceRepository.listCheckedByUserId(orgId, userId, null, null, null);
+        List<ResourceBaseExtendVO> resourceList = this.resourceRepository.getBaseMapper().selectListCheckedByUserId(orgId, userId, null);
+        List<ResourceBaseExtendVO> menuList = this.menuRepository.getBaseMapper().selectListCheckedByUserId(orgId, userId, null);
+        List<ResourceBaseExtendVO> result = new ArrayList<>(10);
+        if (CollUtil.isNotEmpty(resourceList)) {
+            result.addAll(resourceList);
+        }
+        if (CollUtil.isNotEmpty(menuList)) {
+            result.addAll(menuList);
+        }
+        return result;
     }
 
     @Cacheable(key = "#root.methodName", unless = "#result == null")
@@ -69,11 +75,15 @@ public class ResourceQueryService {
         return this.buildResourceBaseExtendVO(list);
     }
 
-    @Cacheable(key = "#root.methodName + '_' + #p0 + '_' + #p1 + '_' + #p2 + '_' + #p3",
-        condition = "#p0 != null && #p1 != null && #p2 != null && #p3 != null", unless = "#result == null")
-    public Boolean checkApiByUserId(Long orgId, Long userId, String requestMethod, String apiUrl) {
-        final List<ResourceBaseExtendVO> list = this.resourceRepository.listCheckedByUserId(orgId, userId, null, requestMethod, apiUrl);
-        return CollUtil.isNotEmpty(list);
+    @Cacheable(key = "#root.methodName + '_' + #p0 + '_' + #p1 + '_' + #p2",
+        condition = "#p0 != null && #p1 != null && #p2 != null", unless = "#result == null")
+    public Boolean checkApiByUserId(Long orgId, Long userId, String path) {
+        final List<ResourceBaseExtendVO> resourceList = this.resourceRepository.getBaseMapper().selectListCheckedByUserId(orgId, userId, path);
+        if (CollUtil.isNotEmpty(resourceList)) {
+            return Boolean.TRUE;
+        }
+        final List<ResourceBaseExtendVO> menuList = this.menuRepository.getBaseMapper().selectListCheckedByUserId(orgId, userId, path);
+        return CollUtil.isNotEmpty(menuList);
     }
 
     @Cacheable(key = "#root.methodName + '_' + #p0", condition = "#p0 != null", unless = "#result == null")
@@ -88,8 +98,7 @@ public class ResourceQueryService {
                 .id(m.getId())
                 .code(m.getCode())
                 .name(m.getName())
-                .requestMethod(m.getRequestMethod())
-                .apiUrl(m.getApiUrl())
+                .apiUrls(m.getApiUrls())
                 .build())
             .sorted(Comparator.comparing(ResourceBaseVO::getName))
             .collect(Collectors.toCollection(ArrayList::new));

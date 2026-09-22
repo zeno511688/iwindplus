@@ -11,6 +11,7 @@ import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.vo.DbVersionBaseVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -66,6 +67,12 @@ public class MenuVO extends DbVersionBaseVO {
      */
     @Schema(description = "路由路径")
     private String routeUrl;
+
+    /**
+     * API路径集合.
+     */
+    @Schema(description = "API路径集合")
+    private List<String> apiUrls;
 
     /**
      * 级别.

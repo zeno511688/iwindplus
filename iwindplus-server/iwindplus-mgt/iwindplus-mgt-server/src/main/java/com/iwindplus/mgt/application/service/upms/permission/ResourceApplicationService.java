@@ -10,20 +10,17 @@ package com.iwindplus.mgt.application.service.upms.permission;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.CharSequenceUtil;
-import com.iwindplus.base.domain.constant.CommonConstant.SymbolConstant;
 import com.iwindplus.base.domain.enums.BizCodeEnum;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.exception.BizException;
 import com.iwindplus.base.redis.executor.RedissonExecutor;
-import com.iwindplus.mgt.application.service.upms.permission.dto.ResourceDTO;
 import com.iwindplus.mgt.application.service.upms.permission.dto.ResourceEditDTO;
 import com.iwindplus.mgt.application.service.upms.permission.dto.ResourceSaveDTO;
 import com.iwindplus.mgt.common.constant.MgtConstant.RedisCacheConstant;
+import com.iwindplus.mgt.common.enums.MgtCodePrefixEnum;
 import com.iwindplus.mgt.infrastructure.persistence.upms.permission.ResourceDO;
 import com.iwindplus.mgt.infrastructure.persistence.upms.permission.ResourceRepository;
 import com.iwindplus.mgt.infrastructure.persistence.upms.permission.RoleResourceRepository;
-import com.iwindplus.mgt.common.enums.MgtCodeEnum;
-import com.iwindplus.mgt.common.enums.ResourceTypeEnum;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +48,12 @@ public class ResourceApplicationService {
     private final ResourceRepository resourceRepository;
     private final RedissonExecutor redissonExecutor;
 
+    /**
+     * 保存资源.
+     *
+     * @param entity 实体
+     * @return 是否成功
+     */
     @Caching(
         evict = {
             @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_RESOURCE}, allEntries = true),
@@ -63,19 +66,25 @@ public class ResourceApplicationService {
         this.resourceRepository.getNameIsExist(entity.getName().trim(), entity.getMenuId());
         entity.setSeq(this.resourceRepository.getNextSeq(entity.getMenuId()));
         if (CharSequenceUtil.isBlank(entity.getCode())) {
-            final String key = entity.getResourceType().name().toLowerCase() + SymbolConstant.UNDERLINE;
+            final String key = MgtCodePrefixEnum.RESOURCE_PREFIX.getValue();
             entity.setCode(this.redissonExecutor.serialNum().getSerialNumDate(key));
         } else {
-            this.checkCode(entity);
             this.resourceRepository.getCodeIsExist(entity.getCode());
         }
-        this.resourceRepository.getApiUrlIsExist(entity.getApiUrl().trim(), entity.getMenuId());
+        List<String> apiUrls = entity.getApiUrls().stream().map(String::trim).distinct().toList();
         final ResourceDO model = BeanUtil.copyProperties(entity, ResourceDO.class);
+        model.setApiUrls(apiUrls);
         this.resourceRepository.save(model);
         entity.setId(model.getId());
         return Boolean.TRUE;
     }
 
+    /**
+     * 根据id批量删除资源.
+     *
+     * @param ids id列表
+     * @return 是否成功
+     */
     @Caching(
         evict = {
             @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_RESOURCE}, allEntries = true),
@@ -96,6 +105,12 @@ public class ResourceApplicationService {
         return Boolean.TRUE;
     }
 
+    /**
+     * 修改资源.
+     *
+     * @param entity 实体
+     * @return 是否成功
+     */
     @Caching(
         evict = {
             @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_RESOURCE}, allEntries = true),
@@ -117,17 +132,22 @@ public class ResourceApplicationService {
             entity.setVersion(data.getVersion());
         }
         if (CharSequenceUtil.isNotBlank(entity.getCode()) && !CharSequenceUtil.equals(data.getCode(), entity.getCode().trim())) {
-            this.checkCode(entity);
             this.resourceRepository.getCodeIsExist(entity.getCode());
         }
-        if (CharSequenceUtil.isNotBlank(entity.getApiUrl()) && !CharSequenceUtil.equals(data.getApiUrl(), entity.getApiUrl().trim())) {
-            this.resourceRepository.getApiUrlIsExist(entity.getApiUrl().trim(), data.getMenuId());
-        }
+        List<String> apiUrls = entity.getApiUrls().stream().map(String::trim).distinct().toList();
         final ResourceDO model = BeanUtil.copyProperties(entity, ResourceDO.class);
+        model.setApiUrls(apiUrls);
         this.resourceRepository.updateById(model);
         return Boolean.TRUE;
     }
 
+    /**
+     * 修改资源启用禁用状态.
+     *
+     * @param id     id
+     * @param status 状态
+     * @return 是否成功
+     */
     @Caching(
         evict = {
             @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_RESOURCE}, allEntries = true),
@@ -153,6 +173,13 @@ public class ResourceApplicationService {
         return Boolean.TRUE;
     }
 
+    /**
+     * 修改资源内置状态.
+     *
+     * @param id          id
+     * @param buildInFlag 内置状态
+     * @return 是否成功
+     */
     @Caching(
         evict = {
             @CacheEvict(cacheNames = {RedisCacheConstant.CACHE_RESOURCE}, allEntries = true),
@@ -173,18 +200,6 @@ public class ResourceApplicationService {
         param.setVersion(data.getVersion());
         this.resourceRepository.updateById(param);
         return Boolean.TRUE;
-    }
-
-    private void checkCode(ResourceDTO entity) {
-        if (ResourceTypeEnum.BUTTON.equals(entity.getResourceType())) {
-            if (!entity.getCode().startsWith(ResourceTypeEnum.BUTTON.name().toLowerCase())) {
-                throw new BizException(MgtCodeEnum.BUTTON_PREFIX_ERROR);
-            }
-        } else if (ResourceTypeEnum.API.equals(entity.getResourceType())) {
-            if (!entity.getCode().startsWith(ResourceTypeEnum.API.name().toLowerCase())) {
-                throw new BizException(MgtCodeEnum.API_PREFIX_ERROR);
-            }
-        }
     }
 
 }

@@ -10,6 +10,7 @@ package com.iwindplus.mgt.infrastructure.persistence.upms.permission;
 import com.github.yulichang.base.MPJBaseMapper;
 import com.iwindplus.base.domain.enums.EnableStatusEnum;
 import com.iwindplus.base.domain.vo.BaseTreeVO;
+import com.iwindplus.mgt.api.upms.vo.ResourceBaseExtendVO;
 import com.iwindplus.mgt.application.query.upms.permission.vo.MenuBaseListSystemVO;
 import com.iwindplus.mgt.application.query.upms.permission.vo.MenuListSystemVO;
 import java.util.List;
@@ -60,5 +61,16 @@ public interface MenuMapper extends MPJBaseMapper<MenuDO> {
      * @return List<MenuListSystemVO>
      */
     List<MenuListSystemVO> selectListByUserId(@Param("orgId") Long orgId, @Param("userId") Long userId);
+
+    /**
+     * 通过用户主键查询已授权菜单的API路径集合.
+     *
+     * @param orgId  组织主键
+     * @param userId 用户主键
+     * @param path   API路径（可选）
+     * @return List<ResourceBaseExtendVO>
+     */
+    List<ResourceBaseExtendVO> selectListCheckedByUserId(@Param("orgId") Long orgId, @Param("userId") Long userId,
+        @Param("path") String path);
 
 }
